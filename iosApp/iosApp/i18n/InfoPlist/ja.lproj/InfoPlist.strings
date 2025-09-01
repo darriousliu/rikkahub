@@ -1,0 +1,3 @@
+NSCameraUsageDescription = "QRコードをスキャンするか写真を撮って画像をアップロードするには、カメラの許可が必要です。";
+NSPhotoLibraryUsageDescription = "会話でアップロードする画像やスキャンする必要のあるQRコード画像を選択するには、写真へのアクセス許可が必要です。";
+NSUserNotificationsUsageDescription = "通知の許可が必要です。アプリがフォアグラウンドにないとき、メッセージの生成が完了したら通知を表示します。";

@@ -1,0 +1,3 @@
+NSCameraUsageDescription = "需要相機權限以掃描 QR 碼或透過拍照上傳圖片。";
+NSPhotoLibraryUsageDescription = "需要照片權限以選取對話中要上傳的圖片或需要掃描的 QR 碼圖片。";
+NSUserNotificationsUsageDescription = "需要通知權限，當應用不在前台時，若訊息生成完成則顯示通知。";
