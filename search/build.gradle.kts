@@ -2,9 +2,36 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    id("multiplatform")
+    alias(libs.plugins.composeMultiplatform)
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.components.resources)
+            implementation("org.jetbrains.compose.material3:material3:1.10.0-alpha01") {
+                exclude("org.jetbrains.compose.animation")
+                exclude("org.jetbrains.compose.annotation-internal")
+                exclude("org.jetbrains.compose.collection-internal")
+                exclude("org.jetbrains.compose.foundation")
+                exclude("org.jetbrains.compose.material")
+                exclude("org.jetbrains.compose.runtime")
+                exclude("org.jetbrains.compose.ui")
+            }
+
+            implementation(project(":ai"))
+            implementation(libs.bundles.ktor)
+            implementation(libs.okio)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+
+            implementation(libs.ksoup)
+            implementation(libs.ksoup.network)
+        }
+    }
 }
 
 android {
@@ -34,9 +61,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
@@ -52,7 +76,8 @@ android {
 
 dependencies {
     implementation(project(":ai"))
-    implementation(libs.okhttp)
+    implementation(libs.bundles.ktor)
+    implementation(libs.okio)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
     implementation(platform(libs.androidx.compose.bom))

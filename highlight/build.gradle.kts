@@ -1,8 +1,33 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    id("multiplatform")
+    alias(libs.plugins.composeMultiplatform)
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.components.resources)
+            implementation(compose.ui)
+            implementation("org.jetbrains.compose.material3:material3:1.10.0-alpha01") {
+                exclude("org.jetbrains.compose.animation")
+                exclude("org.jetbrains.compose.annotation-internal")
+                exclude("org.jetbrains.compose.collection-internal")
+                exclude("org.jetbrains.compose.foundation")
+                exclude("org.jetbrains.compose.material")
+                exclude("org.jetbrains.compose.runtime")
+                exclude("org.jetbrains.compose.ui")
+            }
+
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.quickjs.kt)
+            implementation(libs.quickjs.kt.converter.serialization)
+            implementation(libs.kermit)
+        }
+    }
 }
 
 android {
@@ -32,9 +57,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 
 dependencies {
@@ -43,7 +65,4 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    api(libs.quickjs)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines.core)
 }
