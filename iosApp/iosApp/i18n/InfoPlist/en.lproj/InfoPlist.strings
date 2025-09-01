@@ -1,0 +1,2 @@
+NSCameraUsageDescription = "Camera permission is required to scan QR codes or to upload images by taking a photo.";
+NSPhotoLibraryUsageDescription = "Permission to access photos is required to select images to upload in the conversation or to choose QR code images that need to be scanned.";
