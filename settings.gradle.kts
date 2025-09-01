@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-convention")
     repositories {
         google {
             content {
