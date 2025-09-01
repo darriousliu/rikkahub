@@ -8,4 +8,6 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
     alias(libs.plugins.chaquo.python) apply false
+    alias(libs.plugins.multiplatform) apply false
+    alias(libs.plugins.composeMultiplatform) apply false
 }
