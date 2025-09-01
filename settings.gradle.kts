@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-convention")
     repositories {
         google {
             content {
@@ -26,11 +27,12 @@ dependencyResolutionManagement {
         mavenCentral()
         maven("https://jitpack.io")
         mavenLocal()
+        maven("https://maven.universablockchain.com/")
     }
 }
 
 rootProject.name = "rikkahub"
-include(":app")
+include(":composeApp")
 include(":highlight")
 include(":ai")
 include(":search")

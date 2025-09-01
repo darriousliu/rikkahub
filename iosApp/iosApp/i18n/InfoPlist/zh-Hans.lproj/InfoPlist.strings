@@ -1,0 +1,3 @@
+NSCameraUsageDescription = "需要相机权限扫描二维码或通过拍照上传图片。";
+NSPhotoLibraryUsageDescription = "需要照片权限来选取对话需要上传的图片或需要扫描的二维码图片。";
+NSUserNotificationsUsageDescription = "需要通知权限，当应用不在前台时，若生成消息完毕则显示通知。";

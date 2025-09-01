@@ -4,6 +4,21 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    id("multiplatform")
+    alias(libs.plugins.composeMultiplatform)
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.material3)
+
+            implementation(project(":common"))
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kermit)
+        }
+    }
 }
 
 android {
@@ -47,13 +62,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":common"))
-
-    implementation(libs.okhttp)
-
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines.core)
-
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.common)

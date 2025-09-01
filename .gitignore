@@ -1,5 +1,8 @@
 *.iml
 .gradle
+**/build/
+xcuserdata
+!src/**/build/
 /local.properties
 /.idea
 .DS_Store
@@ -11,3 +14,11 @@ local.properties
 .cursor
 .history
 .kotlin
+
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+**/GoogleService-Info.plist

@@ -4,6 +4,26 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    id("multiplatform")
+    alias(libs.plugins.composeMultiplatform)
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.components.resources)
+            implementation(compose.material3)
+
+            implementation(project(":ai"))
+            implementation(libs.bundles.ktor)
+            implementation(libs.okio)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+
+            implementation(libs.ksoup)
+            implementation(libs.ksoup.network)
+        }
+    }
 }
 
 android {
@@ -48,7 +68,8 @@ android {
 
 dependencies {
     implementation(project(":ai"))
-    implementation(libs.okhttp)
+    implementation(libs.bundles.ktor)
+    implementation(libs.okio)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
     implementation(platform(libs.androidx.compose.bom))
