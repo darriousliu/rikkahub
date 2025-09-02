@@ -6,13 +6,191 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.chaquo.python)
+    id("multiplatform")
+    alias(libs.plugins.composeMultiplatform)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+    }
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.lifecycle.runtime.ktx)
+            implementation(libs.androidx.work.runtime.ktx)
+            implementation(libs.androidx.browser)
+
+            // koin
+            implementation(libs.koin.android)
+            implementation(libs.koin.androidx.workmanager)
+
+            // Compose
+            implementation(libs.androidx.activity.compose)
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.androidx.ui)
+            implementation(libs.androidx.ui.android)
+            implementation(libs.androidx.ui.graphics)
+            implementation(libs.androidx.ui.tooling.preview)
+            implementation(libs.androidx.material3)
+            implementation(libs.androidx.material3.adaptive)
+            implementation(libs.androidx.material3.adaptive.layout)
+
+            // Navigation 2
+            implementation(libs.androidx.navigation2)
+
+            // Navigation 3
+//    implementation(libs.androidx.navigation3.runtime)
+//    implementation(libs.androidx.navigation3.ui)
+//    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+//    implementation(libs.androidx.material3.adaptive.navigation3)
+
+            // Firebase
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.config)
+
+            // Room
+            implementation(libs.androidx.room.paging)
+
+            // Image metadata extractor
+            // https://github.com/drewnoakes/metadata-extractor
+            implementation(libs.metadata.extractor)
+
+            // okhttp
+            implementation(libs.okhttp)
+            implementation(libs.okhttp.sse)
+            implementation(libs.retrofit)
+            implementation(libs.retrofit.serialization.json)
+
+            // ucrop
+            implementation(libs.ucrop)
+
+            // pebble (template engine)
+            implementation(libs.pebble)
+
+            // zxing
+            implementation(libs.zxing.core)
+
+            // quickie (qrcode scanner)
+            implementation(libs.quickie.bundled)
+            implementation(libs.barcode.scanning)
+            implementation(libs.androidx.camera.core)
+
+            // WebDav
+            implementation(libs.dav4jvm.get().toString()) {
+                exclude(group = "org.ogce", module = "xpp3")
+            }
+
+            // Apache Commons Text
+            implementation(libs.commons.text)
+
+            // Permission
+            implementation(libs.permissions.compose)
+
+            // JLatexMath
+            // https://github.com/rikkahub/jlatexmath-android
+            implementation(libs.jlatexmath)
+            implementation(libs.jlatexmath.font.greek)
+            implementation(libs.jlatexmath.font.cyrillic)
+
+            // modules
+            implementation(project(":ai"))
+            implementation(project(":highlight"))
+            implementation(project(":search"))
+            implementation(project(":rag"))
+            implementation(project(":tts"))
+            implementation(project(":common"))
+
+            implementation(libs.ktor.client.okhttp)
+        }
+        commonMain.dependencies {
+            // Compose
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+
+            // lifecycle
+            implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
+
+            // DataStore
+            implementation(libs.androidx.datastore.preferences)
+
+            // koin
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.compose)
+
+
+            // jetbrains markdown parser
+            implementation(libs.jetbrains.markdown)
+
+            // coil
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
+            implementation(libs.coil.svg)
+
+            // serialization
+            implementation(libs.kotlinx.serialization.json)
+
+            // WebDav
+            implementation(libs.dav4kmp)
+
+            // Room
+            implementation(libs.androidx.room.runtime)
+
+
+            // Paging3
+//            implementation(libs.androidx.paging.runtime)
+            implementation(libs.androidx.paging.compose.get().toString()) {
+                exclude(group = "androidx.compose.ui", module = "ui-android")
+            }
+
+            // Reorderable (https://github.com/Calvin-LL/Reorderable/)
+            implementation(libs.reorderable)
+
+            // lucide icons
+            implementation(libs.lucide.icons)
+
+            // image viewer
+            implementation(libs.image.viewer)
+
+            // Toast (Sonner)
+            implementation(libs.sonner)
+
+            // mcp
+            implementation(libs.modelcontextprotocol.kotlin.sdk)
+
+            implementation(kotlin("reflect"))
+
+            // Ktor
+            implementation(libs.bundles.ktor)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
+    }
 }
 
 android {
@@ -122,16 +300,10 @@ ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
-
 chaquopy {
     defaultConfig {
         version = "3.12"
-        if(Os.isFamily(Os.FAMILY_MAC)) buildPython("/Library/Frameworks/Python.framework/Versions/3.12/bin/python3")
+        if (Os.isFamily(Os.FAMILY_MAC)) buildPython("/opt/homebrew/bin/python3")
         pip {
             install("pypdf")
             install("python-docx")
@@ -140,131 +312,7 @@ chaquopy {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.browser)
-
-    // Compose
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.material3.adaptive)
-    implementation(libs.androidx.material3.adaptive.layout)
-
-    // Navigation 2
-    implementation(libs.androidx.navigation2)
-
-    // Navigation 3
-//    implementation(libs.androidx.navigation3.runtime)
-//    implementation(libs.androidx.navigation3.ui)
-//    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-//    implementation(libs.androidx.material3.adaptive.navigation3)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.config)
-
-    // DataStore
-    implementation(libs.androidx.datastore.preferences)
-
-    // Image metadata extractor
-    // https://github.com/drewnoakes/metadata-extractor
-    implementation(libs.metadata.extractor)
-
-    // koin
-    implementation(platform(libs.koin.bom))
-    implementation(libs.koin.android)
-    implementation(libs.koin.compose)
-    implementation(libs.koin.androidx.workmanager)
-
-    // jetbrains markdown parser
-    implementation(libs.jetbrains.markdown)
-
-    // okhttp
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.sse)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.serialization.json)
-
-    // ucrop
-    implementation(libs.ucrop)
-
-    // pebble (template engine)
-    implementation(libs.pebble)
-
-    // coil
-    implementation(libs.coil.compose)
-    implementation(libs.coil.okhttp)
-    implementation(libs.coil.svg)
-
-    // serialization
-    implementation(libs.kotlinx.serialization.json)
-
-    // zxing
-    implementation(libs.zxing.core)
-
-    // quickie (qrcode scanner)
-    implementation(libs.quickie.bundled)
-    implementation(libs.barcode.scanning)
-    implementation(libs.androidx.camera.core)
-
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.paging)
     ksp(libs.androidx.room.compiler)
-
-    // Paging3
-    implementation(libs.androidx.paging.runtime)
-    implementation(libs.androidx.paging.compose)
-
-    // WebDav
-    implementation(libs.dav4jvm) {
-        exclude(group = "org.ogce", module = "xpp3")
-    }
-
-    // Apache Commons Text
-    implementation(libs.commons.text)
-
-    // Toast (Sonner)
-    implementation(libs.sonner)
-
-    // Reorderable (https://github.com/Calvin-LL/Reorderable/)
-    implementation(libs.reorderable)
-
-    // Permission
-    implementation(libs.permissions.compose)
-
-    // lucide icons
-    implementation(libs.lucide.icons)
-
-    // image viewer
-    implementation(libs.image.viewer)
-
-    // JLatexMath
-    // https://github.com/rikkahub/jlatexmath-android
-    implementation(libs.jlatexmath)
-    implementation(libs.jlatexmath.font.greek)
-    implementation(libs.jlatexmath.font.cyrillic)
-
-    // mcp
-    implementation(libs.modelcontextprotocol.kotlin.sdk)
-
-    // modules
-    implementation(project(":ai"))
-    implementation(project(":highlight"))
-    implementation(project(":search"))
-    implementation(project(":rag"))
-    implementation(project(":tts"))
-    implementation(project(":common"))
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
-    implementation(kotlin("reflect"))
 
     // Leak Canary
     debugImplementation(libs.leakcanary.android)

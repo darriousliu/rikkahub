@@ -1,6 +1,10 @@
 package me.rerere.rikkahub.di
 
 import androidx.room.Room
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRedirect
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import io.pebbletemplates.pebble.PebbleEngine
 import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
@@ -86,6 +90,23 @@ val dataSourceModule = module {
                 level = HttpLoggingInterceptor.Level.HEADERS
             })
             .build()
+    }
+
+    single<HttpClient> {
+        HttpClient {
+            install(HttpRedirect) {
+                checkHttpMethod = true
+                allowHttpsDowngrade = true
+            }
+            install(HttpRequestRetry) {
+                maxRetries = 3
+            }
+            install(HttpTimeout) {
+                connectTimeoutMillis = 20_000
+                socketTimeoutMillis = 10 * 60 * 1000
+                requestTimeoutMillis = 20_000 + 10 * 60 * 1000 + 120_000
+            }
+        }
     }
 
     single {
