@@ -2,8 +2,8 @@
 // Copyright (c) 2024 Alibaba Group Holding Limited All rights reserved.
 package me.rerere.ai.mnn.model
 
-class SessionItem(
-    @JvmField val sessionId: String,
-    @JvmField val modelId: String,
-    @JvmField var title: String
-)
+//class SessionItem(
+//    @JvmField val sessionId: String,
+//    @JvmField val modelId: String,
+//    @JvmField var title: String
+//)

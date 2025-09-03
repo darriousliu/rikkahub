@@ -2,23 +2,23 @@
 // Copyright (c) 2024 Alibaba Group Holding Limited All rights reserved.
 package me.rerere.ai.mnn
 
-import me.rerere.ai.mnn.model.ChatDataItem
-
-
-interface ChatSession  {
-    val debugInfo: String
-    val sessionId: String?
-
-    val supportOmni: Boolean
-    fun load()
-
-    fun generate(prompt: String, params: Map<String, Any>, progressListener: GenerateProgressListener): HashMap<String, Any>
-
-    fun reset(): String
-
-    fun release()
-    fun setKeepHistory(keepHistory: Boolean)
-    fun setEnableAudioOutput(enable: Boolean)
-    fun getHistory(): List<ChatDataItem>?
-    fun setHistory(history:List<ChatDataItem>?)
-}
+//import me.rerere.ai.mnn.model.ChatDataItem
+//
+//
+//interface ChatSession  {
+//    val debugInfo: String
+//    val sessionId: String?
+//
+//    val supportOmni: Boolean
+//    fun load()
+//
+//    fun generate(prompt: String, params: Map<String, Any>, progressListener: GenerateProgressListener): HashMap<String, Any>
+//
+//    fun reset(): String
+//
+//    fun release()
+//    fun setKeepHistory(keepHistory: Boolean)
+//    fun setEnableAudioOutput(enable: Boolean)
+//    fun getHistory(): List<ChatDataItem>?
+//    fun setHistory(history:List<ChatDataItem>?)
+//}
