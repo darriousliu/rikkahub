@@ -1,6 +1,35 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    id("multiplatform")
+}
+
+kotlin {
+    sourceSets {
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.appcompat)
+            implementation(libs.material)
+
+            api(libs.ktor.client.okhttp)
+
+            // floating
+            // https://github.com/Petterpx/FloatingX
+            api("io.github.petterpx:floatingx:2.3.7")
+            api("io.github.petterpx:floatingx-compose:2.3.7")
+        }
+        commonMain.dependencies {
+            // ktor
+            api(libs.bundles.ktor)
+
+            // kotlinx
+            api(libs.kotlinx.serialization.json)
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.datetime)
+        }
+        iosMain.dependencies {
+            api(libs.ktor.client.darwin)
+        }
+    }
 }
 
 android {
@@ -27,35 +56,4 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-}
-
-dependencies {
-    // okhttp
-    api(libs.okhttp)
-    api(libs.okhttp.sse)
-    api(libs.okhttp.logging)
-
-    // kotlinx
-    api(libs.kotlinx.serialization.json)
-    api(libs.kotlinx.coroutines.core)
-    api(libs.kotlinx.datetime)
-
-    // apache commons
-    api(libs.commons.text)
-
-    // floating
-    // https://github.com/Petterpx/FloatingX
-    api("io.github.petterpx:floatingx:2.3.7")
-    api("io.github.petterpx:floatingx-compose:2.3.7")
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

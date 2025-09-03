@@ -12,4 +12,5 @@ plugins {
     alias(libs.plugins.baselineprofile) apply false
     alias(libs.plugins.multiplatform) apply false
     alias(libs.plugins.composeMultiplatform) apply false
+    alias(libs.plugins.ktorfit) apply false
 }

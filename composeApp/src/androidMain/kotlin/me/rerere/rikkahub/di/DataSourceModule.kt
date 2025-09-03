@@ -5,12 +5,15 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.sse.SSE
 import io.pebbletemplates.pebble.PebbleEngine
 import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
-import me.rerere.rikkahub.data.ai.AIRequestInterceptor
-import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
+import me.rerere.rikkahub.data.ai.AIRequestInterceptorPlugin
 import me.rerere.rikkahub.data.ai.GenerationHandler
+import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.RikkaHubAPI
 import me.rerere.rikkahub.data.api.SponsorAPI
@@ -20,13 +23,10 @@ import me.rerere.rikkahub.data.db.Migration_6_7
 import me.rerere.rikkahub.data.mcp.McpManager
 import me.rerere.rikkahub.data.sync.DataSync
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 val dataSourceModule = module {
     single {
@@ -77,23 +77,9 @@ val dataSourceModule = module {
         )
     }
 
-    single<OkHttpClient> {
-        OkHttpClient.Builder()
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.MINUTES)
-            .writeTimeout(120, TimeUnit.SECONDS)
-            .followSslRedirects(true)
-            .followRedirects(true)
-            .retryOnConnectionFailure(true)
-            .addInterceptor(AIRequestInterceptor(remoteConfig = get()))
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.HEADERS
-            })
-            .build()
-    }
-
     single<HttpClient> {
         HttpClient {
+            install(SSE)
             install(HttpRedirect) {
                 checkHttpMethod = true
                 allowHttpsDowngrade = true
@@ -105,6 +91,12 @@ val dataSourceModule = module {
                 connectTimeoutMillis = 20_000
                 socketTimeoutMillis = 10 * 60 * 1000
                 requestTimeoutMillis = 20_000 + 10 * 60 * 1000 + 120_000
+            }
+            install(Logging) {
+                level = LogLevel.HEADERS
+            }
+            install(AIRequestInterceptorPlugin) {
+                remoteConfig = get()
             }
         }
     }

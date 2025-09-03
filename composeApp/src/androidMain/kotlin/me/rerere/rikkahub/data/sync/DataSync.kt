@@ -2,32 +2,41 @@ package me.rerere.rikkahub.data.sync
 
 import android.content.Context
 import android.util.Log
-import at.bitfire.dav4jvm.BasicDigestAuthHandler
-import at.bitfire.dav4jvm.DavCollection
-import at.bitfire.dav4jvm.Response
-import at.bitfire.dav4jvm.exception.NotFoundException
-import at.bitfire.dav4jvm.property.DisplayName
-import at.bitfire.dav4jvm.property.GetContentLength
-import at.bitfire.dav4jvm.property.GetLastModified
+import io.github.triangleofice.dav4kmp.DavCollection
+import io.github.triangleofice.dav4kmp.Response
+import io.github.triangleofice.dav4kmp.exception.NotFoundException
+import io.github.triangleofice.dav4kmp.property.DisplayName
+import io.github.triangleofice.dav4kmp.property.GetContentLength
+import io.github.triangleofice.dav4kmp.property.GetLastModified
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRedirect
+import io.ktor.client.plugins.HttpSend
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.DigestAuthCredentials
+import io.ktor.client.plugins.auth.providers.digest
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.http.ContentType
+import io.ktor.http.Url
+import io.ktor.http.defaultForFileExtension
+import io.ktor.http.isSuccess
+import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.OkHttpClient
-import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.time.Duration.Companion.minutes
 
 private const val TAG = "DataSync"
 
@@ -39,7 +48,7 @@ class DataSync(
     suspend fun testWebdav(webDavConfig: WebDavConfig) {
         val davCollection = DavCollection(
             httpClient = webDavConfig.requireClient(),
-            location = webDavConfig.url.toHttpUrl(),
+            location = Url(webDavConfig.url),
         )
 
         withContext(Dispatchers.IO) {
@@ -57,8 +66,10 @@ class DataSync(
         val collection = webDavConfig.requireCollection()
         collection.ensureCollectionExists() // ensure collection exists
         val target = webDavConfig.requireCollection(file.name)
+        val body = file.readChannel()
         target.put(
-            body = file.asRequestBody(),
+            body = body,
+            contentType = ContentType.defaultForFileExtension(file.extension)
         ) { response ->
             Log.i(TAG, "backupToWebDav: $response")
         }
@@ -101,7 +112,7 @@ class DataSync(
         withContext(Dispatchers.IO) {
             val collection = DavCollection(
                 httpClient = webDavConfig.requireClient(),
-                location = item.href.toHttpUrl(),
+                location = Url(item.href),
             )
             val backupFile = File(context.cacheDir, item.displayName)
             if (backupFile.exists()) {
@@ -113,14 +124,14 @@ class DataSync(
                 accept = "",
                 headers = null
             ) { response ->
-                if (response.isSuccessful) {
+                if (response.status.isSuccess()) {
                     Log.i(
                         TAG,
                         "restoreFromWebDav: Downloading ${item.displayName} to ${backupFile.absolutePath}"
                     )
-                    response.body?.byteStream()?.use { inputStream ->
+                    response.bodyAsBytes().let { inputStream ->
                         FileOutputStream(backupFile).use { outputStream ->
-                            inputStream.copyTo(outputStream)
+                            outputStream.write(inputStream)
                         }
                     }
                 } else {
@@ -128,7 +139,7 @@ class DataSync(
                         TAG,
                         "restoreFromWebDav: Failed to download ${item.displayName}, response: $response"
                     )
-                    throw Exception("Failed to download backup file: ${response.message}")
+                    throw Exception("Failed to download backup file: ${response.status.description}")
                 }
             }
 
@@ -150,7 +161,7 @@ class DataSync(
         withContext(Dispatchers.IO) {
             val collection = DavCollection(
                 httpClient = webDavConfig.requireClient(),
-                location = item.href.toHttpUrl()
+                location = Url(item.href)
             )
             collection.delete { response ->
                 Log.i(TAG, "deleteWebDavBackupFile: $response")
@@ -391,23 +402,35 @@ private fun addVirtualFileToZip(zipOut: ZipOutputStream, name: String, content: 
     Log.i(TAG, "addVirtualFileToZip: $name （${content.length} bytes）")
 }
 
-private fun WebDavConfig.requireClient(): OkHttpClient {
-    val authHandler = BasicDigestAuthHandler(
-        domain = null,
-        username = this.username,
-        password = this.password
-    )
-    val okHttpClient = OkHttpClient.Builder()
-        .followRedirects(false)
-        .authenticator(authHandler)
-        .addNetworkInterceptor(authHandler)
-        .writeTimeout(5, TimeUnit.MINUTES)
-        .build()
+private fun WebDavConfig.requireClient(): HttpClient {
+    val okHttpClient = HttpClient {
+        install(HttpRedirect) {
+            allowHttpsDowngrade = false
+        }
+        install(Auth) {
+            digest {
+                credentials {
+                    DigestAuthCredentials(
+                        username = this@requireClient.username,
+                        password = this@requireClient.password
+                    )
+                }
+            }
+        }
+        install(HttpSend)
+        install(HttpTimeout) {
+            socketTimeoutMillis = 5.minutes.inWholeMilliseconds
+        }
+    }.apply {
+//        plugin(HttpSend).apply {
+//            intercept { }
+//        }
+    }
     return okHttpClient
 }
 
 private fun WebDavConfig.requireCollection(path: String? = null): DavCollection {
-    val location = buildString {
+    val location = Url(buildString {
         append(this@requireCollection.url.trimEnd('/'))
         append("/")
         if (this@requireCollection.path.isNotBlank()) {
@@ -417,7 +440,7 @@ private fun WebDavConfig.requireCollection(path: String? = null): DavCollection 
         if (path != null) {
             append(path.trim('/'))
         }
-    }.toHttpUrl()
+    })
     val davCollection = DavCollection(
         httpClient = this.requireClient(),
         location = location,

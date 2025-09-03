@@ -1,47 +1,54 @@
 package me.rerere.ai.util
 
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.headers
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.Headers
+import io.ktor.http.Url
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.CustomHeader
-import okhttp3.Headers
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.Request
-import okhttp3.ResponseBody
-import okhttp3.internal.http.RealResponseBody
+
+typealias RequestBuilder = HttpRequestBuilder.() -> Unit
 
 fun List<CustomHeader>.toHeaders(): Headers {
-    return Headers.Builder().apply {
+    return Headers.build {
         this@toHeaders
             .filter { it.name.isNotBlank() }
             .forEach {
-                add(it.name, it.value)
+                append(it.name, it.value)
             }
-    }.build()
-}
-
-fun Request.Builder.configureReferHeaders(url: String): Request.Builder {
-    val httpUrl = url.toHttpUrl()
-    return when (httpUrl.host) {
-        "aihubmix.com" -> {
-            addHeader("APP-Code", "DKHA9468")
-        }
-
-        "openrouter.ai" -> {
-            this
-                .addHeader("X-Title", "RikkaHub")
-                .addHeader("HTTP-Referer", "https://rikka-ai.com")
-        }
-
-        else -> this
     }
 }
 
-fun ResponseBody.stringSafe(): String? {
-    return when (this) {
-        is RealResponseBody -> string()
-        else -> null
+fun HttpRequestBuilder.configureReferHeaders(url: String) {
+    val httpUrl = Url(url)
+    when (httpUrl.host) {
+        "aihubmix.com" -> {
+            headers {
+                append("APP-Code", "DKHA9468")
+            }
+
+        }
+
+        "openrouter.ai" -> {
+            headers {
+                append("X-Title", "RikkaHub")
+                append("HTTP-Referer", "https://rikka-ai.com")
+            }
+        }
+    }
+}
+
+
+suspend fun HttpResponse.stringSafe(): String? {
+    return try {
+        bodyAsText()
+    } catch (e: Exception) {
+        null
     }
 }
 
