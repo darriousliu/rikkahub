@@ -3,6 +3,6 @@
 
 package me.rerere.ai.mnn
 
-interface GenerateProgressListener {
-    fun onProgress(progress: String?): Boolean
-}
+//interface GenerateProgressListener {
+//    fun onProgress(progress: String?): Boolean
+//}
