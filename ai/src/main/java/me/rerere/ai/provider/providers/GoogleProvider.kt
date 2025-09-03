@@ -1,105 +1,60 @@
 package me.rerere.ai.provider.providers
 
 import android.util.Log
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.sse.sse
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.TokenUsage
-import me.rerere.ai.provider.BuiltInTools
-import me.rerere.ai.provider.ImageGenerationParams
-import me.rerere.ai.provider.Modality
-import me.rerere.ai.provider.Model
-import me.rerere.ai.provider.ModelAbility
-import me.rerere.ai.provider.ModelType
-import me.rerere.ai.provider.Provider
-import me.rerere.ai.provider.ProviderSetting
-import me.rerere.ai.provider.TextGenerationParams
+import me.rerere.ai.provider.*
 import me.rerere.ai.provider.providers.vertex.ServiceAccountTokenProvider
-import me.rerere.ai.ui.ImageAspectRatio
-import me.rerere.ai.ui.ImageGenerationItem
-import me.rerere.ai.ui.ImageGenerationResult
-import me.rerere.ai.ui.MessageChunk
-import me.rerere.ai.ui.UIMessage
-import me.rerere.ai.ui.UIMessageAnnotation
-import me.rerere.ai.ui.UIMessageChoice
-import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.util.KeyRoulette
-import me.rerere.ai.util.configureClientWithProxy
-import me.rerere.ai.util.configureReferHeaders
-import me.rerere.ai.util.encodeBase64
-import me.rerere.ai.util.json
-import me.rerere.ai.util.mergeCustomBody
-import me.rerere.ai.util.removeElements
-import me.rerere.ai.util.stringSafe
-import me.rerere.ai.util.toHeaders
-import me.rerere.common.http.await
+import me.rerere.ai.ui.*
+import me.rerere.ai.util.*
 import me.rerere.common.http.jsonPrimitiveOrNull
-import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.sse.EventSource
-import okhttp3.sse.EventSourceListener
-import okhttp3.sse.EventSources
-import org.apache.commons.text.StringEscapeUtils
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "GoogleProvider"
 
-class GoogleProvider(private val client: OkHttpClient) : Provider<ProviderSetting.Google> {
+class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.Google> {
     private val keyRoulette = KeyRoulette.default()
     private val serviceAccountTokenProvider by lazy {
         ServiceAccountTokenProvider(client)
     }
 
-    private fun buildUrl(providerSetting: ProviderSetting.Google, path: String): HttpUrl {
+    private fun buildUrl(providerSetting: ProviderSetting.Google, path: String): Url {
         return if (!providerSetting.vertexAI) {
             val key = keyRoulette.next(providerSetting.apiKey)
-            "${providerSetting.baseUrl}/$path".toHttpUrl()
-                .newBuilder()
-                .addQueryParameter("key", key)
-                .build()
+            URLBuilder("${providerSetting.baseUrl}/$path").apply {
+                parameters.append("key", key)
+            }.build()
         } else {
-            "https://aiplatform.googleapis.com/v1/projects/${providerSetting.projectId}/locations/${providerSetting.location}/$path".toHttpUrl()
+            Url("https://aiplatform.googleapis.com/v1/projects/${providerSetting.projectId}/locations/${providerSetting.location}/$path")
         }
     }
 
     private suspend fun transformRequest(
         providerSetting: ProviderSetting.Google,
-        request: Request
-    ): Request {
+        request: HttpRequestBuilder
+    ): HttpRequestBuilder {
         return if (providerSetting.vertexAI) {
             val accessToken = serviceAccountTokenProvider.fetchAccessToken(
                 serviceAccountEmail = providerSetting.serviceAccountEmail.trim(),
-                privateKeyPem = StringEscapeUtils.unescapeJson(providerSetting.privateKey.trim()),
+                privateKeyPem = providerSetting.privateKey.trim().unescapeJson(),
             )
-            request.newBuilder()
-                .addHeader("Authorization", "Bearer $accessToken")
-                .build()
+            HttpRequestBuilder().apply {
+                takeFrom(request)
+                header("Authorization", "Bearer $accessToken")
+            }
         } else {
-            request.newBuilder().build()
+            HttpRequestBuilder().takeFrom(request)
         }
     }
 
@@ -108,14 +63,14 @@ class GoogleProvider(private val client: OkHttpClient) : Provider<ProviderSettin
             val url = buildUrl(providerSetting = providerSetting, path = "models")
             val request = transformRequest(
                 providerSetting = providerSetting,
-                request = Request.Builder()
-                    .url(url)
-                    .get()
-                    .build()
+                request = HttpRequestBuilder().apply {
+                    url(url)
+                    method = HttpMethod.Get
+                }
             )
-            val response = client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-            if (response.isSuccessful) {
-                val body = response.body?.string() ?: error("empty body")
+            val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
+            if (response.status.isSuccess()) {
+                val body = response.bodyAsText()
                 Log.d(TAG, "listModels: $body")
                 val bodyObject = json.parseToJsonElement(body).jsonObject
                 val models = bodyObject["models"]?.jsonArray ?: return@withContext emptyList()
@@ -160,22 +115,22 @@ class GoogleProvider(private val client: OkHttpClient) : Provider<ProviderSettin
 
         val request = transformRequest(
             providerSetting = providerSetting,
-            request = Request.Builder()
-                .url(url)
-                .headers(params.customHeaders.toHeaders())
-                .post(
-                    json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
-                )
-                .configureReferHeaders(providerSetting.baseUrl)
-                .build()
+            request = HttpRequestBuilder().apply {
+                url(url)
+                headers { appendAll(params.customHeaders.toHeaders()) }
+                method = HttpMethod.Post
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(requestBody))
+                configureReferHeaders(providerSetting.baseUrl)
+            }
         )
 
-        val response = client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body?.string()}")
+        val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
+        if (!response.status.isSuccess()) {
+            throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
         }
 
-        val bodyStr = response.body?.string() ?: ""
+        val bodyStr = response.bodyAsText()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
         val candidates = bodyJson["candidates"]!!.jsonArray
@@ -202,130 +157,111 @@ class GoogleProvider(private val client: OkHttpClient) : Provider<ProviderSettin
         providerSetting: ProviderSetting.Google,
         messages: List<UIMessage>,
         params: TextGenerationParams,
-    ): Flow<MessageChunk> = callbackFlow {
+    ): Flow<MessageChunk> = flow {
         val requestBody = buildCompletionRequestBody(messages, params)
 
-        val url = buildUrl(
-            providerSetting = providerSetting,
-            path = if (providerSetting.vertexAI) {
-                "publishers/google/models/${params.model.modelId}:streamGenerateContent"
-            } else {
-                "models/${params.model.modelId}:streamGenerateContent"
-            }
-        ).newBuilder().addQueryParameter("alt", "sse").build()
+        val url = URLBuilder(
+            buildUrl(
+                providerSetting = providerSetting,
+                path = if (providerSetting.vertexAI) {
+                    "publishers/google/models/${params.model.modelId}:streamGenerateContent"
+                } else {
+                    "models/${params.model.modelId}:streamGenerateContent"
+                }
+            )
+        ).apply {
+            parameters.append("alt", "sse")
+        }.build()
 
         val request = transformRequest(
             providerSetting = providerSetting,
-            request = Request.Builder()
-                .url(url)
-                .headers(params.customHeaders.toHeaders())
-                .post(
-                    json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
-                )
-                .configureReferHeaders(providerSetting.baseUrl)
-                .build()
+            request = HttpRequestBuilder().apply {
+                url(url)
+                headers { appendAll(params.customHeaders.toHeaders()) }
+                method = HttpMethod.Post
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(requestBody))
+                configureReferHeaders(providerSetting.baseUrl)
+            }
         )
 
         Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
 
-        val listener = object : EventSourceListener() {
-            override fun onEvent(
-                eventSource: EventSource,
-                id: String?,
-                type: String?,
-                data: String
-            ) {
-                Log.i(TAG, "onEvent: $data")
+        client.configureClientWithProxy(providerSetting.proxy).sse({ takeFrom(request) }) {
+            try {
+                incoming.collect { event ->
+                    Log.i(TAG, "onEvent: ${event.data}")
 
-                try {
-                    val jsonData = json.parseToJsonElement(data).jsonObject
-                    val candidates = jsonData["candidates"]?.jsonArray ?: return
-                    if (candidates.isEmpty()) return
-                    val usage = parseUsageMeta(jsonData["usageMetadata"] as? JsonObject)
-                    val messageChunk = MessageChunk(
-                        id = Uuid.random().toString(),
-                        model = params.model.modelId,
-                        choices = candidates.mapIndexed { index, candidate ->
-                            val candidateObj = candidate.jsonObject
-                            val content = candidateObj["content"]?.jsonObject
-                            val groundingMetadata = candidateObj["groundingMetadata"]?.jsonObject
-                            val finishReason =
-                                candidateObj["finishReason"]?.jsonPrimitive?.contentOrNull
+                    try {
+                        val jsonData = json.parseToJsonElement(event.data.orEmpty()).jsonObject
+                        val candidates = jsonData["candidates"]?.jsonArray ?: return@collect
+                        if (candidates.isEmpty()) return@collect
+                        val usage = parseUsageMeta(jsonData["usageMetadata"] as? JsonObject)
+                        val messageChunk = MessageChunk(
+                            id = Uuid.random().toString(),
+                            model = params.model.modelId,
+                            choices = candidates.mapIndexed { index, candidate ->
+                                val candidateObj = candidate.jsonObject
+                                val content = candidateObj["content"]?.jsonObject
+                                val groundingMetadata = candidateObj["groundingMetadata"]?.jsonObject
+                                val finishReason =
+                                    candidateObj["finishReason"]?.jsonPrimitive?.contentOrNull
 
-                            val message = content?.let {
-                                parseMessage(buildJsonObject {
-                                    put("role", JsonPrimitive("model"))
-                                    put("content", it)
-                                    groundingMetadata?.let { groundingMetadata ->
-                                        put("groundingMetadata", groundingMetadata)
-                                    }
-                                })
-                            }
+                                val message = content?.let {
+                                    parseMessage(buildJsonObject {
+                                        put("role", JsonPrimitive("model"))
+                                        put("content", it)
+                                        groundingMetadata?.let { groundingMetadata ->
+                                            put("groundingMetadata", groundingMetadata)
+                                        }
+                                    })
+                                }
 
-                            UIMessageChoice(
-                                index = index,
-                                delta = message,
-                                message = null,
-                                finishReason = finishReason
-                            )
-                        },
-                        usage = usage
-                    )
+                                UIMessageChoice(
+                                    index = index,
+                                    delta = message,
+                                    message = null,
+                                    finishReason = finishReason
+                                )
+                            },
+                            usage = usage
+                        )
 
-                    trySend(messageChunk)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    println("[onEvent] 解析错误: $data")
+                        emit(messageChunk)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        println("[onEvent] 解析错误: ${event.data}")
+                    }
                 }
-            }
-
-            override fun onFailure(
-                eventSource: EventSource,
-                t: Throwable?,
-                response: Response?
-            ) {
+            } catch (t: Throwable) {
+                val response = call.response
                 var exception = t
 
-                t?.printStackTrace()
-                println("[onFailure] 发生错误: ${t?.message}")
+                t.printStackTrace()
+                println("[onFailure] 发生错误: ${t.message}")
 
-                try {
-                    if (t == null && response != null) {
-                        val bodyStr = response.body.stringSafe()
-                        if (!bodyStr.isNullOrEmpty()) {
-                            val bodyElement = json.parseToJsonElement(bodyStr)
-                            println(bodyElement)
-                            if (bodyElement is JsonObject) {
-                                exception = Exception(
-                                    bodyElement["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
-                                        ?: "unknown"
-                                )
-                            }
-                        } else {
-                            exception = Exception("Unknown error: ${response.code}")
+                runCatching {
+                    val bodyStr = response.bodyAsText()
+                    if (bodyStr.isNotEmpty()) {
+                        val bodyElement = json.parseToJsonElement(bodyStr)
+                        println(bodyElement)
+                        if (bodyElement is JsonObject) {
+                            exception = Exception(
+                                bodyElement["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
+                                    ?: "unknown"
+                            )
                         }
+                    } else {
+                        exception = Exception("Unknown error: ${response.status.value}")
                     }
-                } catch (e: Throwable) {
-                    e.printStackTrace()
+                    exception.printStackTrace()
+                }.onFailure { e ->
                     exception = e
-                } finally {
-                    close(exception ?: Exception("Stream failed"))
+                    exception.printStackTrace()
                 }
+            } finally {
+                println("[awaitClose] 关闭eventSource")
             }
-
-            override fun onClosed(eventSource: EventSource) {
-                println("[onClosed] 连接已关闭")
-                close()
-            }
-        }
-
-        val eventSource =
-            EventSources.createFactory(client.configureClientWithProxy(providerSetting.proxy))
-                .newEventSource(request, listener)
-
-        awaitClose {
-            println("[awaitClose] 关闭eventSource")
-            eventSource.cancel()
         }
     }
 
@@ -644,11 +580,13 @@ class GoogleProvider(private val client: OkHttpClient) : Provider<ProviderSettin
             }
             putJsonObject("parameters") {
                 put("sampleCount", params.numOfImages)
-                put("aspectRatio", when(params.aspectRatio) {
-                    ImageAspectRatio.SQUARE -> "1:1"
-                    ImageAspectRatio.LANDSCAPE -> "16:9"
-                    ImageAspectRatio.PORTRAIT -> "9:16"
-                })
+                put(
+                    "aspectRatio", when (params.aspectRatio) {
+                        ImageAspectRatio.SQUARE -> "1:1"
+                        ImageAspectRatio.LANDSCAPE -> "16:9"
+                        ImageAspectRatio.PORTRAIT -> "9:16"
+                    }
+                )
             }
         }
 
@@ -663,24 +601,24 @@ class GoogleProvider(private val client: OkHttpClient) : Provider<ProviderSettin
 
         val request = transformRequest(
             providerSetting = providerSetting,
-            request = Request.Builder()
-                .url(url)
-                .post(
-                    json.encodeToString(requestBody).toRequestBody("application/json".toMediaType())
-                )
-                .configureReferHeaders(providerSetting.baseUrl)
-                .build()
+            request = HttpRequestBuilder().apply {
+                url(url)
+                method = HttpMethod.Post
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(requestBody))
+                configureReferHeaders(providerSetting.baseUrl)
+            }
         )
 
-        val response = client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-        if (!response.isSuccessful) {
-            error("Failed to generate image: ${response.code} ${response.body.string()}")
+        val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
+        if (!response.status.isSuccess()) {
+            error("Failed to generate image: ${response.status.value} ${response.bodyAsText()}")
         }
 
-        val bodyStr = response.body.string()
+        val bodyStr = response.bodyAsText()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
-        val predictions =  bodyJson["predictions"]?.jsonArray ?: error("No predictions in response")
+        val predictions = bodyJson["predictions"]?.jsonArray ?: error("No predictions in response")
 
         val items = predictions.mapNotNull { prediction ->
             val predictionObj = prediction.jsonObject

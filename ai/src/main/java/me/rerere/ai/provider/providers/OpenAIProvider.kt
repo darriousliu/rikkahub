@@ -1,40 +1,27 @@
 package me.rerere.ai.provider.providers
 
+import io.ktor.client.HttpClient
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import me.rerere.ai.provider.ImageGenerationParams
-import me.rerere.ai.provider.Model
-import me.rerere.ai.provider.Provider
-import me.rerere.ai.provider.ProviderSetting
-import me.rerere.ai.provider.TextGenerationParams
+import kotlinx.serialization.json.*
+import me.rerere.ai.provider.*
 import me.rerere.ai.provider.providers.openai.ChatCompletionsAPI
 import me.rerere.ai.provider.providers.openai.ResponseAPI
-import me.rerere.ai.ui.ImageAspectRatio
-import me.rerere.ai.ui.ImageGenerationItem
-import me.rerere.ai.ui.ImageGenerationResult
-import me.rerere.ai.ui.MessageChunk
-import me.rerere.ai.ui.UIMessage
+import me.rerere.ai.ui.*
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.configureClientWithProxy
 import me.rerere.ai.util.json
-import me.rerere.common.http.await
 import me.rerere.common.http.getByKey
-import me.rerere.common.http.jsonPrimitiveOrNull
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.math.BigDecimal
 
 class OpenAIProvider(
-    private val client: OkHttpClient
+    private val client: HttpClient
 ) : Provider<ProviderSetting.OpenAI> {
     private val keyRoulette = KeyRoulette.default()
 
@@ -45,19 +32,18 @@ class OpenAIProvider(
     override suspend fun listModels(providerSetting: ProviderSetting.OpenAI): List<Model> =
         withContext(Dispatchers.IO) {
             val key = keyRoulette.next(providerSetting.apiKey)
-            val request = Request.Builder()
-                .url("${providerSetting.baseUrl}/models")
-                .addHeader("Authorization", "Bearer $key")
-                .get()
-                .build()
-
-            val response =
-                client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-            if (!response.isSuccessful) {
-                error("Failed to get models: ${response.code} ${response.body?.string()}")
+            val request = HttpRequestBuilder().apply {
+                url("${providerSetting.baseUrl}/models")
+                header("Authorization", "Bearer $key")
             }
 
-            val bodyStr = response.body?.string() ?: ""
+
+            val response = client.configureClientWithProxy(providerSetting.proxy).get(request)
+            if (!response.status.isSuccess()) {
+                error("Failed to get models: ${response.status.value} ${response.bodyAsText()}")
+            }
+
+            val bodyStr = response.bodyAsText()
             val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
             val data = bodyJson["data"]?.jsonArray ?: return@withContext emptyList()
 
@@ -79,21 +65,20 @@ class OpenAIProvider(
         } else {
             "${providerSetting.baseUrl}${providerSetting.balanceOption.apiPath}"
         }
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("Authorization", "Bearer $key")
-            .get()
-            .build()
-        val response = client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-        if (!response.isSuccessful) {
-            error("Failed to get balance: ${response.code} ${response.body?.string()}")
+        val request = HttpRequestBuilder().apply {
+            url(url)
+            header("Authorization", "Bearer $key")
+        }
+        val response = client.configureClientWithProxy(providerSetting.proxy).get(request)
+        if (!response.status.isSuccess()) {
+            error("Failed to get balance: ${response.status.value} ${response.bodyAsText()}")
         }
 
-        val bodyStr = response.body.string()
+        val bodyStr = response.bodyAsText()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val value = bodyJson.getByKey(providerSetting.balanceOption.resultPath)
         val digitalValue = value.toFloatOrNull()
-        if(digitalValue != null) {
+        if (digitalValue != null) {
             "%.2f".format(digitalValue)
         } else {
             value
@@ -162,19 +147,21 @@ class OpenAIProvider(
             }
         )
 
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/images/generations")
-            .addHeader("Authorization", "Bearer $key")
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody.toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-        if (!response.isSuccessful) {
-            error("Failed to generate image: ${response.code} ${response.body?.string()}")
+        val request = HttpRequestBuilder().apply {
+            url("${providerSetting.baseUrl}/images/generations")
+            header("Authorization", "Bearer $key")
+            header("Content-Type", "application/json")
+            method = HttpMethod.Post
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
         }
 
-        val bodyStr = response.body?.string() ?: ""
+        val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
+        if (!response.status.isSuccess()) {
+            error("Failed to generate image: ${response.status.value} ${response.bodyAsText()}")
+        }
+
+        val bodyStr = response.bodyAsText()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val data = bodyJson["data"]?.jsonArray ?: error("No data in response")
 

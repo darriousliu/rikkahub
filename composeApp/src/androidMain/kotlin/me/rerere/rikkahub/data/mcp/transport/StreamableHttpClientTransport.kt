@@ -1,38 +1,25 @@
 package me.rerere.rikkahub.data.mcp.transport
 
 import android.util.Log
-import io.modelcontextprotocol.kotlin.sdk.JSONRPCMessage
-import io.modelcontextprotocol.kotlin.sdk.JSONRPCNotification
-import io.modelcontextprotocol.kotlin.sdk.JSONRPCRequest
-import io.modelcontextprotocol.kotlin.sdk.JSONRPCResponse
-import io.modelcontextprotocol.kotlin.sdk.RequestId
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.sse.sse
+import io.ktor.client.request.*
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpMethod
+import io.ktor.http.isSuccess
+import io.ktor.utils.io.exhausted
+import io.ktor.utils.io.readUTF8Line
+import io.modelcontextprotocol.kotlin.sdk.*
 import io.modelcontextprotocol.kotlin.sdk.shared.AbstractTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.McpJson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import me.rerere.common.http.SseEvent
-import me.rerere.common.http.sseFlow
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import java.io.IOException
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 private const val TAG = "StreamableHttpClientTra"
 
@@ -47,7 +34,7 @@ class StreamableHttpError(
 
 @OptIn(ExperimentalAtomicApi::class)
 class StreamableHttpClientTransport(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
     private val url: String,
     private val headers: Map<String, String> = emptyMap(),
 ) : AbstractTransport() {
@@ -102,55 +89,40 @@ class StreamableHttpClientTransport(
         }
 
         val jsonBody = McpJson.encodeToString(message)
-        val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
 
-        val request = Request.Builder()
-            .url(url)
-            .post(requestBody)
-            .apply {
-                applyCommonHeaders(this)
-                addHeader("Accept", "application/json, text/event-stream")
-            }
-            .build()
-
-        val response = suspendCancellableCoroutine<Response> { continuation ->
-            val call = client.newCall(request)
-            continuation.invokeOnCancellation { call.cancel() }
-
-            call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    continuation.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response)
-                }
-            })
+        val request = HttpRequestBuilder().apply {
+            url(this@StreamableHttpClientTransport.url)
+            setBody(jsonBody)
+            applyCommonHeaders()
+            header("Accept", "application/json, text/event-stream")
         }
 
-        response.use { resp ->
-            resp.header(MCP_SESSION_ID_HEADER)?.let {
+        val response = client.post(request)
+
+
+        response.let { resp ->
+            resp.headers[MCP_SESSION_ID_HEADER].let {
                 sessionId = it
             }
 
-            if (resp.code == 202) { // HTTP_ACCEPTED
+            if (resp.status.value == 202) { // HTTP_ACCEPTED
                 if (message is JSONRPCNotification && message.method == "notifications/initialized") {
                     startSseSession(onResumptionToken = onResumptionToken)
                 }
                 return
             }
 
-            if (!resp.isSuccessful) {
-                val error = StreamableHttpError(resp.code, resp.body?.string())
+            if (!resp.status.isSuccess()) {
+                val error = StreamableHttpError(resp.status.value, resp.bodyAsText())
                 _onError(error)
                 throw error
             }
 
-            val contentType = resp.header("Content-Type")
+            val contentType = resp.headers["Content-Type"]
             when {
                 contentType?.startsWith("application/json") == true -> {
-                    val body = resp.body?.string()
-                    if (!body.isNullOrEmpty()) {
+                    val body = resp.bodyAsText()
+                    if (body.isNotEmpty()) {
                         runCatching { McpJson.decodeFromString<JSONRPCMessage>(body) }
                             .onSuccess { _onMessage(it) }
                             .onFailure(_onError)
@@ -165,7 +137,7 @@ class StreamableHttpClientTransport(
                 }
 
                 else -> {
-                    val body = resp.body?.string() ?: ""
+                    val body = resp.bodyAsText()
                     if (contentType == null && body.isBlank()) return
 
                     val ct = contentType ?: "<none>"
@@ -202,33 +174,19 @@ class StreamableHttpClientTransport(
         if (sessionId == null) return
         Log.d(TAG, "terminateSession: Terminating session: $sessionId")
 
-        val request = Request.Builder()
-            .url(url)
-            .delete()
-            .apply { applyCommonHeaders(this) }
-            .build()
-
-        val response = suspendCancellableCoroutine<Response> { continuation ->
-            val call = client.newCall(request)
-            continuation.invokeOnCancellation { call.cancel() }
-
-            call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    continuation.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response)
-                }
-            })
+        val request = HttpRequestBuilder().apply {
+            url(this@StreamableHttpClientTransport.url)
+            applyCommonHeaders()
         }
 
-        response.use { resp ->
+        val response = client.delete(request)
+
+        response.let { resp ->
             // 405 means server doesn't support explicit session termination
-            if (!resp.isSuccessful && resp.code != 405) {
+            if (!resp.status.isSuccess() && resp.status.value != 405) {
                 val error = StreamableHttpError(
-                    resp.code,
-                    "Failed to terminate session: ${resp.message}"
+                    resp.status.value,
+                    "Failed to terminate session: ${resp.status.description}"
                 )
                 Log.e(TAG, "Failed to terminate session", error)
                 _onError(error)
@@ -250,39 +208,35 @@ class StreamableHttpClientTransport(
 
         Log.d(TAG, "startSseSession: Client attempting to start SSE session at url: $url")
 
-        val request = Request.Builder()
-            .url(url)
-            .get()
-            .apply {
-                applyCommonHeaders(this)
-                addHeader("Accept", "text/event-stream")
-                (resumptionToken ?: lastEventId)?.let {
-                    addHeader(MCP_RESUMPTION_TOKEN_HEADER, it)
-                }
+        val request = HttpRequestBuilder().apply {
+            url(this@StreamableHttpClientTransport.url)
+            method = HttpMethod.Get
+            applyCommonHeaders()
+            header("Accept", "text/event-stream")
+            (resumptionToken ?: lastEventId)?.let {
+                header(MCP_RESUMPTION_TOKEN_HEADER, it)
             }
-            .build()
+        }
 
-        sseJob = client.sseFlow(request)
-            .onEach { event ->
-                when (event) {
-                    is SseEvent.Open -> {
-                        Log.d(TAG, "startSseSession: Client SSE session started successfully.")
-                    }
+        client.sse({ takeFrom(request) }) {
+            Log.d(TAG, "startSseSession: Client SSE session started successfully.")
 
-                    is SseEvent.Event -> {
+            try {
+                sseJob = incoming
+                    .onEach { event ->
                         event.id?.let {
                             lastEventId = it
                             onResumptionToken?.invoke(it)
                         }
                         Log.d(
                             TAG,
-                            "collectSse: Client received SSE event: event=${event.type}, data=${event.data}, id=${event.id}"
+                            "collectSse: Client received SSE event: event=${event.event}, data=${event.data}, id=${event.id}"
                         )
 
-                        when (event.type) {
+                        when (event.event) {
                             null, "message" -> {
-                                if (event.data.isNotEmpty()) {
-                                    runCatching { McpJson.decodeFromString<JSONRPCMessage>(event.data) }
+                                if (!event.data.isNullOrEmpty()) {
+                                    runCatching { McpJson.decodeFromString<JSONRPCMessage>(event.data!!) }
                                         .onSuccess { msg ->
                                             scope.launch {
                                                 if (replayMessageId != null && msg is JSONRPCResponse) {
@@ -299,43 +253,39 @@ class StreamableHttpClientTransport(
                             "error" -> _onError(StreamableHttpError(null, event.data))
                         }
                     }
-
-                    is SseEvent.Closed -> {
-                        Log.d(TAG, "startSseSession: SSE connection closed")
+                    .catch { throwable ->
+                        Log.e(TAG, "SSE flow error", throwable)
+                        _onError(throwable)
                     }
-
-                    is SseEvent.Failure -> {
-                        if (event.response?.code == 405) {
-                            Log.i(TAG, "startSseSession: Server returned 405 for GET/SSE, stream disabled.")
-                            return@onEach
-                        }
-                        event.throwable?.let { _onError(it) }
-                    }
+                    .launchIn(scope)
+            } catch (e: Exception) {
+                if (call.response.status.value == 405) {
+                    Log.i(TAG, "startSseSession: Server returned 405 for GET/SSE, stream disabled.")
+                    return@sse
                 }
+                _onError(e)
+            } finally {
+                Log.d(TAG, "startSseSession: SSE connection closed")
             }
-            .catch { throwable ->
-                Log.e(TAG, "SSE flow error", throwable)
-                _onError(throwable)
-            }
-            .launchIn(scope)
+        }
     }
 
-    private fun applyCommonHeaders(builder: Request.Builder) {
-        sessionId?.let { builder.addHeader(MCP_SESSION_ID_HEADER, it) }
-        protocolVersion?.let { builder.addHeader(MCP_PROTOCOL_VERSION_HEADER, it) }
-        headers.forEach { (name, value) ->
-            builder.addHeader(name, value)
+    private fun HttpRequestBuilder.applyCommonHeaders() {
+        sessionId?.let { header(MCP_SESSION_ID_HEADER, it) }
+        protocolVersion?.let { header(MCP_PROTOCOL_VERSION_HEADER, it) }
+        this@StreamableHttpClientTransport.headers.forEach { (name, value) ->
+            header(name, value)
         }
     }
 
 
     private suspend fun handleInlineSse(
-        response: Response,
+        response: HttpResponse,
         replayMessageId: RequestId?,
         onResumptionToken: ((String) -> Unit)?
     ) {
         Log.d(TAG, "handleInlineSse: Handling inline SSE from POST response")
-        val body = response.body ?: return
+        val body = response.bodyAsChannel()
 
         val sb = StringBuilder()
         var id: String? = null
@@ -365,18 +315,16 @@ class StreamableHttpClientTransport(
             sb.clear()
         }
 
-        body.source().use { source ->
-            while (!source.exhausted()) {
-                val line = source.readUtf8Line() ?: break
-                if (line.isEmpty()) {
-                    dispatch(sb.toString())
-                    continue
-                }
-                when {
-                    line.startsWith("id:") -> id = line.substringAfter("id:").trim()
-                    line.startsWith("event:") -> eventName = line.substringAfter("event:").trim()
-                    line.startsWith("data:") -> sb.append(line.substringAfter("data:").trim())
-                }
+        while (!body.exhausted()) {
+            val line = body.readUTF8Line() ?: break
+            if (line.isEmpty()) {
+                dispatch(sb.toString())
+                continue
+            }
+            when {
+                line.startsWith("id:") -> id = line.substringAfter("id:").trim()
+                line.startsWith("event:") -> eventName = line.substringAfter("event:").trim()
+                line.startsWith("data:") -> sb.append(line.substringAfter("data:").trim())
             }
         }
     }

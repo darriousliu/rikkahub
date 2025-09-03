@@ -24,6 +24,7 @@ material3AdaptiveNav3 = "1.2.0-beta01"
 lifecycleViewmodelNav3 = "1.0.0-alpha04"
 nav3Material = "1.0.0-SNAPSHOT"
 markdown = "0.7.3"
+navigationCompose = "2.9.0-rc01"
 okhttp = "5.1.0"
 retrofit = "3.0.0"
 coil = "3.3.0"
@@ -57,6 +58,8 @@ appcompat = "1.7.1"
 material = "1.12.0"
 ucrop = "2.2.11-native"
 ktor = "3.2.3"
+kermit = "2.0.8"
+ktorfit = "2.6.4"
 
 [libraries]
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
@@ -98,6 +101,7 @@ androidx-datastore-preferences = { group = "androidx.datastore", name = "datasto
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workmanager" }
 jetbrains-markdown = { group = "org.jetbrains", name = "markdown", version.ref = "markdown" }
 metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref = "metadataExtractor" }
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-sse = { group = "com.squareup.okhttp3", name = "okhttp-sse", version.ref = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
@@ -145,6 +149,9 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+ktorfit-lib-lite = { module = "de.jensklingenberg.ktorfit:ktorfit-lib-light", version.ref = "ktorfit" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 
 [bundles]
 ktor = ["ktor-client-core", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-client-logging"]
@@ -161,3 +168,4 @@ firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "
 chaquo-python = { id = "com.chaquo.python", version.ref = "chaquo-python" }
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }

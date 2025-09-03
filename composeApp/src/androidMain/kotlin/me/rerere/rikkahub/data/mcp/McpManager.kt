@@ -1,6 +1,10 @@
 package me.rerere.rikkahub.data.mcp
 
 import android.util.Log
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRedirect
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.sse.SSE
 import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.Implementation
 import io.modelcontextprotocol.kotlin.sdk.Tool
@@ -11,12 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.ClassDiscriminatorMode
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -24,8 +23,7 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.mcp.transport.SseClientTransport
 import me.rerere.rikkahub.data.mcp.transport.StreamableHttpClientTransport
 import me.rerere.rikkahub.utils.checkDifferent
-import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
@@ -35,13 +33,18 @@ class McpManager(
     private val settingsStore: SettingsStore,
     private val appScope: AppScope,
 ) {
-    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.MINUTES)
-        .writeTimeout(120, TimeUnit.SECONDS)
-        .followSslRedirects(true)
-        .followRedirects(true)
-        .build()
+    private val okHttpClient = HttpClient {
+        install(SSE)
+        install(HttpTimeout) {
+            requestTimeoutMillis = 10.minutes.inWholeMilliseconds
+            connectTimeoutMillis = 20.seconds.inWholeMilliseconds
+            socketTimeoutMillis = 120.seconds.inWholeMilliseconds
+        }
+        install(HttpRedirect) {
+            checkHttpMethod = true
+            allowHttpsDowngrade = true
+        }
+    }
 
     private val clients: MutableMap<McpServerConfig, Client> = mutableMapOf()
     val syncingStatus = MutableStateFlow<Map<Uuid, McpStatus>>(mapOf())

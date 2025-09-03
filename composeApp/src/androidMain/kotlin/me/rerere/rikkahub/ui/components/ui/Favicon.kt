@@ -20,7 +20,7 @@ import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.composables.icons.lucide.Earth
 import com.composables.icons.lucide.Lucide
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import io.ktor.http.parseUrl
 
 @Composable
 fun Favicon(
@@ -29,7 +29,7 @@ fun Favicon(
     shape: Shape = RoundedCornerShape(25),
 ) {
     val faviconUrl = remember(url) {
-        url.toHttpUrlOrNull()?.host?.let { host ->
+        parseUrl(url)?.host?.let { host ->
             "https://favicone.com/$host"
         }
     }
@@ -53,7 +53,7 @@ fun FaviconRow(
     size: Dp = 20.dp
 ) {
     val displayUrls = remember(urls) {
-        urls.distinctBy { it.toHttpUrlOrNull()?.host }
+        urls.distinctBy { parseUrl(it)?.host }
     }.take(3)
     Layout(
         modifier = modifier,

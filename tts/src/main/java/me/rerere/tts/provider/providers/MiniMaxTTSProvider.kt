@@ -11,15 +11,19 @@ import kotlinx.serialization.json.put
 import me.rerere.common.http.SseEvent
 import me.rerere.common.http.sseFlow
 import me.rerere.tts.model.AudioChunk
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import kotlinx.serialization.SerialName
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "MiniMaxTTSProvider"
 
@@ -36,9 +40,12 @@ private data class MiniMaxResponse(
 )
 
 class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(60, TimeUnit.SECONDS)
-        .build()
+    private val httpClient = HttpClient {
+        install(HttpTimeout) {
+            socketTimeoutMillis = 60_000
+        }
+    }
+
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -67,67 +74,68 @@ class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/t2a_v2")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .build()
+        val httpRequest = HttpRequestBuilder().apply {
+            url("${providerSetting.baseUrl}/t2a_v2")
+            header("Authorization", "Bearer ${providerSetting.apiKey}")
+            header("Content-Type", "application/json")
+            method = HttpMethod.Post
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+        }
 
         var hasEmittedAudio = false
 
-        httpClient.sseFlow(httpRequest).collect {
-            when (it) {
-                is SseEvent.Open -> Log.i(TAG, "SSE connection opened")
-                is SseEvent.Event -> {
-                    try {
-                        val data = json.decodeFromString<MiniMaxResponse>(it.data)
-
-                        // Convert hex string to bytes
-                        val audioBytes = hexStringToBytes(data.data.audio)
-
-                        emit(
-                            AudioChunk(
-                                data = audioBytes,
-                                format = AudioFormat.MP3, // MiniMax returns MP3 format
-                                sampleRate = 32000, // Default sample rate from MiniMax
-                                isLast = false, // Will be set to true on last chunk
-                                metadata = mapOf(
-                                    "provider" to "minimax",
-                                    "model" to providerSetting.model,
-                                    "voice" to providerSetting.voiceId,
-                                    "status" to data.data.status.toString(),
-                                    "ced" to data.data.ced
+        val response = try {
+            httpClient.sse({ takeFrom(httpRequest) }) {
+                Logger.i(TAG) { "SSE connection opened" }
+                incoming
+                    .onCompletion {
+                        Logger.i(TAG) { "SSE connection closed" }
+                        // Emit final chunk if we haven't already
+                        if (hasEmittedAudio) {
+                            emit(
+                                AudioChunk(
+                                    data = byteArrayOf(), // Empty data for last chunk
+                                    format = AudioFormat.MP3,
+                                    sampleRate = 32000,
+                                    isLast = true,
+                                    metadata = mapOf("provider" to "minimax")
                                 )
                             )
-                        )
-                        hasEmittedAudio = true
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to process audio chunk", e)
+                        }
                     }
-                }
+                    .collect {
+                        it.data ?: return@collect
+                        try {
+                            val data = json.decodeFromString<MiniMaxResponse>(it.data)
 
-                is SseEvent.Closed -> {
-                    Log.i(TAG, "SSE connection closed")
-                    // Emit final chunk if we haven't already
-                    if (hasEmittedAudio) {
-                        emit(
-                            AudioChunk(
-                                data = byteArrayOf(), // Empty data for last chunk
-                                format = AudioFormat.MP3,
-                                sampleRate = 32000,
-                                isLast = true,
-                                metadata = mapOf("provider" to "minimax")
+                            // Convert hex string to bytes
+                            val audioBytes = hexStringToBytes(data.data.audio)
+
+                            emit(
+                                AudioChunk(
+                                    data = audioBytes,
+                                    format = AudioFormat.MP3, // MiniMax returns MP3 format
+                                    sampleRate = 32000, // Default sample rate from MiniMax
+                                    isLast = false, // Will be set to true on last chunk
+                                    metadata = mapOf(
+                                        "provider" to "minimax",
+                                        "model" to providerSetting.model,
+                                        "voice" to providerSetting.voiceId,
+                                        "status" to data.data.status.toString(),
+                                        "ced" to data.data.ced
+                                    )
+                                )
                             )
-                        )
+                            hasEmittedAudio = true
+                        } catch (e: Exception) {
+                            Logger.e(TAG, e) { "Failed to process audio chunk" }
+                        }
                     }
-                }
-
-                is SseEvent.Failure -> {
-                    Log.e(TAG, "SSE connection failed", it.throwable)
-                    throw it.throwable ?: Exception("MiniMax TTS streaming failed")
-                }
             }
+        } catch (e: Throwable) {
+            Logger.e(TAG, it.throwable) { "SSE connection failed" }
+            throw it.throwable ?: Exception("MiniMax TTS streaming failed")
         }
     }
 }

@@ -1,28 +1,18 @@
 package me.rerere.rikkahub.ui.pages.setting.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
+import io.ktor.http.parseUrl
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
@@ -172,7 +162,7 @@ private fun ColumnScope.ProviderConfigureOpenAI(
             onCheckedChange = {
                 onEdit(provider.copy(useResponseApi = it))
 
-                if(it && provider.baseUrl.toHttpUrlOrNull()?.host != "api.openai.com") {
+                if(it && parseUrl(provider.baseUrl)?.host != "api.openai.com") {
                     toaster.show(
                         message = responseAPIWarning,
                         type = ToastType.Warning

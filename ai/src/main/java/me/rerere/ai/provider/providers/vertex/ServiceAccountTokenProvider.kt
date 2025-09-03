@@ -1,13 +1,15 @@
 package me.rerere.ai.provider.providers.vertex
 
+import io.ktor.client.HttpClient
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.formData
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import java.security.KeyFactory
 import java.security.PrivateKey
 import java.security.Signature
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  * 构造时传入 OkHttpClient；调用时传 email、私钥 PEM 与 scopes。
  */
 class ServiceAccountTokenProvider(
-    private val http: OkHttpClient
+    private val http: HttpClient
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -89,23 +91,23 @@ class ServiceAccountTokenProvider(
         val signature = signRs256(signingInput.toByteArray(Charsets.UTF_8), privateKey)
         val assertion = "$signingInput.${base64UrlNoPad(signature)}"
 
-        val form = FormBody.Builder()
-            .add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-            .add("assertion", assertion)
-            .build()
+        val form = formData {
+            append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+            append("assertion", assertion)
+        }
 
-        val req = Request.Builder()
-            .url("https://oauth2.googleapis.com/token")
-            .post(form)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .build()
+        val req = HttpRequestBuilder().apply {
+            url("https://oauth2.googleapis.com/token")
+            setBody(form)
+            header("Content-Type", "application/x-www-form-urlencoded")
+        }
 
-        http.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) {
-                val body = resp.body.string()
-                throw IllegalStateException("Token endpoint ${resp.code}: $body")
+        http.post(req).let { resp ->
+            if (!resp.status.isSuccess()) {
+                val body = resp.bodyAsText()
+                throw IllegalStateException("Token endpoint ${resp.status.value}: $body")
             }
-            val body = resp.body.string()
+            val body = resp.bodyAsText()
             val tokenResp = json.decodeFromString(TokenResponse.serializer(), body)
             val accessToken = tokenResp.accessToken ?: error("No access_token in response")
 

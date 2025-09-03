@@ -5,6 +5,12 @@ import android.content.Context
 import android.os.Environment
 import android.widget.Toast
 import androidx.core.net.toUri
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -12,14 +18,11 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import me.rerere.common.http.await
 import me.rerere.rikkahub.BuildConfig
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 private const val API_URL = "https://updates.rikka-ai.com/"
 
-class UpdateChecker(private val client: OkHttpClient) {
+class UpdateChecker(private val client: HttpClient) {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun checkUpdate(): Flow<UiState<UpdateInfo>> = flow {
@@ -27,18 +30,15 @@ class UpdateChecker(private val client: OkHttpClient) {
         emit(
             UiState.Success(
                 data = try {
-                    val response = client.newCall(
-                        Request.Builder()
-                            .url(API_URL)
-                            .get()
-                            .addHeader(
-                                "User-Agent",
-                                "RikkaHub ${BuildConfig.VERSION_NAME} #${BuildConfig.VERSION_CODE}"
-                            )
-                            .build()
-                    ).await()
-                    if (response.isSuccessful) {
-                        json.decodeFromString<UpdateInfo>(response.body.string())
+                    val response = client.get {
+                        url(API_URL)
+                        header(
+                            "User-Agent",
+                            "RikkaHub ${BuildConfig.VERSION_NAME} #${BuildConfig.VERSION_CODE}"
+                        )
+                    }
+                    if (response.status.isSuccess()) {
+                        json.decodeFromString<UpdateInfo>(response.bodyAsText())
                     } else {
                         throw Exception("Failed to fetch update info")
                     }

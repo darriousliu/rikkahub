@@ -1,22 +1,18 @@
 package me.rerere.ai.provider.providers.openai
 
 import android.util.Log
-import kotlinx.coroutines.channels.awaitClose
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.sse.sse
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
+import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.TokenUsage
@@ -29,28 +25,12 @@ import me.rerere.ai.ui.MessageChunk
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageChoice
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.util.configureClientWithProxy
-import me.rerere.ai.util.configureReferHeaders
-import me.rerere.ai.util.encodeBase64
-import me.rerere.ai.util.json
-import me.rerere.ai.util.mergeCustomBody
-import me.rerere.ai.util.parseErrorDetail
-import me.rerere.ai.util.stringSafe
-import me.rerere.ai.util.toHeaders
-import me.rerere.common.http.await
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.sse.EventSource
-import okhttp3.sse.EventSourceListener
-import okhttp3.sse.EventSources
+import me.rerere.ai.util.*
 import kotlin.time.Clock
 
 private const val TAG = "ResponseAPI"
 
-class ResponseAPI(private val client: OkHttpClient) : OpenAIImpl {
+class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
     override suspend fun generateText(
         providerSetting: ProviderSetting.OpenAI,
         messages: List<UIMessage>,
@@ -61,23 +41,24 @@ class ResponseAPI(private val client: OkHttpClient) : OpenAIImpl {
             params = params,
             stream = false,
         )
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/responses")
-            .headers(params.customHeaders.toHeaders())
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .configureReferHeaders(providerSetting.baseUrl)
-            .build()
+        val request = HttpRequestBuilder().apply {
+            url("${providerSetting.baseUrl}/responses")
+            headers.appendAll(params.customHeaders.toHeaders())
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+            header("Authorization", "Bearer ${providerSetting.apiKey}")
+            header("Content-Type", "application/json")
+            configureReferHeaders(providerSetting.baseUrl)
+        }
 
         Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
 
-        val response = client.configureClientWithProxy(providerSetting.proxy).newCall(request).await()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body.string()}")
+        val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
+        if (!response.status.isSuccess()) {
+            throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
         }
 
-        val bodyStr = response.body?.string() ?: ""
+        val bodyStr = response.bodyAsText()
         Log.i(TAG, "generateText: $bodyStr")
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val output = parseResponseOutput(bodyJson)
@@ -89,50 +70,51 @@ class ResponseAPI(private val client: OkHttpClient) : OpenAIImpl {
         providerSetting: ProviderSetting.OpenAI,
         messages: List<UIMessage>,
         params: TextGenerationParams
-    ): Flow<MessageChunk> = callbackFlow {
+    ): Flow<MessageChunk> = flow {
         val requestBody = buildRequestBody(
             messages = messages,
             params = params,
             stream = true,
         )
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/responses")
-            .headers(params.customHeaders.toHeaders())
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .configureReferHeaders(providerSetting.baseUrl)
-            .build()
+        val request = HttpRequestBuilder().apply {
+            url("${providerSetting.baseUrl}/responses")
+            headers.appendAll(params.customHeaders.toHeaders())
+            method = HttpMethod.Post
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+            header("Authorization", "Bearer ${providerSetting.apiKey}")
+            header("Content-Type", "application/json")
+            configureReferHeaders(providerSetting.baseUrl)
+        }
 
         Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
 
-        val listener = object : EventSourceListener() {
-            override fun onEvent(
-                eventSource: EventSource,
-                id: String?,
-                type: String?,
-                data: String
-            ) {
-                Log.d(TAG, "onEvent: $id/$type $data")
-                val json = json.parseToJsonElement(data).jsonObject
-                val chunk = parseResponseDelta(json)
-                if (chunk != null) {
-                    trySend(chunk)
+        client.configureClientWithProxy(providerSetting.proxy).sse({ takeFrom(request) }) {
+            try {
+                incoming.collect { event ->
+                    val id = event.id
+                    val type = event.event
+                    val data = event.data ?: return@collect
+                    Log.d(TAG, "onEvent: $id/$type $data")
+                    val json = json.parseToJsonElement(data).jsonObject
+                    val chunk = parseResponseDelta(json)
+                    if (chunk != null) {
+                        emit(chunk)
+                    }
+                    if (type == "response.completed") {
+                        cancel()
+                    }
                 }
-                if (type == "response.completed") {
-                    close()
-                }
-            }
+            } catch (t: Throwable) {
+                val response = call.response
+                var exception: Throwable
 
-            override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
-                var exception = t
+                t.printStackTrace()
+                println("[onFailure] 发生错误: ${t::class.qualifiedName} ${t.message} / $response")
 
-                t?.printStackTrace()
-                println("[onFailure] 发生错误: ${t?.javaClass?.name} ${t?.message} / $response")
-
-                val bodyRaw = response?.body?.stringSafe()
+                val bodyRaw = response.bodyAsText()
                 try {
-                    if (!bodyRaw.isNullOrBlank()) {
+                    if (bodyRaw.isNotBlank()) {
                         val bodyElement = Json.parseToJsonElement(bodyRaw)
                         println(bodyElement)
                         exception = bodyElement.parseErrorDetail()
@@ -141,23 +123,10 @@ class ResponseAPI(private val client: OkHttpClient) : OpenAIImpl {
                 } catch (e: Throwable) {
                     Log.w(TAG, "onFailure: failed to parse from $bodyRaw")
                     e.printStackTrace()
-                } finally {
-                    close(exception)
                 }
+            } finally {
+                println("[awaitClose] 关闭eventSource ")
             }
-
-            override fun onClosed(eventSource: EventSource) {
-                close()
-            }
-        }
-
-        val eventSource =
-            EventSources.createFactory(client.configureClientWithProxy(providerSetting.proxy))
-                .newEventSource(request, listener)
-
-        awaitClose {
-            println("[awaitClose] 关闭eventSource ")
-            eventSource.cancel()
         }
     }
 
@@ -383,7 +352,7 @@ class ResponseAPI(private val client: OkHttpClient) : OpenAIImpl {
                             )
                         )
                     )
-                } else if(type == "reasoning") {
+                } else if (type == "reasoning") {
                     return MessageChunk(
                         id = id,
                         model = "",

@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.chaquo.python)
     id("multiplatform")
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.ktorfit)
 }
 
 kotlin {
@@ -135,6 +136,9 @@ kotlin {
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
 
+            // Navigation
+            implementation(libs.navigation.compose)
+
             // DataStore
             implementation(libs.androidx.datastore.preferences)
 
@@ -186,6 +190,7 @@ kotlin {
 
             // Ktor
             implementation(libs.bundles.ktor)
+            implementation(libs.ktorfit.lib.lite)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
