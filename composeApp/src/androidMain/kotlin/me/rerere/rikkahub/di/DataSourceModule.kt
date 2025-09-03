@@ -5,9 +5,11 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
+import io.ktor.serialization.kotlinx.json.json
 import io.pebbletemplates.pebble.PebbleEngine
 import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
@@ -79,6 +81,9 @@ val dataSourceModule = module {
 
     single<HttpClient> {
         HttpClient {
+            install(ContentNegotiation) {
+                json(json = get())
+            }
             install(SSE)
             install(HttpRedirect) {
                 checkHttpMethod = true

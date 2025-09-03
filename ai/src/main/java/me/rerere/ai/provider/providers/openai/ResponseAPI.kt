@@ -47,7 +47,6 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
             contentType(ContentType.Application.Json)
             setBody(requestBody)
             header("Authorization", "Bearer ${providerSetting.apiKey}")
-            header("Content-Type", "application/json")
             configureReferHeaders(providerSetting.baseUrl)
         }
 
@@ -83,7 +82,6 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
             contentType(ContentType.Application.Json)
             setBody(requestBody)
             header("Authorization", "Bearer ${providerSetting.apiKey}")
-            header("Content-Type", "application/json")
             configureReferHeaders(providerSetting.baseUrl)
         }
 
