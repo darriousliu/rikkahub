@@ -186,9 +186,6 @@ kotlin {
             // Ktor
             implementation(libs.bundles.ktor)
             implementation(libs.ktorfit.lib.lite)
-
-            // datetime
-            implementation(libs.kotlinx.datetime)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -315,7 +312,7 @@ ksp {
 
 chaquopy {
     defaultConfig {
-        version = "3.12"
+        version = "3.13"
         if (Os.isFamily(Os.FAMILY_MAC)) buildPython("/opt/homebrew/bin/python3")
         pip {
             install("pypdf")
