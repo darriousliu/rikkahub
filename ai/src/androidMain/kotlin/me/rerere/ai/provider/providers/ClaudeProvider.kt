@@ -1,6 +1,6 @@
 package me.rerere.ai.provider.providers
 
-import android.util.Log
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
@@ -82,7 +82,7 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
                 configureReferHeaders(providerSetting.baseUrl)
             }
         }
-        Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "generateText: ${json.encodeToString(requestBody)}" }
 
         val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
 
@@ -135,20 +135,20 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
             }
         }
 
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "streamText: ${json.encodeToString(requestBody)}" }
 
         requestBody["messages"]!!.jsonArray.forEach {
-            Log.i(TAG, "streamText: $it")
+            Logger.i(TAG) { "streamText: $it" }
         }
 
         client.configureClientWithProxy(providerSetting.proxy).sse(request) {
             try {
                 incoming.collect { event ->
-                    Log.d(TAG, "onEvent: type=${event.event}, data=${event.data}")
+                    Logger.d(TAG) { "onEvent: type=${event.event}, data=${event.data}" }
 
                     when (event.event) {
                         "message_stop" -> {
-                            Log.d(TAG, "Stream ended")
+                            Logger.d(TAG) { "Stream ended" }
                         }
 
                         "error" -> {
@@ -199,22 +199,22 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
                 var exception = t
 
                 t.printStackTrace()
-                Log.e(TAG, "onFailure: ${t::class.qualifiedName} ${t.message} / $response")
+                Logger.e(TAG) { "onFailure: ${t::class.qualifiedName} ${t.message} / $response" }
 
-                val bodyRaw = response.bodyAsText()
+                val bodyRaw = response.stringSafe()
                 runCatching {
-                    if (bodyRaw.isNotBlank()) {
+                    if (!bodyRaw.isNullOrEmpty()) {
                         val bodyElement = Json.parseToJsonElement(bodyRaw)
-                        Log.i(TAG, "Error response: $bodyElement")
+                        Logger.i(TAG) { "Error response: $bodyElement" }
                         exception = bodyElement.parseErrorDetail()
                     }
                     exception.printStackTrace()
                 }.onFailure { e ->
-                    Log.w(TAG, "onFailure: failed to parse from $bodyRaw")
+                    Logger.w(TAG) { "onFailure: failed to parse from $bodyRaw" }
                     e.printStackTrace()
                 }
             } finally {
-                Log.d(TAG, "Closing eventSource")
+                Logger.d(TAG) { "Closing eventSource" }
             }
         }
     }
@@ -330,7 +330,7 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
                                             })
                                         }.onFailure {
                                             it.printStackTrace()
-                                            Log.w(TAG, "encode image failed: ${part.url}")
+                                            Logger.w(TAG) { "encode image failed: ${part.url}" }
                                             // 如果图片编码失败，添加一个空文本块
                                             put("type", "text")
                                             put("text", "")
@@ -360,7 +360,7 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
                                 }
 
                                 else -> {
-                                    Log.w(TAG, "buildMessages: message part not supported: $part")
+                                    Logger.w(TAG) { "buildMessages: message part not supported: $part" }
                                     // DO NOTHING
                                 }
                             }

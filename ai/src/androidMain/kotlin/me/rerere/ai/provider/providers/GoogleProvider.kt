@@ -1,6 +1,6 @@
 package me.rerere.ai.provider.providers
 
-import android.util.Log
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
@@ -71,7 +71,7 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
             val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
             if (response.status.isSuccess()) {
                 val body = response.bodyAsText()
-                Log.d(TAG, "listModels: $body")
+                Logger.d(TAG) { "listModels: $body" }
                 val bodyObject = json.parseToJsonElement(body).jsonObject
                 val models = bodyObject["models"]?.jsonArray ?: return@withContext emptyList()
 
@@ -185,12 +185,12 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
             }
         )
 
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "streamText: ${json.encodeToString(requestBody)}" }
 
         client.configureClientWithProxy(providerSetting.proxy).sse({ takeFrom(request) }) {
             try {
                 incoming.collect { event ->
-                    Log.i(TAG, "onEvent: ${event.data}")
+                    Logger.i(TAG) { "onEvent: ${event.data}" }
 
                     try {
                         val jsonData = json.parseToJsonElement(event.data.orEmpty()).jsonObject
@@ -241,8 +241,8 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
                 println("[onFailure] 发生错误: ${t.message}")
 
                 runCatching {
-                    val bodyStr = response.bodyAsText()
-                    if (bodyStr.isNotEmpty()) {
+                    val bodyStr = response.stringSafe()
+                    if (!bodyStr.isNullOrEmpty()) {
                         val bodyElement = json.parseToJsonElement(bodyStr)
                         println(bodyElement)
                         if (bodyElement is JsonObject) {
@@ -429,7 +429,7 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
         } ?: emptyList()
 
         val groundingMetadata = message["groundingMetadata"]?.jsonObject
-        Log.i(TAG, "parseMessage: $groundingMetadata")
+        Logger.i(TAG) { "parseMessage: $groundingMetadata" }
         val annotations = parseSearchGroundingMetadata(groundingMetadata)
 
         return UIMessage(
@@ -451,7 +451,7 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
                 url = uri
             )
         }
-        Log.i(TAG, "parseSearchGroundingMetadata: $chunks")
+        Logger.i(TAG) { "parseSearchGroundingMetadata: $chunks" }
         return chunks
     }
 

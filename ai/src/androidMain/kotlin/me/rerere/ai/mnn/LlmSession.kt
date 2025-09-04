@@ -38,7 +38,7 @@ package me.rerere.ai.mnn
 //    }
 //
 //    override fun load() {
-////        Log.d(TAG, "MNN_DEBUG load begin")
+////        Logger.i(TAG) { "MNN_DEBUG load begin" }
 ////        modelLoading = true
 ////        var historyStringList: List<String>? = null
 ////        val currentHistory = this.savedHistory
@@ -66,7 +66,7 @@ package me.rerere.ai.mnn
 ////            this.assistantPromptTemplate = extraAssistantPrompt
 ////            this.backendType = backend
 ////        }
-////        Log.d(TAG, "MNN_DEBUG load initNative")
+////        Logger.i(TAG) { "MNN_DEBUG load initNative" }
 ////        nativePtr = initNative(
 ////            configPath,
 ////            historyStringList,
@@ -77,7 +77,7 @@ package me.rerere.ai.mnn
 ////            },
 ////            Gson().toJson(configMap)
 ////        )
-////        Log.d(TAG, "MNN_DEBUG load initNative end")
+////        Logger.i(TAG) { "MNN_DEBUG load initNative end" }
 ////        modelLoading = false
 ////        if (releaseRequested) {
 ////            release()
@@ -94,9 +94,9 @@ package me.rerere.ai.mnn
 //        params: Map<String, Any>,
 //        progressListener: GenerateProgressListener
 //    ): HashMap<String, Any> {
-//        Log.d(TAG, "start generate prompt: $prompt")
+//        Logger.i(TAG) { "start generate prompt: $prompt" }
 //        synchronized(this) {
-//            Log.d(TAG, "MNN_DEBUG submit$prompt")
+//            Logger.i(TAG) { "MNN_DEBUG submit$prompt" }
 //            generating = true
 //            val result = submitNative(nativePtr, prompt, keepHistory, progressListener)
 //            generating = false
@@ -116,7 +116,7 @@ package me.rerere.ai.mnn
 //
 //    override fun release() {
 //        synchronized(this) {
-//            Log.d(
+//            Logger.d(
 //                TAG,
 //                "MNN_DEBUG release nativePtr: $nativePtr mGenerating: $generating"
 //            )
@@ -129,7 +129,7 @@ package me.rerere.ai.mnn
 //                        (this as Object).wait()
 //                    } catch (e: InterruptedException) {
 //                        Thread.currentThread().interrupt()
-//                        Log.e(TAG, "Thread interrupted while waiting for release", e)
+//                        Logger.i(TAG, "Thread interrupted while waiting for release") { e }
 //                    }
 //                }
 //                releaseInner()
