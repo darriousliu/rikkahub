@@ -18,6 +18,7 @@ import me.rerere.ai.ui.*
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.configureClientWithProxy
 import me.rerere.ai.util.json
+import me.rerere.ai.util.stringSafe
 import me.rerere.common.http.getByKey
 
 class OpenAIProvider(
@@ -40,10 +41,10 @@ class OpenAIProvider(
 
             val response = client.configureClientWithProxy(providerSetting.proxy).get(request)
             if (!response.status.isSuccess()) {
-                error("Failed to get models: ${response.status.value} ${response.bodyAsText()}")
+                error("Failed to get models: ${response.status.value} ${response.stringSafe()}")
             }
 
-            val bodyStr = response.bodyAsText()
+            val bodyStr = response.stringSafe().orEmpty()
             val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
             val data = bodyJson["data"]?.jsonArray ?: return@withContext emptyList()
 
@@ -71,7 +72,7 @@ class OpenAIProvider(
         }
         val response = client.configureClientWithProxy(providerSetting.proxy).get(request)
         if (!response.status.isSuccess()) {
-            error("Failed to get balance: ${response.status.value} ${response.bodyAsText()}")
+            error("Failed to get balance: ${response.status.value} ${response.stringSafe()}")
         }
 
         val bodyStr = response.bodyAsText()
@@ -158,10 +159,10 @@ class OpenAIProvider(
 
         val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
         if (!response.status.isSuccess()) {
-            error("Failed to generate image: ${response.status.value} ${response.bodyAsText()}")
+            error("Failed to generate image: ${response.status.value} ${response.stringSafe()}")
         }
 
-        val bodyStr = response.bodyAsText()
+        val bodyStr = response.stringSafe().orEmpty()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val data = bodyJson["data"]?.jsonArray ?: error("No data in response")
 

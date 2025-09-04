@@ -57,7 +57,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
             throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
         }
 
-        val bodyStr = response.bodyAsText()
+        val bodyStr = response.stringSafe().orEmpty()
         Logger.i(TAG) { "generateText: $bodyStr" }
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val output = parseResponseOutput(bodyJson)

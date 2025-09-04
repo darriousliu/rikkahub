@@ -6,7 +6,6 @@ import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.exhausted
@@ -18,6 +17,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import me.rerere.ai.util.stringSafe
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -113,7 +113,7 @@ class StreamableHttpClientTransport(
             }
 
             if (!resp.status.isSuccess()) {
-                val error = StreamableHttpError(resp.status.value, resp.bodyAsText())
+                val error = StreamableHttpError(resp.status.value, resp.stringSafe())
                 _onError(error)
                 throw error
             }
@@ -121,8 +121,8 @@ class StreamableHttpClientTransport(
             val contentType = resp.headers["Content-Type"]
             when {
                 contentType?.startsWith("application/json") == true -> {
-                    val body = resp.bodyAsText()
-                    if (body.isNotEmpty()) {
+                    val body = resp.stringSafe()
+                    if (!body.isNullOrEmpty()) {
                         runCatching { McpJson.decodeFromString<JSONRPCMessage>(body) }
                             .onSuccess { _onMessage(it) }
                             .onFailure(_onError)
@@ -137,7 +137,7 @@ class StreamableHttpClientTransport(
                 }
 
                 else -> {
-                    val body = resp.bodyAsText()
+                    val body = resp.stringSafe().orEmpty()
                     if (contentType == null && body.isBlank()) return
 
                     val ct = contentType ?: "<none>"

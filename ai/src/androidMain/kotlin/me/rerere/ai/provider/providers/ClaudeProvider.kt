@@ -4,7 +4,6 @@ import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
@@ -39,10 +38,10 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
             val response = client.configureClientWithProxy(providerSetting.proxy).get(request)
 
             if (!response.status.isSuccess()) {
-                error("Failed to get models: ${response.status.value} ${response.bodyAsText()}")
+                error("Failed to get models: ${response.status.value} ${response.stringSafe()}")
             }
 
-            val bodyStr = response.bodyAsText()
+            val bodyStr = response.stringSafe().orEmpty()
             val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
             val data = bodyJson["data"]?.jsonArray ?: return@withContext emptyList()
 
@@ -87,10 +86,10 @@ class ClaudeProvider(private val client: HttpClient) : Provider<ProviderSetting.
         val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
 
         if (!response.status.isSuccess()) {
-            throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
+            throw Exception("Failed to get response: ${response.status.value} ${response.stringSafe()}")
         }
 
-        val bodyStr = response.bodyAsText()
+        val bodyStr = response.stringSafe().orEmpty()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
         // 从 JsonObject 中提取必要的信息

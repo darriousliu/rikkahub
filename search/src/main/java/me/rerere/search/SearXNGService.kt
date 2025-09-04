@@ -21,6 +21,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
+import me.rerere.ai.util.stringSafe
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
@@ -113,7 +114,7 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
 
                 return@withContext Result.success(SearchResult(items = items))
             } else {
-                val errorBody = response.bodyAsText()
+                val errorBody = response.stringSafe()
                 println("SearXNG API error: ${response.status.value} - $errorBody")
                 error("SearXNG request failed with status ${response.status.value}")
             }

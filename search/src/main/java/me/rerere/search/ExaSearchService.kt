@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import io.ktor.client.request.*
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -16,6 +15,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
+import me.rerere.ai.util.stringSafe
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
@@ -70,7 +70,7 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
 
             val response = httpClient.post(request)
             if (response.status.isSuccess()) {
-                val bodyRaw = response.bodyAsText()
+                val bodyRaw = response.stringSafe() ?: error("Failed to get response body")
                 val response = runCatching {
                     json.decodeFromString<ExaData>(bodyRaw)
                 }.onFailure {
@@ -90,7 +90,7 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                         }
                     ))
             } else {
-                println(response.bodyAsText())
+                println(response.stringSafe())
                 error("response failed #${response.status.value}")
             }
         }
