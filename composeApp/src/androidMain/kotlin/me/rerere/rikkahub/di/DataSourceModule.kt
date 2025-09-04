@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.di
 
 import androidx.room.Room
+import de.jensklingenberg.ktorfit.Ktorfit
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpRequestRetry
@@ -11,7 +12,6 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.serialization.kotlinx.json.json
 import io.pebbletemplates.pebble.PebbleEngine
-import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.AIRequestInterceptorPlugin
 import me.rerere.rikkahub.data.ai.GenerationHandler
@@ -24,10 +24,7 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.Migration_6_7
 import me.rerere.rikkahub.data.mcp.McpManager
 import me.rerere.rikkahub.data.sync.DataSync
-import okhttp3.MediaType.Companion.toMediaType
 import org.koin.dsl.module
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.Locale
 
 val dataSourceModule = module {
@@ -118,14 +115,14 @@ val dataSourceModule = module {
         DataSync(settingsStore = get(), json = get(), context = get())
     }
 
-    single<Retrofit> {
-        Retrofit.Builder()
+    single<Ktorfit> {
+        Ktorfit.Builder()
             .baseUrl("https://api.rikka-ai.com")
-            .addConverterFactory(get<Json>().asConverterFactory("application/json; charset=UTF8".toMediaType()))
+            .httpClient(client = get())
             .build()
     }
 
     single<RikkaHubAPI> {
-        get<Retrofit>().create(RikkaHubAPI::class.java)
+        get<Ktorfit>().create()
     }
 }

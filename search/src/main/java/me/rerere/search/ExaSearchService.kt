@@ -5,22 +5,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
     override val name: String = "Exa"
@@ -63,15 +61,16 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                 })
             }
 
-            val request = Request.Builder()
-                .url("https://api.exa.ai/search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
+            val request = HttpRequestBuilder().apply {
+                url("https://api.exa.ai/search")
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(body))
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+            }
 
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val bodyRaw = response.body?.string() ?: error("Failed to get response body")
+            val response = httpClient.post(request)
+            if (response.status.isSuccess()) {
+                val bodyRaw = response.bodyAsText()
                 val response = runCatching {
                     json.decodeFromString<ExaData>(bodyRaw)
                 }.onFailure {
@@ -91,8 +90,8 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                         }
                     ))
             } else {
-                println(response.body?.string())
-                error("response failed #${response.code}")
+                println(response.bodyAsText())
+                error("response failed #${response.status.value}")
             }
         }
     }

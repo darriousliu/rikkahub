@@ -115,7 +115,7 @@ class ChatCompletionsAPI(
         Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
 
         // just for debugging response body
-        // println(client.newCall(request).await().body?.string())
+        // println(client.newCall(request).await().bodyAsText())
 
         proxyClient.sse({ takeFrom(request) }) {
             try {

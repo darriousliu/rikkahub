@@ -60,6 +60,7 @@ ucrop = "2.2.11-native"
 ktor = "3.2.3"
 kermit = "2.0.8"
 ktorfit = "2.6.4"
+okio = "3.16.0"
 
 [libraries]
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
@@ -151,7 +152,11 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktorfit-lib-lite = { module = "de.jensklingenberg.ktorfit:ktorfit-lib-light", version.ref = "ktorfit" }
+
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+# Okio
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+
 
 [bundles]
 ktor = ["ktor-client-core", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-client-logging"]
