@@ -76,12 +76,6 @@ kotlin {
             // https://github.com/drewnoakes/metadata-extractor
             implementation(libs.metadata.extractor)
 
-            // okhttp
-            implementation(libs.okhttp)
-            implementation(libs.okhttp.sse)
-            implementation(libs.retrofit)
-            implementation(libs.retrofit.serialization.json)
-
             // ucrop
             implementation(libs.ucrop)
 
