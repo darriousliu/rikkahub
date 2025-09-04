@@ -27,6 +27,7 @@ dependencyResolutionManagement {
         maven("https://jitpack.io")
         maven("https://androidx.dev/snapshots/builds/13617490/artifacts/repository")
         mavenLocal()
+        maven("https://maven.universablockchain.com/")
     }
 }
 
