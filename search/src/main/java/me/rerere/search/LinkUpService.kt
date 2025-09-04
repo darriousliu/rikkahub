@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
+import me.rerere.ai.util.stringSafe
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
@@ -91,7 +92,7 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.status.value}: ${response.bodyAsText()}")
+                error("response failed #${response.status.value}: ${response.stringSafe()}")
             }
         }
     }

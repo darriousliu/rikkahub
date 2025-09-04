@@ -4,11 +4,11 @@ import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.modelcontextprotocol.kotlin.sdk.JSONRPCMessage
 import io.modelcontextprotocol.kotlin.sdk.shared.AbstractTransport
 import kotlinx.coroutines.*
+import me.rerere.ai.util.stringSafe
 import me.rerere.rikkahub.data.mcp.McpJson
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -132,7 +132,7 @@ internal class SseClientTransport(
             val response = client.post(request)
 
             if (!response.status.isSuccess()) {
-                val text = response.bodyAsText()
+                val text = response.stringSafe()
                 error("Error POSTing to endpoint ${endpoint.getCompleted()} (HTTP ${response.status.value}): $text")
             }
         } catch (e: Exception) {

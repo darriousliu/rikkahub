@@ -6,7 +6,6 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
 import io.ktor.client.request.*
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -16,6 +15,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
+import me.rerere.ai.util.stringSafe
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
@@ -70,7 +70,7 @@ object MetasoSearchService : SearchService<SearchServiceOptions.MetasoOptions> {
 
             val response = httpClient.post(request)
             if (response.status.isSuccess()) {
-                val bodyRaw = response.bodyAsText()
+                val bodyRaw = response.stringSafe() ?: error("Failed to get response body")
                 val searchResponse = runCatching {
                     json.decodeFromString<MetasoSearchResponse>(bodyRaw)
                 }.onFailure {
@@ -91,7 +91,7 @@ object MetasoSearchService : SearchService<SearchServiceOptions.MetasoOptions> {
                     )
                 )
             } else {
-                val errorBody = response.bodyAsText()
+                val errorBody = response.stringSafe()
                 println("Metaso search failed with code ${response.status.value}: $errorBody")
                 error("Search request failed with code ${response.status.value}: $errorBody")
             }

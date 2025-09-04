@@ -70,7 +70,7 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
             )
             val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
             if (response.status.isSuccess()) {
-                val body = response.bodyAsText()
+                val body = response.stringSafe() ?: error("empty body")
                 Logger.d(TAG) { "listModels: $body" }
                 val bodyObject = json.parseToJsonElement(body).jsonObject
                 val models = bodyObject["models"]?.jsonArray ?: return@withContext emptyList()
@@ -127,10 +127,10 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
 
         val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
         if (!response.status.isSuccess()) {
-            throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
+            throw Exception("Failed to get response: ${response.status.value} ${response.stringSafe()}")
         }
 
-        val bodyStr = response.bodyAsText()
+        val bodyStr = response.stringSafe().orEmpty()
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
         val candidates = bodyJson["candidates"]!!.jsonArray
@@ -612,7 +612,7 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
 
         val response = client.configureClientWithProxy(providerSetting.proxy).request(request)
         if (!response.status.isSuccess()) {
-            error("Failed to generate image: ${response.status.value} ${response.bodyAsText()}")
+            error("Failed to generate image: ${response.status.value} ${response.stringSafe()}")
         }
 
         val bodyStr = response.bodyAsText()
