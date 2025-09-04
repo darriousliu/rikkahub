@@ -7,6 +7,12 @@ plugins {
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        optIn.addAll(
+            "kotlin.time.ExperimentalTime",
+            "kotlinx.cinterop.ExperimentalForeignApi",
+            "kotlinx.cinterop.BetaInteropApi",
+            "kotlin.uuid.ExperimentalUuidApi"
+        )
     }
 
     androidTarget {
