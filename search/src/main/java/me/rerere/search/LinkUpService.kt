@@ -6,20 +6,19 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "LinkUpService"
 
@@ -63,18 +62,19 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                 put("includeImages", JsonPrimitive("false"))
             }
 
-            val request = Request.Builder()
-                .url("https://api.linkup.so/v1/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
+            val request = HttpRequestBuilder().apply {
+                url("https://api.linkup.so/v1/search")
+                contentType(ContentType.Application.Json)
+                setBody(body.toString())
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+                header("Content-Type", "application/json")
+            }
 
             Log.i(TAG, "search: $query")
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+            val response = httpClient.post(request)
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText().let {
                     json.decodeFromString<LinkUpSearchResponse>(it)
                 }
 
@@ -91,7 +91,7 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.status.value}: ${response.bodyAsText()}")
             }
         }
     }

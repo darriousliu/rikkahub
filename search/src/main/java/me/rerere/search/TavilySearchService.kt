@@ -5,23 +5,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "TavilySearchService"
 
@@ -81,14 +75,14 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                 put("topic", topic)
             }
 
-            val request = Request.Builder()
-                .url("https://api.tavily.com/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val response = response.body.string().let {
+            val request = HttpRequestBuilder().apply {
+                url("https://api.tavily.com/search")
+                setBody(body.toString())
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+            }
+            val response = httpClient.post(request)
+            if (response.status.isSuccess()) {
+                val response = response.bodyAsText().let {
                     json.decodeFromString<SearchResponse>(it)
                 }
 
@@ -103,7 +97,7 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                         }
                     ))
             } else {
-                error("response failed #${response.code}")
+                error("response failed #${response.status.value}")
             }
         }
     }

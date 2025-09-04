@@ -4,13 +4,19 @@ import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.URLBuilder
+import io.ktor.http.Url
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.add
-import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -18,9 +24,7 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Credentials
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.Request
+import okio.ByteString.Companion.encode
 import java.net.URLEncoder
 
 private const val TAG = "SearXNGService"
@@ -60,36 +64,34 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
             // 构建查询URL
             val baseUrl = serviceOptions.url.trimEnd('/')
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
-            val url = "$baseUrl/search?q=$encodedQuery&format=json"
-                .toHttpUrl()
-                .newBuilder()
+            val url = URLBuilder(Url("$baseUrl/search?q=$encodedQuery&format=json"))
                 .apply {
                     if (serviceOptions.engines.isNotBlank()) {
-                        addQueryParameter("engines", serviceOptions.engines)
+                        parameters.append("engines", serviceOptions.engines)
                     }
                     if (serviceOptions.language.isNotBlank()) {
-                        addQueryParameter("language", serviceOptions.language)
+                        parameters.append("language", serviceOptions.language)
                     }
-                }
-                .build()
+                }.build()
 
             // 发送请求
-            val request = Request.Builder()
-                .url(url)
-                .get()
-                .apply {
-                    // 添加HTTP Basic Auth支持
-                    if (serviceOptions.username.isNotBlank() && serviceOptions.password.isNotBlank()) {
-                        header("Authorization", Credentials.basic(serviceOptions.username, serviceOptions.password))
-                    }
+            val request = HttpRequestBuilder().apply {
+                url(url)
+                // 添加HTTP Basic Auth支持
+                if (serviceOptions.username.isNotBlank() && serviceOptions.password.isNotBlank()) {
+                    header(
+                        "Authorization",
+                        "${serviceOptions.username}:${serviceOptions.password}"
+                            .encode(Charsets.ISO_8859_1).base64()
+                    )
                 }
-                .build()
+            }
 
             Log.i(TAG, "search: $url")
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
+            val response = httpClient.get(request)
+            if (response.status.isSuccess()) {
+                val bodyRaw = response.bodyAsText()
                 val searchResponse = runCatching {
                     json.decodeFromString<SearXNGResponse>(bodyRaw)
                 }.onFailure {
@@ -111,9 +113,9 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
 
                 return@withContext Result.success(SearchResult(items = items))
             } else {
-                val errorBody = response.body?.string()
-                println("SearXNG API error: ${response.code} - $errorBody")
-                error("SearXNG request failed with status ${response.code}")
+                val errorBody = response.bodyAsText()
+                println("SearXNG API error: ${response.status.value} - $errorBody")
+                error("SearXNG request failed with status ${response.status.value}")
             }
         }
     }
