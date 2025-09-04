@@ -1,6 +1,6 @@
 package me.rerere.ai.provider.providers.openai
 
-import android.util.Log
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
@@ -50,7 +50,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
             configureReferHeaders(providerSetting.baseUrl)
         }
 
-        Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "generateText: ${json.encodeToString(requestBody)}" }
 
         val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
         if (!response.status.isSuccess()) {
@@ -58,7 +58,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
         }
 
         val bodyStr = response.bodyAsText()
-        Log.i(TAG, "generateText: $bodyStr")
+        Logger.i(TAG) { "generateText: $bodyStr" }
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val output = parseResponseOutput(bodyJson)
 
@@ -85,7 +85,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
             configureReferHeaders(providerSetting.baseUrl)
         }
 
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "streamText: ${json.encodeToString(requestBody)}" }
 
         client.configureClientWithProxy(providerSetting.proxy).sse({ takeFrom(request) }) {
             try {
@@ -93,7 +93,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
                     val id = event.id
                     val type = event.event
                     val data = event.data ?: return@collect
-                    Log.d(TAG, "onEvent: $id/$type $data")
+                    Logger.i(TAG) { "onEvent: $id/$type $data" }
                     val json = json.parseToJsonElement(data).jsonObject
                     val chunk = parseResponseDelta(json)
                     if (chunk != null) {
@@ -110,16 +110,16 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
                 t.printStackTrace()
                 println("[onFailure] 发生错误: ${t::class.qualifiedName} ${t.message} / $response")
 
-                val bodyRaw = response.bodyAsText()
+                val bodyRaw = response.stringSafe()
                 try {
-                    if (bodyRaw.isNotBlank()) {
+                    if (!bodyRaw.isNullOrEmpty()) {
                         val bodyElement = Json.parseToJsonElement(bodyRaw)
                         println(bodyElement)
                         exception = bodyElement.parseErrorDetail()
-                        Log.i(TAG, "onFailure: $exception")
+                        Logger.i(TAG) { "onFailure: $exception" }
                     }
                 } catch (e: Throwable) {
-                    Log.w(TAG, "onFailure: failed to parse from $bodyRaw")
+                    Logger.i(TAG) { "onFailure: failed to parse from $bodyRaw" }
                     e.printStackTrace()
                 }
             } finally {
@@ -250,10 +250,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
                                     }
 
                                     else -> {
-                                        Log.w(
-                                            TAG,
-                                            "buildMessages: message part not supported: $part"
-                                        )
+                                        Logger.w(TAG) { "buildMessages: message part not supported: $part" }
                                         // DO NOTHING
                                     }
                                 }

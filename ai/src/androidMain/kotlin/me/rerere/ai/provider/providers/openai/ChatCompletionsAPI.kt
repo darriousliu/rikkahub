@@ -1,6 +1,6 @@
 package me.rerere.ai.provider.providers.openai
 
-import android.util.Log
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.*
@@ -50,7 +50,7 @@ class ChatCompletionsAPI(
             configureReferHeaders(providerSetting.baseUrl)
         }
 
-        Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "generateText: ${json.encodeToString(requestBody)}" }
 
         val response = proxyClient.post(request)
         if (!response.status.isSuccess()) {
@@ -112,7 +112,7 @@ class ChatCompletionsAPI(
             configureReferHeaders(providerSetting.baseUrl)
         }
 
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+        Logger.i(TAG) { "streamText: ${json.encodeToString(requestBody)}" }
 
         // just for debugging response body
         // println(client.newCall(request).await().bodyAsText())
@@ -125,7 +125,7 @@ class ChatCompletionsAPI(
                         println("[onEvent] (done) 结束流: $data")
                         return@collect
                     }
-                    Log.d(TAG, "onEvent: $data")
+                    Logger.i(TAG) { "onEvent: $data" }
                     data
                         .trim()
                         .split("\n")
@@ -177,16 +177,16 @@ class ChatCompletionsAPI(
                 t.printStackTrace()
                 println("[onFailure] 发生错误: ${t::class.qualifiedName} ${t.message} / $response")
 
-                val bodyRaw = response.bodyAsText()
+                val bodyRaw = response.stringSafe()
                 runCatching {
-                    if (bodyRaw.isNotBlank()) {
+                    if (!bodyRaw.isNullOrEmpty()) {
                         val bodyElement = Json.parseToJsonElement(bodyRaw)
                         println(bodyElement)
                         exception = bodyElement.parseErrorDetail()
-                        Log.i(TAG, "onFailure: $exception")
+                        Logger.i(TAG) { "onFailure: $exception" }
                     }
                 }.onFailure { e ->
-                    Log.w(TAG, "onFailure: failed to parse from $bodyRaw")
+                    Logger.i(TAG) { "onFailure: failed to parse from $bodyRaw" }
                     e.printStackTrace()
                 }
             } finally {
@@ -377,10 +377,7 @@ class ChatCompletionsAPI(
                                     }
 
                                     else -> {
-                                        Log.w(
-                                            TAG,
-                                            "buildMessages: message part not supported: $part"
-                                        )
+                                        Logger.w(TAG) { "buildMessages: message part not supported: $part" }
                                         // DO NOTHING
                                     }
                                 }
