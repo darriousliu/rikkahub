@@ -11,6 +11,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":common"))
             implementation(compose.runtime)
 
             // Ktor
@@ -24,6 +25,9 @@ kotlin {
 
             // Log
             api(libs.kermit)
+
+            // okio
+            api(libs.okio)
         }
     }
 }

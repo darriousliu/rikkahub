@@ -8,6 +8,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -20,6 +21,7 @@ import me.rerere.ai.util.configureClientWithProxy
 import me.rerere.ai.util.json
 import me.rerere.ai.util.stringSafe
 import me.rerere.common.http.getByKey
+import net.sergeych.sprintf.format
 
 class OpenAIProvider(
     private val client: HttpClient

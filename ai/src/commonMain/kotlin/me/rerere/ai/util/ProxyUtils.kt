@@ -7,8 +7,11 @@ import io.ktor.client.request.headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
+import io.ktor.util.encodeBase64
+import io.ktor.utils.io.charsets.Charsets
+import io.ktor.utils.io.core.buildPacket
+import io.ktor.utils.io.core.writeText
 import me.rerere.ai.provider.ProviderProxy
-import okio.ByteString.Companion.encode
 
 private const val TAG = "ProxyUtils"
 
@@ -62,7 +65,9 @@ val ProxyAuthPlugin = createClientPlugin("ProxyAuth", ::ProxyAuthConfig) {
     val password = pluginConfig.password
 
     // 生成 Basic 认证凭据
-    val credentials = "Basic " + "$username:$password".encode(Charsets.ISO_8859_1).base64()
+    val credentials = "Basic " + buildPacket {
+        writeText("$username:$password", charset = Charsets.ISO_8859_1)
+    }.encodeBase64()
 
     onRequest { request, _ ->
         // 为每个请求添加 Proxy-Authorization 头

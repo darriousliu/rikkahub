@@ -17,7 +17,7 @@ private val supportedTypes = setOf(
 
 private const val TAG = "FileEncoder"
 
-fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean = true): Result<String> = runCatching {
+actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
     when {
         this.url.startsWith("file://") -> {
             val filePath =
