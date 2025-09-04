@@ -57,8 +57,7 @@ import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.toLocalString
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 @Composable
@@ -145,7 +144,7 @@ fun ColumnScope.ConversationList(
             val unpinnedGrouped = unpinned
                 .groupBy { conversation ->
                     val instant = conversation.updateAt
-                    instant.atZone(ZoneId.systemDefault()).toLocalDate()
+                    instant.toLocalDateTime(TimeZone.currentSystemDefault())
                 }
                 .toSortedMap(compareByDescending { it })
                 .mapValues { (_, conversations) ->
@@ -250,21 +249,21 @@ private fun PinnedHeader() {
 }
 
 @Composable
-private fun DateHeader(date: LocalDate) {
-    val today = LocalDate.now()
-    val yesterday = today.minusDays(1)
+private fun DateHeader(date: LocalDateTime) {
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val yesterday = today.minus(1, DateTimeUnit.DAY)
 
-    val displayText = when {
-        date.isEqual(today) -> stringResource(id = R.string.chat_page_today)
-        date.isEqual(yesterday) -> stringResource(id = R.string.chat_page_yesterday)
+    val displayText = when (date.date) {
+        today -> stringResource(id = R.string.chat_page_today)
+        yesterday -> stringResource(id = R.string.chat_page_yesterday)
         else -> {
             // 使用Android本地化日期格式
             val formatStyle = if (date.year == today.year) {
                 // 同一年仅显示月日
-                date.toLocalString(false)
+                date.date.toLocalString(false)
             } else {
                 // 不同年显示完整日期
-                date.toLocalString(true)
+                date.date.toLocalString(true)
             }
             formatStyle
         }

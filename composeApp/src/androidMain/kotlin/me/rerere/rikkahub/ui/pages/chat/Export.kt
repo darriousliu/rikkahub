@@ -6,39 +6,10 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,18 +27,14 @@ import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
-import com.composables.icons.lucide.BookDashed
-import com.composables.icons.lucide.BookHeart
-import com.composables.icons.lucide.Earth
-import com.composables.icons.lucide.FileText
-import com.composables.icons.lucide.Image
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Wrench
+import com.composables.icons.lucide.*
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import me.rerere.ai.core.MessageRole
@@ -86,14 +53,10 @@ import me.rerere.rikkahub.ui.components.ui.BitmapComposer
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
-import me.rerere.rikkahub.utils.JsonInstant
-import me.rerere.rikkahub.utils.exportImage
-import me.rerere.rikkahub.utils.getActivity
-import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
-import me.rerere.rikkahub.utils.toLocalString
+import me.rerere.rikkahub.utils.*
 import org.koin.compose.koinInject
 import java.io.FileOutputStream
-import java.time.LocalDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -230,11 +193,12 @@ private fun exportToMarkdown(
     conversation: Conversation,
     messages: List<UIMessage>
 ) {
-    val filename = "chat-export-${LocalDateTime.now().toLocalString()}.md"
+    val filename =
+        "chat-export-${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toLocalString()}.md"
 
     val sb = buildAnnotatedString {
         append("# ${conversation.title}\n\n")
-        append("*Exported on ${LocalDateTime.now().toLocalString()}*\n\n")
+        append("*Exported on ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toLocalString()}*\n\n")
 
         messages.forEach { message ->
             val role = if (message.role == MessageRole.USER) "**User**" else "**Assistant**"
@@ -305,7 +269,8 @@ private suspend fun exportToImage(
     messages: List<UIMessage>,
     options: ImageExportOptions = ImageExportOptions()
 ) {
-    val filename = "chat-export-${LocalDateTime.now().toLocalString()}.png"
+    val filename =
+        "chat-export-${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toLocalString()}.png"
     val composer = BitmapComposer(scope)
     val activity = context.getActivity()
     if (activity == null) {
@@ -399,7 +364,9 @@ private fun ExportedChatImage(
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                             )
                             Text(
-                                text = "${LocalDateTime.now().toLocalString()}  rikka-ai.com",
+                                text = "${
+                                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toLocalString()
+                                }  rikka-ai.com",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -511,7 +478,7 @@ private fun ExportedChatMessage(
 private fun ExportedReasoningCard(reasoning: UIMessagePart.Reasoning, expanded: Boolean) {
     val duration = reasoning.finishedAt?.let { endTime ->
         endTime - reasoning.createdAt
-    } ?: (kotlin.time.Clock.System.now() - reasoning.createdAt)
+    } ?: (Clock.System.now() - reasoning.createdAt)
 
     Surface(
         shape = MaterialTheme.shapes.medium,

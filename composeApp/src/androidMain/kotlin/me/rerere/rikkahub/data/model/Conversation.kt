@@ -3,12 +3,13 @@ package me.rerere.rikkahub.data.model
 import android.net.Uri
 import androidx.core.net.toUri
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.InstantComponentSerializer
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.util.InstantSerializer
 import me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
-import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Serializable
@@ -20,10 +21,10 @@ data class Conversation(
     val truncateIndex: Int = -1,
     val chatSuggestions: List<String> = emptyList(),
     val isPinned: Boolean = false,
-    @Serializable(with = InstantSerializer::class)
-    val createAt: Instant = Instant.now(),
-    @Serializable(with = InstantSerializer::class)
-    val updateAt: Instant = Instant.now(),
+    @Serializable(with = InstantComponentSerializer::class)
+    val createAt: Instant = Clock.System.now(),
+    @Serializable(with = InstantComponentSerializer::class)
+    val updateAt: Instant = Clock.System.now(),
 ) {
     val files: List<Uri>
         get() {

@@ -23,6 +23,11 @@ import io.ktor.http.isSuccess
 import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -30,13 +35,12 @@ import me.rerere.rikkahub.data.datastore.WebDavConfig
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 private const val TAG = "DataSync"
 
@@ -91,7 +95,7 @@ class DataSync(
                         .firstOrNull()?.displayName ?: "Unknown"
                     val size = response.properties.filterIsInstance<GetContentLength>()
                         .firstOrNull()?.contentLength ?: 0L
-                    val lastModified = Instant.ofEpochMilli(
+                    val lastModified = Instant.fromEpochMilliseconds(
                         response.properties.filterIsInstance<GetLastModified>()
                             .firstOrNull()?.lastModified ?: 0L
                     )
@@ -190,7 +194,19 @@ class DataSync(
         }
 
     suspend fun prepareBackupFile(webDavConfig: WebDavConfig): File = withContext(Dispatchers.IO) {
-        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+        val timestamp = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        //DateTimeFormat.ofPattern("yyyyMMdd_HHmmss")
+        timestamp.format(
+            LocalDateTime.Format {
+                year()
+                monthNumber()
+                day()
+                char('_')
+                hour()
+                minute()
+                second()
+            }
+        )
         val backupFile = File(
             context.cacheDir,
             "backup_$timestamp.zip"

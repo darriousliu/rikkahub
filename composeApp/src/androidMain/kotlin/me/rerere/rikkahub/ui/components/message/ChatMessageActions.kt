@@ -3,52 +3,18 @@ package me.rerere.rikkahub.ui.components.message
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.BookOpenText
-import com.composables.icons.lucide.CircleStop
-import com.composables.icons.lucide.Copy
-import com.composables.icons.lucide.Ellipsis
-import com.composables.icons.lucide.GitFork
-import com.composables.icons.lucide.Languages
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Pencil
-import com.composables.icons.lucide.RefreshCw
-import com.composables.icons.lucide.Share
-import com.composables.icons.lucide.TextSelect
-import com.composables.icons.lucide.Trash2
-import com.composables.icons.lucide.Volume2
+import com.composables.icons.lucide.*
 import kotlinx.coroutines.delay
-import kotlinx.datetime.toJavaLocalDateTime
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
@@ -382,7 +348,7 @@ fun ChatMessageActionsSheet(
 
             // Message Info
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
-                Text(message.createdAt.toJavaLocalDateTime().toLocalString())
+                Text(message.createdAt.toLocalString())
                 if (model != null) {
                     Text(model.displayName)
                 }

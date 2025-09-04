@@ -28,6 +28,10 @@ kotlin {
 
             // okio
             api(libs.okio)
+
+            // Crypto
+            api(project.dependencies.platform(libs.cryptography.bom))
+            api(libs.cryptography.core)
         }
     }
 }
@@ -79,8 +83,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":common"))
-
     // Compose
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))

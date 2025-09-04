@@ -5,12 +5,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.InstantComponentSerializer
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.TokenUsage
 import me.rerere.ai.provider.Model
+import me.rerere.ai.util.InstantSerializer
 import me.rerere.ai.util.json
 import kotlin.time.Clock
 import kotlin.time.Instant
@@ -349,11 +349,11 @@ sealed class UIMessagePart {
     }
 
     @Serializable
-    data class Reasoning(
+    data class Reasoning constructor(
         val reasoning: String,
-        @Serializable(with = InstantComponentSerializer::class)
+        @Serializable(with = InstantSerializer::class)
         val createdAt: Instant = Clock.System.now(),
-        @Serializable(with = InstantComponentSerializer::class)
+        @Serializable(with = InstantSerializer::class)
         val finishedAt: Instant? = Clock.System.now(),
         override var metadata: JsonObject? = null
     ) : UIMessagePart() {

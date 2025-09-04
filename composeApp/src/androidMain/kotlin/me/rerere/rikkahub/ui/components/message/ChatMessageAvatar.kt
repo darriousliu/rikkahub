@@ -1,10 +1,6 @@
 package me.rerere.rikkahub.ui.components.message
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -13,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.toJavaLocalDateTime
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
@@ -55,7 +50,7 @@ fun ChatMessageUserAvatar(
                     color = LocalContentColor.current.copy(alpha = 0.85f),
                 )
                 Text(
-                    text = message.createdAt.toJavaLocalDateTime().toLocalString(),
+                    text = message.createdAt.toLocalString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = LocalContentColor.current.copy(alpha = 0.6f),
                     maxLines = 1,
@@ -112,7 +107,7 @@ fun ChatMessageAssistantAvatar(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = message.createdAt.toJavaLocalDateTime().toLocalString(),
+                                text = message.createdAt.toLocalString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = LocalContentColor.current.copy(alpha = 0.8f),
                                 maxLines = 1,
@@ -150,7 +145,7 @@ fun ChatMessageAssistantAvatar(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = message.createdAt.toJavaLocalDateTime().toLocalString(),
+                                text = message.createdAt.toLocalString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = LocalContentColor.current.copy(alpha = 0.8f)
                             )
