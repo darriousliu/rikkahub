@@ -25,6 +25,9 @@ kotlin {
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
+
+            // KMP Utils
+            api(libs.mp.stools)
         }
         iosMain.dependencies {
             api(libs.ktor.client.darwin)
