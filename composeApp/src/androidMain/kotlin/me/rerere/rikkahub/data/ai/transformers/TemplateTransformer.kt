@@ -14,7 +14,7 @@ import me.rerere.rikkahub.utils.toLocalTime
 import java.io.Reader
 import java.io.StringReader
 import java.io.StringWriter
-import java.time.Instant
+import kotlin.time.Clock
 
 class TemplateTransformer(
     private val engine: PebbleEngine,
@@ -38,8 +38,8 @@ class TemplateTransformer(
                                 result, mapOf(
                                     "message" to part.text,
                                     "role" to message.role.name.lowercase(),
-                                    "time" to Instant.now().toLocalTime(),
-                                    "date" to Instant.now().toLocalDate(),
+                                    "time" to Clock.System.now().toLocalTime(),
+                                    "date" to Clock.System.now().toLocalDate(),
                                 )
                             )
                             part.copy(

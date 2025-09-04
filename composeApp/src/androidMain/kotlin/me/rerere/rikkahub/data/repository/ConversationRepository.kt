@@ -12,7 +12,7 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.deleteChatFiles
-import java.time.Instant
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class ConversationRepository(
@@ -109,8 +109,8 @@ class ConversationRepository(
             id = conversation.id.toString(),
             title = conversation.title,
             nodes = JsonInstant.encodeToString(conversation.messageNodes),
-            createAt = conversation.createAt.toEpochMilli(),
-            updateAt = conversation.updateAt.toEpochMilli(),
+            createAt = conversation.createAt.toEpochMilliseconds(),
+            updateAt = conversation.updateAt.toEpochMilliseconds(),
             assistantId = conversation.assistantId.toString(),
             truncateIndex = conversation.truncateIndex,
             chatSuggestions = JsonInstant.encodeToString(conversation.chatSuggestions),
@@ -126,8 +126,8 @@ class ConversationRepository(
             id = Uuid.parse(conversationEntity.id),
             title = conversationEntity.title,
             messageNodes = messageNodes,
-            createAt = Instant.ofEpochMilli(conversationEntity.createAt),
-            updateAt = Instant.ofEpochMilli(conversationEntity.updateAt),
+            createAt = Instant.fromEpochMilliseconds(conversationEntity.createAt),
+            updateAt = Instant.fromEpochMilliseconds(conversationEntity.updateAt),
             assistantId = Uuid.parse(conversationEntity.assistantId),
             truncateIndex = conversationEntity.truncateIndex,
             chatSuggestions = JsonInstant.decodeFromString(conversationEntity.chatSuggestions),

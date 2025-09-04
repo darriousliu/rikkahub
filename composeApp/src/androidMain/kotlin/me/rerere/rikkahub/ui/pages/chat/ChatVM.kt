@@ -85,8 +85,8 @@ import me.rerere.rikkahub.utils.createChatFilesByContents
 import me.rerere.rikkahub.utils.deleteChatFiles
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
-import java.time.Instant
 import java.util.Locale
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatVM"
@@ -476,7 +476,7 @@ class ChatVM(
                             node.copy(messages = node.messages.map { it.finishReasoning() } // 结束思考
                             )
                         },
-                        updateAt = Instant.now()
+                        updateAt = Clock.System.now()
                     )
                 )
 

@@ -186,6 +186,9 @@ kotlin {
             // Ktor
             implementation(libs.bundles.ktor)
             implementation(libs.ktorfit.lib.lite)
+
+            // datetime
+            implementation(libs.kotlinx.datetime)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
