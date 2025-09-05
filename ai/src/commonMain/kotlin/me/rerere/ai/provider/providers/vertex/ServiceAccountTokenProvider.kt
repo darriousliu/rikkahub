@@ -135,4 +135,4 @@ expect fun parsePkcs8PrivateKey(pem: String): PrivateKey
 expect fun signRs256(data: ByteArray, privateKey: PrivateKey): ByteArray
 
 // 跨平台私钥接口
-expect class PrivateKey
+expect interface PrivateKey

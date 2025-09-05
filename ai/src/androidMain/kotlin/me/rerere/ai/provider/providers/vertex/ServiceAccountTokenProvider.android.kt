@@ -6,7 +6,7 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
 import java.security.PrivateKey as JavaPrivateKey
 
-actual typealias PrivateKey = Any
+actual typealias PrivateKey = JavaPrivateKey
 
 actual fun parsePkcs8PrivateKey(pem: String): PrivateKey {
     val normalized = pem
@@ -20,7 +20,7 @@ actual fun parsePkcs8PrivateKey(pem: String): PrivateKey {
 
 actual fun signRs256(data: ByteArray, privateKey: PrivateKey): ByteArray {
     val sig = Signature.getInstance("SHA256withRSA")
-    sig.initSign(privateKey as JavaPrivateKey)
+    sig.initSign(privateKey)
     sig.update(data)
     return sig.sign()
 }
