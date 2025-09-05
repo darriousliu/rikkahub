@@ -1,20 +1,23 @@
 package me.rerere.common.cache
 
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.exists
+import io.github.vinceglb.filekit.readString
+import kotlinx.atomicfu.locks.reentrantLock
+import kotlinx.atomicfu.locks.withLock
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import java.io.File
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import me.rerere.common.utils.delete
 
 class SingleFileCacheStore<K : Any, V : Any>(
-    private val file: File,
+    private val file: PlatformFile,
     private val keySerializer: KSerializer<K>,
     private val valueSerializer: KSerializer<V>,
     private val json: Json = Json { prettyPrint = false; ignoreUnknownKeys = true; allowStructuredMapKeys = true }
 ) : CacheStore<K, V> {
-    private val lock = ReentrantLock()
+    private val lock = reentrantLock()
     private val entrySerializer = cacheEntrySerializer(valueSerializer)
     private val mapEntrySerializer = MapSerializer(keySerializer, entrySerializer)
 
@@ -51,12 +54,15 @@ class SingleFileCacheStore<K : Any, V : Any>(
     private fun safeReadMap(): Map<K, CacheEntry<V>> {
         try {
             if (!file.exists()) return emptyMap()
-            val text = file.readText()
+            val text = runBlocking { file.readString() }
             if (text.isBlank()) return emptyMap()
             return json.decodeFromString(mapEntrySerializer, text)
         } catch (_: Exception) {
             return try {
-                val legacyMap = json.decodeFromString(MapSerializer(keySerializer, valueSerializer), file.readText())
+                val legacyMap = json.decodeFromString(
+                    MapSerializer(keySerializer, valueSerializer),
+                    runBlocking { file.readString() }
+                )
                 legacyMap.mapValues { CacheEntry(value = it.value, expiresAt = null) }
             } catch (_: Exception) {
                 emptyMap()

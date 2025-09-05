@@ -2,6 +2,9 @@ package me.rerere.rikkahub.data.ai.transformers
 
 import android.content.Context
 import android.util.Log
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.cacheDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.serializer
@@ -21,17 +24,15 @@ import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import java.io.File
 import kotlin.time.Duration.Companion.days
 
 private const val TAG = "OcrTransformer"
 
 object OcrTransformer : InputMessageTransformer, KoinComponent {
     private val cache by lazy {
-        val context = get<Context>()
         val json = Json { allowStructuredMapKeys = true }
         val store = SingleFileCacheStore(
-            file = File(context.cacheDir, "ocr_cache.json"),
+            file = PlatformFile(FileKit.cacheDir, "ocr_cache.json"),
             keySerializer = String.serializer(),
             valueSerializer = String.serializer(),
             json = json
