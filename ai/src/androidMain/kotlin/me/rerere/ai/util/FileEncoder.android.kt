@@ -8,14 +8,7 @@ import me.rerere.ai.ui.UIMessagePart
 import java.io.File
 import java.io.FileOutputStream
 
-private val supportedTypes = setOf(
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-)
 
-private const val TAG = "FileEncoder"
 
 actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
     when {
