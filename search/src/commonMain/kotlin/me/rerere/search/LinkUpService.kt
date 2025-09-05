@@ -4,12 +4,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
+import co.touchlab.kermit.Logger
 import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
@@ -17,19 +20,24 @@ import me.rerere.ai.util.stringSafe
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.click_to_get_api_key
 
-object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
-    override val name: String = "Zhipu"
+private const val TAG = "LinkUpService"
+
+object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
+    override val name: String = "LinkUp"
 
     @Composable
     override fun Description() {
         val urlHandler = LocalUriHandler.current
         TextButton(
             onClick = {
-                urlHandler.openUri("https://bigmodel.cn/usercenter/proj-mgmt/apikeys")
+                urlHandler.openUri("https://www.linkup.so/")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
@@ -47,70 +55,61 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.ZhipuOptions
+        serviceOptions: SearchServiceOptions.LinkUpOptions
     ): Result<SearchResult> = withContext(Dispatchers.IO) {
         runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-
             val body = buildJsonObject {
-                put("search_query", JsonPrimitive(query))
-                put("search_engine", JsonPrimitive("search_std"))
-                put("count", JsonPrimitive(commonOptions.resultSize))
+                put("q", JsonPrimitive(query))
+                put("depth", JsonPrimitive(serviceOptions.depth))
+                put("outputType", JsonPrimitive("sourcedAnswer"))
+                put("includeImages", JsonPrimitive("false"))
             }
 
             val request = HttpRequestBuilder().apply {
-                url("https://open.bigmodel.cn/api/paas/v4/web_search")
-                setBody(json.encodeToString(body))
+                url("https://api.linkup.so/v1/search")
+                contentType(ContentType.Application.Json)
+                setBody(body.toString())
                 header("Authorization", "Bearer ${serviceOptions.apiKey}")
+                header("Content-Type", "application/json")
             }
+
+            Logger.i(TAG) { "search: $query" }
 
             val response = httpClient.post(request)
             if (response.status.isSuccess()) {
-                val bodyRaw = response.stringSafe() ?: error("Failed to get response body")
-                val response = runCatching {
-                    json.decodeFromString<ZhipuDto>(bodyRaw)
-                }.onFailure {
-                    it.printStackTrace()
-                    println(bodyRaw)
-                    error("Failed to decode response: $bodyRaw")
-                }.getOrThrow()
+                val responseBody = response.bodyAsText().let {
+                    json.decodeFromString<LinkUpSearchResponse>(it)
+                }
 
                 return@withContext Result.success(
                     SearchResult(
-                        items = response.searchResult.map {
+                        answer = responseBody.answer,
+                        items = responseBody.sources.take(commonOptions.resultSize).map {
                             SearchResultItem(
-                                title = it.title,
-                                url = it.link,
-                                text = it.content,
+                                title = it.name,
+                                url = it.url,
+                                text = it.snippet
                             )
                         }
-                    ))
+                    )
+                )
             } else {
-                println(response.stringSafe())
-                error("response failed #${response.status.value}")
+                error("response failed #${response.status.value}: ${response.stringSafe()}")
             }
         }
     }
 
     @Serializable
-    data class ZhipuDto(
-        @SerialName("search_result")
-        val searchResult: List<ZhipuSearchResultDto>
+    data class LinkUpSearchResponse(
+        val answer: String,
+        val sources: List<Source>
     )
 
     @Serializable
-    data class ZhipuSearchResultDto(
-        @SerialName("content")
-        val content: String,
-        @SerialName("icon")
-        val icon: String?,
-        @SerialName("link")
-        val link: String,
-        @SerialName("media")
-        val media: String?,
-        @SerialName("refer")
-        val refer: String?,
-        @SerialName("title")
-        val title: String
+    data class Source(
+        val name: String,
+        val url: String,
+        val snippet: String
     )
 }

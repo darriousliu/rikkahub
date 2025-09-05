@@ -8,6 +8,24 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
 }
 
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.components.resources)
+            implementation(compose.material3)
+
+            implementation(project(":ai"))
+            implementation(libs.bundles.ktor)
+            implementation(libs.okio)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.coroutines.core)
+
+            implementation(libs.ksoup)
+            implementation(libs.ksoup.network)
+        }
+    }
+}
+
 android {
     namespace = "me.rerere.search"
     compileSdk = 36

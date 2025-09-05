@@ -1,9 +1,8 @@
 package me.rerere.search
 
-import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
+import co.touchlab.kermit.Logger
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -11,8 +10,14 @@ import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
+import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
+import io.ktor.util.encodeBase64
+import io.ktor.utils.io.charsets.Charsets
+import io.ktor.utils.io.core.buildPacket
+import io.ktor.utils.io.core.writeText
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -25,8 +30,10 @@ import me.rerere.ai.util.stringSafe
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okio.ByteString.Companion.encode
-import java.net.URLEncoder
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.searxng_desc_1
+import rikkahub.search.generated.resources.searxng_desc_2
 
 private const val TAG = "SearXNGService"
 
@@ -35,8 +42,8 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
 
     @Composable
     override fun Description() {
-        Text(stringResource(R.string.searxng_desc_1))
-        Text(stringResource(R.string.searxng_desc_2))
+        Text(stringResource(Res.string.searxng_desc_1))
+        Text(stringResource(Res.string.searxng_desc_2))
     }
 
     override val parameters: InputSchema?
@@ -64,7 +71,7 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
 
             // 构建查询URL
             val baseUrl = serviceOptions.url.trimEnd('/')
-            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val encodedQuery = query.encodeURLParameter()
             val url = URLBuilder(Url("$baseUrl/search?q=$encodedQuery&format=json"))
                 .apply {
                     if (serviceOptions.engines.isNotBlank()) {
@@ -82,13 +89,17 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
                 if (serviceOptions.username.isNotBlank() && serviceOptions.password.isNotBlank()) {
                     header(
                         "Authorization",
-                        "${serviceOptions.username}:${serviceOptions.password}"
-                            .encode(Charsets.ISO_8859_1).base64()
+                        buildPacket {
+                            writeText(
+                                "${serviceOptions.username}:${serviceOptions.password}",
+                                charset = Charsets.ISO_8859_1
+                            )
+                        }.encodeBase64()
                     )
                 }
             }
 
-            Log.i(TAG, "search: $url")
+            Logger.i(TAG) { "search: $url" }
 
             val response = httpClient.get(request)
             if (response.status.isSuccess()) {
