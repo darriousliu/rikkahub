@@ -8,7 +8,13 @@ import platform.Foundation.*
 import platform.Security.*
 import platform.posix.memcpy
 
-actual class PrivateKey(val secKey: SecKeyRef)
+actual interface PrivateKey {
+    val secKey: SecKeyRef
+}
+
+class PrivateKeyImpl(
+    override val secKey: SecKeyRef
+) : PrivateKey
 
 actual fun parsePkcs8PrivateKey(pem: String): PrivateKey {
     val normalized = pem
@@ -33,7 +39,7 @@ actual fun parsePkcs8PrivateKey(pem: String): PrivateKey {
         val secKey = SecKeyCreateWithData(nsDataRef, attributeRef, errorPtr.ptr)
             ?: throw IllegalArgumentException("Failed to create private key: ${errorPtr.value}")
 
-        return PrivateKey(secKey)
+        return PrivateKeyImpl(secKey)
     }
 }
 
