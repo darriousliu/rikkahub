@@ -1,7 +1,7 @@
 package me.rerere.ai.ui
 
-import android.content.Context
 import me.rerere.ai.provider.Model
+import me.rerere.common.PlatformContext
 
 interface MessageTransformer {
     /**
@@ -12,7 +12,7 @@ interface MessageTransformer {
      * 对于输出消息，会对消息输出chunk进行转换
      */
     suspend fun transform(
-        context: Context,
+        context: PlatformContext,
         messages: List<UIMessage>,
         model: Model,
     ): List<UIMessage> {
@@ -29,7 +29,7 @@ interface OutputMessageTransformer : MessageTransformer {
      * 不能还没结束生成就transform，因此提供一个visualTransform
      */
     suspend fun visualTransform(
-        context: Context,
+        context: PlatformContext,
         messages: List<UIMessage>,
         model: Model,
     ): List<UIMessage> {
@@ -40,7 +40,7 @@ interface OutputMessageTransformer : MessageTransformer {
      * 消息生成完成后调用
      */
     suspend fun onGenerationFinish(
-        context: Context,
+        context: PlatformContext,
         messages: List<UIMessage>,
         model: Model,
     ): List<UIMessage> {
@@ -50,7 +50,7 @@ interface OutputMessageTransformer : MessageTransformer {
 
 suspend fun List<UIMessage>.transforms(
     transformers: List<MessageTransformer>,
-    context: Context,
+    context: PlatformContext,
     model: Model
 ): List<UIMessage> {
     return transformers.fold(this) { acc, transformer ->
@@ -60,7 +60,7 @@ suspend fun List<UIMessage>.transforms(
 
 suspend fun List<UIMessage>.visualTransforms(
     transformers: List<MessageTransformer>,
-    context: Context,
+    context: PlatformContext,
     model: Model
 ): List<UIMessage> {
     return transformers.fold(this) { acc, transformer ->
@@ -74,7 +74,7 @@ suspend fun List<UIMessage>.visualTransforms(
 
 suspend fun List<UIMessage>.onGenerationFinish(
     transformers: List<MessageTransformer>,
-    context: Context,
+    context: PlatformContext,
     model: Model
 ): List<UIMessage> {
     return transformers.fold(this) { acc, transformer ->
