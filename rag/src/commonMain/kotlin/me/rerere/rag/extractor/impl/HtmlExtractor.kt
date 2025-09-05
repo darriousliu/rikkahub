@@ -1,8 +1,8 @@
 package me.rerere.rag.extractor.impl
 
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import me.rerere.rag.extractor.DataExtractor
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 
 /**
  * 从HTML文本中提取纯文本内容
@@ -20,7 +20,7 @@ class HtmlExtractor : DataExtractor<String> {
         }
 
         return try {
-            val document = Jsoup.parse(data)
+            val document = Ksoup.parse(data)
             val result = mutableListOf<String>()
 
             // 提取标题

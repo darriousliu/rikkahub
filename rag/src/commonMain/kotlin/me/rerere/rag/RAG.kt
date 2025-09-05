@@ -1,6 +1,6 @@
 package me.rerere.rag
 
-import android.content.Context
+import me.rerere.common.PlatformContext
 import me.rerere.rag.db.VectorDatabase
 import me.rerere.rag.spliter.TextSplitter
 
@@ -11,7 +11,7 @@ private const val TAG = "RAG"
  * 用于管理向量数据库和文本处理流程
  */
 class RAG private constructor(
-    private val context: Context,
+    private val context: PlatformContext,
     private val textSplitter: TextSplitter,
     private val db: VectorDatabase,
     private val embeddingProvider: EmbeddingProvider,
@@ -40,7 +40,7 @@ class RAG private constructor(
     /**
      * RAG系统构建器类
      */
-    class Builder(private val context: Context) {
+    class Builder(private val context: PlatformContext) {
         private var textSplitter: TextSplitter? = null
         private var db: VectorDatabase? = null
         private var embeddingProvider: EmbeddingProvider? = null
@@ -87,7 +87,7 @@ class RAG private constructor(
         /**
          * 创建新的RAG构建器
          */
-        fun builder(context: Context): Builder {
+        fun builder(context: PlatformContext): Builder {
             return Builder(context)
         }
     }
