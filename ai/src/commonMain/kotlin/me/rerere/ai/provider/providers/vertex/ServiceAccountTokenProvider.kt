@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
 /**
@@ -126,7 +127,7 @@ class ServiceAccountTokenProvider(
     )
 
     private fun base64UrlNoPad(bytes: ByteArray): String =
-        kotlin.io.encoding.Base64.UrlSafe.encode(bytes).trimEnd('=')
+        Base64.withPadding(Base64.PaddingOption.ABSENT).encode(bytes)
 }
 
 // 平台专用函数声明
