@@ -4,14 +4,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -22,6 +23,9 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.click_to_get_api_key
 
 private const val TAG = "BraveSearchService"
 
@@ -36,7 +40,7 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
                 urlHandler.openUri("https://api.search.brave.com/")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
@@ -59,7 +63,7 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
         runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
             val url = "https://api.search.brave.com/res/v1/web/search" +
-                "?q=${java.net.URLEncoder.encode(query, "UTF-8")}" +
+                "?q=${query.encodeURLParameter()}" +
                 "&count=${commonOptions.resultSize}"
 
             val request = HttpRequestBuilder().apply {

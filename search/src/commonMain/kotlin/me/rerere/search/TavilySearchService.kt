@@ -4,11 +4,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
 import io.ktor.client.request.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
@@ -16,6 +16,9 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.click_to_get_api_key
 
 private const val TAG = "TavilySearchService"
 
@@ -30,7 +33,7 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                 urlHandler.openUri("https://app.tavily.com/home")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
