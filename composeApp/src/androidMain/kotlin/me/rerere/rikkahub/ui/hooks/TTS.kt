@@ -2,7 +2,6 @@ package me.rerere.rikkahub.ui.hooks
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -121,7 +120,7 @@ private class CustomTtsStateImpl(
 ) : CustomTtsState, KoinComponent {
 
     private val ttsManager by inject<TTSManager>()
-    private val controller by lazy { me.rerere.tts.controller.TtsController(context, ttsManager) }
+    private val controller by lazy { TtsController(context, ttsManager) }
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private var currentJob: Job? = null
