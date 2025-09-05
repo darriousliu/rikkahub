@@ -7,12 +7,9 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import me.rerere.common.android.appTempFolder
+import me.rerere.common.utils.toFile
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
@@ -62,7 +59,7 @@ class RikkaHubApp : Application() {
 
     private fun deleteTempFiles() {
         get<AppScope>().launch(Dispatchers.IO) {
-            val dir = appTempFolder
+            val dir = appTempFolder.toFile()
             if (dir.exists()) {
                 dir.deleteRecursively()
             }

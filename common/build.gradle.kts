@@ -18,6 +18,8 @@ kotlin {
             api("io.github.petterpx:floatingx-compose:2.3.7")
         }
         commonMain.dependencies {
+            // Coil
+            api(libs.coil.compose)
             // ktor
             api(libs.bundles.ktor)
 
@@ -28,6 +30,10 @@ kotlin {
 
             // KMP Utils
             api(libs.mp.stools)
+            api(libs.filekit.core)
+
+            // atomics
+            api(libs.atomicfu)
         }
         iosMain.dependencies {
             api(libs.ktor.client.darwin)

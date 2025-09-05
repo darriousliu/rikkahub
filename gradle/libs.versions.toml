@@ -6,6 +6,7 @@ cameraCore = "1.5.0-rc01"
 cryptography = "0.5.0"
 dav4jvm = "2.2.1"
 dav4kmp = "0.1.0"
+filekit = "0.10.0"
 jlatexmath = "1.2"
 kotlin = "2.2.10"
 coreKtx = "1.17.0"
@@ -67,6 +68,7 @@ ktor = "3.2.3"
 kermit = "2.0.8"
 ktorfit = "2.6.4"
 okio = "3.16.0"
+atomicfu = "0.29.0"
 
 [libraries]
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
@@ -170,6 +172,8 @@ kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 cryptography-bom = { module = "dev.whyoleg.cryptography:cryptography-bom", version.ref = "cryptography" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core" }
+filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
+atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 
 [bundles]
 ktor = ["ktor-client-core", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-client-logging"]

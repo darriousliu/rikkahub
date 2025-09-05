@@ -1,10 +1,14 @@
 package me.rerere.common.cache
 
-import java.io.File
-import java.io.IOException
+import io.github.vinceglb.filekit.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.io.IOException
+import me.rerere.common.utils.delete
+import me.rerere.common.utils.mkdirs
+import me.rerere.common.utils.renameTo
 
-internal fun ensureParentDir(file: File) {
-    val parent = file.parentFile
+internal fun ensureParentDir(file: PlatformFile) {
+    val parent = file.parent()
     if (parent != null && !parent.exists()) {
         if (!parent.mkdirs() && !parent.exists()) {
             throw IOException("Failed to create directory: $parent")
@@ -12,10 +16,10 @@ internal fun ensureParentDir(file: File) {
     }
 }
 
-internal fun atomicWrite(file: File, content: String) {
+internal fun atomicWrite(file: PlatformFile, content: String) = runBlocking {
     ensureParentDir(file)
-    val tmp = File(file.parentFile, file.name + ".tmp")
-    tmp.writeText(content)
+    val tmp = PlatformFile(file.parent()!!, file.name + ".tmp")
+    tmp.writeString(content)
     if (file.exists()) {
         if (!tmp.renameTo(file)) {
             if (file.delete()) {

@@ -72,7 +72,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -119,6 +118,7 @@ import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.android.appTempFolder
+import me.rerere.common.utils.toFile
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -885,7 +885,7 @@ private fun useCropLauncher(
     }
 
     val launchCrop: (Uri) -> Unit = { sourceUri ->
-        val outputFile = File(context.appTempFolder, "crop_output_${System.currentTimeMillis()}.jpg")
+        val outputFile = File(context.appTempFolder.toFile(), "crop_output_${System.currentTimeMillis()}.jpg")
         cropOutputUri = Uri.fromFile(outputFile)
 
         val cropIntent = UCrop.of(sourceUri, cropOutputUri!!)

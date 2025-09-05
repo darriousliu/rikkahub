@@ -1,8 +1,9 @@
 package me.rerere.common.cache
 
-import java.util.LinkedHashMap
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import kotlinx.atomicfu.locks.reentrantLock
+import kotlinx.atomicfu.locks.withLock
+import kotlin.time.Clock
+import androidx.collection.LruCache as AndroidXLruCache
 
 class LruCache<K, V>(
     private val capacity: Int,
@@ -11,22 +12,29 @@ class LruCache<K, V>(
     preloadFromStore: Boolean = false,
     private val expireAfterWriteMillis: Long? = null
 ) where K : Any {
-    private val lock = ReentrantLock()
+    private val lock = reentrantLock()
 
-    private val map = object : LinkedHashMap<K, CacheEntry<V>>(capacity, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, CacheEntry<V>>): Boolean {
-            val shouldEvict = size > capacity
-            if (shouldEvict) {
-                if (deleteOnEvict) {
-                    try {
-                        store.remove(eldest.key)
-                    } catch (_: Exception) {
-                    }
+    private val map = object : AndroidXLruCache<K, CacheEntry<V>>(capacity) {
+        override fun entryRemoved(
+            evicted: Boolean,
+            key: K,
+            oldValue: CacheEntry<V>,
+            newValue: CacheEntry<V>?
+        ) {
+            // 只有在真正被淘汰时才处理（不是替换）
+            if (evicted && deleteOnEvict) {
+                try {
+                    store.remove(key)
+                } catch (_: Exception) {
                 }
             }
-            return shouldEvict
         }
     }
+
+    private operator fun AndroidXLruCache<K, CacheEntry<V>>.set(key: K, value: CacheEntry<V>) {
+        put(key, value)
+    }
+
 
     init {
         if (preloadFromStore) {
@@ -40,7 +48,7 @@ class LruCache<K, V>(
                         } else {
                             runCatching { store.remove(k) }
                         }
-                        if (map.size >= capacity) break
+                        if (map.size() >= capacity) break
                     }
                 }
             } catch (_: Exception) {
@@ -88,7 +96,7 @@ class LruCache<K, V>(
     }
 
     fun clear() {
-        lock.withLock { map.clear() }
+        lock.withLock { map.evictAll() }
         try {
             store.clear()
         } catch (_: Exception) {
@@ -104,10 +112,10 @@ class LruCache<K, V>(
         return false
     }
 
-    fun size(): Int = lock.withLock { map.size }
+    fun size(): Int = lock.withLock { map.size() }
 
-    fun keysInMemory(): Set<K> = lock.withLock { map.filterValues { !it.isExpired(now()) }.keys.toSet() }
+    fun keysInMemory(): Set<K> = lock.withLock { map.snapshot().filterValues { !it.isExpired(now()) }.keys.toSet() }
 }
 
-private fun now(): Long = System.currentTimeMillis()
+private fun now(): Long = Clock.System.now().toEpochMilliseconds()
 
