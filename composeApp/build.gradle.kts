@@ -98,9 +98,6 @@ kotlin {
             // Apache Commons Text
             implementation(libs.commons.text)
 
-            // Permission
-            implementation(libs.permissions.compose)
-
             // JLatexMath
             // https://github.com/rikkahub/jlatexmath-android
             implementation(libs.jlatexmath)
