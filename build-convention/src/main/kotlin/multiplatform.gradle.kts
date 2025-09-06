@@ -11,7 +11,8 @@ kotlin {
             "kotlin.time.ExperimentalTime",
             "kotlinx.cinterop.ExperimentalForeignApi",
             "kotlinx.cinterop.BetaInteropApi",
-            "kotlin.uuid.ExperimentalUuidApi"
+            "kotlin.uuid.ExperimentalUuidApi",
+            "androidx.compose.animation.ExperimentalSharedTransitionApi"
         )
     }
 
