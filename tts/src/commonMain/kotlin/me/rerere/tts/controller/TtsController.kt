@@ -1,7 +1,7 @@
 package me.rerere.tts.controller
 
-import android.content.Context
-import android.util.Log
+import co.touchlab.kermit.Logger
+import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +35,7 @@ private const val TAG = "TtsController"
  * - 对外 API 与原版兼容
  */
 class TtsController(
-    context: Context,
+    context: PlatformContext,
     private val ttsManager: TTSManager
 ) {
     // 协程作用域
@@ -52,9 +52,9 @@ class TtsController(
     private var isPaused = false
 
     // 队列与缓存（基于稳定 ID）
-    private val queue: java.util.concurrent.ConcurrentLinkedQueue<TtsChunk> = java.util.concurrent.ConcurrentLinkedQueue()
+    private val queue = ConcurrentQueue<TtsChunk>()
     private val allChunks: MutableList<TtsChunk> = mutableListOf()
-    private val cache = java.util.concurrent.ConcurrentHashMap<UUID, kotlinx.coroutines.Deferred<TTSResponse>>()
+    private val cache = ConcurrentMap<UUID, kotlinx.coroutines.Deferred<TTSResponse>>()
     private var lastPrefetchedIndex: Int = -1
 
     // 行为参数
@@ -268,7 +268,7 @@ class TtsController(
                         audio.play(response)
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e
-                        Log.e(TAG, "Playback error", e)
+                        Logger.e(TAG, e) { "Playback error" }
                         _error.update { e.message ?: "Audio playback error" }
                     }
 
