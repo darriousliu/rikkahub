@@ -63,7 +63,7 @@ class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
         context: PlatformContext,
         providerSetting: TTSProviderSetting.Gemini,
         request: TTSRequest
-    ): TTSResponse {
+    ): Flow<AudioChunk> = flow {
         val requestBody = buildJsonObject {
             put("contents", buildJsonArray {
                 add(buildJsonObject {
@@ -89,7 +89,7 @@ class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
             put("model", providerSetting.model)
         }
 
-        Logger.i(TAG, ) { "generateSpeech: $requestBody" }
+        Logger.i(TAG) { "generateSpeech: $requestBody" }
 
         val httpRequest = HttpRequestBuilder().apply {
             url("${providerSetting.baseUrl}/models/${providerSetting.model}:generateContent")

@@ -1,27 +1,25 @@
 package me.rerere.tts.provider.providers
 
 import co.touchlab.kermit.Logger
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.sse.sse
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import me.rerere.common.http.SseEvent
-import me.rerere.common.http.sseFlow
-import me.rerere.tts.model.AudioChunk
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.request.*
-import io.ktor.client.statement.bodyAsBytes
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import me.rerere.common.PlatformContext
+import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
@@ -87,7 +85,7 @@ class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
 
         var hasEmittedAudio = false
 
-        val response = try {
+        try {
             httpClient.sse({ takeFrom(httpRequest) }) {
                 Logger.i(TAG) { "SSE connection opened" }
                 incoming
@@ -107,9 +105,9 @@ class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
                         }
                     }
                     .collect {
-                        it.data ?: return@collect
+                        val data = it.data ?: return@collect
                         try {
-                            val data = json.decodeFromString<MiniMaxResponse>(it.data)
+                            val data = json.decodeFromString<MiniMaxResponse>(data)
 
                             // Convert hex string to bytes
                             val audioBytes = hexStringToBytes(data.data.audio)
@@ -136,8 +134,8 @@ class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
                     }
             }
         } catch (e: Throwable) {
-            Logger.e(TAG, it.throwable) { "SSE connection failed" }
-            throw it.throwable ?: Exception("MiniMax TTS streaming failed")
+            Logger.e(TAG, e) { "SSE connection failed" }
+            throw e ?: Exception("MiniMax TTS streaming failed")
         }
     }
 }
