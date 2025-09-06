@@ -6,6 +6,7 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import me.rerere.common.PlatformContext
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.utils.toFile
 import me.rerere.tts.model.AudioFormat
@@ -47,7 +48,7 @@ private const val TAG = "AudioPlayer"
  * - ✅ 线程安全的资源管理
  * - ✅ 支持多种音频格式 (MP3, WAV, OGG, AAC, OPUS, PCM)
  */
-class AudioPlayer(private val context: Context) {
+actual class AudioPlayer actual constructor(private val context: PlatformContext) {
 
     private var mediaPlayer: MediaPlayer? = null
     private var audioTrack: AudioTrack? = null
@@ -57,7 +58,7 @@ class AudioPlayer(private val context: Context) {
     /**
      * 使用指定格式播放音频数据
      */
-    suspend fun playSound(
+    actual suspend fun playSound(
         sound: ByteArray,
         format: AudioFormat
     ): Unit = withContext(Dispatchers.IO) {
@@ -148,9 +149,9 @@ class AudioPlayer(private val context: Context) {
     /**
      * 播放 PCM 音频数据
      */
-    suspend fun playPcmSound(
+    actual suspend fun playPcmSound(
         pcmData: ByteArray,
-        sampleRate: Int = 24000
+        sampleRate: Int
     ): Unit = withContext(Dispatchers.IO) {
         if (isDisposed.get()) {
             throw IllegalStateException("AudioPlayer has been disposed")
@@ -227,7 +228,7 @@ class AudioPlayer(private val context: Context) {
     /**
      * 停止当前播放
      */
-    fun stop() {
+    actual fun stop() {
         if (isDisposed.get()) return
 
         try {
@@ -241,7 +242,7 @@ class AudioPlayer(private val context: Context) {
     /**
      * 释放所有资源
      */
-    fun dispose() {
+    actual fun dispose() {
         if (isDisposed.compareAndSet(false, true)) {
             Log.d(TAG, "Disposing AudioPlayer")
 
