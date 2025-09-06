@@ -4,7 +4,6 @@ import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import okio.internal.commonToUtf8String
 import kotlin.io.encoding.Base64
 
 interface KeyCodec<K : Any> {
@@ -25,7 +24,7 @@ class Base64JsonKeyCodec<K : Any>(
 
     override fun fromFileName(name: String): K? = try {
         val decoded = base64.decode(name)
-        val jsonStr = decoded.commonToUtf8String()
+        val jsonStr = decoded.decodeToString()
         json.decodeFromString(keySerializer, jsonStr)
     } catch (_: Exception) {
         null

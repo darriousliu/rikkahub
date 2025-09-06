@@ -4,7 +4,9 @@ import co.touchlab.kermit.Logger
 import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -17,15 +19,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import me.rerere.common.PlatformContext
+import me.rerere.common.collections.ConcurrentQueue
 import me.rerere.tts.model.PlaybackState
 import me.rerere.tts.model.PlaybackStatus
 import me.rerere.tts.model.TTSResponse
 import me.rerere.tts.provider.TTSManager
 import me.rerere.tts.provider.TTSProviderSetting
-import me.rerere.tts.player.AudioPlayer
-import kotlin.math.max
-import kotlin.math.min
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 private const val TAG = "TtsController"
 
@@ -54,7 +55,7 @@ class TtsController(
     // 队列与缓存（基于稳定 ID）
     private val queue = ConcurrentQueue<TtsChunk>()
     private val allChunks: MutableList<TtsChunk> = mutableListOf()
-    private val cache = ConcurrentMap<UUID, kotlinx.coroutines.Deferred<TTSResponse>>()
+    private val cache = ConcurrentMap<Uuid, Deferred<TTSResponse>>()
     private var lastPrefetchedIndex: Int = -1
 
     // 行为参数
@@ -257,7 +258,7 @@ class TtsController(
                         awaitOrCreate(chunk, provider)
                     } catch (e: Exception) {
                         if (e is CancellationException) throw e
-                        Log.e(TAG, "Synthesis error", e)
+                        Logger.e(TAG, e) { "Synthesis error" }
                         _error.update { e.message ?: "TTS synthesis error" }
                         processedCount++
                         continue
