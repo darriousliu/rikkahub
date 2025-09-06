@@ -1,8 +1,8 @@
 package me.rerere.rikkahub.ui.pages.history
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
@@ -29,7 +29,7 @@ class HistoryVM(
     val conversations = assistant.flatMapLatest { assistant ->
         conversationRepo.getConversationsOfAssistant(assistant?.id ?: Uuid.random())
     }.catch {
-        Log.e(TAG, "Error: ${it.message}")
+        Logger.e(TAG) { "Error: ${it.message}" }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun searchConversations(query: String): Flow<List<Conversation>> {

@@ -1,8 +1,8 @@
 package me.rerere.rikkahub.ui.pages.backup
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -157,7 +157,7 @@ class BackupVM(
             }
         }
 
-        Log.i(TAG, "restoreFromChatBox: import ${importProviders.size} providers: $importProviders")
+        Logger.i(TAG) { "restoreFromChatBox: import ${importProviders.size} providers: $importProviders" }
 
         updateSettings(
             settings.value.copy(

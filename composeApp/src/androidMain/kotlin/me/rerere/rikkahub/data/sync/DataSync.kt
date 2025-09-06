@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.sync
 
 import android.content.Context
-import android.util.Log
+import co.touchlab.kermit.Logger
 import io.github.triangleofice.dav4kmp.DavCollection
 import io.github.triangleofice.dav4kmp.Response
 import io.github.triangleofice.dav4kmp.exception.NotFoundException
@@ -60,7 +60,7 @@ class DataSync(
                 depth = 1,
                 DisplayName.NAME,
             ) { response, relation ->
-                Log.i(TAG, "testWebdav: $response | $relation")
+                Logger.i(TAG) { "testWebdav: $response | $relation" }
             }
         }
     }
@@ -75,7 +75,7 @@ class DataSync(
             body = body,
             contentType = ContentType.defaultForFileExtension(file.extension)
         ) { response ->
-            Log.i(TAG, "backupToWebDav: $response")
+            Logger.i(TAG) { "backupToWebDav: $response" }
         }
     }
 
@@ -89,7 +89,7 @@ class DataSync(
                 GetContentLength.NAME,
                 GetLastModified.NAME
             ) { response, relation ->
-                Log.i(TAG, "listBackupFiles: ${response.properties} ${response.href}")
+                Logger.i(TAG) { "listBackupFiles: ${response.properties} ${response.href}" }
                 if (relation == Response.HrefRelation.MEMBER) {
                     val displayName = response.properties.filterIsInstance<DisplayName>()
                         .firstOrNull()?.displayName ?: "Unknown"
@@ -129,25 +129,19 @@ class DataSync(
                 headers = null
             ) { response ->
                 if (response.status.isSuccess()) {
-                    Log.i(
-                        TAG,
-                        "restoreFromWebDav: Downloading ${item.displayName} to ${backupFile.absolutePath}"
-                    )
+                    Logger.i(TAG) { "restoreFromWebDav: Downloading ${item.displayName} to ${backupFile.absolutePath}" }
                     response.bodyAsBytes().let { inputStream ->
                         FileOutputStream(backupFile).use { outputStream ->
                             outputStream.write(inputStream)
                         }
                     }
                 } else {
-                    Log.e(
-                        TAG,
-                        "restoreFromWebDav: Failed to download ${item.displayName}, response: $response"
-                    )
+                    Logger.e(TAG) { "restoreFromWebDav: Failed to download ${item.displayName}, response: $response" }
                     throw Exception("Failed to download backup file: ${response.status.description}")
                 }
             }
 
-            Log.i(TAG, "restoreFromWebDav: Downloaded ${backupFile.length()} bytes")
+            Logger.i(TAG) { "restoreFromWebDav: Downloaded ${backupFile.length()} bytes" }
 
             try {
                 // 解压并恢复备份文件
@@ -156,7 +150,7 @@ class DataSync(
                 // 清理临时文件
                 if (backupFile.exists()) {
                     backupFile.delete()
-                    Log.i(TAG, "restoreFromWebDav: Cleaned up temporary backup file")
+                    Logger.i(TAG) { "restoreFromWebDav: Cleaned up temporary backup file" }
                 }
             }
         }
@@ -168,13 +162,13 @@ class DataSync(
                 location = Url(item.href)
             )
             collection.delete { response ->
-                Log.i(TAG, "deleteWebDavBackupFile: $response")
+                Logger.i(TAG) { "deleteWebDavBackupFile: $response" }
             }
         }
 
     suspend fun restoreFromLocalFile(file: File, webDavConfig: WebDavConfig) =
         withContext(Dispatchers.IO) {
-            Log.i(TAG, "restoreFromLocalFile: Starting restore from ${file.absolutePath}")
+            Logger.i(TAG) { "restoreFromLocalFile: Starting restore from ${file.absolutePath}" }
 
             if (!file.exists()) {
                 throw Exception("备份文件不存在")
@@ -186,9 +180,9 @@ class DataSync(
 
             try {
                 restoreFromBackupFile(file, webDavConfig)
-                Log.i(TAG, "restoreFromLocalFile: Restore completed successfully")
+                Logger.i(TAG) { "restoreFromLocalFile: Restore completed successfully" }
             } catch (e: Exception) {
-                Log.e(TAG, "restoreFromLocalFile: Failed to restore from local file", e)
+                Logger.e(TAG, e) { "restoreFromLocalFile: Failed to restore from local file" }
                 throw Exception("恢复失败: ${e.message}")
             }
         }
@@ -248,20 +242,14 @@ class DataSync(
             if (webDavConfig.items.contains(WebDavConfig.BackupItem.FILES)) {
                 val uploadFolder = File(context.filesDir, "upload")
                 if (uploadFolder.exists() && uploadFolder.isDirectory) {
-                    Log.i(
-                        TAG,
-                        "prepareBackupFile: Backing up files from ${uploadFolder.absolutePath}"
-                    )
+                    Logger.i(TAG) { "prepareBackupFile: Backing up files from ${uploadFolder.absolutePath}" }
                     uploadFolder.listFiles()?.forEach { file ->
                         if (file.isFile) {
                             addFileToZip(zipOut, file, "upload/${file.name}")
                         }
                     }
                 } else {
-                    Log.w(
-                        TAG,
-                        "prepareBackupFile: Upload folder does not exist or is not a directory"
-                    )
+                    Logger.w(TAG) { "prepareBackupFile: Upload folder does not exist or is not a directory" }
                 }
             }
         }
@@ -271,32 +259,25 @@ class DataSync(
 
     private suspend fun restoreFromBackupFile(backupFile: File, webDavConfig: WebDavConfig) =
         withContext(Dispatchers.IO) {
-            Log.i(TAG, "restoreFromBackupFile: Starting restore from ${backupFile.absolutePath}")
+            Logger.i(TAG) { "restoreFromBackupFile: Starting restore from ${backupFile.absolutePath}" }
 
             ZipInputStream(FileInputStream(backupFile)).use { zipIn ->
                 var entry: ZipEntry?
                 while (zipIn.nextEntry.also { entry = it } != null) {
                     entry?.let { zipEntry ->
-                        Log.i(TAG, "restoreFromBackupFile: Processing entry ${zipEntry.name}")
+                        Logger.i(TAG) { "restoreFromBackupFile: Processing entry ${zipEntry.name}" }
 
                         when (zipEntry.name) {
                             "settings.json" -> {
                                 // 恢复设置
                                 val settingsJson = zipIn.readBytes().toString(Charsets.UTF_8)
-                                Log.i(TAG, "restoreFromBackupFile: Restoring settings")
+                                Logger.i(TAG) { "restoreFromBackupFile: Restoring settings" }
                                 try {
                                     val settings = json.decodeFromString<Settings>(settingsJson)
                                     settingsStore.update(settings)
-                                    Log.i(
-                                        TAG,
-                                        "restoreFromBackupFile: Settings restored successfully"
-                                    )
+                                    Logger.i(TAG) { "restoreFromBackupFile: Settings restored successfully" }
                                 } catch (e: Exception) {
-                                    Log.e(
-                                        TAG,
-                                        "restoreFromBackupFile: Failed to restore settings",
-                                        e
-                                    )
+                                    Logger.e(TAG, e) { "restoreFromBackupFile: Failed to restore settings" }
                                     throw Exception("Failed to restore settings: ${e.message}")
                                 }
                             }
@@ -320,10 +301,7 @@ class DataSync(
                                     }
 
                                     dbFile?.let { targetFile ->
-                                        Log.i(
-                                            TAG,
-                                            "restoreFromBackupFile: Restoring ${zipEntry.name} to ${targetFile.absolutePath}"
-                                        )
+                                        Logger.i(TAG) { "restoreFromBackupFile: Restoring ${zipEntry.name} to ${targetFile.absolutePath}" }
 
                                         // 确保父目录存在
                                         targetFile.parentFile?.mkdirs()
@@ -333,10 +311,7 @@ class DataSync(
                                             zipIn.copyTo(outputStream)
                                         }
 
-                                        Log.i(
-                                            TAG,
-                                            "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)"
-                                        )
+                                        Logger.i(TAG) { "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)" }
                                     }
                                 }
                             }
@@ -353,40 +328,24 @@ class DataSync(
                                         // 确保upload文件夹存在
                                         if (!uploadFolder.exists()) {
                                             uploadFolder.mkdirs()
-                                            Log.i(
-                                                TAG,
-                                                "restoreFromBackupFile: Created upload directory"
-                                            )
+                                            Logger.i(TAG) { "restoreFromBackupFile: Created upload directory" }
                                         }
 
                                         val targetFile = File(uploadFolder, fileName)
-                                        Log.i(
-                                            TAG,
-                                            "restoreFromBackupFile: Restoring file ${zipEntry.name} to ${targetFile.absolutePath}"
-                                        )
+                                        Logger.i(TAG) { "restoreFromBackupFile: Restoring file ${zipEntry.name} to ${targetFile.absolutePath}" }
 
                                         try {
                                             FileOutputStream(targetFile).use { outputStream ->
                                                 zipIn.copyTo(outputStream)
                                             }
-                                            Log.i(
-                                                TAG,
-                                                "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)"
-                                            )
+                                            Logger.i(TAG) { "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)" }
                                         } catch (e: Exception) {
-                                            Log.e(
-                                                TAG,
-                                                "restoreFromBackupFile: Failed to restore file ${zipEntry.name}",
-                                                e
-                                            )
+                                            Logger.e(TAG, e) { "restoreFromBackupFile: Failed to restore file ${zipEntry.name}" }
                                             throw Exception("Failed to restore file ${zipEntry.name}: ${e.message}")
                                         }
                                     }
                                 } else {
-                                    Log.i(
-                                        TAG,
-                                        "restoreFromBackupFile: Skipping entry ${zipEntry.name}"
-                                    )
+                                    Logger.i(TAG) { "restoreFromBackupFile: Skipping entry ${zipEntry.name}" }
                                 }
                             }
                         }
@@ -396,7 +355,7 @@ class DataSync(
                 }
             }
 
-            Log.i(TAG, "restoreFromBackupFile: Restore completed successfully")
+            Logger.i(TAG) { "restoreFromBackupFile: Restore completed successfully" }
         }
 }
 
@@ -406,7 +365,7 @@ private fun addFileToZip(zipOut: ZipOutputStream, file: File, entryName: String)
         zipOut.putNextEntry(zipEntry)
         fis.copyTo(zipOut)
         zipOut.closeEntry()
-        Log.d(TAG, "addFileToZip: Added $entryName (${file.length()} bytes) to zip")
+        Logger.d(TAG) { "addFileToZip: Added $entryName (${file.length()} bytes) to zip" }
     }
 }
 
@@ -415,7 +374,7 @@ private fun addVirtualFileToZip(zipOut: ZipOutputStream, name: String, content: 
     zipOut.putNextEntry(zipEntry)
     zipOut.write(content.toByteArray())
     zipOut.closeEntry()
-    Log.i(TAG, "addVirtualFileToZip: $name （${content.length} bytes）")
+    Logger.i(TAG) { "addVirtualFileToZip: $name （${content.length} bytes）" }
 }
 
 private fun WebDavConfig.requireClient(): HttpClient {
@@ -467,13 +426,13 @@ private fun WebDavConfig.requireCollection(path: String? = null): DavCollection 
 private suspend fun DavCollection.ensureCollectionExists() = withContext(Dispatchers.IO) {
     try {
         propfind(depth = 0, DisplayName.NAME) { response, relation ->
-            Log.i(TAG, "ensureCollectionExists: $response $relation")
+            Logger.i(TAG) { "ensureCollectionExists: $response $relation" }
         }
     } catch (e: NotFoundException) {
         e.printStackTrace()
-        Log.i(TAG, "ensureCollectionExists: ${this@ensureCollectionExists.location}")
+        Logger.i(TAG) { "ensureCollectionExists: ${this@ensureCollectionExists.location}" }
         mkCol(null) { res ->
-            Log.i(TAG, "ensureCollectionExists: $res")
+            Logger.i(TAG) { "ensureCollectionExists: $res" }
         }
     }
 }

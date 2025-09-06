@@ -1,7 +1,6 @@
 package me.rerere.rikkahub.ui.pages.imggen
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -9,6 +8,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +21,7 @@ import me.rerere.ai.provider.ImageGenerationParams
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.ui.ImageAspectRatio
 import me.rerere.ai.ui.ImageGenerationItem
+import me.rerere.common.utils.toFile
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -41,7 +42,7 @@ data class GeneratedImage(
 )
 
 private fun GenMediaEntity.toGeneratedImage(context: Application): GeneratedImage {
-    val imagesDir = context.getImagesDir()
+    val imagesDir = context.getImagesDir().toFile()
     val fullPath = File(imagesDir, this.path.removePrefix("images/")).absolutePath
 
     return GeneratedImage(
@@ -155,7 +156,7 @@ class ImgGenVM(
                 _currentGeneratedImages.value = newImages
             } catch (e: Exception) {
                 if(e is CancellationException) return@launch
-                Log.e(TAG, "Failed to generate image", e)
+                Logger.e(TAG, e) { "Failed to generate image" }
                 _error.value = e.message ?: "Unknown error occurred"
             } finally {
                 _isGenerating.value = false
@@ -174,7 +175,7 @@ class ImgGenVM(
         index: Int
     ): File {
         val context = getApplication<Application>()
-        val imagesDir = context.getImagesDir()
+        val imagesDir = context.getImagesDir().toFile()
 
         val timestamp = System.currentTimeMillis()
         val filename = "${timestamp}_${modelName}_$index.png"
@@ -192,7 +193,7 @@ class ImgGenVM(
         )
         genMediaRepository.insertMedia(entity)
 
-        return createdFile
+        return createdFile.toFile()
     }
 
     fun deleteImage(image: GeneratedImage) {
@@ -207,7 +208,7 @@ class ImgGenVM(
                     file.delete()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to delete image", e)
+                Logger.e(TAG, e) { "Failed to delete image" }
                 _error.value = "Failed to delete image"
             }
         }

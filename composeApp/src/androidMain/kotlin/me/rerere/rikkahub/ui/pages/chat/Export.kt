@@ -28,11 +28,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.navigation.compose.rememberNavController
+import coil3.asImage
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -319,7 +321,7 @@ private suspend fun exportToImage(
         }
 
         // Save to gallery
-        context.exportImage(activity, bitmap, filename)
+        context.exportImage(activity, bitmap.asImage(), filename)
 
         // Share the file
         val uri = FileProvider.getUriForFile(
@@ -372,7 +374,7 @@ private fun ExportedChatImage(
                             Text(
                                 text = conversation.title,
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "${

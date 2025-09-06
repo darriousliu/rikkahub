@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.ai
 
 import android.content.Context
-import android.util.Log
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -16,20 +16,18 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import me.rerere.ai.provider.CustomBody
-import me.rerere.ai.registry.ModelRegistry
-import me.rerere.rikkahub.utils.applyPlaceholders
-import java.util.Locale
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.Tool
 import me.rerere.ai.core.merge
+import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.Provider
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
+import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.InputMessageTransformer
 import me.rerere.ai.ui.MessageTransformer
 import me.rerere.ai.ui.OutputMessageTransformer
@@ -49,6 +47,8 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.utils.applyPlaceholders
+import java.util.Locale
 
 private const val TAG = "GenerationHandler"
 
@@ -84,10 +84,10 @@ class GenerationHandler(
         var messages: List<UIMessage> = messages
 
         for (stepIndex in 0 until maxSteps) {
-            Log.i(TAG, "streamText: start step #$stepIndex (${model.id})")
+            Logger.i(TAG) { "streamText: start step #$stepIndex (${model.id})" }
 
             val toolsInternal = buildList {
-                Log.i(TAG, "generateInternal: build tools($assistant)")
+                Logger.i(TAG) { "generateInternal: build tools($assistant)" }
                 if (assistant?.enableMemory == true) {
                     buildMemoryTools(
                         onCreation = { content ->
@@ -145,7 +145,7 @@ class GenerationHandler(
                     val tool = toolsInternal.find { tool -> tool.name == toolCall.toolName }
                         ?: error("Tool ${toolCall.toolName} not found")
                     val args = json.parseToJsonElement(toolCall.arguments.ifBlank { "{}" })
-                    Log.i(TAG, "generateText: executing tool ${tool.name} with args: $args")
+                    Logger.i(TAG) { "generateText: executing tool ${tool.name} with args: $args" }
                     val result = tool.execute(args)
                     results += UIMessagePart.ToolResult(
                         toolName = toolCall.toolName,

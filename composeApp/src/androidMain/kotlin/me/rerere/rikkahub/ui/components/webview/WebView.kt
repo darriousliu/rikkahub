@@ -2,7 +2,6 @@ package me.rerere.rikkahub.ui.components.webview
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.ViewGroup.LayoutParams
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
@@ -21,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import co.touchlab.kermit.Logger
 
 private const val TAG = "WebView"
 
@@ -37,10 +37,7 @@ internal class MyWebChromeClient(private val state: WebViewState) : WebChromeCli
     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
         state.pushConsoleMessage(consoleMessage)
         if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR || consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
-            Log.e(
-                TAG,
-                "onConsoleMessage:  ${consoleMessage.message()}  ${consoleMessage.lineNumber()}  ${consoleMessage.sourceId()}"
-            )
+            Logger.e(TAG) { "onConsoleMessage:  ${consoleMessage.message()}  ${consoleMessage.lineNumber()}  ${consoleMessage.sourceId()}" }
         }
         return super.onConsoleMessage(consoleMessage);
     }

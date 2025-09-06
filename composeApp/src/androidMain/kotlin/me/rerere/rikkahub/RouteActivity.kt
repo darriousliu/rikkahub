@@ -1,5 +1,6 @@
 package me.rerere.rikkahub
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -16,29 +17,28 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.core.net.toUri
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import coil3.ImageLoader
-import coil3.compose.setSingletonImageLoaderFactory
-import coil3.network.ktor3.KtorNetworkFetcherFactory
-import coil3.request.crossfade
-import coil3.svg.SvgDecoder
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
 import io.ktor.client.HttpClient
-import kotlinx.serialization.Serializable
 import me.rerere.highlight.Highlighter
 import me.rerere.highlight.LocalHighlighter
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -73,7 +73,6 @@ import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
-import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import org.koin.android.ext.android.inject
 import kotlin.uuid.Uuid
 
@@ -91,16 +90,29 @@ class RouteActivity : ComponentActivity() {
         setContent {
             val navStack = rememberNavController()
             ShareHandler(navStack)
-            RikkahubTheme {
-                setSingletonImageLoaderFactory { context ->
-                    ImageLoader.Builder(context)
-                        .crossfade(true)
-                        .components {
-                            add(KtorNetworkFetcherFactory(ktorClient))
-                            add(SvgDecoder.Factory(scaleToDensity = true))
+            App(
+                navStack = navStack,
+                dynamicColorScheme = { dynamicColor, darkTheme ->
+                    if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (darkTheme) dynamicDarkColorScheme(this) else dynamicLightColorScheme(this)
+                    } else {
+                        null
+                    }
+                },
+                platformConfigure = { darkTheme ->
+                    // 更新状态栏图标颜色
+                    val view = LocalView.current
+                    if (!view.isInEditMode) {
+                        SideEffect {
+                            val window = (view.context as Activity).window
+                            WindowCompat.getInsetsController(window, view).apply {
+                                isAppearanceLightStatusBars = !darkTheme
+                                isAppearanceLightNavigationBars = !darkTheme
+                            }
                         }
-                        .build()
+                    }
                 }
+            ) {
                 AppRoutes(navStack)
             }
         }
@@ -280,69 +292,4 @@ class RouteActivity : ComponentActivity() {
             }
         }
     }
-}
-
-sealed interface Screen {
-    @Serializable
-    data class Chat(val id: String, val text: String? = null, val files: List<String> = emptyList()) : Screen
-
-    @Serializable
-    data class ShareHandler(val text: String, val streamUri: String? = null) : Screen
-
-    @Serializable
-    data object History : Screen
-
-    @Serializable
-    data object Assistant : Screen
-
-    @Serializable
-    data class AssistantDetail(val id: String) : Screen
-
-    @Serializable
-    data object Menu : Screen
-
-    @Serializable
-    data object Translator : Screen
-
-    @Serializable
-    data object Setting : Screen
-
-    @Serializable
-    data object Backup : Screen
-
-    @Serializable
-    data object ImageGen : Screen
-
-    @Serializable
-    data class WebView(val url: String = "", val content: String = "") : Screen
-
-    @Serializable
-    data object SettingDisplay : Screen
-
-    @Serializable
-    data object SettingProvider : Screen
-
-    @Serializable
-    data class SettingProviderDetail(val providerId: String) : Screen
-
-    @Serializable
-    data object SettingModels : Screen
-
-    @Serializable
-    data object SettingAbout : Screen
-
-    @Serializable
-    data object SettingSearch : Screen
-
-    @Serializable
-    data object SettingTTS : Screen
-
-    @Serializable
-    data object SettingMcp : Screen
-
-    @Serializable
-    data object SettingDonate : Screen
-
-    @Serializable
-    data object Debug : Screen
 }

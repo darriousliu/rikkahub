@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import coil3.asImage
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Eye
 import com.composables.icons.lucide.Lucide
@@ -85,7 +86,7 @@ fun Mermaid(
                                 BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                             context.exportImage(
                                 it,
-                                bitmap,
+                                bitmap.asImage(),
                                 "mermaid_${System.currentTimeMillis()}.png"
                             )
                         } catch (e: Exception) {

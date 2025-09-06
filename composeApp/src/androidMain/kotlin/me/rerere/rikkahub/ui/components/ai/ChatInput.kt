@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -92,6 +91,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
 import com.composables.icons.lucide.ArrowUp
 import com.composables.icons.lucide.Camera
@@ -923,7 +923,7 @@ private fun ImagePickButton(onAddImages: (List<Uri>) -> Unit = {}) {
         ActivityResultContracts.GetMultipleContents()
     ) { selectedUris ->
         if (selectedUris.isNotEmpty()) {
-            Log.d("ImagePickButton", "Selected URIs: $selectedUris")
+            Logger.d("ImagePickButton") { "Selected URIs: $selectedUris" }
             // Check if we should skip crop based on settings
             if (settings.displaySetting.skipCropImage) {
                 // Skip crop, directly add images
@@ -939,7 +939,7 @@ private fun ImagePickButton(onAddImages: (List<Uri>) -> Unit = {}) {
                 }
             }
         } else {
-            Log.d("ImagePickButton", "No images selected")
+            Logger.d("ImagePickButton") { "No images selected" }
         }
     }
 

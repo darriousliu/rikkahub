@@ -35,7 +35,7 @@ val appModule = module {
     }
 
     single<EmojiData> {
-        EmojiUtils.loadEmoji(get())
+        EmojiUtils.loadEmoji()
     }
 
     single {

@@ -72,9 +72,6 @@ kotlin {
             implementation(libs.firebase.crashlytics)
             implementation(libs.firebase.config)
 
-            // Room
-            implementation(libs.androidx.room.paging)
-
             // Image metadata extractor
             // https://github.com/drewnoakes/metadata-extractor
             implementation(libs.metadata.extractor)
@@ -110,6 +107,9 @@ kotlin {
             implementation(libs.jlatexmath.font.greek)
             implementation(libs.jlatexmath.font.cyrillic)
 
+            implementation(libs.ktor.client.okhttp)
+        }
+        commonMain.dependencies {
             // modules
             implementation(project(":ai"))
             implementation(project(":highlight"))
@@ -117,10 +117,6 @@ kotlin {
             implementation(project(":rag"))
             implementation(project(":tts"))
             implementation(project(":common"))
-
-            implementation(libs.ktor.client.okhttp)
-        }
-        commonMain.dependencies {
             // Compose
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -160,6 +156,7 @@ kotlin {
 
             // Room
             implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.room.paging)
 
 
             // Paging3
@@ -188,6 +185,9 @@ kotlin {
             // Ktor
             implementation(libs.bundles.ktor)
             implementation(libs.ktorfit.lib.lite)
+
+            // ksoup
+            implementation(libs.ksoup)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -328,7 +328,10 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":app:baselineprofile"))
 
-    ksp(libs.androidx.room.compiler)
+    kspAndroid(libs.androidx.room.compiler)
+    kspIosArm64(libs.androidx.room.compiler)
+    kspIosSimulatorArm64(libs.androidx.room.compiler)
+    kspIosX64(libs.androidx.room.compiler)
 
     // Leak Canary
     debugImplementation(libs.leakcanary.android)

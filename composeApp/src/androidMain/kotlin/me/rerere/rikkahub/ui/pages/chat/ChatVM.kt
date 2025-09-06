@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -17,6 +16,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.google.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -183,7 +183,7 @@ class ChatVM(
     val conversations =
         settings.map { it.assistantId }.distinctUntilChanged().flatMapLatest { assistantId ->
             conversationRepo.getConversationsOfAssistant(assistantId).catch {
-                Log.e(TAG, "conversationRepo.getAllConversations: ", it)
+                Logger.e(TAG, it) { "conversationRepo.getAllConversations: " }
                 errorFlow.emit(it)
                 emit(emptyList())
             }
@@ -570,7 +570,7 @@ class ChatVM(
                         model = model, temperature = 0.3f, thinkingBudget = 0
                     ),
                 )
-                Log.i(TAG, "generateTitle: ${result.choices[0].message?.toText()}")
+                Logger.i(TAG) { "generateTitle: ${result.choices[0].message?.toText()}" }
                 // 生成完，conversation可能不是最新了，因此需要重新获取
                 conversationRepo.getConversationById(conversation.id)?.let {
                     saveConversation(
@@ -610,7 +610,7 @@ class ChatVM(
                 )
                 val suggestions = result.choices[0].message?.toText()?.split("\n")?.map { it.trim() }
                     ?.filter { it.isNotBlank() } ?: emptyList()
-                Log.i(TAG, "generateSuggestion: ${result.choices[0]}")
+                Logger.i(TAG) { "generateSuggestion: ${result.choices[0]}" }
                 saveConversation(
                     _conversation.value.copy(
                         chatSuggestions = suggestions.take(10),
@@ -796,7 +796,7 @@ class ChatVM(
         }
         if (deletedFiles.isNotEmpty()) {
             context.deleteChatFiles(deletedFiles)
-            Log.w(TAG, "checkFilesDelete: $deletedFiles")
+            Logger.w(TAG) { "checkFilesDelete: $deletedFiles" }
         }
     }
 

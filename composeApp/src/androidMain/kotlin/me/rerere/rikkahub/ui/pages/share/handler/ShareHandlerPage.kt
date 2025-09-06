@@ -1,7 +1,6 @@
 package me.rerere.rikkahub.ui.pages.share.handler
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import coil3.toCoilUri
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -88,7 +88,7 @@ fun ShareHandlerPage(text: String, image: String?) {
                             navigateToChatPage(
                                 navController = navController,
                                 initText = vm.shareText.base64Encode(),
-                                initFiles = image?.let { listOf(it.toUri()) } ?: emptyList()
+                                initFiles = image?.let { listOf(it.toUri().toCoilUri()) } ?: emptyList()
                             )
                         }
                     },

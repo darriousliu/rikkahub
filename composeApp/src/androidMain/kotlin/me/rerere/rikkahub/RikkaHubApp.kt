@@ -7,7 +7,9 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.utils.toFile
 import me.rerere.rikkahub.di.appModule
@@ -84,5 +86,3 @@ class RikkaHubApp : Application() {
         get<AppScope>().cancel()
     }
 }
-
-class AppScope : CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default)
