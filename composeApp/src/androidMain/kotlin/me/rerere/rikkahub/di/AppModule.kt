@@ -19,7 +19,7 @@ val appModule = module {
     single<Json> { JsonInstant }
 
     single {
-        Highlighter(get())
+        Highlighter(get<AppScope>())
     }
 
     single {

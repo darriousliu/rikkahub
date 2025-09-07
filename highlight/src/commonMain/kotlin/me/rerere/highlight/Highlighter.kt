@@ -1,7 +1,17 @@
 package me.rerere.highlight
 
+import co.touchlab.kermit.Logger
+import com.dokar.quickjs.QuickJs
+import com.dokar.quickjs.binding.JsObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -9,16 +19,82 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.highlight.HighlightToken.Token.StringContent
+import rikkahub.highlight.generated.resources.Res
 
-expect class Highlighter {
-    suspend fun highlight(code: String, language: String): ArrayList<HighlightToken>
-    fun destroy()
+class Highlighter(appScope: CoroutineScope) {
+    init {
+        appScope.launch {
+            QuickJs.Companion
+
+            context // init context
+        }
+    }
+
+    private val script: String by lazy {
+        runBlocking {
+            Res.readBytes("files/prism.js").decodeToString()
+        }
+    }
+
+    private val context: QuickJs by lazy {
+        runBlocking {
+            QuickJs.create(Dispatchers.Default).also {
+                it.evaluate<Boolean>(script)
+            }
+        }
+    }
+
+    suspend fun highlight(code: String, language: String) = withContext(Dispatchers.Default) {
+        runCatching {
+            val codeJson = Json.encodeToString(code)
+            val languageJson = Json.encodeToString(language)
+
+            val result = context.evaluate<Any>(
+                code = "highlight($codeJson, $languageJson)",
+            )
+            require(result is List<*>) {
+                "highlight result must be an array"
+            }
+            val tokens = arrayListOf<HighlightToken>()
+            for (i in 0 until result.size) {
+                when (val element = result[i]) {
+                    is String -> tokens.add(
+                        HighlightToken.Plain(
+                            content = element,
+                        )
+                    )
+
+                    is JsObject -> {
+                        val token = format.decodeFromString(
+                            HighlightTokenSerializer,
+                            format.encodeToString(JsObjectSerializer, element)
+                        )
+                        tokens.add(token)
+                    }
+
+                    else -> error("Unknown type: ${element!!::class.qualifiedName}")
+                }
+            }
+//            result.release()
+            tokens
+        }.onFailure {
+            Logger.e("Highlighter") { "language:  $language\ncode: $code" }
+            it.printStackTrace()
+        }.getOrThrow()
+    }
+
+    fun destroy() {
+        context.close()
+    }
 }
 
 internal val format by lazy {
@@ -116,6 +192,52 @@ object HighlightTokenSerializer : KSerializer<HighlightToken.Token> {
             }
 
             else -> error("Unknown content type: ${content::class.qualifiedName}")
+        }
+    }
+}
+
+object JsObjectSerializer : KSerializer<JsObject> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("JsObject")
+
+    override fun serialize(encoder: Encoder, value: JsObject) {
+        val jsonMap = value.mapValues { (_, value) ->
+            convertToJsonElement(value)
+        }
+        encoder.encodeSerializableValue(
+            MapSerializer(String.serializer(), JsonElement.serializer()),
+            jsonMap
+        )
+    }
+
+    override fun deserialize(decoder: Decoder): JsObject {
+        throw UnsupportedOperationException("JsObject is not supported in common target")
+    }
+
+    /**
+     * 将任意值转换为JsonElement
+     */
+    private fun convertToJsonElement(value: Any?): JsonElement {
+        return when (value) {
+            null -> JsonNull
+            is String -> JsonPrimitive(value)
+            is Number -> JsonPrimitive(value)
+            is Boolean -> JsonPrimitive(value)
+            is List<*> -> JsonArray(value.map { convertToJsonElement(it) })
+            is Map<*, *> -> {
+                val jsonObject = value.entries.associate { (k, v) ->
+                    k.toString() to convertToJsonElement(v)
+                }
+                JsonObject(jsonObject)
+            }
+
+            else -> {
+                // 对于自定义对象，尝试使用反射序列化
+                try {
+                    format.encodeToJsonElement(value)
+                } catch (e: Exception) {
+                    JsonPrimitive(value.toString()) // 降级为字符串
+                }
+            }
         }
     }
 }
