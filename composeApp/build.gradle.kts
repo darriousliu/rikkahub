@@ -16,6 +16,7 @@ plugins {
     id("multiplatform")
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.ktorfit)
+    alias(libs.plugins.androidx.room)
 }
 
 kotlin {
@@ -154,7 +155,7 @@ kotlin {
             // Room
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.room.paging)
-
+            implementation(libs.androidx.sqlite.bundled)
 
             // Paging3
 //            implementation(libs.androidx.paging.runtime)
@@ -305,8 +306,8 @@ tasks.register("buildAll") {
     description = "Build both APK and AAB"
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 chaquopy {
@@ -325,6 +326,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":app:baselineprofile"))
 
+    kspCommonMainMetadata(libs.androidx.room.compiler)
     kspAndroid(libs.androidx.room.compiler)
     kspIosArm64(libs.androidx.room.compiler)
     kspIosSimulatorArm64(libs.androidx.room.compiler)

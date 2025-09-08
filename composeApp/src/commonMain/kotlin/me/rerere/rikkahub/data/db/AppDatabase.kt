@@ -1,11 +1,6 @@
 package me.rerere.rikkahub.data.db
 
-import androidx.room.AutoMigration
-import androidx.room.Database
-import androidx.room.DeleteColumn
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverter
-import androidx.room.TypeConverters
+import androidx.room.*
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
@@ -24,6 +19,12 @@ import me.rerere.rikkahub.utils.JsonInstant
 
 private const val TAG = "AppDatabase"
 
+@Suppress("KotlinNoActualForExpect")
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
+    override fun initialize(): AppDatabase
+}
+
+@ConstructedBy(AppDatabaseConstructor::class)
 @Database(
     entities = [ConversationEntity::class, MemoryEntity::class, GenMediaEntity::class],
     version = 11,

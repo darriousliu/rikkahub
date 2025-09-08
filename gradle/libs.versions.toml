@@ -36,6 +36,7 @@ coil = "3.3.0"
 quickjs = "3.2.3"
 quickjsKt = "1.0.0-alpha13"
 room = "2.7.2"
+sqlite = "2.5.2"
 koin-bom = "4.1.1"
 datastore = "1.1.7"
 serialization-json = "1.9.0"
@@ -109,6 +110,7 @@ androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecy
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
@@ -200,3 +202,4 @@ baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprof
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
+androidx-room = { id = "androidx.room", version.ref = "room" }
