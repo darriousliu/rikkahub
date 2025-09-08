@@ -4,23 +4,11 @@ import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.reinterpret
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.utils.retainBridgeAs
 import platform.CoreServices.kUTTypeJPEG
-import platform.Foundation.NSData
-import platform.Foundation.NSDictionary
-import platform.Foundation.NSMutableData
-import platform.Foundation.NSURL
-import platform.Foundation.base64EncodedStringWithOptions
-import platform.Foundation.create
-import platform.Foundation.dataWithContentsOfFile
-import platform.Foundation.getBytes
-import platform.ImageIO.CGImageDestinationAddImage
-import platform.ImageIO.CGImageDestinationCreateWithData
-import platform.ImageIO.CGImageDestinationFinalize
-import platform.ImageIO.CGImageSourceCreateImageAtIndex
-import platform.ImageIO.CGImageSourceCreateWithData
-import platform.ImageIO.kCGImageDestinationLossyCompressionQuality
+import platform.Foundation.*
+import platform.ImageIO.*
 
 actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
     when {
@@ -54,7 +42,7 @@ actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String>
 
 private fun convertToJpeg(imageData: NSData): NSData? {
     // 创建CGImageSource
-    val imageSource = CGImageSourceCreateWithData(imageData.reinterpret(), null)
+    val imageSource = CGImageSourceCreateWithData(imageData.retainBridgeAs(), null)
         ?: return null
 
     // 获取第一张图片
@@ -66,7 +54,7 @@ private fun convertToJpeg(imageData: NSData): NSData? {
 
     // 创建CGImageDestination，指定JPEG格式
     val imageDestination = CGImageDestinationCreateWithData(
-        mutableData.reinterpret(),
+        mutableData.retainBridgeAs(),
         kUTTypeJPEG,
         1u,
         null
@@ -79,7 +67,7 @@ private fun convertToJpeg(imageData: NSData): NSData? {
     val optionsDict = options.toNSDictionary()
 
     // 添加图片到destination
-    CGImageDestinationAddImage(imageDestination, cgImage, optionsDict.reinterpret())
+    CGImageDestinationAddImage(imageDestination, cgImage, optionsDict.retainBridgeAs())
 
     // 完成写入
     return if (CGImageDestinationFinalize(imageDestination)) {
@@ -147,4 +135,4 @@ private fun guessMimeTypeFromData(data: NSData): String {
 }
 
 // 扩展函数：将Map转换为NSDictionary
-private fun Map<Any?, Any?>.toNSDictionary(): NSDictionary = NSDictionary.create(this)
+private fun Map<*, *>.toNSDictionary(): NSDictionary = NSDictionary.create(this)
