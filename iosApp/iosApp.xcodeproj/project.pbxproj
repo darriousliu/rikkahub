@@ -6,8 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C0EC1C6E2E6EEDFB0090EE7D /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = C0EC1C6D2E6EEDFB0090EE7D /* FirebaseAnalytics */; };
+		C0EC1C702E6EEDFB0090EE7D /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C0EC1C6F2E6EEDFB0090EE7D /* FirebaseCrashlytics */; };
+		C0EC1C722E6EEDFB0090EE7D /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = C0EC1C712E6EEDFB0090EE7D /* FirebaseRemoteConfig */; };
+		C0EC1C742E6EEFB80090EE7D /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0EC1C732E6EEFB80090EE7D /* FirebaseCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		B9DA97B12DC1472C00A4DA20 /* MyApplication.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyApplication.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B9DA97B12DC1472C00A4DA20 /* RikkaHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RikkaHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -41,6 +48,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0EC1C722E6EEDFB0090EE7D /* FirebaseRemoteConfig in Frameworks */,
+				C0EC1C6E2E6EEDFB0090EE7D /* FirebaseAnalytics in Frameworks */,
+				C0EC1C742E6EEFB80090EE7D /* FirebaseCore in Frameworks */,
+				C0EC1C702E6EEDFB0090EE7D /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,7 +70,7 @@
 		B9DA97B22DC1472C00A4DA20 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B9DA97B12DC1472C00A4DA20 /* MyApplication.app */,
+				B9DA97B12DC1472C00A4DA20 /* RikkaHub.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,9 +96,13 @@
 			);
 			name = iosApp;
 			packageProductDependencies = (
+				C0EC1C6D2E6EEDFB0090EE7D /* FirebaseAnalytics */,
+				C0EC1C6F2E6EEDFB0090EE7D /* FirebaseCrashlytics */,
+				C0EC1C712E6EEDFB0090EE7D /* FirebaseRemoteConfig */,
+				C0EC1C732E6EEFB80090EE7D /* FirebaseCore */,
 			);
 			productName = iosApp;
-			productReference = B9DA97B12DC1472C00A4DA20 /* MyApplication.app */;
+			productReference = B9DA97B12DC1472C00A4DA20 /* RikkaHub.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -114,6 +129,9 @@
 			);
 			mainGroup = B9DA97A82DC1472C00A4DA20;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C0EC1C6C2E6EEDFB0090EE7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = B9DA97B22DC1472C00A4DA20 /* Products */;
 			projectDirPath = "";
@@ -313,6 +331,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_LDFLAGS = "-ObjC";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -346,6 +365,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_LDFLAGS = "-ObjC";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -374,6 +394,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C0EC1C6C2E6EEDFB0090EE7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C0EC1C6D2E6EEDFB0090EE7D /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0EC1C6C2E6EEDFB0090EE7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		C0EC1C6F2E6EEDFB0090EE7D /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0EC1C6C2E6EEDFB0090EE7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		C0EC1C712E6EEDFB0090EE7D /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0EC1C6C2E6EEDFB0090EE7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
+		};
+		C0EC1C732E6EEFB80090EE7D /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0EC1C6C2E6EEDFB0090EE7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B9DA97A92DC1472C00A4DA20 /* Project object */;
 }

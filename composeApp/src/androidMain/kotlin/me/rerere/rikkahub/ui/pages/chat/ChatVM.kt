@@ -6,50 +6,25 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import co.touchlab.kermit.Logger
-import com.google.firebase.analytics.FirebaseAnalytics
+import dev.gitlive.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.Tool
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.TextGenerationParams
-import me.rerere.ai.ui.UIMessage
-import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.ui.finishReasoning
-import me.rerere.ai.ui.isEmptyInputMessage
-import me.rerere.ai.ui.truncate
+import me.rerere.ai.ui.*
 import me.rerere.common.android.Logging
 import me.rerere.rikkahub.CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID
 import me.rerere.rikkahub.R
@@ -57,18 +32,8 @@ import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.ai.GenerationChunk
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.LocalTools
-import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
-import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
-import me.rerere.rikkahub.data.ai.transformers.OcrTransformer
-import me.rerere.rikkahub.data.ai.transformers.PlaceholderTransformer
-import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
-import me.rerere.rikkahub.data.ai.transformers.ThinkTagTransformer
-import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.datastore.findModelById
-import me.rerere.rikkahub.data.datastore.findProvider
-import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.datastore.getCurrentChatModel
+import me.rerere.rikkahub.data.ai.transformers.*
+import me.rerere.rikkahub.data.datastore.*
 import me.rerere.rikkahub.data.mcp.McpManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
@@ -77,12 +42,7 @@ import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
-import me.rerere.rikkahub.utils.JsonInstantPretty
-import me.rerere.rikkahub.utils.UiState
-import me.rerere.rikkahub.utils.UpdateChecker
-import me.rerere.rikkahub.utils.applyPlaceholders
-import me.rerere.rikkahub.utils.createChatFilesByContents
-import me.rerere.rikkahub.utils.deleteChatFiles
+import me.rerere.rikkahub.utils.*
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
 import java.util.Locale
@@ -482,12 +442,14 @@ class ChatVM(
 
                 // Log analytics event
                 val usage = conversation.value.currentMessages.lastOrNull()?.usage
-                analytics.logEvent("ai_generated_done", Bundle().apply {
-                    putInt("inputTokens", usage?.promptTokens ?: 0)
-                    putInt("outputTokens", usage?.completionTokens ?: 0)
-                    putInt("cachedTokens", usage?.cachedTokens ?: 0)
-                    putInt("totalTokens", usage?.totalTokens ?: 0)
-                })
+                analytics.logEvent(
+                    "ai_generated_done", mapOf(
+                        "inputTokens" to (usage?.promptTokens ?: 0),
+                        "outputTokens" to (usage?.completionTokens ?: 0),
+                        "cachedTokens" to (usage?.cachedTokens ?: 0),
+                        "totalTokens" to (usage?.totalTokens ?: 0)
+                    )
+                )
 
                 // Show notification if app is not in foreground
                 if (!isForeground.value && settings.value.displaySetting.enableNotificationOnMessageGeneration) {

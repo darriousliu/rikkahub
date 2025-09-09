@@ -49,6 +49,7 @@ image-viewer = "1.1.0-alpha.7"
 google-services = "4.4.3"
 firebase-bom = "34.2.0"
 firebase-crashlytics = "3.0.6"
+gitlive-firebase = "2.3.0"
 jsoup = "1.21.2"
 zxing = "3.5.3"
 quickie-bundled = "1.11.0"
@@ -181,7 +182,11 @@ atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu"
 ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
 ksoup-network = { module = "com.fleeksoft.ksoup:ksoup-network", version.ref = "ksoup" }
 quickjs-kt = { module = "io.github.dokar3:quickjs-kt", version.ref = "quickjsKt" }
-quickjs-kt-converter-serialization = { module = "io.github.dokar3:quickjs-kt-converter-ktxserialization", version.ref="quickjsKt" }
+quickjs-kt-converter-serialization = { module = "io.github.dokar3:quickjs-kt-converter-ktxserialization", version.ref = "quickjsKt" }
+
+gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "gitlive-firebase" }
+gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "gitlive-firebase" }
+gitlive-firebase-config = { module = "dev.gitlive:firebase-config", version.ref = "gitlive-firebase" }
 
 
 [bundles]

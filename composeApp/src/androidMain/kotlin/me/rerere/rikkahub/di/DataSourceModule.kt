@@ -2,6 +2,7 @@ package me.rerere.rikkahub.di
 
 import androidx.room.Room
 import de.jensklingenberg.ktorfit.Ktorfit
+import dev.gitlive.firebase.remoteconfig.FirebaseRemoteConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpRequestRetry
@@ -97,7 +98,7 @@ val dataSourceModule = module {
                 level = LogLevel.HEADERS
             }
             install(AIRequestInterceptorPlugin) {
-                remoteConfig = get()
+                remoteConfig = get<FirebaseRemoteConfig>()
             }
         }
     }

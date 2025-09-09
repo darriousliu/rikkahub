@@ -26,7 +26,7 @@ kotlin {
         }
     }
     listOf(
-        iosX64(),
+//        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
@@ -326,11 +326,10 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     baselineProfile(project(":app:baselineprofile"))
 
-    kspCommonMainMetadata(libs.androidx.room.compiler)
     kspAndroid(libs.androidx.room.compiler)
     kspIosArm64(libs.androidx.room.compiler)
     kspIosSimulatorArm64(libs.androidx.room.compiler)
-    kspIosX64(libs.androidx.room.compiler)
+//    kspIosX64(libs.androidx.room.compiler)
 
     // Leak Canary
     debugImplementation(libs.leakcanary.android)

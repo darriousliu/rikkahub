@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.ai
 
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import dev.gitlive.firebase.remoteconfig.FirebaseRemoteConfig
+import dev.gitlive.firebase.remoteconfig.get
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpClientPlugin
 import io.ktor.client.plugins.HttpSend
@@ -11,11 +12,11 @@ import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.encodedPath
 import io.ktor.util.AttributeKey
+import io.ktor.util.decodeBase64String
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonObject
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
-import kotlin.io.encoding.Base64
 
 class AIRequestInterceptorPlugin(private val remoteConfig: FirebaseRemoteConfig) {
     companion object : HttpClientPlugin<AIRequestConfig, AIRequestInterceptorPlugin> {
@@ -54,10 +55,10 @@ class AIRequestInterceptorPlugin(private val remoteConfig: FirebaseRemoteConfig)
         ) {
             val bodyJson = request.readBodyAsJson()
             val model = bodyJson?.jsonObject?.get("model")?.jsonPrimitiveOrNull?.content
-            val freeModels = remoteConfig.getString("silicon_cloud_free_models").split(",")
+            val freeModels = remoteConfig.get<String>("silicon_cloud_free_models").split(",")
 
             if (model.isNullOrEmpty() || model in freeModels) {
-                val apiKey = String(Base64.decode(remoteConfig.getString("silicon_cloud_api_key")))
+                val apiKey = remoteConfig.get<String>("silicon_cloud_api_key").decodeBase64String()
                 request.headers["Authorization"] = "Bearer $apiKey"
             }
         }
@@ -86,7 +87,7 @@ private fun HttpRequestBuilder.readBodyAsJson(): JsonElement? {
         is ByteArrayContent -> {
             if (body.contentType?.match(ContentType.Application.Json) == true) {
                 try {
-                    val text = String(body.bytes())
+                    val text = body.bytes().decodeToString()
                     JsonInstant.parseToJsonElement(text)
                 } catch (e: Exception) {
                     null
