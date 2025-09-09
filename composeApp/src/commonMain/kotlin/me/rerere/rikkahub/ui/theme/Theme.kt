@@ -3,12 +3,7 @@ package me.rerere.rikkahub.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import kotlinx.serialization.Serializable
 import me.rerere.rikkahub.ui.hooks.rememberAmoledDarkMode
@@ -32,7 +27,6 @@ enum class ColorMode {
 
 @Composable
 fun RikkahubTheme(
-    dynamicColorScheme: (dynamicColor: Boolean, darkTheme: Boolean) -> ColorScheme? = { _, _ -> null },
     platformConfigure: @Composable (darkTheme: Boolean) -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -87,3 +81,6 @@ val MaterialTheme.extendColors
     @Composable
     @ReadOnlyComposable
     get() = LocalExtendColors.current
+
+@Composable
+expect fun dynamicColorScheme(dynamicColor: Boolean, darkTheme: Boolean): ColorScheme?

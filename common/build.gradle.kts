@@ -12,6 +12,9 @@ kotlin {
 
             api(libs.ktor.client.okhttp)
 
+            // pebble (template engine)
+            api(libs.pebble)
+
             // floating
             // https://github.com/Petterpx/FloatingX
             api("io.github.petterpx:floatingx:2.3.7")

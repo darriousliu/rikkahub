@@ -1,8 +1,6 @@
 package me.rerere.rikkahub
 
-import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
@@ -17,8 +15,6 @@ import org.koin.compose.getKoin
 
 @Composable
 fun App(
-    navStack: NavHostController,
-    dynamicColorScheme: (dynamicColor: Boolean, darkTheme: Boolean) -> ColorScheme? = { _, _ -> null },
     platformConfigure: @Composable (darkTheme: Boolean) -> Unit = {},
     content: @Composable () -> Unit
 ) {
@@ -33,8 +29,7 @@ fun App(
             .build()
     }
     RikkahubTheme(
-        dynamicColorScheme = dynamicColorScheme,
-        platformConfigure = platformConfigure
+        platformConfigure = platformConfigure,
     ) {
         content()
     }

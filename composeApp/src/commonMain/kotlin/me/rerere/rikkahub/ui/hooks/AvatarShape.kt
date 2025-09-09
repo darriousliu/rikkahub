@@ -1,16 +1,9 @@
 package me.rerere.rikkahub.ui.hooks
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialShapes
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Shape
-import kotlin.math.roundToInt
 
 @Composable
 fun rememberAvatarShape(loading: Boolean): Shape {
@@ -25,5 +18,7 @@ fun rememberAvatarShape(loading: Boolean): Shape {
             ),
         )
     )
-    return if (loading) MaterialShapes.Cookie6Sided.toShape(rotateAngle.value.roundToInt()) else CircleShape
+    // TODO: Re-enable when Material3 support is better
+//    return if (loading) MaterialShapes.Cookie6Sided.toShape(rotateAngle.value.roundToInt()) else CircleShape
+    return CircleShape
 }
