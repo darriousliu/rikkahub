@@ -16,7 +16,7 @@ import java.io.StringReader
 import java.io.StringWriter
 import kotlin.time.Clock
 
-class TemplateTransformer(
+actual class TemplateTransformer(
     private val engine: PebbleEngine,
     private val settingsStore: SettingsStore
 ) : InputMessageTransformer {

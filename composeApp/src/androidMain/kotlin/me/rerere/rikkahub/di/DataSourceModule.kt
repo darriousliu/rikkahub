@@ -14,6 +14,7 @@ import io.ktor.client.plugins.sse.SSE
 import io.ktor.serialization.kotlinx.json.json
 import io.pebbletemplates.pebble.PebbleEngine
 import me.rerere.ai.provider.ProviderManager
+import me.rerere.common.utils.PlatformPebbleEngine
 import me.rerere.rikkahub.data.ai.AIRequestInterceptorPlugin
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
@@ -40,6 +41,10 @@ val dataSourceModule = module {
 
     single {
         AssistantTemplateLoader(settingsStore = get())
+    }
+
+    single {
+        PlatformPebbleEngine(get())
     }
 
     single {

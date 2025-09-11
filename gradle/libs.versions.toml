@@ -34,7 +34,7 @@ navigationCompose = "2.9.0-rc01"
 #retrofit = "3.0.0"
 coil = "3.3.0"
 quickjs = "3.2.3"
-quickjsKt = "1.0.0-alpha13"
+quickjsKt = "1.0.0-beta01"
 room = "2.7.2"
 sqlite = "2.5.2"
 koin-bom = "4.1.1"
@@ -181,8 +181,8 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
 ksoup-network = { module = "com.fleeksoft.ksoup:ksoup-network", version.ref = "ksoup" }
-quickjs-kt = { module = "io.github.dokar3:quickjs-kt", version.ref = "quickjsKt" }
-quickjs-kt-converter-serialization = { module = "io.github.dokar3:quickjs-kt-converter-ktxserialization", version.ref = "quickjsKt" }
+quickjs-kt = { module = "io.github.darriousliu:quickjs-kt", version.ref = "quickjsKt" }
+quickjs-kt-converter-serialization = { module = "io.github.darriousliu:quickjs-kt-converter-ktxserialization", version.ref = "quickjsKt" }
 
 gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "gitlive-firebase" }
 gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "gitlive-firebase" }
