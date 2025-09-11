@@ -800,7 +800,7 @@ class ChatVM(
         }
     }
 
-    fun translateMessage(message: UIMessage, targetLanguage: Locale) {
+    fun translateMessage(message: UIMessage, targetLanguage: androidx.compose.ui.text.intl.Locale) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val settings = settingsStore.settingsFlow.first()

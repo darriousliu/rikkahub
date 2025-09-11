@@ -1,20 +1,19 @@
 package me.rerere.rikkahub.data.ai
 
-import android.content.Context
-import com.whl.quickjs.wrapper.QuickJSContext
-import com.whl.quickjs.wrapper.QuickJSObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
+import com.dokar.quickjs.QuickJs
+import com.dokar.quickjs.binding.JsObject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.json.*
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
+import me.rerere.highlight.JsObjectSerializer
 
 
+class LocalTools() {
+    private val json = Json {
+        ignoreUnknownKeys = true
+    }
 
-class LocalTools(private val context: Context) {
     val javascriptTool by lazy {
         Tool(
             name = "eval_javascript",
@@ -30,13 +29,13 @@ class LocalTools(private val context: Context) {
                 )
             },
             execute = {
-                val context = QuickJSContext.create()
+                val context = QuickJs.create(Dispatchers.Default)
                 val code = it.jsonObject["code"]?.jsonPrimitive?.contentOrNull
-                val result = context.evaluate(code)
+                val result = context.evaluate<Any>(code.orEmpty())
                 buildJsonObject {
                     put(
                         "result", when (result) {
-                            is QuickJSObject -> JsonPrimitive(result.stringify())
+                            is JsObject -> JsonPrimitive(json.encodeToString(JsObjectSerializer, result))
                             else -> JsonPrimitive(result.toString())
                         }
                     )

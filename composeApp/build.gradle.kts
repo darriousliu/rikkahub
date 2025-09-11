@@ -185,6 +185,10 @@ kotlin {
 
             // ksoup
             implementation(libs.ksoup)
+
+            // quickjs
+            implementation(libs.quickjs.kt)
+            implementation(libs.quickjs.kt.converter.serialization)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
