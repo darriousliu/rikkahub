@@ -4,13 +4,12 @@ import android.content.Context
 import android.os.BatteryManager
 import android.os.Build
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import me.rerere.ai.provider.Model
-import me.rerere.rikkahub.R
 import me.rerere.ai.ui.InputMessageTransformer
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import org.koin.core.component.KoinComponent
@@ -24,41 +23,9 @@ import java.time.temporal.Temporal
 import java.util.Locale
 import java.util.TimeZone
 
-data class PlaceholderCtx(
-    val context: Context,
-    val settingsStore: SettingsStore,
-    val model: Model
-)
 
-interface PlaceholderProvider {
-    val placeholders: Map<String, PlaceholderInfo>
-}
-
-data class PlaceholderInfo(
-    val displayName: @Composable () -> Unit,
-    val resolver: (PlaceholderCtx) -> String
-)
-
-class PlaceholderBuilder {
-    private val placeholders = mutableMapOf<String, PlaceholderInfo>()
-
-    fun placeholder(
-        key: String,
-        displayName: @Composable () -> Unit,
-        resolver: (PlaceholderCtx) -> String
-    ) {
-        placeholders[key] = PlaceholderInfo(displayName, resolver)
-    }
-
-    fun build(): Map<String, PlaceholderInfo> = placeholders.toMap()
-}
-
-fun buildPlaceholders(block: PlaceholderBuilder.() -> Unit): Map<String, PlaceholderInfo> {
-    return PlaceholderBuilder().apply(block).build()
-}
-
-object DefaultPlaceholderProvider : PlaceholderProvider {
-    override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
+actual object DefaultPlaceholderProvider : PlaceholderProvider {
+    actual override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
         placeholder("cur_date", { Text(stringResource(R.string.placeholder_current_date)) }) {
             LocalDate.now().toDateString()
         }

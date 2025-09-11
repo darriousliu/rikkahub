@@ -1,19 +1,19 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import android.content.Context
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.OutputMessageTransformer
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.PlatformContext
 import kotlin.time.Clock
 
-private val THINKING_REGEX = Regex("<think>([\\s\\S]*?)(?:</think>|$)", RegexOption.DOT_MATCHES_ALL)
+private val THINKING_REGEX = Regex("<think>([\\s\\S]*?)(?:</think>|$)")
 
 // 部分供应商不会返回reasoning parts, 所以需要这个transformer
 object ThinkTagTransformer : OutputMessageTransformer {
     override suspend fun visualTransform(
-        context: Context,
+        context: PlatformContext,
         messages: List<UIMessage>,
         model: Model
     ): List<UIMessage> {

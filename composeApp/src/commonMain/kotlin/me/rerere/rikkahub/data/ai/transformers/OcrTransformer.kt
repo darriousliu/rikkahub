@@ -1,11 +1,11 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import android.content.Context
 import co.touchlab.kermit.Logger
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.cacheDir
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -17,6 +17,7 @@ import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.InputMessageTransformer
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.PlatformContext
 import me.rerere.common.cache.LruCache
 import me.rerere.common.cache.SingleFileCacheStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -46,7 +47,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         )
     }
 
-    override suspend fun transform(context: Context, messages: List<UIMessage>, model: Model): List<UIMessage> {
+    override suspend fun transform(context: PlatformContext, messages: List<UIMessage>, model: Model): List<UIMessage> {
         if (model.inputModalities.contains(Modality.IMAGE)) {
             // 如果模型支持图片输入，直接返回原始消息
             return messages
