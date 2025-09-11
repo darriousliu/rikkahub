@@ -112,7 +112,6 @@ kotlin {
             implementation(project(":ai"))
             implementation(project(":highlight"))
             implementation(project(":search"))
-            implementation(project(":rag"))
             implementation(project(":tts"))
             implementation(project(":common"))
             // Compose
