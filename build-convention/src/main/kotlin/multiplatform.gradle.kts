@@ -12,7 +12,9 @@ kotlin {
             "kotlinx.cinterop.ExperimentalForeignApi",
             "kotlinx.cinterop.BetaInteropApi",
             "kotlin.uuid.ExperimentalUuidApi",
-            "androidx.compose.animation.ExperimentalSharedTransitionApi"
+            "androidx.compose.animation.ExperimentalSharedTransitionApi",
+            "androidx.compose.material3.ExperimentalMaterial3Api",
+            "androidx.compose.ui.ExperimentalComposeUiApi"
         )
     }
 
