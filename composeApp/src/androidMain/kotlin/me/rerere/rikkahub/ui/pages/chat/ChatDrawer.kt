@@ -75,7 +75,6 @@ import me.rerere.rikkahub.utils.toLocalDateTime
 import org.koin.compose.koinInject
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlin.time.toJavaInstant
 import kotlin.uuid.Uuid
 
 @Composable
@@ -354,7 +353,7 @@ private fun UpdateCard(vm: ChatVM) {
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = Instant.parse(info.publishedAt).toJavaInstant().toLocalDateTime(),
+                        text = Instant.parse(info.publishedAt).toLocalDateTime(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )

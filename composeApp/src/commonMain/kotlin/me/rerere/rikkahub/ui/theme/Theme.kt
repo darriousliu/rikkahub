@@ -3,12 +3,9 @@ package me.rerere.rikkahub.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -50,12 +47,10 @@ fun RikkahubTheme(
 
     val colorScheme = dynamicColorScheme(settings.dynamicColor, darkTheme) ?: when {
         darkTheme -> findPresetTheme(settings.themeId).getColorScheme(
-            type = settings.themeType,
             dark = true
         )
 
         else -> findPresetTheme(settings.themeId).getColorScheme(
-            type = settings.themeType,
             dark = false
         )
     }

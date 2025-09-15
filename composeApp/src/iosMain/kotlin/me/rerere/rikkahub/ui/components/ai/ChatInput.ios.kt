@@ -7,6 +7,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil3.Uri
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.ui.hooks.ChatInputState
 
 @Composable
 internal actual fun ImagePickButton(onAddImages: (List<Uri>) -> Unit) {

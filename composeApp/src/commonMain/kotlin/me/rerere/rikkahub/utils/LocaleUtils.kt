@@ -50,7 +50,7 @@ fun Locale.getDisplayLanguageInEnglish(): String {
     return getDisplayLanguageInEnglish(this)
 }
 
-fun Locale.getDisplayLanguage(locale: Locale): String {
+fun Locale.getDisplayLanguage(locale: Locale = this): String {
     return getDisplayLanguage(this, locale)
 }
 

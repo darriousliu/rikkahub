@@ -1,18 +1,10 @@
 package me.rerere.rikkahub
 
 import android.app.Application
-import android.util.Log
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.remoteConfigSettings
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
@@ -24,9 +16,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
 
-private const val TAG = "RikkaHubApp"
-
-const val CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID = "chat_completed"
 
 class RikkaHubApp : Application() {
     override fun onCreate() {
@@ -69,12 +58,3 @@ class RikkaHubApp : Application() {
         get<AppScope>().cancel()
     }
 }
-
-class AppScope : CoroutineScope by CoroutineScope(
-    SupervisorJob()
-        + Dispatchers.Main
-        + CoroutineName("AppScope")
-        + CoroutineExceptionHandler { _, e ->
-            Log.e(TAG, "AppScope exception", e)
-        }
-)

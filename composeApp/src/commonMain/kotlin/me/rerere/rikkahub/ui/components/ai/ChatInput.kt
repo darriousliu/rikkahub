@@ -4,9 +4,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.content.MediaType
 import androidx.compose.foundation.content.ReceiveContentListener
 import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -52,6 +51,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,11 +74,16 @@ import coil3.Uri
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.toUri
-import com.composables.icons.lucide.*
+import com.composables.icons.lucide.ArrowUp
+import com.composables.icons.lucide.Eraser
+import com.composables.icons.lucide.Fullscreen
+import com.composables.icons.lucide.GraduationCap
+import com.composables.icons.lucide.Image
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Plus
+import com.composables.icons.lucide.X
+import com.composables.icons.lucide.Zap
 import com.dokar.sonner.ToastType
-import kotlinx.serialization.json.*
-import com.yalantis.ucrop.UCrop
-import com.yalantis.ucrop.UCropActivity
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
@@ -93,14 +98,26 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.ui.KeepScreenOn
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.deleteChatFiles
 import me.rerere.rikkahub.utils.isImeVisible
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.cancel_edit
+import rikkahub.composeapp.generated.resources.chat_input_placeholder
+import rikkahub.composeapp.generated.resources.chat_page_clear_context
+import rikkahub.composeapp.generated.resources.chat_page_learning_mode
+import rikkahub.composeapp.generated.resources.chat_page_learning_mode_desc
+import rikkahub.composeapp.generated.resources.chat_page_save
+import rikkahub.composeapp.generated.resources.editing
+import rikkahub.composeapp.generated.resources.more_options
+import rikkahub.composeapp.generated.resources.photo
+import rikkahub.composeapp.generated.resources.send
+import rikkahub.composeapp.generated.resources.stop
+import rikkahub.composeapp.generated.resources.web_search_disabled
+import rikkahub.composeapp.generated.resources.web_search_enabled
 import kotlin.time.Duration.Companion.seconds
-import kotlin.uuid.Uuid
 
 enum class ExpandState {
     Collapsed,

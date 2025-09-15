@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +38,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
-import io.ktor.client.HttpClient
 import me.rerere.highlight.Highlighter
 import me.rerere.highlight.LocalHighlighter
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -79,7 +79,6 @@ private const val TAG = "RouteActivity"
 
 class RouteActivity : ComponentActivity() {
     private val highlighter by inject<Highlighter>()
-    private val ktorClient by inject<HttpClient>()
     private val settingsStore by inject<SettingsStore>()
     private var navStack by mutableStateOf<NavHostController?>(null)
 

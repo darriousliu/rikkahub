@@ -1,19 +1,12 @@
 package me.rerere.rikkahub.service
 
-import android.Manifest
-import android.app.Application
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.util.Log
-import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
+import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
+import co.touchlab.kermit.Logger
+import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -28,7 +21,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -44,11 +36,9 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.truncate
+import me.rerere.common.PlatformContext
 import me.rerere.common.android.Logging
 import me.rerere.rikkahub.AppScope
-import me.rerere.rikkahub.CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID
-import me.rerere.rikkahub.R
-import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.ai.GenerationChunk
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.LocalTools
@@ -73,11 +63,14 @@ import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.applyPlaceholders
 import me.rerere.rikkahub.utils.deleteChatFiles
+import me.rerere.rikkahub.utils.getDisplayLanguage
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
-import java.time.Instant
-import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
+import org.jetbrains.compose.resources.getString
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.tools_warning
+import rikkahub.composeapp.generated.resources.translating
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatService"
@@ -99,7 +92,7 @@ private val outputTransformers by lazy {
 }
 
 class ChatService(
-    private val context: Application,
+    private val context: PlatformContext,
     private val appScope: AppScope,
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
@@ -111,10 +104,10 @@ class ChatService(
     val mcpManager: McpManager,
 ) {
     // 存储每个对话的状态
-    private val conversations = ConcurrentHashMap<Uuid, MutableStateFlow<Conversation>>()
+    private val conversations = ConcurrentMap<Uuid, MutableStateFlow<Conversation>>()
 
     // 记录哪些conversation有VM引用
-    private val conversationReferences = ConcurrentHashMap<Uuid, Int>()
+    private val conversationReferences = ConcurrentMap<Uuid, Int>()
 
     // 存储每个对话的生成任务状态
     private val _generationJobs = MutableStateFlow<Map<Uuid, Job?>>(emptyMap())
@@ -142,22 +135,19 @@ class ChatService(
     }
 
     init {
-        // 添加生命周期观察者
-        ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
+        init(lifecycleObserver)
     }
 
-    fun cleanup() = runCatching {
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(lifecycleObserver)
-        _generationJobs.value.values.forEach { it?.cancel() }
+    fun cleanup() {
+        cleanup(lifecycleObserver) {
+            _generationJobs.value.values.forEach { it?.cancel() }
+        }
     }
 
     // 添加引用
     fun addConversationReference(conversationId: Uuid) {
-        conversationReferences[conversationId] = conversationReferences.getOrDefault(conversationId, 0) + 1
-        Log.d(
-            TAG,
-            "Added reference for $conversationId (current references: ${conversationReferences[conversationId] ?: 0})"
-        )
+        conversationReferences[conversationId] = conversationReferences.getOrElse(conversationId) { 0 } + 1
+        Logger.d(TAG) { "Added reference for $conversationId (current references: ${conversationReferences[conversationId] ?: 0})" }
     }
 
     // 移除引用
@@ -169,10 +159,7 @@ class ChatService(
                 conversationReferences.remove(conversationId)
             }
         }
-        Log.d(
-            TAG,
-            "Removed reference for $conversationId (current references: ${conversationReferences[conversationId] ?: 0})"
-        )
+        Logger.d(TAG) { "Removed reference for $conversationId (current references: ${conversationReferences[conversationId] ?: 0})" }
         appScope.launch {
             delay(500)
             checkAllConversationsReferences()
@@ -358,7 +345,7 @@ class ChatService(
             // memory tool
             if (!model.abilities.contains(ModelAbility.TOOL)) {
                 if (settings.enableWebSearch || mcpManager.getAllAvailableTools().isNotEmpty()) {
-                    _errorFlow.emit(IllegalStateException(context.getString(R.string.tools_warning)))
+                    _errorFlow.emit(IllegalStateException(getString(Res.string.tools_warning)))
                 }
             }
 
@@ -408,13 +395,17 @@ class ChatService(
                     messageNodes = getConversationFlow(conversationId).value.messageNodes.map { node ->
                         node.copy(messages = node.messages.map { it.finishReasoning() })
                     },
-                    updateAt = Instant.now()
+                    updateAt = Clock.System.now()
                 )
                 updateConversation(conversationId, updatedConversation)
 
                 // Show notification if app is not in foreground
                 if (!isForeground.value && settings.displaySetting.enableNotificationOnMessageGeneration) {
-                    sendGenerationDoneNotification(conversationId)
+                    sendGenerationDoneNotification(
+                        getConversationFlow(conversationId).value,
+                        context,
+                        conversationId
+                    )
                 }
             }.collect { chunk ->
                 when (chunk) {
@@ -594,7 +585,7 @@ class ChatService(
                 messages = listOf(
                     UIMessage.user(
                         prompt = settings.titlePrompt.applyPlaceholders(
-                            "locale" to Locale.getDefault().displayName,
+                            "locale" to Locale.current.getDisplayLanguage(),
                             "content" to conversation.currentMessages.truncate(conversation.truncateIndex)
                                 .joinToString("\n\n") { it.summaryAsText() })
                     ),
@@ -634,7 +625,7 @@ class ChatService(
                 messages = listOf(
                     UIMessage.user(
                         settings.suggestionPrompt.applyPlaceholders(
-                            "locale" to Locale.getDefault().displayName,
+                            "locale" to Locale.current.getDisplayLanguage(),
                             "content" to conversation.currentMessages.truncate(conversation.truncateIndex)
                                 .takeLast(8).joinToString("\n\n") { it.summaryAsText() }),
                     )
@@ -662,43 +653,6 @@ class ChatService(
         }
     }
 
-    // 发送生成完成通知
-    private fun sendGenerationDoneNotification(conversationId: Uuid) {
-        val conversation = getConversationFlow(conversationId).value
-        val notification =
-            NotificationCompat.Builder(context, CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID)
-                .setContentTitle(context.getString(R.string.notification_chat_done_title))
-                .setContentText(conversation.currentMessages.lastOrNull()?.toText()?.take(50) ?: "")
-                .setSmallIcon(R.drawable.small_icon)
-                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                .setAutoCancel(true)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setContentIntent(getPendingIntent(context, conversationId))
-
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        NotificationManagerCompat.from(context).notify(1, notification.build())
-    }
-
-    private fun getPendingIntent(context: Context, conversationId: Uuid): PendingIntent {
-        val intent = Intent(context, RouteActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("conversationId", conversationId.toString())
-        }
-        return PendingIntent.getActivity(
-            context,
-            conversationId.hashCode(),
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-    }
-
     // 更新对话
     private fun updateConversation(conversationId: Uuid, conversation: Conversation) {
         if (conversation.id != conversationId) return
@@ -716,7 +670,7 @@ class ChatService(
         }
         if (deletedFiles.isNotEmpty()) {
             context.deleteChatFiles(deletedFiles)
-            Log.w(TAG, "checkFilesDelete: $deletedFiles")
+            Logger.w(TAG) { "checkFilesDelete: $deletedFiles" }
         }
     }
 
@@ -755,7 +709,7 @@ class ChatService(
                 if (messageText.isBlank()) return@launch
 
                 // Set loading state for translation
-                val loadingText = context.getString(R.string.translating)
+                val loadingText = getString(Res.string.translating)
                 updateTranslationField(conversationId, message.id, loadingText)
 
                 generationHandler.translateText(
@@ -827,9 +781,17 @@ class ChatService(
         removeGenerationJob(conversationId)
         conversations.remove(conversationId)
 
-        Log.i(
-            TAG,
-            "cleanupConversation: removed $conversationId (current references: ${conversationReferences.size}, generation jobs: ${_generationJobs.value.size})"
-        )
+        Logger.i(TAG) { "cleanupConversation: removed $conversationId (current references: ${conversationReferences.size}, generation jobs: ${_generationJobs.value.size})" }
     }
 }
+
+expect fun init(lifecycleObserver: LifecycleEventObserver)
+
+expect fun cleanup(lifecycleObserver: LifecycleEventObserver, block: () -> Unit)
+
+// 发送生成完成通知
+internal expect fun sendGenerationDoneNotification(
+    conversation: Conversation,
+    context: PlatformContext,
+    conversationId: Uuid
+)

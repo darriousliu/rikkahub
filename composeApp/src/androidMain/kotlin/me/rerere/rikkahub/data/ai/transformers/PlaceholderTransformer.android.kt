@@ -4,16 +4,21 @@ import android.content.Context
 import android.os.BatteryManager
 import android.os.Build
 import androidx.compose.material3.Text
-import androidx.compose.ui.res.stringResource
-import me.rerere.ai.provider.Model
-import me.rerere.ai.ui.InputMessageTransformer
-import me.rerere.ai.ui.UIMessage
-import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.model.Assistant
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.placeholder_battery_level
+import rikkahub.composeapp.generated.resources.placeholder_char
+import rikkahub.composeapp.generated.resources.placeholder_current_date
+import rikkahub.composeapp.generated.resources.placeholder_current_datetime
+import rikkahub.composeapp.generated.resources.placeholder_current_time
+import rikkahub.composeapp.generated.resources.placeholder_device_info
+import rikkahub.composeapp.generated.resources.placeholder_locale
+import rikkahub.composeapp.generated.resources.placeholder_model_id
+import rikkahub.composeapp.generated.resources.placeholder_model_name
+import rikkahub.composeapp.generated.resources.placeholder_nickname
+import rikkahub.composeapp.generated.resources.placeholder_system_version
+import rikkahub.composeapp.generated.resources.placeholder_timezone
+import rikkahub.composeapp.generated.resources.placeholder_user
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -23,91 +28,57 @@ import java.time.temporal.Temporal
 import java.util.Locale
 import java.util.TimeZone
 
-data class PlaceholderCtx(
-    val context: Context,
-    val settingsStore: SettingsStore,
-    val model: Model,
-    val assistant: Assistant,
-)
-
-interface PlaceholderProvider {
-    val placeholders: Map<String, PlaceholderInfo>
-}
-
-data class PlaceholderInfo(
-    val displayName: @Composable () -> Unit,
-    val resolver: (PlaceholderCtx) -> String
-)
-
-class PlaceholderBuilder {
-    private val placeholders = mutableMapOf<String, PlaceholderInfo>()
-
-    fun placeholder(
-        key: String,
-        displayName: @Composable () -> Unit,
-        resolver: (PlaceholderCtx) -> String
-    ) {
-        placeholders[key] = PlaceholderInfo(displayName, resolver)
-    }
-
-    fun build(): Map<String, PlaceholderInfo> = placeholders.toMap()
-}
-
-fun buildPlaceholders(block: PlaceholderBuilder.() -> Unit): Map<String, PlaceholderInfo> {
-    return PlaceholderBuilder().apply(block).build()
-}
-
-object DefaultPlaceholderProvider : PlaceholderProvider {
-    override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
-        placeholder("cur_date", { Text(stringResource(R.string.placeholder_current_date)) }) {
+actual object DefaultPlaceholderProvider : PlaceholderProvider {
+    actual override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
+        placeholder("cur_date", { Text(stringResource(Res.string.placeholder_current_date)) }) {
             LocalDate.now().toDateString()
         }
 
-        placeholder("cur_time", { Text(stringResource(R.string.placeholder_current_time)) }) {
+        placeholder("cur_time", { Text(stringResource(Res.string.placeholder_current_time)) }) {
             LocalTime.now().toTimeString()
         }
 
-        placeholder("cur_datetime", { Text(stringResource(R.string.placeholder_current_datetime)) }) {
+        placeholder("cur_datetime", { Text(stringResource(Res.string.placeholder_current_datetime)) }) {
             LocalDateTime.now().toDateTimeString()
         }
 
-        placeholder("model_id", { Text(stringResource(R.string.placeholder_model_id)) }) {
+        placeholder("model_id", { Text(stringResource(Res.string.placeholder_model_id)) }) {
             it.model.modelId
         }
 
-        placeholder("model_name", { Text(stringResource(R.string.placeholder_model_name)) }) {
+        placeholder("model_name", { Text(stringResource(Res.string.placeholder_model_name)) }) {
             it.model.displayName
         }
 
-        placeholder("locale", { Text(stringResource(R.string.placeholder_locale)) }) {
+        placeholder("locale", { Text(stringResource(Res.string.placeholder_locale)) }) {
             Locale.getDefault().displayName
         }
 
-        placeholder("timezone", { Text(stringResource(R.string.placeholder_timezone)) }) {
+        placeholder("timezone", { Text(stringResource(Res.string.placeholder_timezone)) }) {
             TimeZone.getDefault().displayName
         }
 
-        placeholder("system_version", { Text(stringResource(R.string.placeholder_system_version)) }) {
+        placeholder("system_version", { Text(stringResource(Res.string.placeholder_system_version)) }) {
             "Android SDK v${Build.VERSION.SDK_INT} (${Build.VERSION.RELEASE})"
         }
 
-        placeholder("device_info", { Text(stringResource(R.string.placeholder_device_info)) }) {
+        placeholder("device_info", { Text(stringResource(Res.string.placeholder_device_info)) }) {
             "${Build.BRAND} ${Build.MODEL}"
         }
 
-        placeholder("battery_level", { Text(stringResource(R.string.placeholder_battery_level)) }) {
+        placeholder("battery_level", { Text(stringResource(Res.string.placeholder_battery_level)) }) {
             it.context.batteryLevel().toString()
         }
 
-        placeholder("nickname", { Text(stringResource(R.string.placeholder_nickname)) }) {
+        placeholder("nickname", { Text(stringResource(Res.string.placeholder_nickname)) }) {
             it.settingsStore.settingsFlow.value.displaySetting.userNickname.ifBlank { "user" }
         }
 
-        placeholder("char", { Text(stringResource(R.string.placeholder_char)) }) {
+        placeholder("char", { Text(stringResource(Res.string.placeholder_char)) }) {
             it.assistant.name.ifBlank { "assistant" }
         }
 
-        placeholder("user", { Text(stringResource(R.string.placeholder_user)) }) {
+        placeholder("user", { Text(stringResource(Res.string.placeholder_user)) }) {
             it.settingsStore.settingsFlow.value.displaySetting.userNickname.ifBlank { "user" }
         }
     }
@@ -130,52 +101,5 @@ object DefaultPlaceholderProvider : PlaceholderProvider {
     private fun Context.batteryLevel(): Int {
         val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
         return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-    }
-}
-
-object PlaceholderTransformer : InputMessageTransformer, KoinComponent {
-    private val defaultProvider = DefaultPlaceholderProvider
-
-    override suspend fun transform(
-        ctx: TransformerContext,
-        messages: List<UIMessage>,
-    ): List<UIMessage> {
-        val settingsStore = get<SettingsStore>()
-        return messages.map {
-            it.copy(
-                parts = it.parts.map { part ->
-                    if (part is UIMessagePart.Text) {
-                        part.copy(
-                            text = replacePlaceholders(text = part.text, ctx = ctx, settingsStore = settingsStore)
-                        )
-                    } else {
-                        part
-                    }
-                }
-            )
-        }
-    }
-
-    private fun replacePlaceholders(
-        text: String,
-        ctx: TransformerContext,
-        settingsStore: SettingsStore
-    ): String {
-        var result = text
-
-        val ctx = PlaceholderCtx(
-            context = ctx.context,
-            settingsStore = settingsStore,
-            model = ctx.model,
-            assistant = ctx.assistant
-        )
-        defaultProvider.placeholders.forEach { (key, placeholderInfo) ->
-            val value = placeholderInfo.resolver(ctx)
-            result = result
-                .replace(oldValue = "{{$key}}", newValue = value, ignoreCase = true)
-                .replace(oldValue = "{$key}", newValue = value, ignoreCase = true)
-        }
-
-        return result
     }
 }

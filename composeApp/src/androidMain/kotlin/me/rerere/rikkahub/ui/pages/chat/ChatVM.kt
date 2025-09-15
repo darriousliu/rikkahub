@@ -1,10 +1,11 @@
 package me.rerere.rikkahub.ui.pages.chat
 
 import android.app.Application
+import androidx.compose.ui.text.intl.Locale
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.analytics.FirebaseAnalytics
+import dev.gitlive.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,8 +35,6 @@ import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.utils.createChatFilesByContents
 import me.rerere.rikkahub.utils.deleteChatFiles
-import java.util.Locale
-import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatVM"
@@ -94,8 +93,6 @@ class ChatVM(
     val conversations =
         settings.map { it.assistantId }.distinctUntilChanged().flatMapLatest { assistantId ->
             conversationRepo.getConversationsOfAssistant(assistantId).catch {
-                Logger.e(TAG, it) { "conversationRepo.getAllConversations: " }
-                errorFlow.emit(it)
                 emit(emptyList())
             }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

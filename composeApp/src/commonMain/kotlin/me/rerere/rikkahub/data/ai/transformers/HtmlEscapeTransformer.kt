@@ -1,18 +1,14 @@
 package me.rerere.rikkahub.data.ai.transformers
 
 import me.rerere.ai.core.MessageRole
-import me.rerere.ai.provider.Model
-import me.rerere.ai.ui.OutputMessageTransformer
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.utils.unescapeHtml
 
 object HtmlEscapeTransformer : OutputMessageTransformer {
     override suspend fun visualTransform(
-        context: PlatformContext,
-        messages: List<UIMessage>,
-        model: Model
+        ctx: TransformerContext,
+        messages: List<UIMessage>
     ): List<UIMessage> {
         return messages.map { message ->
             message.copy(
