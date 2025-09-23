@@ -1,4 +1,7 @@
+@file:OptIn(ExperimentalSwiftExportDsl::class)
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.FileInputStream
 import java.util.Properties
@@ -23,14 +26,15 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
-    listOf(
-//        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "ComposeApp"
-            isStatic = true
+
+    iosArm64()
+    iosSimulatorArm64()
+
+    swiftExport {
+        moduleName = "ComposeApp"
+        flattenPackage = "me.rerere.rikkahub"
+        configure {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
         }
     }
 
@@ -117,15 +121,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.ui)
             implementation(libs.ui.backhandler)
-            implementation("org.jetbrains.compose.material3:material3:1.10.0-alpha01") {
-                exclude("org.jetbrains.compose.animation")
-                exclude("org.jetbrains.compose.annotation-internal")
-                exclude("org.jetbrains.compose.collection-internal")
-                exclude("org.jetbrains.compose.foundation")
-                exclude("org.jetbrains.compose.material")
-                exclude("org.jetbrains.compose.runtime")
-                exclude("org.jetbrains.compose.ui")
-            }
+            implementation("org.jetbrains.compose.material3:material3:1.9.0-alpha04")
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
@@ -202,6 +198,8 @@ kotlin {
             implementation(libs.cache4k)
             // webview
             implementation(libs.compose.webview)
+            // Latex
+            implementation(libs.katex.core)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

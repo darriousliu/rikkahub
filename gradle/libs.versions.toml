@@ -9,6 +9,7 @@ dom4j = "2.2.0"
 dav4kmp = "0.1.0"
 filekit = "0.11.0"
 jlatexmath = "1.2"
+katex = "0.3.1"
 kotlin = "2.2.20"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -120,6 +121,7 @@ androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", 
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workmanager" }
 jetbrains-markdown = { group = "org.jetbrains", name = "markdown", version.ref = "markdown" }
+katex-core = { module = "io.github.darriousliu:katex-core", version.ref = "katex" }
 metadata-extractor = { module = "com.drewnoakes:metadata-extractor", version.ref = "metadataExtractor" }
 mp_stools = { module = "net.sergeych:mp_stools", version.ref = "mp_stools" }
 navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }

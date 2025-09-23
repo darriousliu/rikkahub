@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
+import me.rerere.common.utils.putIfAbsent
 import me.rerere.rikkahub.ui.components.table.DataTable
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.utils.toDp
@@ -95,9 +96,9 @@ private val parser by lazy {
 }
 
 private val INLINE_LATEX_REGEX = Regex("\\\\\\((.+?)\\\\\\)")
-private val BLOCK_LATEX_REGEX = Regex("\\\\\\[(.+?)\\\\\\]", RegexOption.DOT_MATCHES_ALL)
-val THINKING_REGEX = Regex("<think>([\\s\\S]*?)(?:</think>|$)", RegexOption.DOT_MATCHES_ALL)
-private val CODE_BLOCK_REGEX = Regex("```[\\s\\S]*?```|`[^`\n]*`", RegexOption.DOT_MATCHES_ALL)
+private val BLOCK_LATEX_REGEX = Regex("\\\\\\[(.+?)\\\\]")
+val THINKING_REGEX = Regex("<think>([\\s\\S]*?)(?:</think>|$)")
+private val CODE_BLOCK_REGEX = Regex("```[\\s\\S]*?```|`[^`\n]*`")
 
 // 预处理markdown内容
 private fun preProcess(content: String): String {
@@ -497,7 +498,7 @@ private fun MarkdownNode(
             MathInline(
                 formula,
                 modifier = modifier
-                    .padding(horizontal = 1.dp)
+                    .padding(1.dp)
             )
         }
 
@@ -935,7 +936,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                 val domain = linkText.substringAfter("citation,")
                 val id = linkDest
                 if (id.length == 6) {
-                    inlineContents.putIfAbsent(
+                    inlineContents.put(
                         "citation:$linkDest", InlineTextContent(
                             placeholder = Placeholder(
                                 width = (domain.length * 7).sp,
@@ -1018,7 +1019,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                     latex = formula,
                     fontSize = style.fontSize.toPx()
                 ).let {
-                    it.width().toSp() to it.height().toSp()
+                    it.width.toSp() to it.height.toSp()
                 }
             }
             inlineContents.putIfAbsent(

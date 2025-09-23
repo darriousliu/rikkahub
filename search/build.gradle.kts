@@ -12,15 +12,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(compose.components.resources)
-            implementation("org.jetbrains.compose.material3:material3:1.10.0-alpha01") {
-                exclude("org.jetbrains.compose.animation")
-                exclude("org.jetbrains.compose.annotation-internal")
-                exclude("org.jetbrains.compose.collection-internal")
-                exclude("org.jetbrains.compose.foundation")
-                exclude("org.jetbrains.compose.material")
-                exclude("org.jetbrains.compose.runtime")
-                exclude("org.jetbrains.compose.ui")
-            }
+            implementation(compose.material3)
 
             implementation(project(":ai"))
             implementation(libs.bundles.ktor)
