@@ -1,4 +1,4 @@
-package me.rerere.rikkahub.ui.pages.history;
+package me.rerere.rikkahub.ui.pages.history
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -45,7 +45,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,14 +55,29 @@ import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.Trash2
 import com.composables.icons.lucide.X
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
 import me.rerere.rikkahub.utils.toLocalDateTime
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.history_page_cancel
+import rikkahub.composeapp.generated.resources.history_page_clear
+import rikkahub.composeapp.generated.resources.history_page_conversation_deleted
+import rikkahub.composeapp.generated.resources.history_page_delete
+import rikkahub.composeapp.generated.resources.history_page_delete_all
+import rikkahub.composeapp.generated.resources.history_page_delete_all_confirmation
+import rikkahub.composeapp.generated.resources.history_page_delete_all_conversations
+import rikkahub.composeapp.generated.resources.history_page_new_conversation
+import rikkahub.composeapp.generated.resources.history_page_pin
+import rikkahub.composeapp.generated.resources.history_page_search
+import rikkahub.composeapp.generated.resources.history_page_search_placeholder
+import rikkahub.composeapp.generated.resources.history_page_title
+import rikkahub.composeapp.generated.resources.history_page_undo
+import rikkahub.composeapp.generated.resources.history_page_unpin
 
 @Composable
 fun HistoryPage(vm: HistoryVM = koinViewModel()) {
@@ -94,7 +108,7 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.history_page_title))
+                    Text(stringResource(Res.string.history_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -108,14 +122,14 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                             }
                         }
                     ) {
-                        Icon(Lucide.Search, contentDescription = stringResource(R.string.history_page_search))
+                        Icon(Lucide.Search, contentDescription = stringResource(Res.string.history_page_search))
                     }
                     IconButton(
                         onClick = {
                             showDeleteAllDialog = true
                         }
                     ) {
-                        Icon(Lucide.Trash2, contentDescription = stringResource(R.string.history_page_delete_all))
+                        Icon(Lucide.Trash2, contentDescription = stringResource(Res.string.history_page_delete_all))
                     }
                 }
             )
@@ -136,8 +150,8 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { contentPadding ->
-        val snackMessageDeleted = stringResource(R.string.history_page_conversation_deleted)
-        val snackMessageUndo = stringResource(R.string.history_page_undo)
+        val snackMessageDeleted = stringResource(Res.string.history_page_conversation_deleted)
+        val snackMessageUndo = stringResource(Res.string.history_page_undo)
         LazyColumn(
             contentPadding = contentPadding + PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -173,8 +187,8 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
     if (showDeleteAllDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteAllDialog = false },
-            title = { Text(stringResource(R.string.history_page_delete_all_conversations)) },
-            text = { Text(stringResource(R.string.history_page_delete_all_confirmation)) },
+            title = { Text(stringResource(Res.string.history_page_delete_all_conversations)) },
+            text = { Text(stringResource(Res.string.history_page_delete_all_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -182,14 +196,14 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                         showDeleteAllDialog = false
                     }
                 ) {
-                    Text(stringResource(R.string.history_page_delete))
+                    Text(stringResource(Res.string.history_page_delete))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showDeleteAllDialog = false }
                 ) {
-                    Text(stringResource(R.string.history_page_cancel))
+                    Text(stringResource(Res.string.history_page_cancel))
                 }
             }
         )
@@ -216,7 +230,7 @@ private fun SearchInput(
                 onValueChange = onValueChange,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
-                    Text(stringResource(R.string.history_page_search_placeholder))
+                    Text(stringResource(Res.string.history_page_search_placeholder))
                 },
                 shape = RoundedCornerShape(50),
                 singleLine = true,
@@ -225,7 +239,7 @@ private fun SearchInput(
                         onClick = { onValueChange("") },
                         modifier = Modifier
                     ) {
-                        Icon(Lucide.X, stringResource(R.string.history_page_clear))
+                        Icon(Lucide.X, stringResource(Res.string.history_page_clear))
                     }
                 }
             )
@@ -274,7 +288,7 @@ private fun SwipeableConversationItem(
             ) {
                 Icon(
                     imageVector = Lucide.Trash2,
-                    contentDescription = stringResource(R.string.history_page_delete),
+                    contentDescription = stringResource(Res.string.history_page_delete),
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
@@ -318,7 +332,7 @@ private fun ConversationItem(
                         )
                     }
                     Text(
-                        text = conversation.title.ifBlank { stringResource(R.string.history_page_new_conversation) }
+                        text = conversation.title.ifBlank { stringResource(Res.string.history_page_new_conversation) }
                             .trim(),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -335,8 +349,8 @@ private fun ConversationItem(
                 ) {
                     Icon(
                         if (conversation.isPinned) Lucide.PinOff else Lucide.Pin,
-                        contentDescription = if (conversation.isPinned) stringResource(R.string.history_page_unpin) else stringResource(
-                            R.string.history_page_pin
+                        contentDescription = if (conversation.isPinned) stringResource(Res.string.history_page_unpin) else stringResource(
+                            Res.string.history_page_pin
                         )
                     )
                 }

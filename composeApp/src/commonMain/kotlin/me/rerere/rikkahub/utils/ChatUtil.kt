@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.utils
 
+import androidx.navigation.NavHostController
 import co.touchlab.kermit.Logger
 import coil3.BitmapImage
 import coil3.Uri
@@ -17,10 +18,33 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import me.rerere.ai.ui.UIMessage
 import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.Screen
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.uuid.Uuid
 
 private const val TAG = "ChatUtil"
+
+fun navigateToChatPage(
+    navController: NavHostController,
+    chatId: Uuid = Uuid.random(),
+    initText: String? = null,
+    initFiles: List<Uri> = emptyList(),
+) {
+    Logger.i(TAG) { "navigateToChatPage: navigate to $chatId" }
+    navController.navigate(
+        route = Screen.Chat(
+            id = chatId.toString(),
+            text = initText,
+            files = initFiles.map { it.toString() },
+        ),
+    ) {
+        popUpTo(0) {
+            inclusive = true
+        }
+        launchSingleTop = true
+    }
+}
 
 expect fun PlatformContext.copyMessageToClipboard(message: UIMessage)
 expect fun ByteArray.toImage(): BitmapImage

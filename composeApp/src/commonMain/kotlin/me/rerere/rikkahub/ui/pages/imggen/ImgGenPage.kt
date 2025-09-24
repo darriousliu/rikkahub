@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.imggen
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +24,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -58,11 +56,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,6 +69,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Copy
 import com.composables.icons.lucide.Images
 import com.composables.icons.lucide.Lucide
@@ -85,7 +83,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ModelType
 import me.rerere.ai.ui.ImageAspectRatio
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -94,8 +91,33 @@ import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.utils.saveMessageImage
-import org.koin.androidx.compose.koinViewModel
-import java.io.File
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio
+import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_desc
+import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_landscape
+import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_portrait
+import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_square
+import rikkahub.composeapp.generated.resources.imggen_page_cancel
+import rikkahub.composeapp.generated.resources.imggen_page_cancel_generation_message
+import rikkahub.composeapp.generated.resources.imggen_page_cancel_generation_title
+import rikkahub.composeapp.generated.resources.imggen_page_confirm
+import rikkahub.composeapp.generated.resources.imggen_page_delete
+import rikkahub.composeapp.generated.resources.imggen_page_gallery
+import rikkahub.composeapp.generated.resources.imggen_page_generate_image
+import rikkahub.composeapp.generated.resources.imggen_page_generation_count
+import rikkahub.composeapp.generated.resources.imggen_page_generation_count_desc
+import rikkahub.composeapp.generated.resources.imggen_page_image_saved_success
+import rikkahub.composeapp.generated.resources.imggen_page_model_selection
+import rikkahub.composeapp.generated.resources.imggen_page_model_selection_desc
+import rikkahub.composeapp.generated.resources.imggen_page_no_generated_images
+import rikkahub.composeapp.generated.resources.imggen_page_prompt_placeholder
+import rikkahub.composeapp.generated.resources.imggen_page_save
+import rikkahub.composeapp.generated.resources.imggen_page_save_failed
+import rikkahub.composeapp.generated.resources.imggen_page_settings_title
+import rikkahub.composeapp.generated.resources.imggen_page_title
 
 @Composable
 fun ImageGenPage(
@@ -124,7 +146,7 @@ fun ImageGenPage(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.imggen_page_title))
+                    Text(stringResource(Res.string.imggen_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -156,16 +178,16 @@ private fun CancelDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.imggen_page_cancel_generation_title)) },
-        text = { Text(stringResource(R.string.imggen_page_cancel_generation_message)) },
+        title = { Text(stringResource(Res.string.imggen_page_cancel_generation_title)) },
+        text = { Text(stringResource(Res.string.imggen_page_cancel_generation_message)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.imggen_page_confirm))
+                Text(stringResource(Res.string.imggen_page_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.imggen_page_cancel))
+                Text(stringResource(Res.string.imggen_page_cancel))
             }
         }
     )
@@ -180,7 +202,7 @@ private fun BottomBar(
         NavigationBarItem(
             selected = 0 == pagerState.currentPage,
             label = {
-                Text(stringResource(R.string.imggen_page_title))
+                Text(stringResource(Res.string.imggen_page_title))
             },
             icon = {
                 Icon(Lucide.Palette, null)
@@ -195,7 +217,7 @@ private fun BottomBar(
         NavigationBarItem(
             selected = 1 == pagerState.currentPage,
             label = {
-                Text(stringResource(R.string.imggen_page_gallery))
+                Text(stringResource(Res.string.imggen_page_gallery))
             },
             icon = {
                 Icon(Lucide.Images, null)
@@ -250,7 +272,7 @@ private fun ImageGenScreen(
                 val image = currentGeneratedImages[index]
                 var showPreview by remember { mutableStateOf(false) }
                 AsyncImage(
-                    model = File(image.filePath),
+                    model = image.filePath,
                     contentDescription = null,
                     modifier = Modifier
                         .weight(1f)
@@ -312,7 +334,7 @@ private fun InputBar(
         OutlinedTextField(
             value = prompt,
             onValueChange = vm::updatePrompt,
-            placeholder = { Text(stringResource(R.string.imggen_page_prompt_placeholder)) },
+            placeholder = { Text(stringResource(Res.string.imggen_page_prompt_placeholder)) },
             modifier = Modifier.weight(1f),
             minLines = 1,
             maxLines = 5,
@@ -337,7 +359,7 @@ private fun InputBar(
             } else {
                 Icon(
                     imageVector = Lucide.Send,
-                    contentDescription = stringResource(R.string.imggen_page_generate_image)
+                    contentDescription = stringResource(Res.string.imggen_page_generate_image)
                 )
             }
         }
@@ -349,7 +371,7 @@ private fun ImageGalleryScreen(
     vm: ImgGenVM,
 ) {
     val generatedImages = vm.generatedImages.collectAsLazyPagingItems()
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -376,7 +398,7 @@ private fun ImageGalleryScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = stringResource(R.string.imggen_page_no_generated_images),
+                        text = stringResource(Res.string.imggen_page_no_generated_images),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -405,7 +427,7 @@ private fun ImageGalleryScreen(
                         ) {
                             Column {
                                 AsyncImage(
-                                    model = File(it.filePath),
+                                    model = it.filePath,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -458,14 +480,14 @@ private fun ImageGalleryScreen(
                                                     try {
                                                         context.saveMessageImage("file://${it.filePath}")
                                                         toaster.show(
-                                                            message = context.getString(R.string.imggen_page_image_saved_success),
+                                                            message = getString(Res.string.imggen_page_image_saved_success),
                                                             type = ToastType.Success
                                                         )
                                                     } catch (e: Exception) {
                                                         toaster.show(
-                                                            message = context.getString(
-                                                                R.string.imggen_page_save_failed,
-                                                                e.message
+                                                            message = getString(
+                                                                Res.string.imggen_page_save_failed,
+                                                                e.message.orEmpty()
                                                             ),
                                                             type = ToastType.Error
                                                         )
@@ -476,7 +498,7 @@ private fun ImageGalleryScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Lucide.Save,
-                                                contentDescription = stringResource(R.string.imggen_page_save),
+                                                contentDescription = stringResource(Res.string.imggen_page_save),
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
@@ -487,7 +509,7 @@ private fun ImageGalleryScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Lucide.Trash2,
-                                                contentDescription = stringResource(R.string.imggen_page_delete),
+                                                contentDescription = stringResource(Res.string.imggen_page_delete),
                                                 modifier = Modifier.size(16.dp),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
@@ -534,14 +556,14 @@ private fun SettingsBottomSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.imggen_page_settings_title),
+                text = stringResource(Res.string.imggen_page_settings_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             FormItem(
-                label = { Text(stringResource(R.string.imggen_page_model_selection)) },
-                description = { Text(stringResource(R.string.imggen_page_model_selection_desc)) }
+                label = { Text(stringResource(Res.string.imggen_page_model_selection)) },
+                description = { Text(stringResource(Res.string.imggen_page_model_selection_desc)) }
             ) {
                 ModelSelector(
                     modelId = settings.imageGenerationModelId,
@@ -559,8 +581,8 @@ private fun SettingsBottomSheet(
             }
 
             FormItem(
-                label = { Text(stringResource(R.string.imggen_page_generation_count)) },
-                description = { Text(stringResource(R.string.imggen_page_generation_count_desc)) }
+                label = { Text(stringResource(Res.string.imggen_page_generation_count)) },
+                description = { Text(stringResource(Res.string.imggen_page_generation_count_desc)) }
             ) {
                 OutlinedNumberInput(
                     value = numberOfImages,
@@ -570,8 +592,8 @@ private fun SettingsBottomSheet(
             }
 
             FormItem(
-                label = { Text(stringResource(R.string.imggen_page_aspect_ratio)) },
-                description = { Text(stringResource(R.string.imggen_page_aspect_ratio_desc)) }
+                label = { Text(stringResource(Res.string.imggen_page_aspect_ratio)) },
+                description = { Text(stringResource(Res.string.imggen_page_aspect_ratio_desc)) }
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -585,9 +607,9 @@ private fun SettingsBottomSheet(
                                 Text(
                                     stringResource(
                                         when (ratio) {
-                                            ImageAspectRatio.SQUARE -> R.string.imggen_page_aspect_ratio_square
-                                            ImageAspectRatio.LANDSCAPE -> R.string.imggen_page_aspect_ratio_landscape
-                                            ImageAspectRatio.PORTRAIT -> R.string.imggen_page_aspect_ratio_portrait
+                                            ImageAspectRatio.SQUARE -> Res.string.imggen_page_aspect_ratio_square
+                                            ImageAspectRatio.LANDSCAPE -> Res.string.imggen_page_aspect_ratio_landscape
+                                            ImageAspectRatio.PORTRAIT -> Res.string.imggen_page_aspect_ratio_portrait
                                         }
                                     )
                                 )

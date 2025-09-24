@@ -6,9 +6,12 @@ import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.core.net.toFile
 import androidx.core.net.toUri
-import androidx.navigation.NavHostController
 import co.touchlab.kermit.Logger
-import coil3.*
+import coil3.BitmapImage
+import coil3.Uri
+import coil3.asImage
+import coil3.toAndroidUri
+import coil3.toCoilUri
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +19,6 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.PlatformContext
 import me.rerere.common.utils.toPlatformFile
-import me.rerere.rikkahub.Screen
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.io.encoding.Base64
@@ -25,27 +27,6 @@ import kotlin.uuid.Uuid
 import android.net.Uri as AndroidUri
 
 private const val TAG = "ChatUtil"
-
-fun navigateToChatPage(
-    navController: NavHostController,
-    chatId: Uuid = Uuid.random(),
-    initText: String? = null,
-    initFiles: List<Uri> = emptyList(),
-) {
-    Logger.i(TAG) { "navigateToChatPage: navigate to $chatId" }
-    navController.navigate(
-        route = Screen.Chat(
-            id = chatId.toString(),
-            text = initText,
-            files = initFiles.map { it.toString() },
-        ),
-    ) {
-        popUpTo(0) {
-            inclusive = true
-        }
-        launchSingleTop = true
-    }
-}
 
 actual fun PlatformContext.copyMessageToClipboard(message: UIMessage) {
     this.writeClipboardText(message.toText())

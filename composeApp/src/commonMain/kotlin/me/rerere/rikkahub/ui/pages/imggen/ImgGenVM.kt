@@ -1,7 +1,6 @@
 package me.rerere.rikkahub.ui.pages.imggen
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -9,6 +8,11 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.map
 import co.touchlab.kermit.Logger
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.delete
+import io.github.vinceglb.filekit.exists
+import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +25,7 @@ import me.rerere.ai.provider.ImageGenerationParams
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.ui.ImageAspectRatio
 import me.rerere.ai.ui.ImageGenerationItem
-import me.rerere.common.utils.toFile
+import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -29,8 +33,8 @@ import me.rerere.rikkahub.data.db.entity.GenMediaEntity
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.utils.createImageFileFromBase64
 import me.rerere.rikkahub.utils.getImagesDir
-import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Clock
 
 @Serializable
 data class GeneratedImage(
@@ -41,9 +45,9 @@ data class GeneratedImage(
     val model: String
 )
 
-private fun GenMediaEntity.toGeneratedImage(context: Application): GeneratedImage {
-    val imagesDir = context.getImagesDir().toFile()
-    val fullPath = File(imagesDir, this.path.removePrefix("images/")).absolutePath
+private fun GenMediaEntity.toGeneratedImage(context: PlatformContext): GeneratedImage {
+    val imagesDir = context.getImagesDir()
+    val fullPath = PlatformFile(imagesDir, this.path.removePrefix("images/")).absolutePath()
 
     return GeneratedImage(
         id = this.id,
@@ -55,11 +59,11 @@ private fun GenMediaEntity.toGeneratedImage(context: Application): GeneratedImag
 }
 
 class ImgGenVM(
-    context: Application,
+    private val context: PlatformContext,
     val settingsStore: SettingsStore,
     val providerManager: ProviderManager,
     val genMediaRepository: GenMediaRepository,
-) : AndroidViewModel(context) {
+) : ViewModel() {
     private val _prompt = MutableStateFlow("")
     val prompt: StateFlow<String> = _prompt
 
@@ -85,7 +89,7 @@ class ImgGenVM(
     )
     val generatedImages: Flow<PagingData<GeneratedImage>> = pager.flow
         .map { pagingData ->
-            pagingData.map { entity -> entity.toGeneratedImage(getApplication()) }
+            pagingData.map { entity -> entity.toGeneratedImage(context) }
         }
         .cachedIn(viewModelScope)
 
@@ -148,8 +152,8 @@ class ImgGenVM(
                     val generatedImage = GeneratedImage(
                         id = 0, // Will be updated after database insertion
                         prompt = _prompt.value,
-                        filePath = imageFile.absolutePath,
-                        timestamp = System.currentTimeMillis(),
+                        filePath = imageFile.absolutePath(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
                         model = model.displayName
                     )
                     newImages.add(generatedImage)
@@ -175,15 +179,14 @@ class ImgGenVM(
         prompt: String,
         modelName: String,
         index: Int
-    ): File {
-        val context = getApplication<Application>()
-        val imagesDir = context.getImagesDir().toFile()
+    ): PlatformFile {
+        val imagesDir = context.getImagesDir()
 
-        val timestamp = System.currentTimeMillis()
+        val timestamp = Clock.System.now().toEpochMilliseconds()
         val filename = "${timestamp}_${modelName}_$index.png"
-        val imageFile = File(imagesDir, filename)
+        val imageFile = PlatformFile(imagesDir, filename)
 
-        val createdFile = context.createImageFileFromBase64(item.data, imageFile.absolutePath)
+        val createdFile = context.createImageFileFromBase64(item.data, imageFile.absolutePath())
 
         // Save to database with relative path
         val relativePath = "images/${imageFile.name}"
@@ -195,7 +198,7 @@ class ImgGenVM(
         )
         genMediaRepository.insertMedia(entity)
 
-        return createdFile.toFile()
+        return createdFile
     }
 
     fun deleteImage(image: GeneratedImage) {
@@ -205,7 +208,7 @@ class ImgGenVM(
                 genMediaRepository.deleteMedia(image.id)
 
                 // Then delete the file
-                val file = File(image.filePath)
+                val file = PlatformFile(image.filePath)
                 if (file.exists()) {
                     file.delete()
                 }
