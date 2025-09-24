@@ -3,10 +3,15 @@ package me.rerere.rikkahub.ui.pages.backup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.readString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -21,7 +26,6 @@ import me.rerere.rikkahub.data.sync.WebDavBackupItem
 import me.rerere.rikkahub.data.sync.WebdavSync
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.UiState
-import java.io.File
 
 private const val TAG = "BackupVM"
 
@@ -80,18 +84,20 @@ class BackupVM(
         webdavSync.deleteWebDavBackupFile(settings.value.webDavConfig, item)
     }
 
-    suspend fun exportToFile(): File {
+    suspend fun exportToFile(): PlatformFile {
         return webdavSync.prepareBackupFile(settings.value.webDavConfig.copy())
     }
 
-    suspend fun restoreFromLocalFile(file: File) {
+    suspend fun restoreFromLocalFile(file: PlatformFile) {
         webdavSync.restoreFromLocalFile(file, settings.value.webDavConfig)
     }
 
-    fun restoreFromChatBox(file: File) {
+    suspend fun restoreFromChatBox(file: PlatformFile) {
         val importProviders = arrayListOf<ProviderSetting>()
 
-        val jsonElements = JsonInstant.parseToJsonElement(file.readText()).jsonObject
+        val jsonElements = JsonInstant.parseToJsonElement(
+            withContext(Dispatchers.IO) { file.readString() }
+        ).jsonObject
         val settingsObj = jsonElements["settings"]?.jsonObject
         if (settingsObj != null) {
             settingsObj["providers"]?.jsonObject?.let { providers ->

@@ -8,6 +8,7 @@ import io.github.triangleofice.dav4kmp.exception.NotFoundException
 import io.github.triangleofice.dav4kmp.property.DisplayName
 import io.github.triangleofice.dav4kmp.property.GetContentLength
 import io.github.triangleofice.dav4kmp.property.GetLastModified
+import io.github.vinceglb.filekit.PlatformFile
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpSend
@@ -29,6 +30,8 @@ import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
+import me.rerere.common.utils.toFile
+import me.rerere.common.utils.toPlatformFile
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
@@ -44,12 +47,12 @@ import kotlin.time.Instant
 
 private const val TAG = "DataSync"
 
-class WebdavSync(
+actual class WebdavSync(
     private val settingsStore: SettingsStore,
     private val json: Json,
     private val context: Context,
 ) {
-    suspend fun testWebdav(webDavConfig: WebDavConfig) {
+    actual suspend fun testWebdav(webDavConfig: WebDavConfig) {
         val davCollection = DavCollection(
             httpClient = webDavConfig.requireClient(),
             location = Url(webDavConfig.url),
@@ -65,8 +68,8 @@ class WebdavSync(
         }
     }
 
-    suspend fun backupToWebDav(webDavConfig: WebDavConfig) = withContext(Dispatchers.IO) {
-        val file = prepareBackupFile(webDavConfig)
+    actual suspend fun backupToWebDav(webDavConfig: WebDavConfig) = withContext(Dispatchers.IO) {
+        val file = prepareBackupFile(webDavConfig).toFile()
         val collection = webDavConfig.requireCollection()
         collection.ensureCollectionExists() // ensure collection exists
         val target = webDavConfig.requireCollection(file.name)
@@ -79,7 +82,7 @@ class WebdavSync(
         }
     }
 
-    suspend fun listBackupFiles(webDavConfig: WebDavConfig): List<WebDavBackupItem> =
+    actual suspend fun listBackupFiles(webDavConfig: WebDavConfig): List<WebDavBackupItem> =
         withContext(Dispatchers.IO) {
             val collection = webDavConfig.requireCollection()
             val files = mutableListOf<WebDavBackupItem>()
@@ -112,7 +115,7 @@ class WebdavSync(
             files
         }
 
-    suspend fun restoreFromWebDav(webDavConfig: WebDavConfig, item: WebDavBackupItem) =
+    actual suspend fun restoreFromWebDav(webDavConfig: WebDavConfig, item: WebDavBackupItem) =
         withContext(Dispatchers.IO) {
             val collection = DavCollection(
                 httpClient = webDavConfig.requireClient(),
@@ -155,7 +158,7 @@ class WebdavSync(
             }
         }
 
-    suspend fun deleteWebDavBackupFile(webDavConfig: WebDavConfig, item: WebDavBackupItem) =
+    actual suspend fun deleteWebDavBackupFile(webDavConfig: WebDavConfig, item: WebDavBackupItem) =
         withContext(Dispatchers.IO) {
             val collection = DavCollection(
                 httpClient = webDavConfig.requireClient(),
@@ -166,8 +169,9 @@ class WebdavSync(
             }
         }
 
-    suspend fun restoreFromLocalFile(file: File, webDavConfig: WebDavConfig) =
+    actual suspend fun restoreFromLocalFile(file: PlatformFile, webDavConfig: WebDavConfig) =
         withContext(Dispatchers.IO) {
+            val file = file.toFile()
             Logger.i(TAG) { "restoreFromLocalFile: Starting restore from ${file.absolutePath}" }
 
             if (!file.exists()) {
@@ -187,7 +191,7 @@ class WebdavSync(
             }
         }
 
-    suspend fun prepareBackupFile(webDavConfig: WebDavConfig): File = withContext(Dispatchers.IO) {
+    actual suspend fun prepareBackupFile(webDavConfig: WebDavConfig): PlatformFile = withContext(Dispatchers.IO) {
         val timestamp = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         //DateTimeFormat.ofPattern("yyyyMMdd_HHmmss")
         timestamp.format(
@@ -254,7 +258,7 @@ class WebdavSync(
             }
         }
 
-        backupFile
+        backupFile.toPlatformFile()
     }
 
     private suspend fun restoreFromBackupFile(backupFile: File, webDavConfig: WebDavConfig) =
@@ -340,7 +344,10 @@ class WebdavSync(
                                             }
                                             Logger.i(TAG) { "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)" }
                                         } catch (e: Exception) {
-                                            Logger.e(TAG, e) { "restoreFromBackupFile: Failed to restore file ${zipEntry.name}" }
+                                            Logger.e(
+                                                TAG,
+                                                e
+                                            ) { "restoreFromBackupFile: Failed to restore file ${zipEntry.name}" }
                                             throw Exception("Failed to restore file ${zipEntry.name}: ${e.message}")
                                         }
                                     }
@@ -436,10 +443,3 @@ private suspend fun DavCollection.ensureCollectionExists() = withContext(Dispatc
         }
     }
 }
-
-data class WebDavBackupItem(
-    val href: String,
-    val displayName: String,
-    val size: Long,
-    val lastModified: Instant,
-)

@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.ui.pages.backup
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,8 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -67,8 +63,21 @@ import com.composables.icons.lucide.Import
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Upload
 import com.dokar.sonner.ToastType
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.format
+import kotlinx.datetime.format.char
+import kotlinx.datetime.toLocalDateTime
+import me.rerere.common.utils.delete
+import me.rerere.common.utils.exitProcess
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import me.rerere.rikkahub.data.sync.WebDavBackupItem
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -80,13 +89,50 @@ import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onLoading
 import me.rerere.rikkahub.utils.onSuccess
 import me.rerere.rikkahub.utils.toLocalDateTime
-import org.koin.androidx.compose.koinViewModel
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import kotlin.system.exitProcess
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.backup_page_backing_up
+import rikkahub.composeapp.generated.resources.backup_page_backup_items
+import rikkahub.composeapp.generated.resources.backup_page_backup_now
+import rikkahub.composeapp.generated.resources.backup_page_backup_success
+import rikkahub.composeapp.generated.resources.backup_page_chat_records
+import rikkahub.composeapp.generated.resources.backup_page_connection_failed
+import rikkahub.composeapp.generated.resources.backup_page_connection_success
+import rikkahub.composeapp.generated.resources.backup_page_delete
+import rikkahub.composeapp.generated.resources.backup_page_delete_failed
+import rikkahub.composeapp.generated.resources.backup_page_delete_success
+import rikkahub.composeapp.generated.resources.backup_page_export_desc
+import rikkahub.composeapp.generated.resources.backup_page_exporting
+import rikkahub.composeapp.generated.resources.backup_page_files
+import rikkahub.composeapp.generated.resources.backup_page_import_chatbox_desc
+import rikkahub.composeapp.generated.resources.backup_page_import_desc
+import rikkahub.composeapp.generated.resources.backup_page_import_export
+import rikkahub.composeapp.generated.resources.backup_page_import_from_chatbox
+import rikkahub.composeapp.generated.resources.backup_page_import_from_other_app
+import rikkahub.composeapp.generated.resources.backup_page_importing
+import rikkahub.composeapp.generated.resources.backup_page_loading_failed
+import rikkahub.composeapp.generated.resources.backup_page_local_backup_export
+import rikkahub.composeapp.generated.resources.backup_page_local_backup_import
+import rikkahub.composeapp.generated.resources.backup_page_password
+import rikkahub.composeapp.generated.resources.backup_page_path
+import rikkahub.composeapp.generated.resources.backup_page_restart_app
+import rikkahub.composeapp.generated.resources.backup_page_restart_desc
+import rikkahub.composeapp.generated.resources.backup_page_restore
+import rikkahub.composeapp.generated.resources.backup_page_restore_failed
+import rikkahub.composeapp.generated.resources.backup_page_restore_now
+import rikkahub.composeapp.generated.resources.backup_page_restore_success
+import rikkahub.composeapp.generated.resources.backup_page_restoring
+import rikkahub.composeapp.generated.resources.backup_page_test_connection
+import rikkahub.composeapp.generated.resources.backup_page_title
+import rikkahub.composeapp.generated.resources.backup_page_unknown_error
+import rikkahub.composeapp.generated.resources.backup_page_username
+import rikkahub.composeapp.generated.resources.backup_page_webdav_backup
+import rikkahub.composeapp.generated.resources.backup_page_webdav_backup_files
+import rikkahub.composeapp.generated.resources.backup_page_webdav_server_address
+import kotlin.time.Clock
+
 
 @Composable
 fun BackupPage(vm: BackupVM = koinViewModel()) {
@@ -96,7 +142,7 @@ fun BackupPage(vm: BackupVM = koinViewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.backup_page_title))
+                    Text(stringResource(Res.string.backup_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -111,7 +157,7 @@ fun BackupPage(vm: BackupVM = koinViewModel()) {
                         Icon(Lucide.DatabaseBackup, null)
                     },
                     label = {
-                        Text(stringResource(R.string.backup_page_webdav_backup))
+                        Text(stringResource(Res.string.backup_page_webdav_backup))
                     },
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(0) }
@@ -123,7 +169,7 @@ fun BackupPage(vm: BackupVM = koinViewModel()) {
                         Icon(Lucide.Import, null)
                     },
                     label = {
-                        Text(stringResource(R.string.backup_page_import_export))
+                        Text(stringResource(Res.string.backup_page_import_export))
                     },
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(1) }
@@ -157,7 +203,6 @@ private fun WebDavPage(
     val settings by vm.settings.collectAsStateWithLifecycle()
     val webDavConfig = settings.webDavConfig
     val toaster = LocalToaster.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showBackupFiles by remember { mutableStateOf(false) }
     var showRestartDialog by remember { mutableStateOf(false) }
@@ -182,7 +227,7 @@ private fun WebDavPage(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FormItem(
-                    label = { Text(stringResource(R.string.backup_page_webdav_server_address)) }
+                    label = { Text(stringResource(Res.string.backup_page_webdav_server_address)) }
                 ) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -193,7 +238,7 @@ private fun WebDavPage(
                     )
                 }
                 FormItem(
-                    label = { Text(stringResource(R.string.backup_page_username)) }
+                    label = { Text(stringResource(Res.string.backup_page_username)) }
                 ) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -209,7 +254,7 @@ private fun WebDavPage(
                     )
                 }
                 FormItem(
-                    label = { Text(stringResource(R.string.backup_page_password)) }
+                    label = { Text(stringResource(Res.string.backup_page_password)) }
                 ) {
                     var passwordVisible by remember { mutableStateOf(false) }
                     OutlinedTextField(
@@ -230,7 +275,7 @@ private fun WebDavPage(
                     )
                 }
                 FormItem(
-                    label = { Text(stringResource(R.string.backup_page_path)) }
+                    label = { Text(stringResource(Res.string.backup_page_path)) }
                 ) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
@@ -248,7 +293,7 @@ private fun WebDavPage(
                     .fillMaxWidth()
                     .padding(16.dp),
                 label = {
-                    Text(stringResource(R.string.backup_page_backup_items))
+                    Text(stringResource(Res.string.backup_page_backup_items))
                 }
             ) {
                 MultiChoiceSegmentedButtonRow(
@@ -272,8 +317,8 @@ private fun WebDavPage(
                         ) {
                             Text(
                                 when (item) {
-                                    WebDavConfig.BackupItem.DATABASE -> stringResource(R.string.backup_page_chat_records)
-                                    WebDavConfig.BackupItem.FILES -> stringResource(R.string.backup_page_files)
+                                    WebDavConfig.BackupItem.DATABASE -> stringResource(Res.string.backup_page_chat_records)
+                                    WebDavConfig.BackupItem.FILES -> stringResource(Res.string.backup_page_files)
                                 }
                             )
                         }
@@ -292,14 +337,14 @@ private fun WebDavPage(
                         try {
                             vm.testWebDav()
                             toaster.show(
-                                context.getString(R.string.backup_page_connection_success),
+                                getString(Res.string.backup_page_connection_success),
                                 type = ToastType.Success
                             )
                         } catch (e: Exception) {
                             e.printStackTrace()
                             toaster.show(
-                                context.getString(
-                                    R.string.backup_page_connection_failed,
+                                getString(
+                                    Res.string.backup_page_connection_failed,
                                     e.message ?: ""
                                 ), type = ToastType.Error
                             )
@@ -307,14 +352,14 @@ private fun WebDavPage(
                     }
                 }
             ) {
-                Text(stringResource(R.string.backup_page_test_connection))
+                Text(stringResource(Res.string.backup_page_test_connection))
             }
             OutlinedButton(
                 onClick = {
                     showBackupFiles = true
                 }
             ) {
-                Text(stringResource(R.string.backup_page_restore))
+                Text(stringResource(Res.string.backup_page_restore))
             }
 
             Button(
@@ -325,13 +370,13 @@ private fun WebDavPage(
                             vm.backup()
                             vm.loadBackupFileItems()
                             toaster.show(
-                                context.getString(R.string.backup_page_backup_success),
+                                getString(Res.string.backup_page_backup_success),
                                 type = ToastType.Success
                             )
                         }.onFailure {
                             it.printStackTrace()
                             toaster.show(
-                                it.message ?: context.getString(R.string.backup_page_unknown_error),
+                                it.message ?: getString(Res.string.backup_page_unknown_error),
                                 type = ToastType.Error
                             )
                         }
@@ -348,7 +393,7 @@ private fun WebDavPage(
                     Icon(Lucide.Upload, null, modifier = Modifier.size(18.dp))
                 }
                 Spacer(Modifier.width(8.dp))
-                Text(if (isBackingUp) stringResource(R.string.backup_page_backing_up) else stringResource(R.string.backup_page_backup_now))
+                Text(if (isBackingUp) stringResource(Res.string.backup_page_backing_up) else stringResource(Res.string.backup_page_backup_now))
             }
         }
     }
@@ -371,7 +416,7 @@ private fun WebDavPage(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    stringResource(R.string.backup_page_webdav_backup_files),
+                    stringResource(Res.string.backup_page_webdav_backup_files),
                     modifier = Modifier.fillMaxWidth()
                 )
                 val backupItems by vm.webDavBackupItems.collectAsStateWithLifecycle()
@@ -390,15 +435,15 @@ private fun WebDavPage(
                                         runCatching {
                                             vm.deleteWebDavBackupFile(item)
                                             toaster.show(
-                                                context.getString(R.string.backup_page_delete_success),
+                                                getString(Res.string.backup_page_delete_success),
                                                 type = ToastType.Success
                                             )
                                             vm.loadBackupFileItems()
                                         }.onFailure { err ->
                                             err.printStackTrace()
                                             toaster.show(
-                                                context.getString(
-                                                    R.string.backup_page_delete_failed,
+                                                getString(
+                                                    Res.string.backup_page_delete_failed,
                                                     err.message ?: ""
                                                 ),
                                                 type = ToastType.Error
@@ -412,7 +457,7 @@ private fun WebDavPage(
                                         runCatching {
                                             vm.restore(item = item)
                                             toaster.show(
-                                                context.getString(R.string.backup_page_restore_success),
+                                                getString(Res.string.backup_page_restore_success),
                                                 type = ToastType.Success
                                             )
                                             showBackupFiles = false
@@ -420,8 +465,8 @@ private fun WebDavPage(
                                         }.onFailure { err ->
                                             err.printStackTrace()
                                             toaster.show(
-                                                context.getString(
-                                                    R.string.backup_page_restore_failed,
+                                                getString(
+                                                    Res.string.backup_page_restore_failed,
                                                     err.message ?: ""
                                                 ),
                                                 type = ToastType.Error
@@ -439,7 +484,7 @@ private fun WebDavPage(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.backup_page_loading_failed, it.message ?: ""),
+                            text = stringResource(Res.string.backup_page_loading_failed, it.message ?: ""),
                             color = Color.Red
                         )
                     }
@@ -506,7 +551,7 @@ private fun BackupItemCard(
                 },
                 enabled = !isRestoring
             ) {
-                Text(stringResource(R.string.backup_page_delete))
+                Text(stringResource(Res.string.backup_page_delete))
             }
             Button(
                 onClick = {
@@ -520,7 +565,7 @@ private fun BackupItemCard(
                     )
                     Spacer(Modifier.width(8.dp))
                 }
-                Text(if (isRestoring) stringResource(R.string.backup_page_restoring) else stringResource(R.string.backup_page_restore_now))
+                Text(if (isRestoring) stringResource(Res.string.backup_page_restoring) else stringResource(Res.string.backup_page_restore_now))
             }
         }
     }
@@ -532,7 +577,6 @@ private fun ImportExportPage(
 ) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     var isExporting by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
     var showRestartDialog by remember { mutableStateOf(false) }
@@ -541,9 +585,7 @@ private fun ImportExportPage(
     var importType by remember { mutableStateOf("local") }
 
     // 创建文件保存的launcher
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri ->
+    val createDocumentLauncher = rememberFileSaverLauncher { uri ->
         uri?.let { targetUri ->
             scope.launch {
                 isExporting = true
@@ -552,23 +594,19 @@ private fun ImportExportPage(
                     val exportFile = vm.exportToFile()
 
                     // 复制到用户选择的位置
-                    context.contentResolver.openOutputStream(targetUri)?.use { outputStream ->
-                        FileInputStream(exportFile).use { inputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
+                    targetUri.write(exportFile)
 
                     // 清理临时文件
                     exportFile.delete()
 
                     toaster.show(
-                        context.getString(R.string.backup_page_backup_success),
+                        getString(Res.string.backup_page_backup_success),
                         type = ToastType.Success
                     )
                 }.onFailure { e ->
                     e.printStackTrace()
                     toaster.show(
-                        context.getString(R.string.backup_page_restore_failed, e.message ?: ""),
+                        getString(Res.string.backup_page_restore_failed, e.message ?: ""),
                         type = ToastType.Error
                     )
                 }
@@ -578,8 +616,8 @@ private fun ImportExportPage(
     }
 
     // 创建文件选择的launcher
-    val openDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+    val openDocumentLauncher = rememberFilePickerLauncher(
+        type = FileKitType.File(if (importType == "local") "zip" else "json"),
     ) { uri ->
         uri?.let { sourceUri ->
             scope.launch {
@@ -588,14 +626,12 @@ private fun ImportExportPage(
                     when (importType) {
                         "local" -> {
                             // 本地备份导入：处理zip文件
-                            val tempFile =
-                                File(context.cacheDir, "temp_restore_${System.currentTimeMillis()}.zip")
+                            val tempFile = PlatformFile(
+                                FileKit.cacheDir,
+                                "temp_restore_${Clock.System.now().toEpochMilliseconds()}.zip"
+                            )
 
-                            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                                FileOutputStream(tempFile).use { outputStream ->
-                                    inputStream.copyTo(outputStream)
-                                }
-                            }
+                            tempFile.write(sourceUri)
 
                             // 从临时文件恢复
                             vm.restoreFromLocalFile(tempFile)
@@ -606,14 +642,12 @@ private fun ImportExportPage(
 
                         "chatbox" -> {
                             // Chatbox导入：处理json文件
-                            val tempFile =
-                                File(context.cacheDir, "temp_chatbox_${System.currentTimeMillis()}.json")
+                            val tempFile = PlatformFile(
+                                FileKit.cacheDir,
+                                "temp_chatbox_${Clock.System.now().toEpochMilliseconds()}.json"
+                            )
 
-                            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                                FileOutputStream(tempFile).use { outputStream ->
-                                    inputStream.copyTo(outputStream)
-                                }
-                            }
+                            tempFile.write(sourceUri)
 
                             // 从Chatbox文件恢复
                             vm.restoreFromChatBox(tempFile)
@@ -624,14 +658,14 @@ private fun ImportExportPage(
                     }
 
                     toaster.show(
-                        context.getString(R.string.backup_page_restore_success),
+                        getString(Res.string.backup_page_restore_success),
                         type = ToastType.Success
                     )
                     showRestartDialog = true
                 }.onFailure { e ->
                     e.printStackTrace()
                     toaster.show(
-                        context.getString(R.string.backup_page_restore_failed, e.message ?: ""),
+                        getString(Res.string.backup_page_restore_failed, e.message ?: ""),
                         type = ToastType.Error
                     )
                 }
@@ -647,7 +681,7 @@ private fun ImportExportPage(
     ) {
         stickyHeader {
             StickyHeader {
-                Text(stringResource(R.string.backup_page_local_backup_export))
+                Text(stringResource(Res.string.backup_page_local_backup_export))
             }
         }
 
@@ -655,20 +689,31 @@ private fun ImportExportPage(
             Card(
                 onClick = {
                     if (!isExporting) {
-                        val timestamp = LocalDateTime.now()
-                            .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
-                        createDocumentLauncher.launch("rikkahub_backup_$timestamp.zip")
+                        val timestamp = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                            .format(
+                                LocalDateTime
+                                    .Format {
+                                        year()
+                                        monthNumber()
+                                        day()
+                                        char('_')
+                                        hour()
+                                        minute()
+                                        second()
+                                    },
+                            )
+                        createDocumentLauncher.launch("rikkahub_backup_$timestamp", "zip")
                     }
                 }
             ) {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.backup_page_local_backup_export))
+                        Text(stringResource(Res.string.backup_page_local_backup_export))
                     },
                     supportingContent = {
                         Text(
-                            if (isExporting) stringResource(R.string.backup_page_exporting) else stringResource(
-                                R.string.backup_page_export_desc
+                            if (isExporting) stringResource(Res.string.backup_page_exporting) else stringResource(
+                                Res.string.backup_page_export_desc
                             )
                         )
                     },
@@ -691,18 +736,18 @@ private fun ImportExportPage(
                 onClick = {
                     if (!isRestoring) {
                         importType = "local"
-                        openDocumentLauncher.launch(arrayOf("application/zip"))
+                        openDocumentLauncher.launch()
                     }
                 }
             ) {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.backup_page_local_backup_import))
+                        Text(stringResource(Res.string.backup_page_local_backup_import))
                     },
                     supportingContent = {
                         Text(
-                            if (isRestoring) stringResource(R.string.backup_page_importing) else stringResource(
-                                R.string.backup_page_import_desc
+                            if (isRestoring) stringResource(Res.string.backup_page_importing) else stringResource(
+                                Res.string.backup_page_import_desc
                             )
                         )
                     },
@@ -722,7 +767,7 @@ private fun ImportExportPage(
 
         stickyHeader {
             StickyHeader {
-                Text(stringResource(R.string.backup_page_import_from_other_app))
+                Text(stringResource(Res.string.backup_page_import_from_other_app))
             }
         }
 
@@ -731,16 +776,16 @@ private fun ImportExportPage(
                 onClick = {
                     if (!isRestoring) {
                         importType = "chatbox"
-                        openDocumentLauncher.launch(arrayOf("application/json"))
+                        openDocumentLauncher.launch()
                     }
                 }
             ) {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.backup_page_import_from_chatbox))
+                        Text(stringResource(Res.string.backup_page_import_from_chatbox))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.backup_page_import_chatbox_desc))
+                        Text(stringResource(Res.string.backup_page_import_chatbox_desc))
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     leadingContent = {
@@ -767,15 +812,15 @@ private fun ImportExportPage(
 private fun BackupDialog() {
     AlertDialog(
         onDismissRequest = {},
-        title = { Text(stringResource(R.string.backup_page_restart_app)) },
-        text = { Text(stringResource(R.string.backup_page_restart_desc)) },
+        title = { Text(stringResource(Res.string.backup_page_restart_app)) },
+        text = { Text(stringResource(Res.string.backup_page_restart_desc)) },
         confirmButton = {
             Button(
                 onClick = {
                     exitProcess(0)
                 }
             ) {
-                Text(stringResource(R.string.backup_page_restart_app))
+                Text(stringResource(Res.string.backup_page_restart_app))
             }
         },
     )
