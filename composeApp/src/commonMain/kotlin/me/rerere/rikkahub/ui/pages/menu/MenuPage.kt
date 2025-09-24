@@ -27,12 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import io.ktor.http.Url
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.Favicon
@@ -40,7 +38,9 @@ import me.rerere.rikkahub.ui.components.ui.Greeting
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun MenuPage() {
@@ -114,7 +114,7 @@ private fun FeaturesSection() {
     ) {
         FeatureCard(
             title = {
-                Text(stringResource(id = R.string.menu_page_ai_translator))
+                Text(stringResource(Res.string.menu_page_ai_translator))
             },
             image = {
                 AsyncImage(
@@ -129,7 +129,7 @@ private fun FeaturesSection() {
         }
         FeatureCard(
             title = {
-                Text(stringResource(id = R.string.menu_page_image_generation))
+                Text(stringResource(Res.string.menu_page_image_generation))
             },
             image = {
                 AsyncImage(
@@ -144,7 +144,7 @@ private fun FeaturesSection() {
         }
 //        FeatureCard(
 //            title = {
-//                Text(stringResource(id = R.string.menu_page_knowledge_base))
+//                Text(stringResource(id = Res.string.menu_page_knowledge_base))
 //            },
 //            image = {
 //                AsyncImage(
@@ -162,7 +162,7 @@ private fun FeaturesSection() {
 
 @Composable
 private fun LeaderBoard() {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
 
     @Composable
     fun LeaderBoardItem(
@@ -199,7 +199,7 @@ private fun LeaderBoard() {
 
     Column {
         Text(
-            text = stringResource(id = R.string.menu_page_llm_leaderboard),
+            text = stringResource(Res.string.menu_page_llm_leaderboard),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(vertical = 16.dp)
