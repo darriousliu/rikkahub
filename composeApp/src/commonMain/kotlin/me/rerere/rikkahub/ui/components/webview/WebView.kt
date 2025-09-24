@@ -175,3 +175,11 @@ fun rememberWebViewState(
         settings = settings
     )
 }
+
+expect fun ConsoleMessage.messageLevelName(): String
+
+expect fun ConsoleMessage.message(): String
+
+expect fun ConsoleMessage.sourceId(): String
+
+expect fun ConsoleMessage.lineNumber(): Int

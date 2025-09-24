@@ -3,7 +3,6 @@ package me.rerere.rikkahub.ui.components.webview
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.view.ViewGroup.LayoutParams
-import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -15,12 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import co.touchlab.kermit.Logger
+import android.webkit.ConsoleMessage as AndroidConsoleMessage
 
 actual typealias NativeWebView = WebView
 
 actual typealias WebSettings = android.webkit.WebSettings
 
-actual typealias ConsoleMessage = ConsoleMessage
+actual typealias ConsoleMessage = AndroidConsoleMessage
 
 private const val TAG = "WebView"
 
@@ -36,7 +36,7 @@ internal class MyWebChromeClient(private val state: WebViewState) : WebChromeCli
 
     override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
         state.pushConsoleMessage(consoleMessage)
-        if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR || consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
+        if (consoleMessage.messageLevel() == AndroidConsoleMessage.MessageLevel.ERROR || consoleMessage.messageLevel() == AndroidConsoleMessage.MessageLevel.WARNING) {
             Logger.e(TAG) { "onConsoleMessage:  ${consoleMessage.message()}  ${consoleMessage.lineNumber()}  ${consoleMessage.sourceId()}" }
         }
         return super.onConsoleMessage(consoleMessage)
@@ -171,4 +171,20 @@ actual fun WebView(
             )
         }
     }
+}
+
+actual fun ConsoleMessage.messageLevelName(): String {
+    return messageLevel().name
+}
+
+actual fun ConsoleMessage.message(): String {
+    return message()
+}
+
+actual fun ConsoleMessage.sourceId(): String {
+    return sourceId()
+}
+
+actual fun ConsoleMessage.lineNumber(): Int {
+    return lineNumber()
 }

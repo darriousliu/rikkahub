@@ -141,3 +141,19 @@ actual fun WebView(
         }
     }
 }
+
+actual fun ConsoleMessage.messageLevelName(): String {
+    TODO("Not yet implemented")
+}
+
+actual fun ConsoleMessage.message(): String {
+    TODO("Not yet implemented")
+}
+
+actual fun ConsoleMessage.sourceId(): String {
+    TODO("Not yet implemented")
+}
+
+actual fun ConsoleMessage.lineNumber(): Int {
+    TODO("Not yet implemented")
+}
