@@ -76,6 +76,7 @@ ktorfit = "2.6.4"
 okio = "3.16.0"
 atomicfu = "0.29.0"
 webview = "2.0.3"
+buildkonfig = "0.17.1"
 
 [libraries]
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
@@ -216,3 +217,4 @@ multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotl
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
 androidx-room = { id = "androidx.room", version.ref = "room" }
+buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }

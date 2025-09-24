@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
@@ -22,7 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.rerere.ai.ui.UIMessage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.getAssistantById
@@ -33,6 +31,8 @@ import me.rerere.rikkahub.ui.components.ui.ListSelectableItem
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.hooks.ImeLazyListAutoScroller
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatList"
@@ -172,7 +172,7 @@ fun ChatList(
                         ) {
                             HorizontalDivider(modifier = Modifier.weight(1f))
                             Text(
-                                text = stringResource(R.string.chat_page_clear_context),
+                                text = stringResource(Res.string.chat_page_clear_context),
                                 style = MaterialTheme.typography.bodySmall
                             )
                             HorizontalDivider(modifier = Modifier.weight(1f))
@@ -427,7 +427,7 @@ private fun BoxScope.MessageJumper(
             ) {
                 Icon(
                     imageVector = Lucide.ChevronsDown,
-                    contentDescription = stringResource(R.string.chat_page_scroll_to_bottom),
+                    contentDescription = stringResource(Res.string.chat_page_scroll_to_bottom),
                     modifier = Modifier
                         .padding(4.dp)
                 )

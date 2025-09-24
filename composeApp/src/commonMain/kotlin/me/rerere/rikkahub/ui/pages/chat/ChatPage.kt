@@ -1,45 +1,24 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import android.net.Uri
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DrawerState
-import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PermanentNavigationDrawer
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.currentWindowDpSize
-import androidx.compose.material3.rememberDrawerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import coil3.Uri
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.ListTree
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MessageCirclePlus
@@ -49,7 +28,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -67,10 +45,10 @@ import me.rerere.rikkahub.utils.base64Decode
 import me.rerere.rikkahub.utils.createChatFilesByContents
 import me.rerere.rikkahub.utils.getFileMimeType
 import me.rerere.rikkahub.utils.navigateToChatPage
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
+import rikkahub.composeapp.generated.resources.*
 import kotlin.uuid.Uuid
 
 @Composable
@@ -82,7 +60,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>) {
     )
     val navController = LocalNavController.current
     val toaster = LocalToaster.current
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val scope = rememberCoroutineScope()
 
     // Handle Error
@@ -395,7 +373,7 @@ private fun TopBar(
             }
         },
         title = {
-            val editTitleWarning = stringResource(R.string.chat_page_edit_title_warning)
+            val editTitleWarning = stringResource(Res.string.chat_page_edit_title_warning)
             Surface(
                 onClick = {
                     if (conversation.messageNodes.isNotEmpty()) {
@@ -411,14 +389,14 @@ private fun TopBar(
                     val model = settings.getCurrentChatModel()
                     val provider = model?.findProvider(providers = settings.providers, checkOverwrite = false)
                     Text(
-                        text = conversation.title.ifBlank { stringResource(R.string.chat_page_new_chat) },
+                        text = conversation.title.ifBlank { stringResource(Res.string.chat_page_new_chat) },
                         maxLines = 1,
                         style = MaterialTheme.typography.bodyMedium,
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (model != null && provider != null) {
                         Text(
-                            text = "${assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) }} / ${model.displayName} (${provider.name})",
+                            text = "${assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) }} / ${model.displayName} (${provider.name})",
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             color = LocalContentColor.current.copy(0.65f),
@@ -454,7 +432,7 @@ private fun TopBar(
                 titleState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.chat_page_edit_title))
+                Text(stringResource(Res.string.chat_page_edit_title))
             },
             text = {
                 OutlinedTextField(
@@ -470,7 +448,7 @@ private fun TopBar(
                         titleState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.chat_page_save))
+                    Text(stringResource(Res.string.chat_page_save))
                 }
             },
             dismissButton = {
@@ -479,7 +457,7 @@ private fun TopBar(
                         titleState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.chat_page_cancel))
+                    Text(stringResource(Res.string.chat_page_cancel))
                 }
             }
         )

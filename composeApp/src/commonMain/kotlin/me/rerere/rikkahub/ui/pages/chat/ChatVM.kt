@@ -1,36 +1,25 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.intl.Locale
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil3.toUri
 import dev.gitlive.firebase.analytics.FirebaseAnalytics
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyInputMessage
+import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
-import me.rerere.rikkahub.data.model.Assistant
-import me.rerere.rikkahub.data.model.AssistantAffectScope
-import me.rerere.rikkahub.data.model.Avatar
-import me.rerere.rikkahub.data.model.Conversation
-import me.rerere.rikkahub.data.model.replaceRegexes
+import me.rerere.rikkahub.data.model.*
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
@@ -44,7 +33,7 @@ private const val TAG = "ChatVM"
 
 class ChatVM(
     id: String,
-    private val context: Application,
+    private val context: PlatformContext,
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
     private val chatService: ChatService,

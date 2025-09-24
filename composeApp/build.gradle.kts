@@ -1,5 +1,6 @@
 @file:OptIn(ExperimentalSwiftExportDsl::class)
 
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -18,6 +19,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.ktorfit)
     alias(libs.plugins.androidx.room)
+    alias(libs.plugins.buildkonfig)
 }
 
 kotlin {
@@ -125,6 +127,7 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0-alpha05")
 
             // lifecycle
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
@@ -196,8 +199,6 @@ kotlin {
 
             // cache
             implementation(libs.cache4k)
-            // webview
-            implementation(libs.compose.webview)
             // Latex
             implementation(libs.katex.core)
         }
@@ -205,6 +206,11 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
     }
+}
+
+buildkonfig {
+    packageName = "me.rerere.rikkahub.buildkonfig"
+    objectName = "BuildConfig"
 }
 
 android {
@@ -272,11 +278,19 @@ android {
             )
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
+            buildkonfig.defaultConfigs {
+                this.buildConfigField(STRING, "VERSION_NAME", android.defaultConfig.versionName)
+                this.buildConfigField(STRING, "APPLICATION_ID", android.defaultConfig.applicationId)
+            }
         }
         debug {
             applicationIdSuffix = ".debug"
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
+            buildkonfig.defaultConfigs {
+                this.buildConfigField(STRING, "VERSION_NAME", android.defaultConfig.versionName)
+                this.buildConfigField(STRING, "APPLICATION_ID", "${android.defaultConfig.applicationId}.debug")
+            }
         }
         create("baseline") {
             initWith(getByName("release"))

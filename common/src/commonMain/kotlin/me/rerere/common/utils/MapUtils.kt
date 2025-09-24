@@ -5,3 +5,5 @@ fun <K, V> MutableMap<K, V>.putIfAbsent(key: K, value: V) {
         this[key] = value
     }
 }
+
+expect fun <K, V> Map<K, V>.toSortedMap1(comparator: Comparator<in K>): Map<K, V>

@@ -5,63 +5,33 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.History
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Pin
-import com.composables.icons.lucide.PinOff
-import com.composables.icons.lucide.RefreshCw
-import com.composables.icons.lucide.Trash2
-import com.composables.icons.lucide.X
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.minus
-import kotlinx.datetime.toLocalDateTime
-import me.rerere.rikkahub.R
+import com.composables.icons.lucide.*
+import kotlinx.datetime.*
+import me.rerere.common.utils.toSortedMap1
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.toLocalString
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -113,19 +83,19 @@ fun ColumnScope.ConversationList(
                 disabledIndicatorColor = Color.Transparent,
             ),
             placeholder = {
-                Text(stringResource(id = R.string.chat_page_search_placeholder))
+                Text(stringResource(Res.string.chat_page_search_placeholder))
             }
         )
 
         Tooltip(
-            tooltip = { Text(stringResource(id = R.string.chat_page_search_placeholder)) },
+            tooltip = { Text(stringResource(Res.string.chat_page_search_placeholder)) },
         ) {
             IconButton(
                 onClick = { navController.navigate(Screen.History) }
             ) {
                 Icon(
                     imageVector = Lucide.History,
-                    contentDescription = stringResource(R.string.chat_page_history),
+                    contentDescription = stringResource(Res.string.chat_page_history),
                 )
             }
         }
@@ -151,7 +121,7 @@ fun ColumnScope.ConversationList(
                     val instant = conversation.updateAt
                     instant.toLocalDateTime(TimeZone.currentSystemDefault())
                 }
-                .toSortedMap(compareByDescending { it })
+                .toSortedMap1(compareByDescending { it })
                 .mapValues { (_, conversations) ->
                     conversations.sortedByDescending { it.updateAt }
                 }
@@ -176,7 +146,7 @@ fun ColumnScope.ConversationList(
                     color = MaterialTheme.colorScheme.surfaceContainerLow
                 ) {
                     Text(
-                        text = stringResource(id = R.string.chat_page_no_conversations),
+                        text = stringResource(Res.string.chat_page_no_conversations),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -245,7 +215,7 @@ private fun PinnedHeader() {
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = stringResource(R.string.pinned_chats),
+            text = stringResource(Res.string.pinned_chats),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -259,8 +229,8 @@ private fun DateHeader(date: LocalDateTime) {
     val yesterday = today.minus(1, DateTimeUnit.DAY)
 
     val displayText = when (date.date) {
-        today -> stringResource(id = R.string.chat_page_today)
-        yesterday -> stringResource(id = R.string.chat_page_yesterday)
+        today -> stringResource(Res.string.chat_page_today)
+        yesterday -> stringResource(Res.string.chat_page_yesterday)
         else -> {
             // 使用Android本地化日期格式
             val formatStyle = if (date.year == today.year) {
@@ -330,7 +300,7 @@ private fun ConversationItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = conversation.title.ifBlank { stringResource(id = R.string.chat_page_new_message) },
+                text = conversation.title.ifBlank { stringResource(Res.string.chat_page_new_message) },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -363,7 +333,7 @@ private fun ConversationItem(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            if (conversation.isPinned) stringResource(R.string.unpin_chat) else stringResource(R.string.pin_chat)
+                            if (conversation.isPinned) stringResource(Res.string.unpin_chat) else stringResource(Res.string.pin_chat)
                         )
                     },
                     onClick = {
@@ -380,7 +350,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(id = R.string.chat_page_regenerate_title))
+                        Text(stringResource(Res.string.chat_page_regenerate_title))
                     },
                     onClick = {
                         onRegenerateTitle(conversation)
@@ -393,7 +363,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(id = R.string.chat_page_delete))
+                        Text(stringResource(Res.string.chat_page_delete))
                     },
                     onClick = {
                         onDelete(conversation)
