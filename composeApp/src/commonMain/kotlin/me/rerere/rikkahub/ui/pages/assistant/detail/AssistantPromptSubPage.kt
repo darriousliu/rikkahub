@@ -41,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -49,8 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.window.DialogProperties
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Fullscreen
@@ -71,7 +69,6 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.transformers.DefaultPlaceholderProvider
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.ai.transformers.TransformerContext
@@ -90,7 +87,34 @@ import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.insertAtCursor
 import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onSuccess
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.assistant_page_available_variables
+import rikkahub.composeapp.generated.resources.assistant_page_message_template
+import rikkahub.composeapp.generated.resources.assistant_page_message_template_desc
+import rikkahub.composeapp.generated.resources.assistant_page_preset_messages
+import rikkahub.composeapp.generated.resources.assistant_page_preset_messages_desc
+import rikkahub.composeapp.generated.resources.assistant_page_quick_message_content
+import rikkahub.composeapp.generated.resources.assistant_page_quick_message_title
+import rikkahub.composeapp.generated.resources.assistant_page_quick_messages
+import rikkahub.composeapp.generated.resources.assistant_page_quick_messages_desc
+import rikkahub.composeapp.generated.resources.assistant_page_regex_affecting_scopes
+import rikkahub.composeapp.generated.resources.assistant_page_regex_desc
+import rikkahub.composeapp.generated.resources.assistant_page_regex_find_regex
+import rikkahub.composeapp.generated.resources.assistant_page_regex_name
+import rikkahub.composeapp.generated.resources.assistant_page_regex_replace_string
+import rikkahub.composeapp.generated.resources.assistant_page_regex_title
+import rikkahub.composeapp.generated.resources.assistant_page_regex_visual_only
+import rikkahub.composeapp.generated.resources.assistant_page_save
+import rikkahub.composeapp.generated.resources.assistant_page_system_prompt
+import rikkahub.composeapp.generated.resources.assistant_page_template_preview
+import rikkahub.composeapp.generated.resources.assistant_page_template_variable_date
+import rikkahub.composeapp.generated.resources.assistant_page_template_variable_message
+import rikkahub.composeapp.generated.resources.assistant_page_template_variable_role
+import rikkahub.composeapp.generated.resources.assistant_page_template_variable_time
+import rikkahub.composeapp.generated.resources.assistant_page_template_variables_label
+import rikkahub.composeapp.generated.resources.delete
 import kotlin.uuid.Uuid
 
 @Composable
@@ -98,8 +122,7 @@ fun AssistantPromptSubPage(
     assistant: Assistant,
     onUpdate: (Assistant) -> Unit
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val context = LocalPlatformContext.current
     val templateTransformer = koinInject<TemplateTransformer>()
     var isFocused by remember { mutableStateOf(false) }
     var isFullScreen by remember { mutableStateOf(false) }
@@ -116,7 +139,7 @@ fun AssistantPromptSubPage(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_system_prompt))
+                    Text(stringResource(Res.string.assistant_page_system_prompt))
                 },
             ) {
                 val systemPromptValue = rememberTextFieldState(
@@ -173,7 +196,7 @@ fun AssistantPromptSubPage(
 
                 Column {
                     Text(
-                        text = stringResource(R.string.assistant_page_available_variables),
+                        text = stringResource(Res.string.assistant_page_available_variables),
                         style = MaterialTheme.typography.labelSmall
                     )
                     FlowRow(
@@ -199,7 +222,7 @@ fun AssistantPromptSubPage(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_message_template))
+                    Text(stringResource(Res.string.assistant_page_message_template))
                 },
                 content = {
                     OutlinedTextField(
@@ -222,29 +245,29 @@ fun AssistantPromptSubPage(
                     )
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_message_template_desc))
+                    Text(stringResource(Res.string.assistant_page_message_template_desc))
                     Text(buildAnnotatedString {
-                        append(stringResource(R.string.assistant_page_template_variables_label))
+                        append(stringResource(Res.string.assistant_page_template_variables_label))
                         append(" ")
-                        append(stringResource(R.string.assistant_page_template_variable_role))
+                        append(stringResource(Res.string.assistant_page_template_variable_role))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ role }}")
                         }
                         append(", ")
-                        append(stringResource(R.string.assistant_page_template_variable_message))
+                        append(stringResource(Res.string.assistant_page_template_variable_message))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ message }}")
                         }
                         append(", ")
-                        append(stringResource(R.string.assistant_page_template_variable_time))
+                        append(stringResource(Res.string.assistant_page_template_variable_time))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ time }}")
                         }
                         append(", ")
-                        append(stringResource(R.string.assistant_page_template_variable_date))
+                        append(stringResource(Res.string.assistant_page_template_variable_date))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ date }}")
@@ -261,7 +284,7 @@ fun AssistantPromptSubPage(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = stringResource(R.string.assistant_page_template_preview),
+                    text = stringResource(Res.string.assistant_page_template_preview),
                     style = MaterialTheme.typography.titleSmall
                 )
                 val rawMessages = listOf(
@@ -289,7 +312,7 @@ fun AssistantPromptSubPage(
                 }
                 preview.onError {
                     Text(
-                        text = it.message ?: it.javaClass.name,
+                        text = it.message ?: it::class.simpleName.orEmpty(),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -314,10 +337,10 @@ fun AssistantPromptSubPage(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_preset_messages))
+                    Text(stringResource(Res.string.assistant_page_preset_messages))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_preset_messages_desc))
+                    Text(stringResource(Res.string.assistant_page_preset_messages_desc))
                 }
             )
             Column(
@@ -414,10 +437,10 @@ fun AssistantPromptSubPage(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_quick_messages))
+                    Text(stringResource(Res.string.assistant_page_quick_messages))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_quick_messages_desc))
+                    Text(stringResource(Res.string.assistant_page_quick_messages_desc))
                 }
             )
             Column(
@@ -449,7 +472,7 @@ fun AssistantPromptSubPage(
                                     )
                                 },
                                 modifier = Modifier.weight(1f),
-                                label = { Text(stringResource(R.string.assistant_page_quick_message_title)) }
+                                label = { Text(stringResource(Res.string.assistant_page_quick_message_title)) }
                             )
                             IconButton(
                                 onClick = {
@@ -482,7 +505,7 @@ fun AssistantPromptSubPage(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             maxLines = 6,
-                            label = { Text(stringResource(R.string.assistant_page_quick_message_content)) }
+                            label = { Text(stringResource(Res.string.assistant_page_quick_message_content)) }
                         )
                     }
                 }
@@ -505,10 +528,10 @@ fun AssistantPromptSubPage(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_regex_title))
+                    Text(stringResource(Res.string.assistant_page_regex_title))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_regex_desc))
+                    Text(stringResource(Res.string.assistant_page_regex_desc))
                 }
             )
             Column(
@@ -619,7 +642,7 @@ private fun AssistantRegexCard(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_regex_name)) }
+                    label = { Text(stringResource(Res.string.assistant_page_regex_name)) }
                 )
 
                 OutlinedTextField(
@@ -638,7 +661,7 @@ private fun AssistantRegexCard(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_regex_find_regex)) },
+                    label = { Text(stringResource(Res.string.assistant_page_regex_find_regex)) },
                     placeholder = { Text("e.g., \\b\\w+@\\w+\\.\\w+\\b") },
                 )
 
@@ -658,13 +681,13 @@ private fun AssistantRegexCard(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_regex_replace_string)) },
+                    label = { Text(stringResource(Res.string.assistant_page_regex_replace_string)) },
                     placeholder = { Text("e.g., [EMAIL]") }
                 )
 
                 Column {
                     Text(
-                        text = stringResource(R.string.assistant_page_regex_affecting_scopes),
+                        text = stringResource(Res.string.assistant_page_regex_affecting_scopes),
                         style = MaterialTheme.typography.labelMedium
                     )
                     Row(
@@ -726,7 +749,7 @@ private fun AssistantRegexCard(
                         }
                     )
                     Text(
-                        text = stringResource(R.string.assistant_page_regex_visual_only),
+                        text = stringResource(Res.string.assistant_page_regex_visual_only),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -747,7 +770,7 @@ private fun AssistantRegexCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Icon(Lucide.Trash2, null)
-                        Text(stringResource(R.string.delete))
+                        Text(stringResource(Res.string.delete))
                     }
                 }
             }
@@ -796,7 +819,7 @@ private fun FullScreenSystemPromptEditor(
                                 onDone()
                             }
                         ) {
-                            Text(stringResource(R.string.assistant_page_save))
+                            Text(stringResource(Res.string.assistant_page_save))
                         }
                     }
                     TextField(
@@ -807,7 +830,7 @@ private fun FullScreenSystemPromptEditor(
                             .fillMaxSize(),
                         shape = RoundedCornerShape(16.dp),
                         placeholder = {
-                            Text(stringResource(R.string.assistant_page_system_prompt))
+                            Text(stringResource(Res.string.assistant_page_system_prompt))
                         },
                         colors = TextFieldDefaults.colors().copy(
                             unfocusedIndicatorColor = Color.Transparent,

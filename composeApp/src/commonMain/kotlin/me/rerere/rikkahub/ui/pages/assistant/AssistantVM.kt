@@ -12,6 +12,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import kotlin.uuid.Uuid
 
 class AssistantVM(
     private val settingsStore: SettingsStore,
@@ -55,7 +56,7 @@ class AssistantVM(
         viewModelScope.launch {
             val settings = settings.value
             val copiedAssistant = assistant.copy(
-                id = kotlin.uuid.Uuid.random(),
+                id = Uuid.random(),
                 name = "${assistant.name} (Clone)",
                 avatar = if (assistant.avatar is Avatar.Image) Avatar.Dummy else assistant.avatar,
             )

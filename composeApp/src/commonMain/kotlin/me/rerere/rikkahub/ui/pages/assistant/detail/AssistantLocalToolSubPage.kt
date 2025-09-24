@@ -12,12 +12,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.LocalToolOption
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.ui.components.ui.FormItem
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun AssistantLocalToolSubPage(
@@ -34,8 +35,8 @@ fun AssistantLocalToolSubPage(
     ) {
         // JavaScript 引擎工具卡片
         LocalToolCard(
-            title = stringResource(R.string.assistant_page_local_tools_javascript_engine_title),
-            description = stringResource(R.string.assistant_page_local_tools_javascript_engine_desc),
+            title = stringResource(Res.string.assistant_page_local_tools_javascript_engine_title),
+            description = stringResource(Res.string.assistant_page_local_tools_javascript_engine_desc),
             isEnabled = assistant.localTools.contains(LocalToolOption.JavascriptEngine),
             onToggle = { enabled ->
                 val newLocalTools = if (enabled) {

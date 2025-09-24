@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -53,7 +52,6 @@ import com.composables.icons.lucide.GripHorizontal
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANTS_IDS
 import me.rerere.rikkahub.data.datastore.Settings
@@ -71,7 +69,21 @@ import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.modifier.onClick
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantImporter
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.assistant_page_add
+import rikkahub.composeapp.generated.resources.assistant_page_cancel
+import rikkahub.composeapp.generated.resources.assistant_page_clone
+import rikkahub.composeapp.generated.resources.assistant_page_default_assistant
+import rikkahub.composeapp.generated.resources.assistant_page_delete
+import rikkahub.composeapp.generated.resources.assistant_page_delete_dialog_text
+import rikkahub.composeapp.generated.resources.assistant_page_memory_count
+import rikkahub.composeapp.generated.resources.assistant_page_name
+import rikkahub.composeapp.generated.resources.assistant_page_save
+import rikkahub.composeapp.generated.resources.assistant_page_title
+import rikkahub.composeapp.generated.resources.cancel
+import rikkahub.composeapp.generated.resources.confirm
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
@@ -103,7 +115,7 @@ fun AssistantPage(vm: AssistantVM = koinViewModel()) {
     Scaffold(
         topBar = {
             TopAppBar(title = {
-                Text(stringResource(R.string.assistant_page_title))
+                Text(stringResource(Res.string.assistant_page_title))
             }, navigationIcon = {
                 BackButton()
             }, actions = {
@@ -111,7 +123,7 @@ fun AssistantPage(vm: AssistantVM = koinViewModel()) {
                     onClick = {
                         createState.open(Assistant())
                     }) {
-                    Icon(Lucide.Plus, stringResource(R.string.assistant_page_add))
+                    Icon(Lucide.Plus, stringResource(Res.string.assistant_page_add))
                 }
             })
         }) {
@@ -290,7 +302,7 @@ private fun AssistantCreationSheet(
                 ) {
                     FormItem(
                         label = {
-                            Text(stringResource(R.string.assistant_page_name))
+                            Text(stringResource(Res.string.assistant_page_name))
                         },
                     ) {
                         OutlinedTextField(
@@ -320,13 +332,13 @@ private fun AssistantCreationSheet(
                         onClick = {
                             state.dismiss()
                         }) {
-                        Text(stringResource(R.string.assistant_page_cancel))
+                        Text(stringResource(Res.string.assistant_page_cancel))
                     }
                     TextButton(
                         onClick = {
                             state.confirm()
                         }) {
-                        Text(stringResource(R.string.assistant_page_save))
+                        Text(stringResource(Res.string.assistant_page_save))
                     }
                 }
             }
@@ -359,7 +371,7 @@ private fun AssistantItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 UIAvatar(
-                    name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                    name = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                     value = assistant.avatar,
                     modifier = Modifier.size(36.dp)
                 )
@@ -368,7 +380,7 @@ private fun AssistantItem(
             }
 
             Text(
-                text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                text = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -376,7 +388,7 @@ private fun AssistantItem(
 
             if (assistant.enableMemory) {
                 Tag(type = TagType.SUCCESS) {
-                    Text(stringResource(R.string.assistant_page_memory_count, memories.size))
+                    Text(stringResource(Res.string.assistant_page_memory_count, memories.size))
                 }
             }
 
@@ -411,10 +423,10 @@ private fun AssistantItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (assistant.id !in DEFAULT_ASSISTANTS_IDS) {
-                    Tooltip(tooltip = { Text(stringResource(R.string.assistant_page_delete)) }) {
+                    Tooltip(tooltip = { Text(stringResource(Res.string.assistant_page_delete)) }) {
                         Icon(
                             imageVector = Lucide.Trash2,
-                            contentDescription = stringResource(R.string.assistant_page_delete),
+                            contentDescription = stringResource(Res.string.assistant_page_delete),
                             modifier = Modifier
                                 .onClick {
                                     showDeleteDialog = true
@@ -424,10 +436,10 @@ private fun AssistantItem(
                         )
                     }
                 }
-                Tooltip(tooltip = { Text(stringResource(R.string.assistant_page_clone)) }) {
+                Tooltip(tooltip = { Text(stringResource(Res.string.assistant_page_clone)) }) {
                     Icon(
                         imageVector = Lucide.Copy,
-                        contentDescription = stringResource(R.string.assistant_page_clone),
+                        contentDescription = stringResource(Res.string.assistant_page_clone),
                         modifier = Modifier
                             .onClick {
                                 onCopy()
@@ -444,10 +456,10 @@ private fun AssistantItem(
                 showDeleteDialog = false
             },
             title = {
-                Text(stringResource(R.string.assistant_page_delete))
+                Text(stringResource(Res.string.assistant_page_delete))
             },
             text = {
-                Text(stringResource(R.string.assistant_page_delete_dialog_text))
+                Text(stringResource(Res.string.assistant_page_delete_dialog_text))
             },
             confirmButton = {
                 TextButton(
@@ -455,7 +467,7 @@ private fun AssistantItem(
                         showDeleteDialog = false
                         onDelete()
                     }) {
-                    Text(stringResource(R.string.confirm))
+                    Text(stringResource(Res.string.confirm))
                 }
             },
             dismissButton = {
@@ -463,7 +475,7 @@ private fun AssistantItem(
                     onClick = {
                         showDeleteDialog = false
                     }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
         )

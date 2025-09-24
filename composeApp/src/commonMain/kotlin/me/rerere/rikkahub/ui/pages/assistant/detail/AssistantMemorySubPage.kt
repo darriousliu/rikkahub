@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -31,12 +30,14 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun AssistantMemorySettings(
@@ -62,7 +63,7 @@ fun AssistantMemorySettings(
                 memoryDialogState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.assistant_page_manage_memory_title))
+                Text(stringResource(Res.string.assistant_page_manage_memory_title))
             },
             text = {
                 TextField(
@@ -71,7 +72,7 @@ fun AssistantMemorySettings(
                         update(memory.copy(content = it))
                     },
                     label = {
-                        Text(stringResource(R.string.assistant_page_manage_memory_title))
+                        Text(stringResource(Res.string.assistant_page_manage_memory_title))
                     },
                     minLines = 1,
                     maxLines = 8
@@ -83,7 +84,7 @@ fun AssistantMemorySettings(
                         memoryDialogState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_save))
+                    Text(stringResource(Res.string.assistant_page_save))
                 }
             },
             dismissButton = {
@@ -92,7 +93,7 @@ fun AssistantMemorySettings(
                         memoryDialogState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_cancel))
+                    Text(stringResource(Res.string.assistant_page_cancel))
                 }
             }
         )
@@ -110,11 +111,11 @@ fun AssistantMemorySettings(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_memory))
+                    Text(stringResource(Res.string.assistant_page_memory))
                 },
                 description = {
                     Text(
-                        text = stringResource(R.string.assistant_page_memory_desc),
+                        text = stringResource(Res.string.assistant_page_memory_desc),
                     )
                 },
                 tail = {
@@ -136,11 +137,11 @@ fun AssistantMemorySettings(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_recent_chats))
+                    Text(stringResource(Res.string.assistant_page_recent_chats))
                 },
                 description = {
                     Text(
-                        text = stringResource(R.string.assistant_page_recent_chats_desc),
+                        text = stringResource(Res.string.assistant_page_recent_chats_desc),
                     )
                 },
                 tail = {
@@ -162,7 +163,7 @@ fun AssistantMemorySettings(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = stringResource(R.string.assistant_page_manage_memory_title),
+                text = stringResource(Res.string.assistant_page_manage_memory_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .padding(bottom = 8.dp)
@@ -228,7 +229,7 @@ private fun MemoryItem(
             ) {
                 Icon(
                     Lucide.Trash2,
-                    stringResource(R.string.assistant_page_delete)
+                    stringResource(Res.string.assistant_page_delete)
                 )
             }
         }

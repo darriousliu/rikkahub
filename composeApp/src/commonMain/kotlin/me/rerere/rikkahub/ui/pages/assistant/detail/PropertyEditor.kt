@@ -22,22 +22,34 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.CustomHeader
 import me.rerere.highlight.LocalHighlighter
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.richtext.HighlightCodeVisualTransformation
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.assistant_page_add_body
+import rikkahub.composeapp.generated.resources.assistant_page_add_header
+import rikkahub.composeapp.generated.resources.assistant_page_body_key
+import rikkahub.composeapp.generated.resources.assistant_page_body_value
+import rikkahub.composeapp.generated.resources.assistant_page_custom_bodies
+import rikkahub.composeapp.generated.resources.assistant_page_custom_headers
+import rikkahub.composeapp.generated.resources.assistant_page_delete_body
+import rikkahub.composeapp.generated.resources.assistant_page_delete_header
+import rikkahub.composeapp.generated.resources.assistant_page_header_name
+import rikkahub.composeapp.generated.resources.assistant_page_header_value
+import rikkahub.composeapp.generated.resources.assistant_page_invalid_json
 
 private val jsonLenient = Json {
     ignoreUnknownKeys = true
@@ -51,7 +63,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
         modifier = Modifier.padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(stringResource(R.string.assistant_page_custom_headers))
+        Text(stringResource(Res.string.assistant_page_custom_headers))
         Spacer(Modifier.height(8.dp))
 
         headers.forEachIndexed { index, header ->
@@ -73,7 +85,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                                 updatedHeaders[index] = updatedHeaders[index].copy(name = it.trim())
                                 onUpdate(updatedHeaders)
                             },
-                            label = { Text(stringResource(R.string.assistant_page_header_name)) },
+                            label = { Text(stringResource(Res.string.assistant_page_header_name)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(Modifier.height(8.dp))
@@ -86,7 +98,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                                     updatedHeaders[index].copy(value = it.trim())
                                 onUpdate(updatedHeaders)
                             },
-                            label = { Text(stringResource(R.string.assistant_page_header_value)) },
+                            label = { Text(stringResource(Res.string.assistant_page_header_value)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -97,7 +109,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                     }) {
                         Icon(
                             Lucide.Trash,
-                            contentDescription = stringResource(R.string.assistant_page_delete_header)
+                            contentDescription = stringResource(Res.string.assistant_page_delete_header)
                         )
                     }
                 }
@@ -112,21 +124,20 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Lucide.Plus, contentDescription = stringResource(R.string.assistant_page_add_header))
+            Icon(Lucide.Plus, contentDescription = stringResource(Res.string.assistant_page_add_header))
             Spacer(Modifier.width(4.dp))
-            Text(stringResource(R.string.assistant_page_add_header))
+            Text(stringResource(Res.string.assistant_page_add_header))
         }
     }
 }
 
 @Composable
 fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) -> Unit) {
-    val context = LocalContext.current
     Column(
         modifier = Modifier.padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(stringResource(R.string.assistant_page_custom_bodies))
+        Text(stringResource(Res.string.assistant_page_custom_bodies))
         Spacer(Modifier.height(8.dp))
 
         customBodies.forEachIndexed { index, body ->
@@ -151,7 +162,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                 updatedBodies[index] = updatedBodies[index].copy(key = it.trim())
                                 onUpdate(updatedBodies)
                             },
-                            label = { Text(stringResource(R.string.assistant_page_body_key)) },
+                            label = { Text(stringResource(Res.string.assistant_page_body_key)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(Modifier.height(8.dp))
@@ -168,13 +179,15 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                     jsonParseError = null // Clear error on successful parse
                                 } catch (e: Exception) { // Catching general Exception, JsonException is common here
                                     jsonParseError =
-                                        context.getString(
-                                            R.string.assistant_page_invalid_json,
-                                            e.message?.take(100) ?: ""
-                                        ) // Truncate for very long messages
+                                        runBlocking {
+                                            getString(
+                                                Res.string.assistant_page_invalid_json,
+                                                e.message?.take(100) ?: ""
+                                            )
+                                        } // Truncate for very long messages
                                 }
                             },
-                            label = { Text(stringResource(R.string.assistant_page_body_value)) },
+                            label = { Text(stringResource(Res.string.assistant_page_body_value)) },
                             modifier = Modifier.fillMaxWidth(),
                             isError = jsonParseError != null,
                             supportingText = {
@@ -199,7 +212,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                     }) {
                         Icon(
                             Lucide.Trash,
-                            contentDescription = stringResource(R.string.assistant_page_delete_body)
+                            contentDescription = stringResource(Res.string.assistant_page_delete_body)
                         )
                     }
                 }
@@ -214,9 +227,9 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Lucide.Plus, contentDescription = stringResource(R.string.assistant_page_add_body))
+            Icon(Lucide.Plus, contentDescription = stringResource(Res.string.assistant_page_add_body))
             Spacer(Modifier.width(4.dp))
-            Text(stringResource(R.string.assistant_page_add_body))
+            Text(stringResource(Res.string.assistant_page_add_body))
         }
     }
 }
