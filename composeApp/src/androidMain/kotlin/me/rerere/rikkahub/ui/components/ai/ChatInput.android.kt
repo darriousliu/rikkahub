@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.content.MediaType
 import androidx.compose.foundation.content.ReceiveContentListener
 import androidx.compose.foundation.content.consume
+import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -17,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
@@ -280,4 +282,8 @@ internal actual fun createImageReceiveListener(
             else -> transferableContent
         }
     }
+}
+
+internal actual fun Modifier.platformContentReceiver(listener: ReceiveContentListener): Modifier {
+    return this.then(Modifier.contentReceiver(listener))
 }

@@ -7,6 +7,8 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.common.PlatformContext
 import kotlin.io.encoding.ExperimentalEncodingApi
 
+private const val TAG = "ChatUtil"
+
 actual fun PlatformContext.copyMessageToClipboard(message: UIMessage) {
 }
 
@@ -18,10 +20,6 @@ actual fun BitmapImage.compress(): ByteArray {
     TODO("Not yet implemented")
 }
 
-@OptIn(markerClass = [ExperimentalEncodingApi::class])
-actual fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri> {
-    TODO("Not yet implemented")
-}
 
 actual fun PlatformContext.createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<Uri> {
     TODO("Not yet implemented")

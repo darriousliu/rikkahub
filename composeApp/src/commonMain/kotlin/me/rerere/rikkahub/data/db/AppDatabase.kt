@@ -1,6 +1,13 @@
 package me.rerere.rikkahub.data.db
 
-import androidx.room.*
+import androidx.room.AutoMigration
+import androidx.room.ConstructedBy
+import androidx.room.Database
+import androidx.room.DeleteColumn
+import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection

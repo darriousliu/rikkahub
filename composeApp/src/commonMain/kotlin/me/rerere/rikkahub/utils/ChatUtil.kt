@@ -4,10 +4,17 @@ import androidx.navigation.NavHostController
 import co.touchlab.kermit.Logger
 import coil3.BitmapImage
 import coil3.Uri
+import coil3.toUri
+import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.extension
+import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.isRegularFile
 import io.github.vinceglb.filekit.list
+import io.github.vinceglb.filekit.resolve
+import io.github.vinceglb.filekit.write
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsBytes
@@ -15,9 +22,12 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import me.rerere.ai.ui.UIMessage
 import me.rerere.common.PlatformContext
+import me.rerere.common.utils.createNewFile
+import me.rerere.common.utils.mkdirs
 import me.rerere.rikkahub.Screen
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -50,8 +60,31 @@ expect fun PlatformContext.copyMessageToClipboard(message: UIMessage)
 expect fun ByteArray.toImage(): BitmapImage
 
 
-@OptIn(markerClass = [ExperimentalEncodingApi::class])
-expect fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri>
+fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri> {
+    val newUris = mutableListOf<Uri>()
+
+    val dir = FileKit.filesDir.resolve("upload")
+    if (!dir.exists()) {
+        dir.mkdirs()
+    }
+    uris.forEach { uri ->
+        val fileName = Uuid.random()
+        val file = dir.resolve("$fileName")
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        val newUri = file.absolutePath().toUri()
+        runCatching {
+            val inputFile = PlatformFile(uri.toString())
+            runBlocking { file.write(inputFile) }
+            newUris.add(newUri)
+        }.onFailure {
+            it.printStackTrace()
+            Logger.e(TAG, it) { "createChatFilesByContents: Failed to save image from $uri" }
+        }
+    }
+    return newUris
+}
 
 expect fun PlatformContext.createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<Uri>
 

@@ -5,7 +5,6 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.content.ReceiveContentListener
-import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -103,20 +102,7 @@ import me.rerere.rikkahub.utils.deleteChatFiles
 import me.rerere.rikkahub.utils.isImeVisible
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.cancel_edit
-import rikkahub.composeapp.generated.resources.chat_input_placeholder
-import rikkahub.composeapp.generated.resources.chat_page_clear_context
-import rikkahub.composeapp.generated.resources.chat_page_learning_mode
-import rikkahub.composeapp.generated.resources.chat_page_learning_mode_desc
-import rikkahub.composeapp.generated.resources.chat_page_save
-import rikkahub.composeapp.generated.resources.editing
-import rikkahub.composeapp.generated.resources.more_options
-import rikkahub.composeapp.generated.resources.photo
-import rikkahub.composeapp.generated.resources.send
-import rikkahub.composeapp.generated.resources.stop
-import rikkahub.composeapp.generated.resources.web_search_disabled
-import rikkahub.composeapp.generated.resources.web_search_enabled
+import rikkahub.composeapp.generated.resources.*
 import kotlin.time.Duration.Companion.seconds
 
 enum class ExpandState {
@@ -376,7 +362,7 @@ private fun TextInputRow(
                     state = state.textContent,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .contentReceiver(receiveContentListener)
+                        .platformContentReceiver(receiveContentListener)
                         .onFocusChanged {
                             isFocused = it.isFocused
                         },
@@ -737,6 +723,10 @@ internal expect fun createImageReceiveListener(
 
 @Stable
 internal expect fun provideDialogProperties(): DialogProperties
+
+internal expect fun Modifier.platformContentReceiver(
+    listener: ReceiveContentListener
+): Modifier
 
 @Composable
 internal fun BigIconTextButton(

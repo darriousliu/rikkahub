@@ -6,6 +6,8 @@ import ComposeApp
 struct iOSApp: App {
     init() {
         FirebaseApp.configure()
+        AppInitializer.shared.doInitKoin { _ in
+        }
         AppInitializer.shared.initialize()
     }
 

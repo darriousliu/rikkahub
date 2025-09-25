@@ -29,14 +29,14 @@ kotlin {
         }
     }
 
-    iosArm64()
-    iosSimulatorArm64()
-
-    swiftExport {
-        moduleName = "ComposeApp"
-        flattenPackage = "me.rerere.rikkahub"
-        configure {
-            freeCompilerArgs.add("-Xexpect-actual-classes")
+    listOf(
+//        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
         }
     }
 

@@ -1,15 +1,60 @@
 package me.rerere.rikkahub.utils
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.buildkonfig.BuildConfig
 import kotlin.jvm.JvmInline
 
-expect class UpdateChecker(client: HttpClient) {
-    fun checkUpdate(): Flow<UiState<UpdateInfo>>
-    fun downloadUpdate(context: PlatformContext, download: UpdateDownload)
+private const val API_URL = "https://updates.rikka-ai.com/"
+
+class UpdateChecker(private val client: HttpClient) {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    fun checkUpdate(): Flow<UiState<UpdateInfo>> = flow {
+        emit(UiState.Loading)
+        emit(
+            UiState.Success(
+                data = try {
+                    val response = client.get {
+                        url(API_URL)
+                        header(
+                            "User-Agent",
+                            "RikkaHub ${BuildConfig.VERSION_NAME} #${BuildConfig.VERSION_CODE}"
+                        )
+                    }
+                    if (response.status.isSuccess()) {
+                        json.decodeFromString<UpdateInfo>(response.bodyAsText())
+                    } else {
+                        throw Exception("Failed to fetch update info")
+                    }
+                } catch (e: Exception) {
+                    throw Exception("Failed to fetch update info", e)
+                }
+            )
+        )
+    }.catch {
+        emit(UiState.Error(it))
+    }.flowOn(Dispatchers.IO)
+
+    fun downloadUpdate(context: PlatformContext, download: UpdateDownload) {
+        platformDownloadUpdate(context, download)
+    }
 }
+
+expect fun platformDownloadUpdate(context: PlatformContext, download: UpdateDownload)
 
 @Serializable
 data class UpdateDownload(

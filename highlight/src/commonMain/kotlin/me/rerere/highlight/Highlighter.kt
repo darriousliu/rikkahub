@@ -48,6 +48,7 @@ class Highlighter(appScope: CoroutineScope) {
     private val context: QuickJs by lazy {
         runBlocking {
             QuickJs.create(Dispatchers.Default).also {
+                it.maxStackSize = 1024 * 1024 // 1MB
                 it.evaluate<Boolean>(script)
             }
         }
@@ -234,7 +235,7 @@ object JsObjectSerializer : KSerializer<JsObject> {
                 // 对于自定义对象，尝试使用反射序列化
                 try {
                     format.encodeToJsonElement(value)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     JsonPrimitive(value.toString()) // 降级为字符串
                 }
             }

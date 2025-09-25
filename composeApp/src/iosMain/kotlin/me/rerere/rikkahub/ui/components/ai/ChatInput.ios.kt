@@ -3,6 +3,7 @@ package me.rerere.rikkahub.ui.components.ai
 import androidx.compose.foundation.content.ReceiveContentListener
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
 import coil3.Uri
 import me.rerere.ai.ui.UIMessagePart
@@ -36,4 +37,8 @@ internal actual fun createImageReceiveListener(
     context: PlatformContext
 ): ReceiveContentListener {
     return ReceiveContentListener { it }
+}
+
+internal actual fun Modifier.platformContentReceiver(listener: ReceiveContentListener): Modifier {
+    return this
 }

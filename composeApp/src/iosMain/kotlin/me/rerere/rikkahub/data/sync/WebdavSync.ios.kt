@@ -1,9 +1,16 @@
 package me.rerere.rikkahub.data.sync
 
 import io.github.vinceglb.filekit.PlatformFile
+import kotlinx.serialization.json.Json
+import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 
-actual class WebdavSync {
+actual class WebdavSync actual constructor(
+    private val settingsStore: SettingsStore,
+    private val json: Json,
+    private val context: PlatformContext
+) {
     actual suspend fun testWebdav(webDavConfig: WebDavConfig) {
     }
 

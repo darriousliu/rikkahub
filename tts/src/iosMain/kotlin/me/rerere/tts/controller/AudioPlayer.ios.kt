@@ -1,13 +1,15 @@
 package me.rerere.tts.controller
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import me.rerere.common.PlatformContext
 import me.rerere.tts.model.PlaybackState
 import me.rerere.tts.model.TTSResponse
 
 actual class AudioPlayer actual constructor(context: PlatformContext) {
-    actual val playbackState: StateFlow<PlaybackState>
-        get() = TODO("Not yet implemented")
+    private val _playbackState = MutableStateFlow(PlaybackState())
+    actual val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     actual fun pause() {
     }

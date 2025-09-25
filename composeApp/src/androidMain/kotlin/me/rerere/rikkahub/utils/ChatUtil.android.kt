@@ -40,33 +40,33 @@ fun PlatformContext.createChatFilesByContents(uris: List<AndroidUri>): List<Andr
     return createChatFilesByContents(uris.map { it.toCoilUri() }).map { it.toAndroidUri() }
 }
 
-actual fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri> {
-    val newUris = mutableListOf<Uri>()
-    val dir = this.filesDir.resolve("upload")
-    if (!dir.exists()) {
-        dir.mkdirs()
-    }
-    uris.forEach { uri ->
-        val fileName = Uuid.random()
-        val file = dir.resolve("$fileName")
-        if (!file.exists()) {
-            file.createNewFile()
-        }
-        val newUri = file.toUri().toCoilUri()
-        runCatching {
-            this.contentResolver.openInputStream(uri.toAndroidUri())?.use { inputStream ->
-                file.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            newUris.add(newUri)
-        }.onFailure {
-            it.printStackTrace()
-            Logger.e(TAG, it) { "createChatFilesByContents: Failed to save image from $uri" }
-        }
-    }
-    return newUris
-}
+//fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri> {
+//    val newUris = mutableListOf<Uri>()
+//    val dir = this.filesDir.resolve("upload")
+//    if (!dir.exists()) {
+//        dir.mkdirs()
+//    }
+//    uris.forEach { uri ->
+//        val fileName = Uuid.random()
+//        val file = dir.resolve("$fileName")
+//        if (!file.exists()) {
+//            file.createNewFile()
+//        }
+//        val newUri = file.toUri().toCoilUri()
+//        runCatching {
+//            this.contentResolver.openInputStream(uri.toAndroidUri())?.use { inputStream ->
+//                file.outputStream().use { outputStream ->
+//                    inputStream.copyTo(outputStream)
+//                }
+//            }
+//            newUris.add(newUri)
+//        }.onFailure {
+//            it.printStackTrace()
+//            Logger.e(TAG, it) { "createChatFilesByContents: Failed to save image from $uri" }
+//        }
+//    }
+//    return newUris
+//}
 
 actual fun PlatformContext.createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<Uri> {
     val newUris = mutableListOf<Uri>()
