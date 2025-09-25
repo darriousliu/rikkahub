@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,8 +20,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import coil3.compose.LocalPlatformContext
 import androidx.compose.ui.unit.dp
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Share2
 import kotlinx.serialization.json.JsonPrimitive
@@ -30,6 +29,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.provider.ProviderSetting
+import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.utils.JsonInstant
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -61,17 +61,7 @@ fun ShareSheet(
 
                     IconButton(
                         onClick = {
-                            val intent = Intent(Intent.ACTION_SEND)
-                            intent.type = "text/plain"
-                            intent.putExtra(
-                                Intent.EXTRA_TEXT,
-                                state.currentProvider?.encode() ?: ""
-                            )
-                            try {
-                                context.startActivity(Intent.createChooser(intent, null))
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
+                            shareModel(context, state)
                         }
                     ) {
                         Icon(Lucide.Share2, null)
@@ -91,7 +81,7 @@ fun ShareSheet(
 }
 
 @OptIn(ExperimentalEncodingApi::class)
-private fun ProviderSetting.encode(): String {
+internal fun ProviderSetting.encode(): String {
     return buildString {
         append("ai-provider:")
         append("v1:")
@@ -186,3 +176,5 @@ class ShareSheetState {
 fun rememberShareSheetState(): ShareSheetState {
     return ShareSheetState()
 }
+
+expect fun shareModel(context: PlatformContext, state: ShareSheetState)
