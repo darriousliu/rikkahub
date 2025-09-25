@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
-import coil3.asImage
 import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Eye
@@ -36,7 +35,6 @@ import com.composables.icons.lucide.X
 import com.dokar.sonner.ToastType
 import io.github.reactivecircus.cache4k.Cache
 import kotlinx.coroutines.runBlocking
-import me.rerere.common.utils.toPlatformBitmap
 import me.rerere.rikkahub.ui.components.webview.NativeWebView
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.configureZoom
@@ -46,6 +44,7 @@ import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.escapeHtml
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.toCssHex
+import me.rerere.rikkahub.utils.toImage
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import rikkahub.composeapp.generated.resources.*
@@ -90,10 +89,10 @@ fun Mermaid(
                     // 解码Base64图像并保存
                     try {
                         val imageBytes = Base64.decode(base64Image)
-                        val bitmap = imageBytes.toPlatformBitmap()
+                        val bitmap = imageBytes.toImage()
                         context.exportImage(
                             context,
-                            bitmap.asImage(),
+                            bitmap,
                             "mermaid_${Clock.System.now().toEpochMilliseconds()}.png"
                         )
                     } catch (e: Exception) {

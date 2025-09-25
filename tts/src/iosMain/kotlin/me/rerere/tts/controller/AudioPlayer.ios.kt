@@ -12,26 +12,34 @@ actual class AudioPlayer actual constructor(context: PlatformContext) {
     actual val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     actual fun pause() {
+        TODO("Not yet implemented")
     }
 
     actual fun resume() {
+        TODO("Not yet implemented")
     }
 
     actual fun stop() {
+        TODO("Not yet implemented")
     }
 
     actual fun clear() {
+        TODO("Not yet implemented")
     }
 
     actual fun release() {
+        TODO("Not yet implemented")
     }
 
     actual fun seekBy(ms: Long) {
+        TODO("Not yet implemented")
     }
 
     actual fun setSpeed(speed: Float) {
+        TODO("Not yet implemented")
     }
 
     actual suspend fun play(response: TTSResponse) {
+        TODO("Not yet implemented")
     }
 }
