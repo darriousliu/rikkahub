@@ -18,6 +18,7 @@ kotlin {
             "androidx.compose.foundation.ExperimentalFoundationApi",
             "androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
             "com.mohamedrejeb.calf.permissions.ExperimentalPermissionsApi",
+            "coil3.annotation.InternalCoilApi",
         )
     }
 

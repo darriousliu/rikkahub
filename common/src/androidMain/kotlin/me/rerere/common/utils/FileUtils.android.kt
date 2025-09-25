@@ -26,3 +26,7 @@ actual fun getUriForFile(
 ): Uri {
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file.toFile()).toCoilUri()
 }
+
+actual fun PlatformFile.deleteRecursively(): Boolean {
+    return toFile().deleteRecursively()
+}

@@ -21,13 +21,15 @@ fun PlatformFile.mkdirs() = try {
 
 fun PlatformFile.delete() = runBlocking {
     try {
-        delete()
+        delete(mustExist = false)
         true
     } catch (e: Exception) {
         e.printStackTrace()
         false
     }
 }
+
+expect fun PlatformFile.deleteRecursively(): Boolean
 
 fun PlatformFile.renameTo(file: PlatformFile) = runBlocking {
     try {

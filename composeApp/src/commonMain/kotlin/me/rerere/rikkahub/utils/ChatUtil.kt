@@ -13,7 +13,9 @@ import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.isRegularFile
 import io.github.vinceglb.filekit.list
+import io.github.vinceglb.filekit.parent
 import io.github.vinceglb.filekit.resolve
+import io.github.vinceglb.filekit.size
 import io.github.vinceglb.filekit.write
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -25,12 +27,14 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import me.rerere.ai.ui.UIMessage
+import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.PlatformContext
 import me.rerere.common.utils.createNewFile
+import me.rerere.common.utils.delete
+import me.rerere.common.utils.deleteRecursively
 import me.rerere.common.utils.mkdirs
 import me.rerere.rikkahub.Screen
 import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatUtil"
@@ -56,9 +60,13 @@ fun navigateToChatPage(
     }
 }
 
-expect fun PlatformContext.copyMessageToClipboard(message: UIMessage)
+fun PlatformContext.copyMessageToClipboard(message: UIMessage) {
+    this.writeClipboardText(message.toText())
+}
+
 expect fun ByteArray.toImage(): BitmapImage
 
+expect fun BitmapImage.compress(): ByteArray
 
 fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri> {
     val newUris = mutableListOf<Uri>()
@@ -86,7 +94,24 @@ fun PlatformContext.createChatFilesByContents(uris: List<Uri>): List<Uri> {
     return newUris
 }
 
-expect fun PlatformContext.createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<Uri>
+suspend fun PlatformContext.createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<Uri> {
+    val newUris = mutableListOf<Uri>()
+    val dir = FileKit.filesDir.resolve("upload")
+    if (!dir.exists()) {
+        dir.mkdirs()
+    }
+    byteArrays.forEach { byteArray ->
+        val fileName = Uuid.random()
+        val file = dir.resolve("$fileName")
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        val newUri = file.absolutePath().toUri()
+        file.write(byteArray)
+        newUris.add(newUri)
+    }
+    return newUris
+}
 
 expect fun PlatformContext.getFileNameFromUri(uri: Uri): String?
 
@@ -125,20 +150,88 @@ suspend fun PlatformContext.saveMessageImage(image: String) = withContext(Dispat
     }
 }
 
-expect fun BitmapImage.compress(): ByteArray
+suspend fun PlatformContext.convertBase64ImagePartToLocalFile(message: UIMessage): UIMessage =
+    withContext(Dispatchers.IO) {
+        message.copy(
+            parts = message.parts.map { part ->
+                when (part) {
+                    is UIMessagePart.Image -> {
+                        if (part.url.startsWith("data:image")) {
+                            // base64 image
+                            val sourceByteArray = Base64.decode(part.url.substringAfter("base64,").toByteArray())
+                            val bitmap = sourceByteArray.toImage()
+                            val byteArray = bitmap.compress()
+                            val urls = createChatFilesByByteArrays(listOf(byteArray))
+                            Logger.i(TAG) {
+                                "convertBase64ImagePartToLocalFile: convert base64 img to ${
+                                    urls.joinToString(
+                                        ", "
+                                    )
+                                }"
+                            }
+                            part.copy(
+                                url = urls.first().toString(),
+                            )
+                        } else {
+                            part
+                        }
+                    }
 
-@OptIn(markerClass = [ExperimentalEncodingApi::class])
-expect suspend fun PlatformContext.convertBase64ImagePartToLocalFile(message: UIMessage): UIMessage
+                    else -> part
+                }
+            }
+        )
+    }
 
-expect fun PlatformContext.deleteChatFiles(uris: List<Uri>)
+fun PlatformContext.deleteChatFiles(uris: List<Uri>) {
+    uris.filter { it.toString().startsWith("file:") }.forEach { uri ->
+        val file = PlatformFile(uri.toString())
+        if (file.exists()) {
+            file.delete()
+        }
+    }
+}
 
-expect fun PlatformContext.deleteAllChatFiles()
+fun PlatformContext.deleteAllChatFiles() {
+    val dir = FileKit.filesDir.resolve("upload")
+    if (dir.exists()) {
+        dir.deleteRecursively()
+    }
+}
 
-expect suspend fun PlatformContext.countChatFiles(): Pair<Int, Long>
+suspend fun PlatformContext.countChatFiles(): Pair<Int, Long> = withContext(Dispatchers.IO) {
+    val dir = FileKit.filesDir.resolve("upload")
+    if (!dir.exists()) {
+        return@withContext Pair(0, 0)
+    }
+    val files = dir.list()
+    val count = files.size
+    val size = files.sumOf { it.size() }
+    Pair(count, size)
+}
 
-expect fun PlatformContext.getImagesDir(): PlatformFile
+fun PlatformContext.getImagesDir(): PlatformFile {
+    val dir = FileKit.filesDir.resolve("images")
+    if (!dir.exists()) {
+        dir.mkdirs()
+    }
+    return dir
+}
 
-expect fun PlatformContext.createImageFileFromBase64(base64Data: String, filePath: String): PlatformFile
+suspend fun PlatformContext.createImageFileFromBase64(base64Data: String, filePath: String): PlatformFile =
+    withContext(Dispatchers.IO) {
+        val data = if (base64Data.startsWith("data:image")) {
+            base64Data.substringAfter("base64,")
+        } else {
+            base64Data
+        }
+
+        val byteArray = Base64.decode(data.toByteArray())
+        val file = PlatformFile(filePath)
+        file.parent()?.mkdirs()
+        file.write(byteArray)
+        return@withContext file
+    }
 
 fun PlatformContext.listImageFiles(): List<PlatformFile> {
     val imagesDir = getImagesDir()

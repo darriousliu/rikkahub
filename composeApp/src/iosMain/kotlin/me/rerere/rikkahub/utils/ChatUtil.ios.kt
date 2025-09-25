@@ -1,60 +1,40 @@
 package me.rerere.rikkahub.utils
 
+import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import coil3.BitmapImage
 import coil3.Uri
-import io.github.vinceglb.filekit.PlatformFile
-import me.rerere.ai.ui.UIMessage
+import coil3.asImage
+import coil3.pathSegments
+import coil3.util.MimeTypeMap
+import io.github.vinceglb.filekit.utils.toByteArray
+import io.github.vinceglb.filekit.utils.toNSData
 import me.rerere.common.PlatformContext
-import kotlin.io.encoding.ExperimentalEncodingApi
-
-private const val TAG = "ChatUtil"
-
-actual fun PlatformContext.copyMessageToClipboard(message: UIMessage) {
-}
+import org.jetbrains.skia.Image
+import platform.UIKit.UIImage
+import platform.UIKit.UIImagePNGRepresentation
 
 actual fun ByteArray.toImage(): BitmapImage {
-    TODO("Not yet implemented")
+    return try {
+        val image = Image.makeFromEncoded(this)
+        image.toComposeImageBitmap().asSkiaBitmap().asImage()
+    } catch (e: Exception) {
+        throw e
+    }
 }
 
 actual fun BitmapImage.compress(): ByteArray {
-    TODO("Not yet implemented")
-}
-
-
-actual fun PlatformContext.createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<Uri> {
-    TODO("Not yet implemented")
+    val skiaBitmap = this.bitmap
+    val byteArray = skiaBitmap.readPixels() ?: return byteArrayOf()
+    val uiImage = UIImage(byteArray.toNSData())
+    val pngData = UIImagePNGRepresentation(uiImage)
+    return pngData?.toByteArray() ?: byteArrayOf()
 }
 
 actual fun PlatformContext.getFileNameFromUri(uri: Uri): String? {
-    TODO("Not yet implemented")
+    return uri.pathSegments.lastOrNull()?.split(".")?.firstOrNull()
 }
 
 actual fun PlatformContext.getFileMimeType(uri: Uri): String? {
-    TODO("Not yet implemented")
-}
-
-@OptIn(markerClass = [ExperimentalEncodingApi::class])
-actual suspend fun PlatformContext.convertBase64ImagePartToLocalFile(message: UIMessage): UIMessage {
-    TODO("Not yet implemented")
-}
-
-actual fun PlatformContext.deleteChatFiles(uris: List<Uri>) {
-}
-
-actual fun PlatformContext.deleteAllChatFiles() {
-}
-
-actual suspend fun PlatformContext.countChatFiles(): Pair<Int, Long> {
-    TODO("Not yet implemented")
-}
-
-actual fun PlatformContext.getImagesDir(): PlatformFile {
-    TODO("Not yet implemented")
-}
-
-actual fun PlatformContext.createImageFileFromBase64(
-    base64Data: String,
-    filePath: String
-): PlatformFile {
-    TODO("Not yet implemented")
+    return MimeTypeMap.getMimeTypeFromUrl(uri.toString())
 }
