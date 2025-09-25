@@ -103,21 +103,21 @@ actual fun WebView(
                     this.webChromeClient = webChromeClient
                     this.webViewClient = webViewClient
 
-                    state.interfaces.forEach { (name, obj) ->
+                    state.androidInterfaces.forEach { (name, obj) ->
                         addJavascriptInterface(obj, name)
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth(), // Make WebView fill the width
             onReset = {
-                state.interfaces.forEach { (name, _) ->
+                state.androidInterfaces.forEach { (name, _) ->
                     it.removeJavascriptInterface(name)
                 }
                 Logger.d(TAG) { "AndroidView: Resetting WebView" }
             },
             update = { webView ->
                 state.webView = AndroidWebView(webView)
-                state.interfaces.forEach { (name, obj) ->
+                state.androidInterfaces.forEach { (name, obj) ->
                     webView.addJavascriptInterface(obj, name)
                 }
                 Logger.d(TAG) { "AndroidView: Updating WebView" }

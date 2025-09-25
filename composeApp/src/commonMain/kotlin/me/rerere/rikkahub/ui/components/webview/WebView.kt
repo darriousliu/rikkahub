@@ -47,7 +47,8 @@ sealed class WebContent {
 @Stable // Mark as Stable for better Compose performance
 class WebViewState(
     initialContent: WebContent = WebContent.NavigatorOnly,
-    val interfaces: Map<String, Any> = emptyMap(),
+    val androidInterfaces: Map<String, Any> = emptyMap(),
+    val iosInterfaces: Map<String, (String) -> Unit> = emptyMap(),
     val settings: WebSettings.() -> Unit = {}
 ) {
     // --- Content State ---
@@ -149,12 +150,14 @@ class WebViewState(
 fun rememberWebViewState(
     url: String = "about:blank",
     additionalHttpHeaders: Map<String, String> = emptyMap(),
-    interfaces: Map<String, Any> = emptyMap(),
+    androidInterfaces: Map<String, Any> = emptyMap(),
+    iosInterfaces: Map<String, (String) -> Unit> = emptyMap(),
     settings: WebSettings.() -> Unit = {},
 ) = remember(url, additionalHttpHeaders) { // Use keys for better recomposition control
     WebViewState(
         initialContent = WebContent.Url(url, additionalHttpHeaders),
-        interfaces = interfaces,
+        androidInterfaces = androidInterfaces,
+        iosInterfaces = iosInterfaces,
         settings = settings
     )
 }
@@ -166,12 +169,14 @@ fun rememberWebViewState(
     encoding: String = "utf-8",
     mimeType: String? = null,
     historyUrl: String? = null,
-    interfaces: Map<String, Any> = emptyMap(),
+    androidInterfaces: Map<String, Any> = emptyMap(),
+    iosInterfaces: Map<String, (String) -> Unit> = emptyMap(),
     settings: WebSettings.() -> Unit = {},
 ) = remember(data, baseUrl, encoding, mimeType, historyUrl) { // Use keys
     WebViewState(
         initialContent = WebContent.Data(data, baseUrl, encoding, mimeType, historyUrl),
-        interfaces = interfaces,
+        androidInterfaces = androidInterfaces,
+        iosInterfaces = iosInterfaces,
         settings = settings
     )
 }

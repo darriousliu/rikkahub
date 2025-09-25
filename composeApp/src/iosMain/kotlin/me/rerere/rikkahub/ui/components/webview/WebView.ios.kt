@@ -3,19 +3,27 @@
 package me.rerere.rikkahub.ui.components.webview
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
+import co.touchlab.kermit.Logger
 import kotlinx.cinterop.cValue
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSOperatingSystemVersion
 import platform.Foundation.NSProcessInfo
+import platform.WebKit.WKScriptMessage
+import platform.WebKit.WKScriptMessageHandlerProtocol
+import platform.WebKit.WKUserContentController
+import platform.WebKit.WKUserScript
+import platform.WebKit.WKUserScriptInjectionTime
 import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
+import platform.darwin.NSObject
 import kotlin.experimental.ExperimentalNativeApi
 
 actual typealias NativeWebView = WKWebView
@@ -58,6 +66,40 @@ actual fun WebView(
 //                        forKey = "allowUniversalAccessFromFileURLs",
 //                    )
                     }
+                val userContentController = WKUserContentController()
+                // 注入 JavaScript Bridge
+                state.iosInterfaces.forEach { (functionName, handler) ->
+                    val jsCode = """
+                    window.$functionName = function(data) {
+                        window.webkit.messageHandlers.$functionName.postMessage(data);
+                    };
+                """.trimIndent()
+
+                    val userScript = WKUserScript(
+                        source = jsCode,
+                        injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
+                        forMainFrameOnly = true
+                    )
+                    userContentController.addUserScript(userScript)
+
+                    // 创建消息处理器
+                    val messageHandler = object : NSObject(), WKScriptMessageHandlerProtocol {
+                        override fun userContentController(
+                            userContentController: WKUserContentController,
+                            didReceiveScriptMessage: WKScriptMessage
+                        ) {
+                            Logger.i("WebView") { "Received message from JS: ${didReceiveScriptMessage.body}, type: ${didReceiveScriptMessage.body::class.qualifiedName}" }
+                            val message = didReceiveScriptMessage.body.toString()
+                            handler(message)
+                        }
+                    }
+
+                    userContentController.addScriptMessageHandler(
+                        scriptMessageHandler = messageHandler,
+                        name = functionName
+                    )
+                }
+                config.userContentController = userContentController
                 WKWebView(
                     frame = CGRectZero.readValue(),
                     configuration = config.apply {
@@ -117,15 +159,49 @@ actual fun WebView(
                     state.webView = iosWebView
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            update = {
-                state.webView = IOSWebView(it)
-                onUpdated(state.webView!!.webView)
+            modifier = Modifier.fillMaxSize(),
+            update = { webView ->
+                state.webView = IOSWebView(webView)
+                Logger.i("WebView") { "UIKitView: Updating WebView" }
+
+                when (val content = state.content) {
+                    is WebContent.Url -> {
+                        val url = content.url
+                        // Only load new URL if it's different from the current one or if the state forces reload
+                        // Also check if the webView's url is null or blank, which might happen initially
+                        val currentWebViewUrl = webView.URL?.absoluteString
+                        if (url.isNotEmpty() && (currentWebViewUrl.isNullOrBlank() || url != currentWebViewUrl || state.forceReload)) {
+                            state.webView?.loadUrl(content.url, content.additionalHttpHeaders)
+                            state.forceReload = false // Reset force reload flag
+                        }
+                    }
+
+                    is WebContent.Data -> {
+                        // Check if the data needs to be reloaded (e.g., if different from last loaded data)
+                        // For simplicity, we might just reload it every time the update block runs with Data content.
+                        // A more complex check could involve comparing `content.data` with a previously stored value.
+                        state.webView?.loadData(
+                            content.data,
+                            content.baseUrl,
+                            content.encoding,
+                            content.mimeType,
+                            content.historyUrl
+                        )
+                        // Assuming data loading is fast, but let's reflect the state more accurately
+                        // state.isLoading = false // This might be too soon, let WebViewClient handle it
+                    }
+
+                    WebContent.NavigatorOnly -> {
+                        // NO-OP: State changes related to navigation are handled by the methods in WebViewState
+                    }
+                }
+                onUpdated(webView)
             },
             onRelease = {
                 state.webView = null
             },
             onReset = {
+                Logger.i("WebView") { "UIKitView: Resetting WebView" }
             },
             properties =
                 UIKitInteropProperties(

@@ -11,7 +11,7 @@ import platform.Foundation.NSUserDomainMask
 import platform.WebKit.WKWebView
 
 class IOSWebView(override val webView: WKWebView) : IWebView {
-    override fun loadUrl(url: String) {
+    override fun loadUrl(url: String, additionalHttpHeaders: Map<String, String>) {
         // Check if it's a file URL
         if (url.startsWith("file://")) {
             val fileURL = NSURL(string = url)

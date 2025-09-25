@@ -3,7 +3,7 @@ package me.rerere.rikkahub.ui.components.webview
 
 interface IWebView {
     val webView: NativeWebView
-    fun loadUrl(url: String)
+    fun loadUrl(url: String, additionalHttpHeaders: Map<String, String> = emptyMap())
 
     fun loadData(
         html: String?,

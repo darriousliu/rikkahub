@@ -5,8 +5,8 @@ import android.webkit.WebView
 class AndroidWebView(
     override val webView: WebView,
 ) : IWebView {
-    override fun loadUrl(url: String) {
-        webView.loadUrl(url)
+    override fun loadUrl(url: String, additionalHttpHeaders: Map<String, String>) {
+        webView.loadUrl(url, additionalHttpHeaders)
     }
 
     override fun loadData(

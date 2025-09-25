@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import co.touchlab.kermit.Logger
 import coil3.asImage
 import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Download
@@ -36,6 +37,7 @@ import com.dokar.sonner.ToastType
 import io.github.reactivecircus.cache4k.Cache
 import kotlinx.coroutines.runBlocking
 import me.rerere.common.utils.toPlatformBitmap
+import me.rerere.rikkahub.ui.components.webview.NativeWebView
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.configureZoom
 import me.rerere.rikkahub.ui.components.webview.rememberWebViewState
@@ -46,10 +48,7 @@ import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.toCssHex
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.mermaid_export
-import rikkahub.composeapp.generated.resources.mermaid_export_failed
-import rikkahub.composeapp.generated.resources.mermaid_export_success
+import rikkahub.composeapp.generated.resources.*
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
@@ -127,8 +126,16 @@ fun Mermaid(
         data = html,
         mimeType = "text/html",
         encoding = "UTF-8",
-        interfaces = mapOf(
+        androidInterfaces = mapOf(
             "AndroidInterface" to jsInterface
+        ),
+        iosInterfaces = mapOf(
+            "updateHeight" to { heightStr ->
+                heightStr.toFloatOrNull()?.toInt()?.let { height ->
+                    jsInterface.onHeightChanged(height)
+                }
+            },
+            "exportImage" to jsInterface.onExportImage
         ),
         settings = {
             configureZoom()
@@ -145,7 +152,11 @@ fun Mermaid(
                 .clip(RoundedCornerShape(4.dp))
                 .animateContentSize()
                 .height(height),
+            onCreated = {
+                it.disableScroll()
+            },
             onUpdated = {
+                Logger.i("Mermaid") { "WebView updated" }
                 webViewState.webView?.evaluateJavascript("calculateAndSendHeight();", null)
             }
         )
@@ -215,8 +226,16 @@ fun Mermaid(
                         data = html,
                         mimeType = "text/html",
                         encoding = "UTF-8",
-                        interfaces = mapOf(
+                        androidInterfaces = mapOf(
                             "AndroidInterface" to jsInterface
+                        ),
+                        iosInterfaces = mapOf(
+                            "updateHeight" to { heightStr ->
+                                heightStr.toFloatOrNull()?.toInt()?.let { height ->
+                                    jsInterface.onHeightChanged(height)
+                                }
+                            },
+                            "exportImage" to jsInterface.onExportImage,
                         ),
                         settings = {
                             configureZoom()
@@ -353,7 +372,7 @@ private fun buildMermaidHtml(
                     console.warn('visualViewportScale', visualViewportScale)
                     const adjustedHeight = Math.ceil(height * visualViewportScale);
 
-                    AndroidInterface.updateHeight(adjustedHeight);
+                    $jsBridgePrefix.updateHeight(adjustedHeight);
               }
 
               mermaid.run({
@@ -373,7 +392,7 @@ private fun buildMermaidHtml(
                     const svgElement = document.querySelector('.mermaid svg');
                     if (!svgElement) {
                         console.error('No SVG element found');
-                        AndroidInterface.exportImage(''); // Notify error or send empty
+                        $jsBridgePrefix.exportImage(''); // Notify error or send empty
                         return;
                     }
 
@@ -411,16 +430,16 @@ private fun buildMermaidHtml(
 
                         // Get PNG image as base64
                         const pngBase64 = canvas.toDataURL('image/png').split(',')[1];
-                        AndroidInterface.exportImage(pngBase64);
+                        $jsBridgePrefix.exportImage(pngBase64);
                     };
                     img.onerror = function(e) {
                         console.error('Error loading SVG image:', e);
-                        AndroidInterface.exportImage(''); // Notify error or send empty
+                        $jsBridgePrefix.exportImage(''); // Notify error or send empty
                     }
                     img.src = 'data:image/svg+xml;base64,' + svgBase64;
                 } catch (e) {
                     console.error('Error exporting SVG:', e);
-                    AndroidInterface.exportImage(''); // Notify error or send empty
+                    $jsBridgePrefix.exportImage(''); // Notify error or send empty
                 }
               };
             </script>
@@ -436,3 +455,7 @@ enum class MermaidTheme(val value: String) {
     DEFAULT("default"),
     DARK("dark"),
 }
+
+expect val jsBridgePrefix: String
+
+expect fun NativeWebView.disableScroll()
