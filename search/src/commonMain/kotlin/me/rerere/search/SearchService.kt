@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.InputSchema
+import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 
 interface SearchService<T : SearchServiceOptions> {
@@ -157,4 +158,19 @@ sealed class SearchServiceOptions {
         override val id: Uuid = Uuid.random(),
         val apiKey: String = "",
     ) : SearchServiceOptions()
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <T : SearchServiceOptions> KClass<out T>.createDefaultInstance(): T {
+    return when (this) {
+        SearchServiceOptions.BingLocalOptions::class -> SearchServiceOptions.BingLocalOptions()
+        SearchServiceOptions.ZhipuOptions::class -> SearchServiceOptions.ZhipuOptions()
+        SearchServiceOptions.TavilyOptions::class -> SearchServiceOptions.TavilyOptions()
+        SearchServiceOptions.ExaOptions::class -> SearchServiceOptions.ExaOptions()
+        SearchServiceOptions.SearXNGOptions::class -> SearchServiceOptions.SearXNGOptions()
+        SearchServiceOptions.LinkUpOptions::class -> SearchServiceOptions.LinkUpOptions()
+        SearchServiceOptions.BraveOptions::class -> SearchServiceOptions.BraveOptions()
+        SearchServiceOptions.MetasoOptions::class -> SearchServiceOptions.MetasoOptions()
+        else -> throw IllegalArgumentException("Unknown SearchServiceOptions type: $this")
+    } as T
 }

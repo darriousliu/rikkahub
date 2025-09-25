@@ -75,8 +75,8 @@ kermit = "2.0.8"
 ktorfit = "2.6.4"
 okio = "3.16.0"
 atomicfu = "0.29.0"
-webview = "2.0.3"
 buildkonfig = "0.17.1"
+calf = "0.8.0"
 
 [libraries]
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
@@ -196,8 +196,9 @@ gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", ve
 gitlive-firebase-config = { module = "dev.gitlive:firebase-config", version.ref = "gitlive-firebase" }
 
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
-compose-webview = { module = "io.github.kevinnzou:compose-webview-multiplatform", version.ref = "webview" }
 ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
+
+calf-permissions = { module = "com.mohamedrejeb.calf:calf-permissions", version.ref = "calf" }
 
 [bundles]
 ktor = ["ktor-client-core", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-client-logging"]

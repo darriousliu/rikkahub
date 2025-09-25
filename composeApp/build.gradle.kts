@@ -201,6 +201,8 @@ kotlin {
             implementation(libs.cache4k)
             // Latex
             implementation(libs.katex.core)
+            // Permission
+            implementation(libs.calf.permissions)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -279,8 +281,9 @@ android {
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
             buildkonfig.defaultConfigs {
-                this.buildConfigField(STRING, "VERSION_NAME", android.defaultConfig.versionName)
-                this.buildConfigField(STRING, "APPLICATION_ID", android.defaultConfig.applicationId)
+                buildConfigField(STRING, "VERSION_NAME", android.defaultConfig.versionName)
+                buildConfigField(STRING, "VERSION_CODE", android.defaultConfig.versionCode.toString())
+                buildConfigField(STRING, "APPLICATION_ID", android.defaultConfig.applicationId)
             }
         }
         debug {
@@ -288,8 +291,9 @@ android {
             buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
             buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
             buildkonfig.defaultConfigs {
-                this.buildConfigField(STRING, "VERSION_NAME", android.defaultConfig.versionName)
-                this.buildConfigField(STRING, "APPLICATION_ID", "${android.defaultConfig.applicationId}.debug")
+                buildConfigField(STRING, "VERSION_NAME", android.defaultConfig.versionName)
+                buildConfigField(STRING, "VERSION_CODE", android.defaultConfig.versionCode.toString())
+                buildConfigField(STRING, "APPLICATION_ID", "${android.defaultConfig.applicationId}.debug")
             }
         }
         create("baseline") {

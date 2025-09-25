@@ -47,7 +47,7 @@ import kotlin.time.Instant
 
 private const val TAG = "DataSync"
 
-actual class WebdavSync(
+actual class WebdavSync actual constructor(
     private val settingsStore: SettingsStore,
     private val json: Json,
     private val context: Context,

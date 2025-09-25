@@ -1,10 +1,13 @@
 package me.rerere.rikkahub.data.sync
 
 import io.github.vinceglb.filekit.PlatformFile
+import kotlinx.serialization.json.Json
+import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import kotlin.time.Instant
 
-expect class WebdavSync {
+expect class WebdavSync(settingsStore: SettingsStore, json: Json, context: PlatformContext) {
     suspend fun testWebdav(webDavConfig: WebDavConfig)
     suspend fun backupToWebDav(webDavConfig: WebDavConfig)
     suspend fun listBackupFiles(webDavConfig: WebDavConfig): List<WebDavBackupItem>

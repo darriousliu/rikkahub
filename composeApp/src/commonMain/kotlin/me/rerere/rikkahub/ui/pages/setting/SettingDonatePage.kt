@@ -3,7 +3,6 @@ package me.rerere.rikkahub.ui.pages.setting
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,9 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.Icon
@@ -29,12 +26,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import me.rerere.rikkahub.R
+import coil3.compose.LocalPlatformContext
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.model.Sponsor
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -43,7 +37,10 @@ import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onLoading
 import me.rerere.rikkahub.utils.onSuccess
 import me.rerere.rikkahub.utils.openUrl
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun SettingDonatePage() {
@@ -51,7 +48,7 @@ fun SettingDonatePage() {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.donate_page_title))
+                    Text(text = stringResource(Res.string.donate_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -67,7 +64,7 @@ fun SettingDonatePage() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.donate_page_donation_methods),
+                text = stringResource(Res.string.donate_page_donation_methods),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -76,7 +73,7 @@ fun SettingDonatePage() {
             Afdian()
 
             Text(
-                text = stringResource(R.string.donate_page_sponsor_list),
+                text = stringResource(Res.string.donate_page_sponsor_list),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -92,7 +89,7 @@ fun SettingDonatePage() {
 
 @Composable
 private fun Patreon() {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -106,7 +103,7 @@ private fun Patreon() {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Icon(
-                painter = painterResource(R.drawable.patreon),
+                painter = painterResource(Res.drawable.patreon),
                 contentDescription = null
             )
             Column(
@@ -117,7 +114,7 @@ private fun Patreon() {
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = stringResource(R.string.donate_page_patreon_desc),
+                    text = stringResource(Res.string.donate_page_patreon_desc),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -127,7 +124,7 @@ private fun Patreon() {
 
 @Composable
 private fun Afdian() {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -141,7 +138,7 @@ private fun Afdian() {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Icon(
-                painter = painterResource(R.drawable.afdian),
+                painter = painterResource(Res.drawable.afdian),
                 contentDescription = null
             )
             Column(
@@ -152,7 +149,7 @@ private fun Afdian() {
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = stringResource(R.string.donate_page_afdian_desc),
+                    text = stringResource(Res.string.donate_page_afdian_desc),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -209,7 +206,7 @@ private fun Sponsors(modifier: Modifier = Modifier) {
             CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }.onError {
             Text(
-                text = it.message ?: it.javaClass.simpleName,
+                text = it.message ?: it::class.simpleName.orEmpty(),
                 modifier = Modifier.align(Alignment.Center)
             )
         }

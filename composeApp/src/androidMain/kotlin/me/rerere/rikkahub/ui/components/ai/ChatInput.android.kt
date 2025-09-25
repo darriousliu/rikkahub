@@ -29,15 +29,15 @@ import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.Files
 import com.composables.icons.lucide.Image
 import com.composables.icons.lucide.Lucide
+import com.mohamedrejeb.calf.permissions.Permission
+import com.mohamedrejeb.calf.permissions.isGranted
+import com.mohamedrejeb.calf.permissions.rememberPermissionState
 import com.yalantis.ucrop.UCrop
 import com.yalantis.ucrop.UCropActivity
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.PlatformContext
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.utils.toFile
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
-import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.GetContentWithMultiMime
@@ -45,10 +45,7 @@ import me.rerere.rikkahub.utils.createChatFilesByContents
 import me.rerere.rikkahub.utils.getFileMimeType
 import me.rerere.rikkahub.utils.getFileNameFromUri
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.photo
-import rikkahub.composeapp.generated.resources.take_picture
-import rikkahub.composeapp.generated.resources.upload_file
+import rikkahub.composeapp.generated.resources.*
 import java.io.File
 import kotlin.uuid.Uuid
 import android.net.Uri as AndroidUri
@@ -147,7 +144,7 @@ internal actual fun ImagePickButton(onAddImages: (List<Uri>) -> Unit) {
 
 @Composable
 actual fun TakePicButton(onAddImages: (List<Uri>) -> Unit) {
-    val cameraPermission = rememberPermissionState(PermissionCamera)
+    val cameraPermission = rememberPermissionState(Permission.Camera)
 
     val context = LocalPlatformContext.current
     val settings = LocalSettings.current
@@ -191,30 +188,26 @@ actual fun TakePicButton(onAddImages: (List<Uri>) -> Unit) {
     }
 
     // 使用权限管理器包装
-    PermissionManager(
-        permissionState = cameraPermission
+    BigIconTextButton(
+        icon = {
+            Icon(Lucide.Camera, null)
+        },
+        text = {
+            Text(stringResource(Res.string.take_picture))
+        }
     ) {
-        BigIconTextButton(
-            icon = {
-                Icon(Lucide.Camera, null)
-            },
-            text = {
-                Text(stringResource(Res.string.take_picture))
-            }
-        ) {
-            if (cameraPermission.allRequiredPermissionsGranted) {
-                // 权限已授权，直接启动相机
-                cameraOutputFile = context.cacheDir.resolve("camera_${Uuid.random()}.jpg")
-                cameraOutputUri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    cameraOutputFile!!
-                )
-                cameraLauncher.launch(cameraOutputUri!!)
-            } else {
-                // 请求权限
-                cameraPermission.requestPermissions()
-            }
+        if (cameraPermission.status.isGranted) {
+            // 权限已授权，直接启动相机
+            cameraOutputFile = context.cacheDir.resolve("camera_${Uuid.random()}.jpg")
+            cameraOutputUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                cameraOutputFile!!
+            )
+            cameraLauncher.launch(cameraOutputUri!!)
+        } else {
+            // 请求权限
+            cameraPermission.launchPermissionRequest()
         }
     }
 }

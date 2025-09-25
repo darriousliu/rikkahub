@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -28,19 +29,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Code
 import com.composables.icons.lucide.Earth
 import com.composables.icons.lucide.FileText
 import com.composables.icons.lucide.Github
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Phone
-import me.rerere.rikkahub.BuildConfig
-import me.rerere.rikkahub.R
+import me.rerere.common.utils.DEVICE_MANUFACTURER
+import me.rerere.common.utils.DEVICE_MODEL
+import me.rerere.common.utils.OS_VERSION
+import me.rerere.common.utils.SDK_VERSION
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.icons.DiscordIcon
 import me.rerere.rikkahub.ui.components.ui.icons.TencentQQIcon
@@ -48,17 +50,20 @@ import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.utils.joinQQGroup
 import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun SettingAboutPage() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val navController = LocalNavController.current
     Scaffold(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(stringResource(R.string.about_page_title))
+                    Text(stringResource(Res.string.about_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -80,8 +85,8 @@ fun SettingAboutPage() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    AsyncImage(
-                        model = R.mipmap.ic_launcher,
+                    Image(
+                        painter = painterResource(Res.drawable.ic_launcher) ,
                         contentDescription = "Logo",
                         modifier = Modifier
                             .clip(CircleShape)
@@ -131,7 +136,7 @@ fun SettingAboutPage() {
             item {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.about_page_version))
+                        Text(stringResource(Res.string.about_page_version))
                     },
                     supportingContent = {
                         Text(
@@ -155,11 +160,11 @@ fun SettingAboutPage() {
             item {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.about_page_system))
+                        Text(stringResource(Res.string.about_page_system))
                     },
                     supportingContent = {
                         Text(
-                            text = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} / Android ${android.os.Build.VERSION.RELEASE} / SDK ${android.os.Build.VERSION.SDK_INT}",
+                            text = "$DEVICE_MANUFACTURER $DEVICE_MODEL / $OS_VERSION / $SDK_VERSION",
                         )
                     },
                     leadingContent = {
@@ -171,7 +176,7 @@ fun SettingAboutPage() {
             item {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.about_page_website))
+                        Text(stringResource(Res.string.about_page_website))
                     },
                     supportingContent = {
                         Text(
@@ -190,7 +195,7 @@ fun SettingAboutPage() {
             item {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.about_page_github))
+                        Text(stringResource(Res.string.about_page_github))
                     },
                     supportingContent = {
                         Text(
@@ -209,7 +214,7 @@ fun SettingAboutPage() {
             item {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.about_page_license))
+                        Text(stringResource(Res.string.about_page_license))
                     },
                     supportingContent = {
                         Text("https://github.com/rikkahub/rikkahub/blob/master/LICENSE")

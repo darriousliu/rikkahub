@@ -1,11 +1,12 @@
 package me.rerere.rikkahub.utils
 
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 import me.rerere.common.PlatformContext
 import kotlin.jvm.JvmInline
 
-expect class UpdateChecker {
+expect class UpdateChecker(client: HttpClient) {
     fun checkUpdate(): Flow<UiState<UpdateInfo>>
     fun downloadUpdate(context: PlatformContext, download: UpdateDownload)
 }

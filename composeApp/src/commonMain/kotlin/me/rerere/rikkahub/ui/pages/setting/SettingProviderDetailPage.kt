@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -71,13 +70,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Boxes
 import com.composables.icons.lucide.Cable
 import com.composables.icons.lucide.ChevronDown
@@ -102,7 +100,6 @@ import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.UIMessage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.ai.ModelAbilityTag
 import me.rerere.rikkahub.ui.components.ai.ModelModalityTag
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
@@ -125,8 +122,11 @@ import me.rerere.rikkahub.ui.pages.setting.components.SettingProviderBalanceOpti
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.plus
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.*
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.uuid.Uuid
@@ -139,7 +139,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
     val pager = rememberPagerState { 3 }
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
 
     val onEdit = { newProvider: ProviderSetting ->
         val newSettings = settings.copy(
@@ -193,7 +193,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
             NavigationBar {
                 NavigationBarItem(
                     selected = pager.currentPage == 0,
-                    label = { Text(stringResource(id = R.string.setting_provider_page_configuration)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_configuration)) },
                     icon = { Icon(Lucide.Settings2, null) },
                     onClick = {
                         scope.launch {
@@ -203,7 +203,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                 )
                 NavigationBarItem(
                     selected = pager.currentPage == 1,
-                    label = { Text(stringResource(id = R.string.setting_provider_page_models)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_models)) },
                     icon = { Icon(Lucide.Boxes, null) },
                     onClick = {
                         scope.launch {
@@ -213,7 +213,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                 )
                 NavigationBarItem(
                     selected = pager.currentPage == 2,
-                    label = { Text(stringResource(id = R.string.setting_provider_page_network_proxy)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_network_proxy)) },
                     icon = { Icon(Lucide.Network, null) },
                     onClick = {
                         scope.launch {
@@ -236,10 +236,12 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                         provider = provider,
                         onEdit = {
                             onEdit(it)
-                            toaster.show(
-                                context.getString(R.string.setting_provider_page_save_success),
-                                type = ToastType.Success
-                            )
+                            scope.launch {
+                                toaster.show(
+                                    getString(Res.string.setting_provider_page_save_success),
+                                    type = ToastType.Success
+                                )
+                            }
                         },
                         onDelete = {
                             onDelete()
@@ -326,7 +328,7 @@ private fun SettingProviderConfigPage(
                     onEdit(internalProvider)
                 }
             ) {
-                Text(stringResource(R.string.setting_provider_page_save))
+                Text(stringResource(Res.string.setting_provider_page_save))
             }
         }
 
@@ -345,14 +347,14 @@ private fun SettingProviderConfigPage(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = {
-                Text(stringResource(R.string.confirm_delete))
+                Text(stringResource(Res.string.confirm_delete))
             },
             text = {
-                Text(stringResource(R.string.setting_provider_page_delete_dialog_text))
+                Text(stringResource(Res.string.setting_provider_page_delete_dialog_text))
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
             confirmButton = {
@@ -362,7 +364,7 @@ private fun SettingProviderConfigPage(
                         onDelete()
                     }
                 ) {
-                    Text(stringResource(R.string.delete))
+                    Text(stringResource(Res.string.delete))
                 }
             }
         )
@@ -386,7 +388,7 @@ private fun SettingProviderProxyPage(
     onEdit: (ProviderSetting) -> Unit
 ) {
     val toaster = LocalToaster.current
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var editingProxy by remember(provider.proxy) {
         mutableStateOf(provider.proxy)
     }
@@ -433,7 +435,7 @@ private fun SettingProviderProxyPage(
                     onValueChange = {
                         editingProxy = (editingProxy as ProviderProxy.Http).copy(address = it)
                     },
-                    label = { Text(stringResource(id = R.string.setting_provider_page_proxy_host)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_proxy_host)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 var portStr by remember { mutableStateOf((editingProxy as ProviderProxy.Http).port.toString()) }
@@ -445,7 +447,7 @@ private fun SettingProviderProxyPage(
                             editingProxy = (editingProxy as ProviderProxy.Http).copy(port = port)
                         }
                     },
-                    label = { Text(stringResource(id = R.string.setting_provider_page_proxy_port)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_proxy_port)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -454,7 +456,7 @@ private fun SettingProviderProxyPage(
                     onValueChange = {
                         editingProxy = (editingProxy as ProviderProxy.Http).copy(username = it)
                     },
-                    label = { Text(stringResource(id = R.string.setting_provider_page_proxy_username)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_proxy_username)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -462,7 +464,7 @@ private fun SettingProviderProxyPage(
                     onValueChange = {
                         editingProxy = (editingProxy as ProviderProxy.Http).copy(password = it)
                     },
-                    label = { Text(stringResource(id = R.string.setting_provider_page_proxy_password)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_proxy_password)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -475,13 +477,15 @@ private fun SettingProviderProxyPage(
             Button(
                 onClick = {
                     onEdit(provider.copyProvider(proxy = editingProxy))
-                    toaster.show(
-                        context.getString(R.string.setting_provider_page_save_success),
-                        type = ToastType.Success
-                    )
+                    scope.launch {
+                        toaster.show(
+                            getString(Res.string.setting_provider_page_save_success),
+                            type = ToastType.Success
+                        )
+                    }
                 }
             ) {
-                Text(stringResource(id = R.string.setting_provider_page_save))
+                Text(stringResource(Res.string.setting_provider_page_save))
             }
         }
     }
@@ -509,7 +513,7 @@ private fun ConnectionTester(
         AlertDialog(
             onDismissRequest = { showTestDialog = false },
             title = {
-                Text(stringResource(R.string.setting_provider_page_test_connection))
+                Text(stringResource(Res.string.setting_provider_page_test_connection))
             },
             text = {
                 Column(
@@ -531,7 +535,7 @@ private fun ConnectionTester(
 
                         is UiState.Success -> {
                             Text(
-                                text = stringResource(R.string.setting_provider_page_test_success),
+                                text = stringResource(Res.string.setting_provider_page_test_success),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.extendColors.green6
                             )
@@ -551,7 +555,7 @@ private fun ConnectionTester(
             },
             dismissButton = {
                 TextButton(onClick = { showTestDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
             confirmButton = {
@@ -579,7 +583,7 @@ private fun ConnectionTester(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.setting_provider_page_test))
+                    Text(stringResource(Res.string.setting_provider_page_test))
                 }
             }
         )
@@ -634,12 +638,12 @@ private fun ModelList(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.setting_provider_page_no_models),
+                            text = stringResource(Res.string.setting_provider_page_no_models),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = stringResource(R.string.setting_provider_page_add_models_hint),
+                            text = stringResource(Res.string.setting_provider_page_add_models_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -735,7 +739,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(0)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_provider_page_basic_settings)) }
+                text = { Text(stringResource(Res.string.setting_provider_page_basic_settings)) }
             )
             Tab(
                 selected = pagerState.currentPage == 1,
@@ -744,7 +748,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(1)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_provider_page_advanced_settings)) }
+                text = { Text(stringResource(Res.string.setting_provider_page_advanced_settings)) }
             )
             Tab(
                 selected = pagerState.currentPage == 2,
@@ -753,7 +757,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(2)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_page_built_in_tools)) }
+                text = { Text(stringResource(Res.string.setting_page_built_in_tools)) }
             )
         }
 
@@ -778,11 +782,11 @@ private fun ModelSettingsForm(
                                     setModelId(it.trim())
                                 }
                             },
-                            label = { Text(stringResource(R.string.setting_provider_page_model_id)) },
+                            label = { Text(stringResource(Res.string.setting_provider_page_model_id)) },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 if (!isEdit) {
-                                    Text(stringResource(R.string.setting_provider_page_model_id_placeholder))
+                                    Text(stringResource(Res.string.setting_provider_page_model_id_placeholder))
                                 }
                             },
                             enabled = !isEdit
@@ -793,11 +797,11 @@ private fun ModelSettingsForm(
                             onValueChange = {
                                 onModelChange(model.copy(displayName = it.trim()))
                             },
-                            label = { Text(stringResource(if (isEdit) R.string.setting_provider_page_model_name else R.string.setting_provider_page_model_display_name)) },
+                            label = { Text(stringResource(if (isEdit) Res.string.setting_provider_page_model_name else Res.string.setting_provider_page_model_display_name)) },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 if (!isEdit) {
-                                    Text(stringResource(R.string.setting_provider_page_model_display_name_placeholder))
+                                    Text(stringResource(Res.string.setting_provider_page_model_display_name_placeholder))
                                 }
                             }
                         )
@@ -927,12 +931,12 @@ private fun AddModelButton(
             ) {
                 Icon(
                     Lucide.Plus,
-                    contentDescription = stringResource(R.string.setting_provider_page_add_model)
+                    contentDescription = stringResource(Res.string.setting_provider_page_add_model)
                 )
                 AnimatedVisibility(expanded) {
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        stringResource(R.string.setting_provider_page_add_new_model),
+                        stringResource(Res.string.setting_provider_page_add_new_model),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -971,7 +975,7 @@ private fun AddModelButton(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_add_model),
+                        text = stringResource(Res.string.setting_provider_page_add_model),
                         style = MaterialTheme.typography.titleLarge
                     )
                     Column(
@@ -997,7 +1001,7 @@ private fun AddModelButton(
                                 dialogState.dismiss()
                             },
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
                         TextButton(
                             onClick = {
@@ -1006,7 +1010,7 @@ private fun AddModelButton(
                                 }
                             },
                         ) {
-                            Text(stringResource(R.string.setting_provider_page_add))
+                            Text(stringResource(Res.string.setting_provider_page_add))
                         }
                     }
                 }
@@ -1128,10 +1132,10 @@ private fun ModelPicker(
                     onValueChange = {
                         filterText = it
                     },
-                    label = { Text(stringResource(R.string.setting_provider_page_filter_placeholder)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_filter_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
-                        Text(stringResource(R.string.setting_provider_page_filter_example))
+                        Text(stringResource(Res.string.setting_provider_page_filter_example))
                     },
                 )
             }
@@ -1162,7 +1166,7 @@ private fun ModelTypeSelector(
     onTypeSelected: (ModelType) -> Unit
 ) {
     Text(
-        stringResource(R.string.setting_provider_page_model_type),
+        stringResource(Res.string.setting_provider_page_model_type),
         style = MaterialTheme.typography.titleSmall
     )
     SingleChoiceSegmentedButtonRow(
@@ -1175,9 +1179,9 @@ private fun ModelTypeSelector(
                     Text(
                         text = stringResource(
                             when (type) {
-                                ModelType.CHAT -> R.string.setting_provider_page_chat_model
-                                ModelType.EMBEDDING -> R.string.setting_provider_page_embedding_model
-                                ModelType.IMAGE -> R.string.setting_provider_page_image_model
+                                ModelType.CHAT -> Res.string.setting_provider_page_chat_model
+                                ModelType.EMBEDDING -> Res.string.setting_provider_page_embedding_model
+                                ModelType.IMAGE -> Res.string.setting_provider_page_image_model
                             }
                         )
                     )
@@ -1199,7 +1203,7 @@ private fun ModelModalitySelector(
 ) {
     if (model.type == ModelType.CHAT) {
         Text(
-            stringResource(R.string.setting_provider_page_input_modality),
+            stringResource(Res.string.setting_provider_page_input_modality),
             style = MaterialTheme.typography.titleSmall
         )
         MultiChoiceSegmentedButtonRow(
@@ -1220,8 +1224,8 @@ private fun ModelModalitySelector(
                     Text(
                         text = stringResource(
                             when (modality) {
-                                Modality.TEXT -> R.string.setting_provider_page_text
-                                Modality.IMAGE -> R.string.setting_provider_page_image
+                                Modality.TEXT -> Res.string.setting_provider_page_text
+                                Modality.IMAGE -> Res.string.setting_provider_page_image
                             }
                         )
                     )
@@ -1230,7 +1234,7 @@ private fun ModelModalitySelector(
         }
 
         Text(
-            stringResource(R.string.setting_provider_page_output_modality),
+            stringResource(Res.string.setting_provider_page_output_modality),
             style = MaterialTheme.typography.titleSmall
         )
         MultiChoiceSegmentedButtonRow(
@@ -1251,8 +1255,8 @@ private fun ModelModalitySelector(
                     Text(
                         text = stringResource(
                             when (modality) {
-                                Modality.TEXT -> R.string.setting_provider_page_text
-                                Modality.IMAGE -> R.string.setting_provider_page_image
+                                Modality.TEXT -> Res.string.setting_provider_page_text
+                                Modality.IMAGE -> Res.string.setting_provider_page_image
                             }
                         )
                     )
@@ -1268,7 +1272,7 @@ fun ModalAbilitySelector(
     onUpdateAbilities: (List<ModelAbility>) -> Unit
 ) {
     Text(
-        stringResource(R.string.setting_provider_page_abilities),
+        stringResource(Res.string.setting_provider_page_abilities),
         style = MaterialTheme.typography.titleSmall
     )
     MultiChoiceSegmentedButtonRow(
@@ -1289,8 +1293,8 @@ fun ModalAbilitySelector(
                     Text(
                         text = stringResource(
                             when (ability) {
-                                ModelAbility.TOOL -> R.string.setting_provider_page_tool
-                                ModelAbility.REASONING -> R.string.setting_provider_page_reasoning
+                                ModelAbility.TOOL -> Res.string.setting_provider_page_tool
+                                ModelAbility.REASONING -> Res.string.setting_provider_page_reasoning
                             }
                         )
                     )
@@ -1349,7 +1353,7 @@ private fun ModelCard(
                             Icon(Lucide.X, null)
                         }
                         Text(
-                            text = stringResource(R.string.setting_provider_page_edit_model),
+                            text = stringResource(Res.string.setting_provider_page_edit_model),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.align(Alignment.Center),
                         )
@@ -1377,7 +1381,7 @@ private fun ModelCard(
                                 dialogState.dismiss()
                             },
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
                         TextButton(
                             onClick = {
@@ -1386,7 +1390,7 @@ private fun ModelCard(
                                 }
                             },
                         ) {
-                            Text(stringResource(R.string.confirm))
+                            Text(stringResource(Res.string.confirm))
                         }
                     }
                 }
@@ -1423,7 +1427,7 @@ private fun ModelCard(
                 ) {
                     Icon(
                         Lucide.Trash2,
-                        contentDescription = stringResource(R.string.chat_page_delete)
+                        contentDescription = stringResource(Res.string.chat_page_delete)
                     )
                 }
             }
@@ -1466,7 +1470,7 @@ private fun ModelCard(
                         if (model.providerOverwrite != null) {
                             Tag(type = TagType.INFO) {
                                 Text(
-                                    model.providerOverwrite?.javaClass?.simpleName ?: model.providerOverwrite?.name
+                                    model.providerOverwrite!!::class.simpleName ?: model.providerOverwrite?.name
                                     ?: "ProviderOverwrite"
                                 )
                             }
@@ -1503,24 +1507,24 @@ private fun BuiltInToolsSettings(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = stringResource(R.string.setting_page_built_in_tools),
+            text = stringResource(Res.string.setting_page_built_in_tools),
             style = MaterialTheme.typography.titleMedium
         )
 
         Text(
-            text = stringResource(R.string.setting_page_built_in_tools_desc),
+            text = stringResource(Res.string.setting_page_built_in_tools_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         val availableTools = listOf(
             BuiltInTools.Search to Pair(
-                stringResource(R.string.setting_page_built_in_tools_search),
-                stringResource(R.string.setting_page_built_in_tools_search_desc)
+                stringResource(Res.string.setting_page_built_in_tools_search),
+                stringResource(Res.string.setting_page_built_in_tools_search_desc)
             ),
             BuiltInTools.UrlContext to Pair(
-                stringResource(R.string.setting_page_built_in_tools_url_context),
-                stringResource(R.string.setting_page_built_in_tools_url_context_desc)
+                stringResource(Res.string.setting_page_built_in_tools_url_context),
+                stringResource(Res.string.setting_page_built_in_tools_url_context_desc)
             )
         )
 
@@ -1579,12 +1583,12 @@ private fun ProviderOverrideSettings(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.setting_provider_page_provider_override),
+            text = stringResource(Res.string.setting_provider_page_provider_override),
             style = MaterialTheme.typography.titleSmall
         )
 
         Text(
-            text = stringResource(R.string.setting_provider_page_provider_override_desc),
+            text = stringResource(Res.string.setting_provider_page_provider_override_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1645,7 +1649,7 @@ private fun ProviderOverrideSettings(
             ) {
                 Icon(Lucide.Plus, contentDescription = null)
                 Spacer(modifier = Modifier.size(8.dp))
-                Text(stringResource(R.string.setting_provider_page_add_provider_override))
+                Text(stringResource(Res.string.setting_provider_page_add_provider_override))
             }
         }
 
@@ -1668,7 +1672,7 @@ private fun ProviderOverrideSettings(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_configure_provider_override),
+                        text = stringResource(Res.string.setting_provider_page_configure_provider_override),
                         style = MaterialTheme.typography.titleLarge,
                     )
 
@@ -1694,7 +1698,7 @@ private fun ProviderOverrideSettings(
                                 editingProvider = null
                             },
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
                         TextButton(
                             onClick = {
@@ -1703,7 +1707,7 @@ private fun ProviderOverrideSettings(
                                 editingProvider = null
                             },
                         ) {
-                            Text(stringResource(R.string.setting_provider_page_save))
+                            Text(stringResource(Res.string.setting_provider_page_save))
                         }
                     }
                 }

@@ -7,53 +7,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import coil3.toUri
-import com.dokar.sonner.Toaster
-import com.dokar.sonner.rememberToasterState
-import me.rerere.highlight.Highlighter
-import me.rerere.highlight.LocalHighlighter
-import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.ui.components.ui.TTSController
-import me.rerere.rikkahub.ui.context.*
-import me.rerere.rikkahub.ui.hooks.readBooleanPreference
-import me.rerere.rikkahub.ui.hooks.readStringPreference
-import me.rerere.rikkahub.ui.hooks.rememberCustomTtsState
-import me.rerere.rikkahub.ui.pages.assistant.AssistantPage
-import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailPage
-import me.rerere.rikkahub.ui.pages.backup.BackupPage
-import me.rerere.rikkahub.ui.pages.chat.ChatPage
-import me.rerere.rikkahub.ui.pages.debug.DebugPage
-import me.rerere.rikkahub.ui.pages.history.HistoryPage
-import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
-import me.rerere.rikkahub.ui.pages.menu.MenuPage
-import me.rerere.rikkahub.ui.pages.setting.*
-import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
-import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
-import me.rerere.rikkahub.ui.pages.webview.WebViewPage
-import me.rerere.rikkahub.ui.theme.LocalDarkMode
-import org.koin.android.ext.android.inject
-import kotlin.uuid.Uuid
 
 private const val TAG = "RouteActivity"
 
 class RouteActivity : ComponentActivity() {
-    private val highlighter by inject<Highlighter>()
-    private val settingsStore by inject<SettingsStore>()
     private var navStack by mutableStateOf<NavHostController?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +33,7 @@ class RouteActivity : ComponentActivity() {
             this.navStack = navStack
             ShareHandler(navStack)
             App(
+                navBackStack = navStack,
                 platformConfigure = { darkTheme ->
                     // 更新状态栏图标颜色
                     val view = LocalView.current
@@ -78,9 +47,7 @@ class RouteActivity : ComponentActivity() {
                         }
                     }
                 }
-            ) {
-                AppRoutes(navStack)
-            }
+            )
         }
     }
 
@@ -114,156 +81,6 @@ class RouteActivity : ComponentActivity() {
         // Navigate to the chat screen if a conversation ID is provided
         intent.getStringExtra("conversationId")?.let { text ->
             navStack?.navigate(Screen.Chat(text))
-        }
-    }
-
-    @Composable
-    fun AppRoutes(navBackStack: NavHostController) {
-        val toastState = rememberToasterState()
-        val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
-        val tts = rememberCustomTtsState()
-        SharedTransitionLayout {
-            CompositionLocalProvider(
-                LocalNavController provides navBackStack,
-                LocalSharedTransitionScope provides this,
-                LocalSettings provides settings,
-                LocalHighlighter provides highlighter,
-                LocalToaster provides toastState,
-                LocalTTSState provides tts,
-            ) {
-                Toaster(
-                    state = toastState,
-                    darkTheme = LocalDarkMode.current,
-                    richColors = true,
-                    alignment = Alignment.TopCenter,
-                    showCloseButton = true,
-                )
-                TTSController()
-                NavHost(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
-                    startDestination = Screen.Chat(
-                        id = if (readBooleanPreference("create_new_conversation_on_start", true)) {
-                            Uuid.random().toString()
-                        } else {
-                            readStringPreference(
-                                "lastConversationId",
-                                Uuid.random().toString()
-                            ) ?: Uuid.random().toString()
-                        }
-                    ),
-                    navController = navBackStack,
-                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) },
-                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) },
-                    popEnterTransition = {
-                        slideInHorizontally(initialOffsetX = { -it / 2 }) + scaleIn(initialScale = 1.3f) + fadeIn()
-                    },
-                    popExitTransition = {
-                        slideOutHorizontally(targetOffsetX = { it }) + scaleOut(targetScale = 0.75f) + fadeOut()
-                    }
-                ) {
-                    composable<Screen.Chat>(
-                        enterTransition = { fadeIn() },
-                        exitTransition = { fadeOut() },
-                    ) { backStackEntry ->
-                        val route = backStackEntry.toRoute<Screen.Chat>()
-                        ChatPage(
-                            id = Uuid.parse(route.id),
-                            text = route.text,
-                            files = route.files.map { it.toUri() }
-                        )
-                    }
-
-                    composable<Screen.ShareHandler> { backStackEntry ->
-                        val route = backStackEntry.toRoute<Screen.ShareHandler>()
-                        ShareHandlerPage(
-                            text = route.text,
-                            image = route.streamUri
-                        )
-                    }
-
-                    composable<Screen.History> {
-                        HistoryPage()
-                    }
-
-                    composable<Screen.Assistant> {
-                        AssistantPage()
-                    }
-
-                    composable<Screen.AssistantDetail> { backStackEntry ->
-                        val route = backStackEntry.toRoute<Screen.AssistantDetail>()
-                        AssistantDetailPage(route.id)
-                    }
-
-                    composable<Screen.Menu> {
-                        MenuPage()
-                    }
-
-                    composable<Screen.Translator> {
-                        TranslatorPage()
-                    }
-
-                    composable<Screen.Setting> {
-                        SettingPage()
-                    }
-
-                    composable<Screen.Backup> {
-                        BackupPage()
-                    }
-
-                    composable<Screen.ImageGen> {
-                        ImageGenPage()
-                    }
-
-                    composable<Screen.WebView> { backStackEntry ->
-                        val route = backStackEntry.toRoute<Screen.WebView>()
-                        WebViewPage(route.url, route.content)
-                    }
-
-                    composable<Screen.SettingDisplay> {
-                        SettingDisplayPage()
-                    }
-
-                    composable<Screen.SettingProvider> {
-                        SettingProviderPage()
-                    }
-
-                    composable<Screen.SettingProviderDetail> {
-                        val route = it.toRoute<Screen.SettingProviderDetail>()
-                        val id = Uuid.parse(route.providerId)
-                        SettingProviderDetailPage(id = id)
-                    }
-
-                    composable<Screen.SettingModels> {
-                        SettingModelPage()
-                    }
-
-                    composable<Screen.SettingAbout> {
-                        SettingAboutPage()
-                    }
-
-                    composable<Screen.SettingSearch> {
-                        SettingSearchPage()
-                    }
-
-                    composable<Screen.SettingTTS> {
-                        SettingTTSPage()
-                    }
-
-                    composable<Screen.SettingMcp> {
-                        SettingMcpPage()
-                    }
-
-                    composable<Screen.SettingDonate> {
-                        SettingDonatePage()
-                    }
-
-                    composable<Screen.Debug> {
-                        DebugPage()
-                    }
-                }
-            }
         }
     }
 }

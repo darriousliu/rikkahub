@@ -21,7 +21,7 @@ import me.rerere.rikkahub.BuildConfig
 
 private const val API_URL = "https://updates.rikka-ai.com/"
 
-actual class UpdateChecker(private val client: HttpClient) {
+actual class UpdateChecker actual constructor(private val client: HttpClient) {
     private val json = Json { ignoreUnknownKeys = true }
 
     actual fun checkUpdate(): Flow<UiState<UpdateInfo>> = flow {

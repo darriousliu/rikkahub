@@ -22,9 +22,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -37,14 +37,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.composables.icons.lucide.GripHorizontal
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
@@ -55,10 +53,12 @@ import me.rerere.rikkahub.utils.plus
 import me.rerere.search.SearchCommonOptions
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
-import org.koin.androidx.compose.koinViewModel
+import me.rerere.search.createDefaultInstance
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.*
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import kotlin.reflect.full.primaryConstructor
 
 @Composable
 fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
@@ -68,7 +68,7 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_page_search_title))
+                    Text(stringResource(Res.string.setting_page_search_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -112,7 +112,7 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_page_search_providers),
+                        text = stringResource(Res.string.setting_page_search_providers),
                         style = MaterialTheme.typography.headlineMedium
                     )
                     OutlinedButton(
@@ -129,7 +129,7 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text(stringResource(R.string.setting_page_search_add_provider))
+                        Text(stringResource(Res.string.setting_page_search_add_provider))
                     }
                 }
             }
@@ -231,7 +231,7 @@ private fun SearchProviderCard(
                 selectedOption = options::class,
                 optionToString = { SearchServiceOptions.TYPES[it] ?: "[Unknown]" },
                 onOptionSelected = {
-                    options = it.primaryConstructor!!.callBy(mapOf())
+                    options = it.createDefaultInstance()
                     onUpdateService(options)
                 },
                 optionLeading = {
@@ -324,7 +324,7 @@ private fun SearchProviderCard(
                     ) {
                         Icon(
                             Lucide.Trash2,
-                            contentDescription = stringResource(R.string.setting_page_search_delete_provider)
+                            contentDescription = stringResource(Res.string.setting_page_search_delete_provider)
                         )
                     }
                 }
@@ -457,13 +457,13 @@ private fun CommonOptions(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.setting_page_search_common_options),
+                text = stringResource(Res.string.setting_page_search_common_options),
                 style = MaterialTheme.typography.titleMedium
             )
 
             FormItem(
                 label = {
-                    Text(stringResource(R.string.setting_page_search_result_size))
+                    Text(stringResource(Res.string.setting_page_search_result_size))
                 }
             ) {
                 OutlinedNumberInput(

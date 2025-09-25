@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import me.rerere.common.PlatformContext
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.utils.delete
+import me.rerere.rikkahub.di.*
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.context.startKoin
@@ -23,6 +24,7 @@ object AppInitializer : KoinComponent {
     fun initKoin(application: KoinAppDeclaration) {
         startKoin {
             application()
+            modules(appModule, viewModelModule, dataSourceModule, repositoryModule, platformModule)
         }
     }
 

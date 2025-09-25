@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,21 +27,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
+import com.mohamedrejeb.calf.permissions.Permission
+import com.mohamedrejeb.calf.permissions.isGranted
+import com.mohamedrejeb.calf.permissions.rememberPermissionState
 import me.rerere.rikkahub.data.datastore.DisplaySetting
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionNotification
-import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.hooks.rememberAmoledDarkMode
 import me.rerere.rikkahub.ui.hooks.rememberSharedPreferenceBoolean
 import me.rerere.rikkahub.ui.pages.setting.components.PresetThemeButtonGroup
 import me.rerere.rikkahub.utils.plus
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
@@ -61,18 +60,13 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    val permissionState = rememberPermissionState(
-        permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setOf(
-            PermissionNotification
-        ) else emptySet(),
-    )
-    PermissionManager(permissionState = permissionState)
+    val permissionState = rememberPermissionState(Permission.Notification)
 
     Scaffold(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_display_page_title))
+                    Text(stringResource(Res.string.setting_display_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -91,7 +85,7 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
         ) {
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_theme_setting),
+                    text = stringResource(Res.string.setting_page_theme_setting),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -102,10 +96,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_page_dynamic_color))
+                        Text(stringResource(Res.string.setting_page_dynamic_color))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_page_dynamic_color_desc))
+                        Text(stringResource(Res.string.setting_page_dynamic_color_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -134,10 +128,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_amoled_dark_mode_title))
+                        Text(stringResource(Res.string.setting_display_page_amoled_dark_mode_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_amoled_dark_mode_desc))
+                        Text(stringResource(Res.string.setting_display_page_amoled_dark_mode_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -152,7 +146,7 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
 
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_basic_settings),
+                    text = stringResource(Res.string.setting_page_basic_settings),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -167,10 +161,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_create_new_conversation_on_start_title))
+                        Text(stringResource(Res.string.setting_display_page_create_new_conversation_on_start_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_create_new_conversation_on_start_desc))
+                        Text(stringResource(Res.string.setting_display_page_create_new_conversation_on_start_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -187,10 +181,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_show_updates_title))
+                        Text(stringResource(Res.string.setting_display_page_show_updates_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_show_updates_desc))
+                        Text(stringResource(Res.string.setting_display_page_show_updates_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -207,18 +201,18 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_notification_message_generated))
+                        Text(stringResource(Res.string.setting_display_page_notification_message_generated))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_notification_message_generated_desc))
+                        Text(stringResource(Res.string.setting_display_page_notification_message_generated_desc))
                     },
                     trailingContent = {
                         Switch(
                             checked = displaySetting.enableNotificationOnMessageGeneration,
                             onCheckedChange = {
-                                if (it && !permissionState.allPermissionsGranted) {
+                                if (it && !permissionState.status.isGranted) {
                                     // 请求权限
-                                    permissionState.requestPermissions()
+                                    permissionState.launchPermissionRequest()
                                 }
                                 updateDisplaySetting(displaySetting.copy(enableNotificationOnMessageGeneration = it))
                             }
@@ -229,7 +223,7 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
 
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_chat_settings),
+                    text = stringResource(Res.string.setting_page_chat_settings),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -240,10 +234,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_show_user_avatar_title))
+                        Text(stringResource(Res.string.setting_display_page_show_user_avatar_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_show_user_avatar_desc))
+                        Text(stringResource(Res.string.setting_display_page_show_user_avatar_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -260,10 +254,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_chat_list_model_icon_title))
+                        Text(stringResource(Res.string.setting_display_page_chat_list_model_icon_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_chat_list_model_icon_desc))
+                        Text(stringResource(Res.string.setting_display_page_chat_list_model_icon_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -280,10 +274,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_show_model_name_title))
+                        Text(stringResource(Res.string.setting_display_page_show_model_name_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_show_model_name_desc))
+                        Text(stringResource(Res.string.setting_display_page_show_model_name_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -300,10 +294,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_show_token_usage_title))
+                        Text(stringResource(Res.string.setting_display_page_show_token_usage_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_show_token_usage_desc))
+                        Text(stringResource(Res.string.setting_display_page_show_token_usage_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -320,10 +314,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_auto_collapse_thinking_title))
+                        Text(stringResource(Res.string.setting_display_page_auto_collapse_thinking_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_auto_collapse_thinking_desc))
+                        Text(stringResource(Res.string.setting_display_page_auto_collapse_thinking_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -340,10 +334,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_show_message_jumper_title))
+                        Text(stringResource(Res.string.setting_display_page_show_message_jumper_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_show_message_jumper_desc))
+                        Text(stringResource(Res.string.setting_display_page_show_message_jumper_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -360,10 +354,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_enable_message_generation_haptic_effect_title))
+                        Text(stringResource(Res.string.setting_display_page_enable_message_generation_haptic_effect_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_enable_message_generation_haptic_effect_desc))
+                        Text(stringResource(Res.string.setting_display_page_enable_message_generation_haptic_effect_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -380,10 +374,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_skip_crop_image_title))
+                        Text(stringResource(Res.string.setting_display_page_skip_crop_image_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_skip_crop_image_desc))
+                        Text(stringResource(Res.string.setting_display_page_skip_crop_image_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -399,7 +393,7 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
             item {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_font_size_title))
+                        Text(stringResource(Res.string.setting_display_page_font_size_title))
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
@@ -424,7 +418,7 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                     )
                 }
                 MarkdownBlock(
-                    content = stringResource(R.string.setting_display_page_font_size_preview),
+                    content = stringResource(Res.string.setting_display_page_font_size_preview),
                     modifier = Modifier.padding(8.dp),
                     style = LocalTextStyle.current.copy(
                         fontSize = LocalTextStyle.current.fontSize * displaySetting.fontSizeRatio,
