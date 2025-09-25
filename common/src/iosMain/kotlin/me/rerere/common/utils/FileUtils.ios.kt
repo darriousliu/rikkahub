@@ -1,7 +1,9 @@
 package me.rerere.common.utils
 
 import coil3.Uri
+import coil3.toUri
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.absolutePath
 import me.rerere.common.PlatformContext
 import platform.Foundation.NSFileManager
 
@@ -9,7 +11,7 @@ actual fun getUriForFile(
     context: PlatformContext,
     file: PlatformFile
 ): Uri {
-    TODO("Not yet implemented")
+    return file.absolutePath().toUri()
 }
 
 actual fun PlatformFile.deleteRecursively(): Boolean {

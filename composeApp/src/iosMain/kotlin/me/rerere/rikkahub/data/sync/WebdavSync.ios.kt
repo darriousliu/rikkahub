@@ -6,6 +6,7 @@ import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 
+// TODO("Not yet implemented")
 actual class WebdavSync actual constructor(
     private val settingsStore: SettingsStore,
     private val json: Json,

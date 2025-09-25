@@ -17,6 +17,7 @@ internal actual suspend fun handleImageQRCode(
     toaster: ToasterState,
     context: PlatformContext
 ) {
+    // TODO("Not yet implemented")
 }
 
 internal actual suspend fun handleQRResult(
@@ -25,4 +26,5 @@ internal actual suspend fun handleQRResult(
     toaster: ToasterState,
     context: PlatformContext
 ) {
+    // TODO("Not yet implemented")
 }

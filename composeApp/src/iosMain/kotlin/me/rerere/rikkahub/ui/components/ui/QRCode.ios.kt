@@ -12,4 +12,5 @@ actual fun QRCode(
     color: Color,
     backgroundColor: Color
 ) {
+    // TODO("Not yet implemented")
 }
