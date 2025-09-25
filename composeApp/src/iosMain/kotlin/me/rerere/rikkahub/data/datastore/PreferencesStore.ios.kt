@@ -22,5 +22,5 @@ internal fun producePath(fileName: String): String {
         create = false,
         error = null,
     )
-    return requireNotNull(documentDirectory).path + "datastore/$fileName.preferences_pb"
+    return requireNotNull(documentDirectory).path + "/datastore/$fileName.preferences_pb"
 }
