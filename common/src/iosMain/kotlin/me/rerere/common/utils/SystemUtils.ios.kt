@@ -83,6 +83,7 @@ private val UIDevice.modelName: String
             // Simulator
             "i386" -> "simulator"
             "x86_64" -> "simulator"
+            "arm64" -> "simulator"
             else -> "unknown"
         }
     }
