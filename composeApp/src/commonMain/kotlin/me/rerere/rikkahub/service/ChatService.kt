@@ -67,9 +67,7 @@ import me.rerere.rikkahub.utils.getDisplayLanguage
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
 import org.jetbrains.compose.resources.getString
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.tools_warning
-import rikkahub.composeapp.generated.resources.translating
+import rikkahub.composeapp.generated.resources.*
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -159,7 +157,7 @@ class ChatService(
                 conversationReferences.remove(conversationId)
             }
         }
-        Logger.d(TAG) { "Removed reference for $conversationId (current references: ${conversationReferences[conversationId] ?: 0})" }
+        Logger.i(TAG) { "Removed reference for $conversationId (current references: ${conversationReferences[conversationId] ?: 0})" }
         appScope.launch {
             delay(500)
             checkAllConversationsReferences()
@@ -175,10 +173,11 @@ class ChatService(
 
     // 检查所有conversation的引用情况（生成结束后调用）
     fun checkAllConversationsReferences() {
-        conversations.keys.forEach { conversationId ->
-            if (!hasReference(conversationId)) {
-                cleanupConversation(conversationId)
-            }
+        val toRemoved = conversations.keys.filter { conversationId ->
+            !hasReference(conversationId)
+        }
+        toRemoved.forEach { conversationId ->
+            cleanupConversation(conversationId)
         }
     }
 
