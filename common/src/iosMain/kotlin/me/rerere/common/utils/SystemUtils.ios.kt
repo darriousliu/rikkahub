@@ -81,9 +81,8 @@ private val UIDevice.modelName: String
             "iPhone17,5" -> "iPhone 16e"
 
             // Simulator
-            "i386" -> "simulator"
-            "x86_64" -> "simulator"
-            "arm64" -> "simulator"
+            "i386", "x86_64" -> "X86 simulator"
+            "arm64" -> "Arm64 Simulator"
             else -> "unknown"
         }
     }
