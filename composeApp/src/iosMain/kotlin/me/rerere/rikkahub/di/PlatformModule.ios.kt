@@ -11,6 +11,8 @@ import me.rerere.common.utils.PlatformPebbleEngine
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.Migration_6_7
+import me.rerere.rikkahub.utils.HtmlEscaper
+import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -30,4 +32,15 @@ actual val platformModule: Module = module {
     }
 
     single { TemplateTransformer(settingsStore = get()) }
+}
+
+fun KoinApplication.initIOSKoin(
+    di: List<Any>,
+) {
+    val htmlEscaper = di.find { it is HtmlEscaper } as? HtmlEscaper
+    modules(
+        module {
+            htmlEscaper?.let { single<HtmlEscaper> { htmlEscaper } }
+        }
+    )
 }

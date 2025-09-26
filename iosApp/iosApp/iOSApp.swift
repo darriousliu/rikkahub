@@ -6,7 +6,10 @@ import ComposeApp
 struct iOSApp: App {
     init() {
         FirebaseApp.configure()
-        AppInitializer.shared.doInitKoin { _ in
+        AppInitializer.shared.doInitKoin { app in
+            app.doInitIOSKoin(di: [
+                HtmlEscapeUtil.shared,
+            ])
         }
         AppInitializer.shared.initialize()
     }
