@@ -148,12 +148,12 @@
   <string name="assistant_page_top_p_warning">Please don\'t modify this value unless you know what you\'re doing</string>
   <string name="assistant_page_context_message_size">Context Message Size</string>
   <string name="assistant_page_context_message_desc">Controls how many historical messages will be sent to the model as context. Messages exceeding this number will be ignored, only the most recent N messages will be retained, which can save tokens</string>
-  <string name="assistant_page_context_message_count">Context Message Size: %d</string>
+  <string name="assistant_page_context_message_count">Context Message Size: %1$d</string>
   <string name="assistant_page_memory">Memory</string>
   <string name="assistant_page_memory_desc">When memory is enabled, the model will try to actively record your information during conversations and use it in subsequent conversations. This feature requires the model to support tool calls to work properly</string>
   <string name="assistant_page_recent_chats">Reference Recent Chats</string>
   <string name="assistant_page_recent_chats_desc">When enabled, the assistant will reference recent chat history to provide more contextual responses</string>
-  <string name="assistant_page_manage_memory">Manage Memory (%d items)</string>
+  <string name="assistant_page_manage_memory">Manage Memory (%1$d items)</string>
   <string name="assistant_page_cancel">Cancel</string>
   <string name="assistant_page_save">Save</string>
   <string name="assistant_page_manage_memory_title">Manage Memory</string>
@@ -161,17 +161,17 @@
   <string name="assistant_page_delete_dialog_text">Are you sure you want to delete this assistant? This action cannot be undone.</string>
   <string name="assistant_page_default_assistant">Default Assistant</string>
   <string name="setting_provider_page_delete_dialog_text">Are you sure you want to delete this provider? This action cannot be undone.</string>
-  <string name="assistant_page_temperature_value">Temperature: %s</string>
-  <string name="assistant_page_memory_count">Memory: %d</string>
+  <string name="assistant_page_temperature_value">Temperature: %1$s</string>
+  <string name="assistant_page_memory_count">Memory: %1$d</string>
   <string name="assistant_page_no_system_prompt">No system prompt</string>
   <string name="assistant_page_clone">Clone</string>
-  <string name="assistant_page_top_p_value">Top P: %s</string>
+  <string name="assistant_page_top_p_value">Top P: %1$s</string>
   <string name="assistant_page_thinking_budget">Thinking Budget</string>
   <string name="assistant_page_thinking_budget_default">Default</string>
   <string name="assistant_page_max_tokens">Max Tokens</string>
   <string name="assistant_page_max_tokens_desc">Maximum number of tokens to generate. Leave empty for no limit.</string>
   <string name="assistant_page_max_tokens_no_limit">No limit</string>
-  <string name="assistant_page_max_tokens_limit">Limit: %d tokens</string>
+  <string name="assistant_page_max_tokens_limit">Limit: %1$d tokens</string>
   <string name="assistant_page_max_tokens_no_token_limit">No token limit</string>
   <string name="assistant_page_message_template">Message Content Template</string>
   <string name="assistant_page_message_template_desc">Controls the content format of chat messages before being sent to the LLM, usually no need to modify</string>
@@ -195,7 +195,7 @@
   <string name="assistant_page_custom_bodies">Custom Body</string>
   <string name="assistant_page_body_key">Body Key</string>
   <string name="assistant_page_body_value">Body Value (JSON)</string>
-  <string name="assistant_page_invalid_json">Invalid JSON: %s</string>
+  <string name="assistant_page_invalid_json">Invalid JSON: %1$s</string>
   <string name="assistant_page_delete_body">Delete Body</string>
   <string name="assistant_page_add_body">Add Body</string>
 
@@ -394,14 +394,14 @@
 
   <!-- Setting Provider Page -->
   <string name="setting_provider_page_title">Providers</string>
-  <string name="setting_provider_page_scan_error">Error: %s</string>
+  <string name="setting_provider_page_scan_error">Error: %1$s</string>
   <string name="setting_provider_page_no_permission">No permission</string>
   <string name="setting_provider_page_import_success">Import successful</string>
   <string name="setting_provider_page_add_provider">Add Provider</string>
   <string name="setting_provider_page_add">Add</string>
   <string name="setting_provider_page_enabled">Enabled</string>
   <string name="setting_provider_page_disabled">Disabled</string>
-  <string name="setting_provider_page_model_count">%d models</string>
+  <string name="setting_provider_page_model_count">%1$d models</string>
   <string name="setting_provider_page_share">Share</string>
   <string name="setting_provider_page_models">Models</string>
   <string name="setting_provider_page_configuration">Configuration</string>
@@ -437,10 +437,10 @@
   <string name="setting_provider_page_import_dialog_message">Please select import method:</string>
   <string name="setting_provider_page_scan_qr_code">Scan QR Code</string>
   <string name="setting_provider_page_select_from_gallery">Select from Gallery</string>
-  <string name="setting_provider_page_qr_decode_failed">Failed to parse QR code: %s</string>
+  <string name="setting_provider_page_qr_decode_failed">Failed to parse QR code: %1$s</string>
   <string name="setting_provider_page_image_read_failed">Unable to read image</string>
   <string name="setting_provider_page_no_qr_found">No valid QR code found</string>
-  <string name="setting_provider_page_image_qr_decode_failed">Failed to parse QR code from image: %s</string>
+  <string name="setting_provider_page_image_qr_decode_failed">Failed to parse QR code from image: %1$s</string>
   <string name="setting_provider_page_enable">Enable</string>
   <string name="setting_provider_page_name">Name</string>
   <string name="setting_provider_page_api_key">API Key</string>
@@ -553,14 +553,14 @@
   <string name="backup_page_restore_now">Restore</string>
   <string name="backup_page_restoring">Restoring...</string>
   <string name="backup_page_connection_success">Connection successful</string>
-  <string name="backup_page_connection_failed">Connection failed: %s</string>
+  <string name="backup_page_connection_failed">Connection failed: %1$s</string>
   <string name="backup_page_backup_success">Backup successful</string>
   <string name="backup_page_unknown_error">Unknown error</string>
-  <string name="backup_page_loading_failed">Failed to load backup files: %s</string>
+  <string name="backup_page_loading_failed">Failed to load backup files: %1$s</string>
   <string name="backup_page_delete_success">Delete successful</string>
-  <string name="backup_page_delete_failed">Delete failed: %s</string>
+  <string name="backup_page_delete_failed">Delete failed: %1$s</string>
   <string name="backup_page_restore_success">Restore successful</string>
-  <string name="backup_page_restore_failed">Restore failed: %s</string>
+  <string name="backup_page_restore_failed">Restore failed: %1$s</string>
   <string name="backup_page_restart_app">Restart App</string>
   <string name="backup_page_restart_desc">The app needs to restart for the changes to take effect.</string>
   <string name="backup_page_local_backup_export">Export to File</string>
@@ -686,9 +686,9 @@
   <string name="assistant_importer_missing_data_field">Missing data field</string>
   <string name="assistant_importer_missing_name_field">Missing name field</string>
   <string name="assistant_importer_missing_spec_field">Missing spec field</string>
-  <string name="assistant_importer_unsupported_spec">Unsupported spec: %s</string>
+  <string name="assistant_importer_unsupported_spec">Unsupported spec: %1$s</string>
   <string name="assistant_importer_read_json_failed">Failed to read JSON</string>
-  <string name="assistant_importer_unsupported_file_type">Unsupported file type: %s</string>
+  <string name="assistant_importer_unsupported_file_type">Unsupported file type: %1$s</string>
   <string name="pinned_chats">Pinned Chats</string>
   <string name="unpin_chat">Unpin the Chat</string>
   <string name="pin_chat">Pin the Chat</string>
