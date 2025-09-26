@@ -1,36 +1,26 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.runtime.Composable
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
 import io.github.g00fy2.quickie.QRResult
-import io.github.g00fy2.quickie.ScanQRCode
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.ui.components.ui.decodeProviderSetting
 import me.rerere.rikkahub.utils.ImageUtils
+import me.rerere.rikkahub.utils.QRCodeResult
 import org.jetbrains.compose.resources.getString
 import rikkahub.composeapp.generated.resources.*
 
-@Composable
-actual fun rememberQrCodeLauncher(onResult: (Any) -> Unit): Any {
-    return rememberLauncherForActivityResult(ScanQRCode()) {
-        onResult(it)
-    }
-}
-
 internal actual suspend fun handleQRResult(
-    result: Any,
+    result: QRCodeResult,
     onAdd: (ProviderSetting) -> Unit,
     toaster: ToasterState,
     context: PlatformContext
 ) {
     runCatching {
-        result as QRResult
-        when (result) {
+        when (val result = result.result) {
             is QRResult.QRError -> {
                 toaster.show(
                     getString(

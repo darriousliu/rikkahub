@@ -1,15 +1,10 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import androidx.compose.runtime.Composable
 import com.dokar.sonner.ToasterState
 import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.common.PlatformContext
-
-@Composable
-actual fun rememberQrCodeLauncher(onResult: (Any) -> Unit): Any {
-    TODO("Not yet implemented")
-}
+import me.rerere.rikkahub.utils.QRCodeResult
 
 internal actual suspend fun handleImageQRCode(
     uri: PlatformFile,
@@ -21,7 +16,7 @@ internal actual suspend fun handleImageQRCode(
 }
 
 internal actual suspend fun handleQRResult(
-    result: Any,
+    result: QRCodeResult,
     onAdd: (ProviderSetting) -> Unit,
     toaster: ToasterState,
     context: PlatformContext

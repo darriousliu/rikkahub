@@ -66,7 +66,9 @@ import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
+import me.rerere.rikkahub.utils.QRCodeResult
 import me.rerere.rikkahub.utils.plus
+import me.rerere.rikkahub.utils.rememberQRCodeScanner
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import rikkahub.composeapp.generated.resources.*
@@ -171,7 +173,7 @@ private fun ImportProviderButton(
     var showImportDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val scanQrCodeLauncher = rememberQrCodeLauncher { result ->
+    val scanQrCodeLauncher = rememberQRCodeScanner { result ->
         scope.launch {
             handleQRResult(result, onAdd, toaster, context)
         }
@@ -222,8 +224,7 @@ private fun ImportProviderButton(
                         Button(
                             onClick = {
                                 showImportDialog = false
-                                // todo enable when implemented
-//                                scanQrCodeLauncher.launch()
+                                scanQrCodeLauncher.startScanning()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -295,13 +296,8 @@ private fun ImportProviderButton(
     }
 }
 
-@Composable
-expect fun rememberQrCodeLauncher(
-    onResult: (Any) -> Unit
-): Any
-
 internal expect suspend fun handleQRResult(
-    result: Any,
+    result: QRCodeResult,
     onAdd: (ProviderSetting) -> Unit,
     toaster: ToasterState,
     context: PlatformContext
