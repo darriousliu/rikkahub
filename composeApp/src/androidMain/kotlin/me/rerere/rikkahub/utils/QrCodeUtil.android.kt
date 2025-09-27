@@ -9,10 +9,10 @@ import io.github.g00fy2.quickie.ScanQRCode
 
 actual class QRCodeResult(val result: QRResult)
 
-actual class QRCodeScanner(
+class AndroidQRCodeScanner(
     private val launcher: ManagedActivityResultLauncher<Nothing?, QRResult>
-) {
-    actual fun startScanning() {
+) : QRCodeScanner {
+    override fun startScanning() {
         launcher.launch(null)
     }
 }
@@ -22,5 +22,5 @@ actual fun rememberQRCodeScanner(onResult: (QRCodeResult) -> Unit): QRCodeScanne
     val launcher = rememberLauncherForActivityResult(ScanQRCode()) {
         onResult(QRCodeResult(it))
     }
-    return remember { QRCodeScanner(launcher) }
+    return remember { AndroidQRCodeScanner(launcher) }
 }

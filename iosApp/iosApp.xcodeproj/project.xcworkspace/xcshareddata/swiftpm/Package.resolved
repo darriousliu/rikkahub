@@ -1,5 +1,5 @@
 {
-  "originHash" : "0b8f4f72459cd1fc0d69a741092468bc4f356aaafd247b1f347763ee57bb402c",
+  "originHash" : "96756a6d546491a99982a8f3160b9967f40f099dc28de55d5e9d8239cf41f083",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -143,6 +143,15 @@
       "state" : {
         "revision" : "e3f69fd321d0c9fcdc16fb576a0cdd956675face",
         "version" : "1.31.0"
+      }
+    },
+    {
+      "identity" : "swiftqrscanner",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/vinodiOS/SwiftQRScanner",
+      "state" : {
+        "revision" : "fddcabcb431cd6110cea0394660082661dbafa7e",
+        "version" : "1.16.0"
       }
     },
     {

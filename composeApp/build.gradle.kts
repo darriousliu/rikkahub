@@ -37,6 +37,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            export(project(":common"))
         }
     }
 
@@ -118,7 +119,7 @@ kotlin {
             implementation(project(":highlight"))
             implementation(project(":search"))
             implementation(project(":tts"))
-            implementation(project(":common"))
+            api(project(":common"))
             // Compose
             implementation(compose.runtime)
             implementation(compose.ui)

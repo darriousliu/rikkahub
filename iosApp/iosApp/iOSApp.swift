@@ -9,6 +9,8 @@ struct iOSApp: App {
         AppInitializer.shared.doInitKoin { app in
             app.doInitIOSKoin(di: [
                 HtmlEscapeUtil.shared,
+                QRCodeUtilProvider.shared,
+                IosQRCodeDecoder.shared
             ])
         }
         AppInitializer.shared.initialize()

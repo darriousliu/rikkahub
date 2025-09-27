@@ -50,8 +50,10 @@ import com.composables.icons.lucide.Image
 import com.composables.icons.lucide.Import
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
+import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import kotlinx.coroutines.launch
@@ -62,13 +64,16 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
+import me.rerere.rikkahub.ui.components.ui.decodeProviderSetting
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
+import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.QRCodeResult
 import me.rerere.rikkahub.utils.plus
 import me.rerere.rikkahub.utils.rememberQRCodeScanner
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import rikkahub.composeapp.generated.resources.*
@@ -303,12 +308,37 @@ internal expect suspend fun handleQRResult(
     context: PlatformContext
 )
 
-internal expect suspend fun handleImageQRCode(
+private suspend fun handleImageQRCode(
     uri: PlatformFile,
     onAdd: (ProviderSetting) -> Unit,
     toaster: ToasterState,
     context: PlatformContext
-)
+) {
+    runCatching {
+        // 使用ImageUtils解析二维码
+        val qrContent = ImageUtils.decodeQRCodeFromUri(context, uri.absolutePath())
+
+        if (qrContent.isNullOrEmpty()) {
+            toaster.show(
+                getString(Res.string.setting_provider_page_no_qr_found),
+                type = ToastType.Error
+            )
+            return
+        }
+
+        val setting = decodeProviderSetting(qrContent)
+        onAdd(setting)
+        toaster.show(
+            getString(Res.string.setting_provider_page_import_success),
+            type = ToastType.Success
+        )
+    }.onFailure { error ->
+        toaster.show(
+            getString(Res.string.setting_provider_page_image_qr_decode_failed, error.message ?: ""),
+            type = ToastType.Error
+        )
+    }
+}
 
 
 @Composable

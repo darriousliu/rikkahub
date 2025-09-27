@@ -12,6 +12,9 @@ import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.Migration_6_7
 import me.rerere.rikkahub.utils.HtmlEscaper
+import me.rerere.rikkahub.utils.ProviderQRCodeScanner
+import me.rerere.rikkahub.utils.QRCodeDecoder
+import me.rerere.rikkahub.utils.QRCodeScanner
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
 import org.koin.dsl.bind
@@ -38,9 +41,17 @@ fun KoinApplication.initIOSKoin(
     di: List<Any>,
 ) {
     val htmlEscaper = di.find { it is HtmlEscaper } as? HtmlEscaper
+    val qrCodeProvider = di.find { it is ProviderQRCodeScanner } as? ProviderQRCodeScanner
+    val qrCodeDecoder = di.find { it is QRCodeDecoder } as? QRCodeDecoder
     modules(
         module {
             htmlEscaper?.let { single<HtmlEscaper> { htmlEscaper } }
+            qrCodeProvider?.let {
+                factory<QRCodeScanner> {
+                    qrCodeProvider.factory(it.get())
+                }
+            }
+            qrCodeDecoder?.let { single<QRCodeDecoder> { qrCodeDecoder } }
         }
     )
 }

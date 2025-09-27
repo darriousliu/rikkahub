@@ -1,16 +1,20 @@
 package me.rerere.rikkahub.utils
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 actual typealias QRCodeResult = String
 
-actual class QRCodeScanner() {
-    actual fun startScanning() {
-    }
+interface ProviderQRCodeScanner {
+    fun factory(onResult: (QRCodeResult) -> Unit): QRCodeScanner
+}
+
+interface QRCodeDecoder {
+    fun decode(uri: String): String?
 }
 
 @Composable
 actual fun rememberQRCodeScanner(onResult: (QRCodeResult) -> Unit): QRCodeScanner {
-    return remember { QRCodeScanner() }
+    return koinInject<QRCodeScanner> { parametersOf(onResult) }
 }

@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 
 expect class QRCodeResult
 
-expect class QRCodeScanner {
+interface QRCodeScanner {
     fun startScanning()
 }
 
