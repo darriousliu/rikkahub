@@ -9,6 +9,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":common"))
             implementation(compose.components.resources)
             implementation(compose.ui)
             implementation(compose.material3)

@@ -3,11 +3,9 @@ package me.rerere.highlight
 import co.touchlab.kermit.Logger
 import com.dokar.quickjs.QuickJs
 import com.dokar.quickjs.binding.JsObject
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer
@@ -27,12 +25,15 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.common.utils.ThreadManager
 import me.rerere.highlight.HighlightToken.Token.StringContent
 import rikkahub.highlight.generated.resources.Res
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-class Highlighter(appScope: CoroutineScope) {
+class Highlighter() {
     init {
-        appScope.launch {
+        ThreadManager.runInBackground {
             QuickJs.Companion
 
             context // init context
@@ -54,43 +55,49 @@ class Highlighter(appScope: CoroutineScope) {
         }
     }
 
-    suspend fun highlight(code: String, language: String) = withContext(Dispatchers.Default) {
-        runCatching {
-            val codeJson = Json.encodeToString(code)
-            val languageJson = Json.encodeToString(language)
+    suspend fun highlight(code: String, language: String) = suspendCancellableCoroutine { continuation ->
+        ThreadManager.runInBackground {
+            runCatching {
+                val codeJson = Json.encodeToString(code)
+                val languageJson = Json.encodeToString(language)
 
-            val result = context.evaluate<Any>(
-                code = "highlight($codeJson, $languageJson)",
-            )
-            require(result is List<*>) {
-                "highlight result must be an array"
-            }
-            val tokens = arrayListOf<HighlightToken>()
-            for (i in 0 until result.size) {
-                when (val element = result[i]) {
-                    is String -> tokens.add(
-                        HighlightToken.Plain(
-                            content = element,
-                        )
+                val result = runBlocking {
+                    context.evaluate<Any>(
+                        code = "highlight($codeJson, $languageJson)",
                     )
-
-                    is JsObject -> {
-                        val token = format.decodeFromString(
-                            HighlightTokenSerializer,
-                            format.encodeToString(JsObjectSerializer, element)
-                        )
-                        tokens.add(token)
-                    }
-
-                    else -> error("Unknown type: ${element!!::class.qualifiedName}")
                 }
-            }
+                require(result is List<*>) {
+                    "highlight result must be an array"
+                }
+                val tokens = arrayListOf<HighlightToken>()
+                for (i in 0 until result.size) {
+                    when (val element = result[i]) {
+                        is String -> tokens.add(
+                            HighlightToken.Plain(
+                                content = element,
+                            )
+                        )
+
+                        is JsObject -> {
+                            val token = format.decodeFromString(
+                                HighlightTokenSerializer,
+                                format.encodeToString(JsObjectSerializer, element)
+                            )
+                            tokens.add(token)
+                        }
+
+                        else -> error("Unknown type: ${element!!::class.qualifiedName}")
+                    }
+                }
 //            result.release()
-            tokens
-        }.onFailure {
-            Logger.e("Highlighter") { "language:  $language\ncode: $code" }
-            it.printStackTrace()
-        }.getOrThrow()
+                continuation.resume(tokens)
+            }.onFailure {
+                Logger.e("Highlighter") { "language:  $language\ncode: $code" }
+                if (continuation.isActive) {
+                    continuation.resumeWithException(it)
+                }
+            }.getOrThrow()
+        }
     }
 
     fun destroy() {
