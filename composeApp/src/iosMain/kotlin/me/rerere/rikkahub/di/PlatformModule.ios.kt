@@ -11,6 +11,7 @@ import me.rerere.common.utils.PlatformPebbleEngine
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.Migration_6_7
+import me.rerere.rikkahub.utils.DocumentReader
 import me.rerere.rikkahub.utils.HtmlEscaper
 import me.rerere.rikkahub.utils.ProviderQRCodeScanner
 import me.rerere.rikkahub.utils.QRCodeDecoder
@@ -43,15 +44,17 @@ fun KoinApplication.initIOSKoin(
     val htmlEscaper = di.find { it is HtmlEscaper } as? HtmlEscaper
     val qrCodeProvider = di.find { it is ProviderQRCodeScanner } as? ProviderQRCodeScanner
     val qrCodeDecoder = di.find { it is QRCodeDecoder } as? QRCodeDecoder
+    val documentReader = di.find { it is DocumentReader } as? DocumentReader
     modules(
         module {
             htmlEscaper?.let { single<HtmlEscaper> { htmlEscaper } }
             qrCodeProvider?.let {
                 factory<QRCodeScanner> {
-                    qrCodeProvider.factory(it.get())
+                    qrCodeProvider.factory(it[0])
                 }
             }
             qrCodeDecoder?.let { single<QRCodeDecoder> { qrCodeDecoder } }
+            documentReader?.let { single<DocumentReader> { documentReader } }
         }
     )
 }
