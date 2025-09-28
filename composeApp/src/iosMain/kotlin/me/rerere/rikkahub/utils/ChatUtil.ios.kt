@@ -6,13 +6,13 @@ import coil3.BitmapImage
 import coil3.Uri
 import coil3.asImage
 import coil3.pathSegments
-import coil3.util.MimeTypeMap
 import io.github.vinceglb.filekit.utils.toByteArray
 import io.github.vinceglb.filekit.utils.toNSData
 import me.rerere.common.PlatformContext
 import org.jetbrains.skia.Image
 import platform.UIKit.UIImage
 import platform.UIKit.UIImagePNGRepresentation
+import platform.UniformTypeIdentifiers.UTType
 
 actual fun ByteArray.toImage(): BitmapImage {
     return try {
@@ -36,5 +36,11 @@ actual fun PlatformContext.getFileNameFromUri(uri: Uri): String? {
 }
 
 actual fun PlatformContext.getFileMimeType(uri: Uri): String? {
-    return MimeTypeMap.getMimeTypeFromUrl(uri.toString())
+    val extension = uri.toString()
+        .substringBeforeLast('#') // Strip the fragment.
+        .substringBeforeLast('?') // Strip the query.
+        .substringAfterLast('/') // Get the last path segment.
+        .substringAfterLast('.', missingDelimiterValue = "") // Get the file extension.
+    val utType = UTType.typeWithFilenameExtension(extension)
+    return utType?.preferredMIMEType
 }
