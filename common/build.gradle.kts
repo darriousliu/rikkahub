@@ -43,6 +43,8 @@ kotlin {
             api(libs.gitlive.firebase.analytics)
             api(libs.gitlive.firebase.crashlytics)
             api(libs.gitlive.firebase.config)
+
+            api(libs.kermit)
         }
         iosMain.dependencies {
             api(libs.ktor.client.darwin)

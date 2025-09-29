@@ -1,8 +1,6 @@
 package me.rerere.rikkahub.service
 
 import androidx.compose.ui.text.intl.Locale
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import co.touchlab.kermit.Logger
 import io.ktor.util.collections.ConcurrentMap
 import kotlinx.coroutines.Dispatchers
@@ -60,6 +58,8 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.utils.AppLifecycleManager
+import me.rerere.rikkahub.utils.AppLifecycleObserver
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.applyPlaceholders
 import me.rerere.rikkahub.utils.deleteChatFiles
@@ -124,22 +124,24 @@ class ChatService(
     private val _isForeground = MutableStateFlow(false)
     val isForeground: StateFlow<Boolean> = _isForeground.asStateFlow()
 
-    private val lifecycleObserver = LifecycleEventObserver { _, event ->
-        when (event) {
-            Lifecycle.Event.ON_START -> _isForeground.value = true
-            Lifecycle.Event.ON_STOP -> _isForeground.value = false
-            else -> {}
+    private val lifecycleObserver = object : AppLifecycleObserver {
+        override fun onAppForeground() {
+            Logger.i(TAG) { "App is in foreground" }
+            _isForeground.value = true
+        }
+
+        override fun onAppBackground() {
+            Logger.i(TAG) { "App is in background" }
+            _isForeground.value = false
         }
     }
 
     init {
-        init(lifecycleObserver)
+        AppLifecycleManager.addObserver(lifecycleObserver)
     }
 
     fun cleanup() {
-        cleanup(lifecycleObserver) {
-            _generationJobs.value.values.forEach { it?.cancel() }
-        }
+        AppLifecycleManager.removeObserver(lifecycleObserver)
     }
 
     // 添加引用
@@ -400,6 +402,9 @@ class ChatService(
                 updateConversation(conversationId, updatedConversation)
 
                 // Show notification if app is not in foreground
+                Logger.i("ChatService") {
+                    "Generation completed for $conversationId, isForeground=${isForeground.value}, enableNotification=${settings.displaySetting.enableNotificationOnMessageGeneration}"
+                }
                 if (!isForeground.value && settings.displaySetting.enableNotificationOnMessageGeneration) {
                     sendGenerationDoneNotification(
                         getConversationFlow(conversationId).value,
@@ -829,10 +834,6 @@ class ChatService(
         Logger.i(TAG) { "cleanupConversation: removed $conversationId (current references: ${conversationReferences.size}, generation jobs: ${_generationJobs.value.size})" }
     }
 }
-
-expect fun init(lifecycleObserver: LifecycleEventObserver)
-
-expect fun cleanup(lifecycleObserver: LifecycleEventObserver, block: () -> Unit)
 
 // 发送生成完成通知
 internal expect fun sendGenerationDoneNotification(

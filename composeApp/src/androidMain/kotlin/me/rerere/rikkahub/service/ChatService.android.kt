@@ -7,26 +7,12 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
 import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.model.Conversation
 import kotlin.uuid.Uuid
-
-actual fun init(lifecycleObserver: LifecycleEventObserver) {
-    // 添加生命周期观察者
-    ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
-}
-
-actual fun cleanup(lifecycleObserver: LifecycleEventObserver, block: () -> Unit) {
-    runCatching {
-        ProcessLifecycleOwner.get().lifecycle.removeObserver(lifecycleObserver)
-        block()
-    }
-}
 
 internal actual fun sendGenerationDoneNotification(
     conversation: Conversation,

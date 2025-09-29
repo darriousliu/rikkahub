@@ -257,7 +257,7 @@ fun App(
 
 class AppScope : CoroutineScope by CoroutineScope(
     SupervisorJob()
-        + Dispatchers.Main
+        + Dispatchers.Default
         + CoroutineName("AppScope")
         + CoroutineExceptionHandler { _, e ->
         Logger.e(TAG, e) { "AppScope exception" }

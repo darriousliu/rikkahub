@@ -3,7 +3,11 @@ package me.rerere.ai.provider.providers.openai
 import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.sse.sse
-import io.ktor.client.request.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
@@ -45,16 +49,7 @@ import me.rerere.ai.util.mergeCustomBody
 import me.rerere.ai.util.parseErrorDetail
 import me.rerere.ai.util.stringSafe
 import me.rerere.ai.util.toHeaders
-import me.rerere.common.http.await
-import me.rerere.common.http.jsonObjectOrNull
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.sse.EventSource
-import okhttp3.sse.EventSourceListener
-import okhttp3.sse.EventSources
+import me.rerere.common.utils.NetworkRequestManager
 import kotlin.time.Clock
 
 private const val TAG = "ResponseAPI"
@@ -65,33 +60,35 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
         messages: List<UIMessage>,
         params: TextGenerationParams
     ): MessageChunk {
-        val requestBody = buildRequestBody(
-            messages = messages,
-            params = params,
-            stream = false,
-        )
-        val request = HttpRequestBuilder().apply {
-            url("${providerSetting.baseUrl}/responses")
-            headers.appendAll(params.customHeaders.toHeaders())
-            contentType(ContentType.Application.Json)
-            setBody(requestBody)
-            header("Authorization", "Bearer ${providerSetting.apiKey}")
-            configureReferHeaders(providerSetting.baseUrl)
+        return NetworkRequestManager().executeWithBackgroundProtection {
+            val requestBody = buildRequestBody(
+                messages = messages,
+                params = params,
+                stream = false,
+            )
+            val request = HttpRequestBuilder().apply {
+                url("${providerSetting.baseUrl}/responses")
+                headers.appendAll(params.customHeaders.toHeaders())
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+                header("Authorization", "Bearer ${providerSetting.apiKey}")
+                configureReferHeaders(providerSetting.baseUrl)
+            }
+
+            Logger.i(TAG) { "generateText: ${json.encodeToString(requestBody)}" }
+
+            val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
+            if (!response.status.isSuccess()) {
+                throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
+            }
+
+            val bodyStr = response.stringSafe().orEmpty()
+            Logger.i(TAG) { "generateText: $bodyStr" }
+            val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
+            val output = parseResponseOutput(bodyJson)
+
+            output
         }
-
-        Logger.i(TAG) { "generateText: ${json.encodeToString(requestBody)}" }
-
-        val response = client.configureClientWithProxy(providerSetting.proxy).post(request)
-        if (!response.status.isSuccess()) {
-            throw Exception("Failed to get response: ${response.status.value} ${response.bodyAsText()}")
-        }
-
-        val bodyStr = response.stringSafe().orEmpty()
-        Logger.i(TAG) { "generateText: $bodyStr" }
-        val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-        val output = parseResponseOutput(bodyJson)
-
-        return output
     }
 
     override suspend fun streamText(
@@ -116,43 +113,45 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
 
         Logger.i(TAG) { "streamText: ${json.encodeToString(requestBody)}" }
 
-        client.configureClientWithProxy(providerSetting.proxy).sse({ takeFrom(request) }) {
-            try {
-                incoming.collect { event ->
-                    val id = event.id
-                    val type = event.event
-                    val data = event.data ?: return@collect
-                    Logger.i(TAG) { "onEvent: $id/$type $data" }
-                    val json = json.parseToJsonElement(data).jsonObject
-                    val chunk = parseResponseDelta(json)
-                    if (chunk != null) {
-                        emit(chunk)
-                    }
-                    if (type == "response.completed") {
-                        cancel()
-                    }
-                }
-            } catch (t: Throwable) {
-                val response = call.response
-                var exception: Throwable
-
-                t.printStackTrace()
-                println("[onFailure] 发生错误: ${t::class.qualifiedName} ${t.message} / $response")
-
-                val bodyRaw = response.stringSafe()
+        NetworkRequestManager().executeWithBackgroundProtection {
+            client.configureClientWithProxy(providerSetting.proxy).sse({ takeFrom(request) }) {
                 try {
-                    if (!bodyRaw.isNullOrEmpty()) {
-                        val bodyElement = Json.parseToJsonElement(bodyRaw)
-                        println(bodyElement)
-                        exception = bodyElement.parseErrorDetail()
-                        Logger.i(TAG) { "onFailure: $exception" }
+                    incoming.collect { event ->
+                        val id = event.id
+                        val type = event.event
+                        val data = event.data ?: return@collect
+                        Logger.i(TAG) { "onEvent: $id/$type $data" }
+                        val json = json.parseToJsonElement(data).jsonObject
+                        val chunk = parseResponseDelta(json)
+                        if (chunk != null) {
+                            emit(chunk)
+                        }
+                        if (type == "response.completed") {
+                            cancel()
+                        }
                     }
-                } catch (e: Throwable) {
-                    Logger.i(TAG) { "onFailure: failed to parse from $bodyRaw" }
-                    e.printStackTrace()
+                } catch (t: Throwable) {
+                    val response = call.response
+                    var exception: Throwable
+
+                    t.printStackTrace()
+                    println("[onFailure] 发生错误: ${t::class.qualifiedName} ${t.message} / $response")
+
+                    val bodyRaw = response.stringSafe()
+                    try {
+                        if (!bodyRaw.isNullOrEmpty()) {
+                            val bodyElement = Json.parseToJsonElement(bodyRaw)
+                            println(bodyElement)
+                            exception = bodyElement.parseErrorDetail()
+                            Logger.i(TAG) { "onFailure: $exception" }
+                        }
+                    } catch (e: Throwable) {
+                        Logger.i(TAG) { "onFailure: failed to parse from $bodyRaw" }
+                        e.printStackTrace()
+                    }
+                } finally {
+                    println("[awaitClose] 关闭eventSource ")
                 }
-            } finally {
-                println("[awaitClose] 关闭eventSource ")
             }
         }
     }

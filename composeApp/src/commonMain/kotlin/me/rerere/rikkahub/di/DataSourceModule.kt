@@ -3,6 +3,7 @@ package me.rerere.rikkahub.di
 import de.jensklingenberg.ktorfit.Ktorfit
 import dev.gitlive.firebase.remoteconfig.FirebaseRemoteConfig
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
@@ -14,10 +15,10 @@ import io.ktor.serialization.kotlinx.json.json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.AIRequestInterceptorPlugin
 import me.rerere.rikkahub.data.ai.GenerationHandler
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.AppDatabase
-import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.sync.WebdavSync
 import org.koin.dsl.module
 
@@ -53,7 +54,7 @@ val dataSourceModule = module {
     }
 
     single<HttpClient> {
-        HttpClient {
+        HttpClient(httpClientEngine()) {
             install(ContentNegotiation) {
                 json(json = get())
             }
@@ -102,3 +103,5 @@ val dataSourceModule = module {
 //        get<Ktorfit>().create()
 //    }
 }
+
+expect fun httpClientEngine(): HttpClientEngine
