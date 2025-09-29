@@ -14,6 +14,8 @@ import co.touchlab.kermit.Logger
 import kotlinx.cinterop.cValue
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSDictionary
+import platform.Foundation.NSNumber
 import platform.Foundation.NSOperatingSystemVersion
 import platform.Foundation.NSProcessInfo
 import platform.WebKit.WKScriptMessage
@@ -32,7 +34,12 @@ actual abstract class WebSettings(val settings: WKWebViewConfiguration)
 
 private class WebSettingsImpl(settings: WKWebViewConfiguration) : WebSettings(settings)
 
-actual class ConsoleMessage
+actual data class ConsoleMessage(
+    val message: String = "",
+    val messageLevelName: String = "log",
+    val sourceId: String = "",
+    val lineNumber: Int = 0
+)
 
 actual fun WebSettings.configureZoom() {
     // iOS WKWebView has built-in zoom controls; no additional configuration needed
@@ -68,6 +75,17 @@ actual fun WebView(
                     }
                 val userContentController = WKUserContentController()
                 // 注入 JavaScript Bridge
+                configureConsoleLog(userContentController) { message, level, sourceId, lineNumber ->
+                    Logger.d("WebView") { "Console [$level] $message (Source: $sourceId, Line: $lineNumber)" }
+                    state.pushConsoleMessage(
+                        ConsoleMessage(
+                            message = message,
+                            messageLevelName = level,
+                            sourceId = sourceId,
+                            lineNumber = lineNumber
+                        )
+                    )
+                }
                 state.iosInterfaces.forEach { (functionName, handler) ->
                     val jsCode = """
                     window.$functionName = function(data) {
@@ -218,18 +236,78 @@ actual fun WebView(
     }
 }
 
+private fun configureConsoleLog(
+    userContentController: WKUserContentController,
+    onConsoleMessage: (String, String, String, Int) -> Unit
+) {
+    // 注入 JavaScript 代码来拦截控制台消息
+    val consoleScript = """
+        (function() {
+            var console = window.console;
+            var logLevels = ['log', 'info', 'warn', 'error', 'debug'];
+
+            logLevels.forEach(function(level) {
+                var originalMethod = console[level];
+                console[level] = function() {
+                    var message = Array.prototype.slice.call(arguments).map(function(arg) {
+                        return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+                    }).join(' ');
+
+                    // 发送消息到 native
+                    window.webkit.messageHandlers.consoleHandler.postMessage({
+                        level: level,
+                        message: message,
+                        sourceId: window.location.href,
+                        lineNumber: 0
+                    });
+
+                    // 调用原始方法
+                    originalMethod.apply(console, arguments);
+                };
+            });
+        })();
+    """.trimIndent()
+    val consoleUserScript = WKUserScript(
+        source = consoleScript,
+        injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
+        forMainFrameOnly = false
+    )
+    userContentController.addUserScript(consoleUserScript)
+    // 添加控制台消息处理器
+    val messageHandler = object : NSObject(), WKScriptMessageHandlerProtocol {
+        override fun userContentController(
+            userContentController: WKUserContentController,
+            didReceiveScriptMessage: WKScriptMessage
+        ) {
+            val body = didReceiveScriptMessage.body as? NSDictionary
+            if (body != null) {
+                val level = body.objectForKey("level") as? String ?: "log"
+                val message = body.objectForKey("message") as? String ?: ""
+                val sourceId = body.objectForKey("sourceId") as? String ?: ""
+                val lineNumber = (body.objectForKey("lineNumber") as? NSNumber)?.intValue ?: 0
+
+                onConsoleMessage(message, level, sourceId, lineNumber)
+            }
+        }
+    }
+    userContentController.addScriptMessageHandler(
+        scriptMessageHandler = messageHandler,
+        name = "consoleHandler"
+    )
+}
+
 actual fun ConsoleMessage.messageLevelName(): String {
-    TODO("Not yet implemented")
+    return messageLevelName
 }
 
 actual fun ConsoleMessage.message(): String {
-    TODO("Not yet implemented")
+    return message
 }
 
 actual fun ConsoleMessage.sourceId(): String {
-    TODO("Not yet implemented")
+    return sourceId
 }
 
 actual fun ConsoleMessage.lineNumber(): Int {
-    TODO("Not yet implemented")
+    return lineNumber
 }
