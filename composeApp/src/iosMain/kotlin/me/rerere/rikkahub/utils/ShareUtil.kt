@@ -4,6 +4,7 @@ import kotlinx.cinterop.useContents
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.getString
 import platform.CoreGraphics.CGRectMake
+import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIAlertAction
 import platform.UIKit.UIAlertActionStyleDefault
@@ -76,5 +77,63 @@ object ShareUtil {
         }
 
         currentViewController.presentViewController(activityViewController, animated = true, completion = null)
+    }
+
+    fun shareFile(
+        shareUri: String,
+        shareTitle: String? = null,
+        noShareApp: String? = null
+    ) {
+        val viewController = getCurrentViewController() ?: return
+        val fileURL = NSURL(string = shareUri)
+
+        // 创建 UIActivityViewController
+        val activityItems = listOf(fileURL)
+        val activityViewController = UIActivityViewController(
+            activityItems = activityItems,
+            applicationActivities = null
+        )
+
+        // 确保模态呈现样式正确
+        activityViewController.modalPresentationStyle = UIModalPresentationOverFullScreen
+
+        if (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad) {
+            // iPad 需要设置 popover
+            activityViewController.popoverPresentationController?.let { popover ->
+                popover.sourceView = viewController.view
+                popover.sourceRect = CGRectMake(
+                    x = viewController.view.bounds.useContents { size.width / 2 },
+                    y = viewController.view.bounds.useContents { size.height / 2 },
+                    width = 0.0,
+                    height = 0.0
+                )
+            }
+        }
+
+        // 设置完成回调
+        activityViewController.completionWithItemsHandler = { _, completed, _, error ->
+            if (error != null && !completed) {
+                val alert = UIAlertController.alertControllerWithTitle(
+                    title = shareTitle,
+                    message = noShareApp,
+                    preferredStyle = UIAlertControllerStyleAlert
+                )
+                alert.addAction(
+                    UIAlertAction.actionWithTitle(
+                        title = null,
+                        style = UIAlertActionStyleDefault,
+                        handler = null
+                    )
+                )
+                viewController.presentViewController(alert, animated = true, completion = null)
+            }
+        }
+
+        // 显示分享界面
+        viewController.presentViewController(
+            viewControllerToPresent = activityViewController,
+            animated = true,
+            completion = null
+        )
     }
 }
