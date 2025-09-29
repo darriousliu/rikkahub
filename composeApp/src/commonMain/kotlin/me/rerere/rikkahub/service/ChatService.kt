@@ -402,9 +402,6 @@ class ChatService(
                 updateConversation(conversationId, updatedConversation)
 
                 // Show notification if app is not in foreground
-                Logger.i("ChatService") {
-                    "Generation completed for $conversationId, isForeground=${isForeground.value}, enableNotification=${settings.displaySetting.enableNotificationOnMessageGeneration}"
-                }
                 if (!isForeground.value && settings.displaySetting.enableNotificationOnMessageGeneration) {
                     sendGenerationDoneNotification(
                         getConversationFlow(conversationId).value,
