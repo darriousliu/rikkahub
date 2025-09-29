@@ -14,7 +14,7 @@ import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.model.Conversation
 import kotlin.uuid.Uuid
 
-internal actual fun sendGenerationDoneNotification(
+internal actual suspend fun sendGenerationDoneNotification(
     conversation: Conversation,
     context: PlatformContext,
     conversationId: Uuid

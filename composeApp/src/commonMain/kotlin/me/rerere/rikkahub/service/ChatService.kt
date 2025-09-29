@@ -833,7 +833,7 @@ class ChatService(
 }
 
 // 发送生成完成通知
-internal expect fun sendGenerationDoneNotification(
+internal expect suspend fun sendGenerationDoneNotification(
     conversation: Conversation,
     context: PlatformContext,
     conversationId: Uuid
