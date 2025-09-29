@@ -15,6 +15,7 @@ import me.rerere.rikkahub.utils.DocumentReader
 import me.rerere.rikkahub.utils.HtmlEscaper
 import me.rerere.rikkahub.utils.ProviderQRCodeScanner
 import me.rerere.rikkahub.utils.QRCodeDecoder
+import me.rerere.rikkahub.utils.QRCodeEncoder
 import me.rerere.rikkahub.utils.QRCodeScanner
 import org.koin.core.KoinApplication
 import org.koin.core.module.Module
@@ -45,6 +46,7 @@ fun KoinApplication.initIOSKoin(
     val qrCodeProvider = di.find { it is ProviderQRCodeScanner } as? ProviderQRCodeScanner
     val qrCodeDecoder = di.find { it is QRCodeDecoder } as? QRCodeDecoder
     val documentReader = di.find { it is DocumentReader } as? DocumentReader
+    val qrCodeEncoder = di.find { it is QRCodeEncoder } as? QRCodeEncoder
     modules(
         module {
             htmlEscaper?.let { single<HtmlEscaper> { htmlEscaper } }
@@ -55,6 +57,7 @@ fun KoinApplication.initIOSKoin(
             }
             qrCodeDecoder?.let { single<QRCodeDecoder> { qrCodeDecoder } }
             documentReader?.let { single<DocumentReader> { documentReader } }
+            qrCodeEncoder?.let { single<QRCodeEncoder> { qrCodeEncoder } }
         }
     )
 }

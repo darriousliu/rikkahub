@@ -15,6 +15,7 @@ struct iOSApp: App {
                 QRCodeUtilProvider.shared,
                 IosQRCodeDecoder.shared,
                 DocumentUtil.shared,
+                IosQRCodeEncoder.shared,
             ])
         }
         AppInitializer.shared.initialize()

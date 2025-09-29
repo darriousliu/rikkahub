@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import SwiftQRCodeScanner
 import ComposeApp
-import Vision
+import QRCode
 
 class QRCodeUtil: QRCodeScanner {
     let onResult: (String) -> Void
@@ -108,7 +108,7 @@ class IosQRCodeDecoder: QRCodeDecoder {
 }
 
 extension UIImage {
-    
+
     /// Parses a QR code from the current image and returns its payload as a `String`.
     ///
     /// This method uses CoreImage to detect and decode any QR codes present in the image. If multiple QR codes are found, it returns the payload of the first one.
@@ -119,10 +119,10 @@ extension UIImage {
         guard let ciImage = CIImage(image: self) else {
             return nil
         }
-        
+
         // Set options for the QR code detector
         let detectorOptions = [CIDetectorAccuracy: CIDetectorAccuracyHigh]
-        
+
         // Create a QR code detector with the specified options
         guard let detector = CIDetector(ofType: CIDetectorTypeQRCode, context: nil, options: detectorOptions),
               // Use the detector to find QR code features in the image
@@ -132,8 +132,27 @@ extension UIImage {
         else {
             return nil
         }
-        
+
         // Return the payload of the first detected QR code
         return payload
+    }
+}
+
+class IosQRCodeEncoder: QRCodeEncoder {
+    static let shared = IosQRCodeEncoder()
+
+    func encode(data: String, size: Int32, color: String, backgroundColor: String) -> UIImage {
+        do {
+            let cgImage = try QRCode.build
+                .text(data)
+                .foregroundColor(hexString: color)
+                .backgroundColor(hexString: backgroundColor)
+                .generate.image(dimension: Int(size))
+            return UIImage(cgImage: cgImage)
+        } catch {
+            print("Failed to encode QR code: \(error)")
+            // Return a fallback image on failure - a simple 1x1 transparent image
+            return UIImage()
+        }
     }
 }
