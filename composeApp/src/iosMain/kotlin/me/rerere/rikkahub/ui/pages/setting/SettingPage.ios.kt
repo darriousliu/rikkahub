@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.ui.pages.setting
 
 import coil3.PlatformContext
+import me.rerere.rikkahub.utils.ShareUtil
 
 internal actual fun onShareClick(
     shareText: String,
@@ -8,5 +9,5 @@ internal actual fun onShareClick(
     share: String,
     noShareApp: String
 ) {
-    // TODO("Not yet implemented")
+    ShareUtil.shareText(shareText, share, noShareApp)
 }

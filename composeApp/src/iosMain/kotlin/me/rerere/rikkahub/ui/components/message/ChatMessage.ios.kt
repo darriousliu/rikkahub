@@ -2,12 +2,9 @@ package me.rerere.rikkahub.ui.components.message
 
 import coil3.PlatformContext
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.utils.getCurrentViewController
 import platform.Foundation.NSURL
-import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentInteractionController
-import platform.UIKit.UINavigationController
-import platform.UIKit.UITabBarController
-import platform.UIKit.UIViewController
 
 internal actual fun openDocument(
     context: PlatformContext,
@@ -16,8 +13,7 @@ internal actual fun openDocument(
     val url = NSURL.fileURLWithPath(document.url)
 
     // 获取当前活跃的 ViewController
-    val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
-    val currentViewController = getCurrentViewController(rootViewController)
+    val currentViewController = getCurrentViewController()
 
     if (currentViewController != null) {
         val documentController = UIDocumentInteractionController.interactionControllerWithURL(url)
@@ -37,20 +33,3 @@ internal actual fun openDocument(
     }
 }
 
-// 辅助函数：获取当前显示的 ViewController
-private fun getCurrentViewController(viewController: UIViewController?): UIViewController? {
-    if (viewController == null) return null
-
-    return when {
-        viewController.presentedViewController != null -> {
-            getCurrentViewController(viewController.presentedViewController)
-        }
-        viewController is UINavigationController -> {
-            getCurrentViewController(viewController.topViewController)
-        }
-        viewController is UITabBarController -> {
-            getCurrentViewController(viewController.selectedViewController)
-        }
-        else -> viewController
-    }
-}
