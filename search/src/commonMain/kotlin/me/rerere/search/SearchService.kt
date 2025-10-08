@@ -232,6 +232,8 @@ fun <T : SearchServiceOptions> KClass<out T>.createDefaultInstance(): T {
         SearchServiceOptions.LinkUpOptions::class -> SearchServiceOptions.LinkUpOptions()
         SearchServiceOptions.BraveOptions::class -> SearchServiceOptions.BraveOptions()
         SearchServiceOptions.MetasoOptions::class -> SearchServiceOptions.MetasoOptions()
+        SearchServiceOptions.OllamaOptions::class -> SearchServiceOptions.OllamaOptions()
+        SearchServiceOptions.PerplexityOptions::class -> SearchServiceOptions.PerplexityOptions()
         else -> throw IllegalArgumentException("Unknown SearchServiceOptions type: $this")
     } as T
 }
