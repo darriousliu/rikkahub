@@ -7,7 +7,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import me.rerere.common.PlatformContext
 import me.rerere.common.android.appTempFolder
-import me.rerere.common.utils.delete
+import me.rerere.common.utils.deleteRecursively
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.platformModule
@@ -53,7 +53,7 @@ object AppInitializer : KoinComponent {
         get<AppScope>().launch(Dispatchers.IO) {
             val dir = get<PlatformContext>().appTempFolder
             if (dir.exists()) {
-                dir.delete()
+                dir.deleteRecursively()
             }
         }
     }
