@@ -8,6 +8,6 @@ actual fun shareModel(
     state: ShareSheetState
 ) {
     ShareUtil.shareText(
-        shareText = state.currentProvider?.encode() ?: ""
+        shareText = state.currentProvider?.encodeForShare() ?: ""
     )
 }
