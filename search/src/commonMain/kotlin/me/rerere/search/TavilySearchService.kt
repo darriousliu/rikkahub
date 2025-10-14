@@ -4,7 +4,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import io.ktor.client.request.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +21,6 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
@@ -136,14 +139,14 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                     add(url)
                 })
             }
-            val request = Request.Builder()
-                .url("https://api.tavily.com/extract")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val response = response.body.string().let {
+            val request = HttpRequestBuilder().apply {
+                url("https://api.tavily.com/extract")
+                setBody(body.toString())
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+            }
+            val response = httpClient.post(request)
+            if (response.status.isSuccess()) {
+                val response = response.bodyAsText().let {
                     json.decodeFromString<ScrapeResponse>(it)
                 }
                 return@withContext Result.success(
@@ -157,7 +160,7 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.code}")
+                error("response failed #${response.status.value}")
             }
         }
     }

@@ -5,6 +5,7 @@ import coil3.Uri
 import kotlinx.coroutines.CoroutineScope
 import me.rerere.ai.ui.UIMessage
 import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.utils.ShareUtil
 
@@ -14,6 +15,7 @@ internal actual suspend fun exportToImage(
     density: Density,
     conversation: Conversation,
     messages: List<UIMessage>,
+    settings: Settings,
     options: ImageExportOptions
 ) {
     // TODO("Not yet implemented")

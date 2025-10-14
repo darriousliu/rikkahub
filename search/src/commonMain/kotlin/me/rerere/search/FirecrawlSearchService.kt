@@ -4,8 +4,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
@@ -24,8 +31,9 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.click_to_get_api_key
 
 object FirecrawlSearchService : SearchService<SearchServiceOptions.FirecrawlOptions> {
     override val name: String = "Firecrawl"
@@ -38,7 +46,7 @@ object FirecrawlSearchService : SearchService<SearchServiceOptions.FirecrawlOpti
                 urlHandler.openUri("https://docs.firecrawl.dev/features/search")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
@@ -111,19 +119,19 @@ object FirecrawlSearchService : SearchService<SearchServiceOptions.FirecrawlOpti
                 }
             }
 
-            val request = Request.Builder()
-                .url("https://api.firecrawl.dev/v2/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Content-Type", "application/json")
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
+            val request = HttpRequestBuilder().apply {
+                url("https://api.firecrawl.dev/v2/search")
+                setBody(body.toString())
+                header("Content-Type", "application/json")
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+            }
 
-            val response = httpClient.newCall(request).await()
-            if (!response.isSuccessful) {
+            val response = httpClient.post(request)
+            if (!response.status.isSuccess()) {
                 error("response failed #${'$'}{response.code}")
             }
 
-            val bodyString = response.body.string()
+            val bodyString = response.bodyAsText()
             val payload = json.parseToJsonElement(bodyString).jsonObject
             val data = payload["data"]?.jsonObject ?: error("empty response data")
             val resultData = json.decodeFromJsonElement<FirecrawlSearchResultData>(data)
@@ -170,19 +178,19 @@ object FirecrawlSearchService : SearchService<SearchServiceOptions.FirecrawlOpti
                 })
             }
 
-            val request = Request.Builder()
-                .url("https://api.firecrawl.dev/v2/scrape")
-                .post(body.toString().toRequestBody())
-                .addHeader("Content-Type", "application/json")
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
-
-            val response = httpClient.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("response failed #${response.code}")
+            val request = HttpRequestBuilder().apply {
+                url("https://api.firecrawl.dev/v2/scrape")
+                setBody(body.toString())
+                header("Content-Type", "application/json")
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
             }
 
-            val bodyString = response.body.string()
+            val response = httpClient.post(request)
+            if (!response.status.isSuccess()) {
+                error("response failed #${response.status.value}")
+            }
+
+            val bodyString = response.bodyAsText()
             val payload = json.parseToJsonElement(bodyString).jsonObject
 
             val success = payload["success"]?.jsonPrimitive?.contentOrNull?.toBoolean() ?: false

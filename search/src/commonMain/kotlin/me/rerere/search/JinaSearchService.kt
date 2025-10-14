@@ -4,8 +4,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -16,8 +23,9 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.click_to_get_api_key
 
 object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
     override val name: String = "Jina"
@@ -30,7 +38,7 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
                 urlHandler.openUri("https://jina.ai/")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
@@ -68,17 +76,17 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
                 put("q", query)
             }
 
-            val request = Request.Builder()
-                .url("https://s.jina.ai/")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .build()
+            val request = HttpRequestBuilder().apply {
+                url("https://s.jina.ai/")
+                setBody(body.toString())
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+                header("Accept", "application/json")
+                header("Content-Type", "application/json")
+            }
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseData = response.body.string().let {
+            val response = httpClient.post(request)
+            if (response.status.isSuccess()) {
+                val responseData = response.bodyAsText().let {
                     json.decodeFromString<JinaSearchResponse>(it)
                 }
 
@@ -94,7 +102,7 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.code}")
+                error("response failed #${response.status.value}")
             }
         }
     }
@@ -111,20 +119,20 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
                 put("url", url)
             }
 
-            val request = Request.Builder()
-                .url("https://r.jina.ai/")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("X-Return-Format", "markdown")
-                .build()
-
-            val response = httpClient.newCall(request).await()
-            if (!response.isSuccessful) {
-                error("response failed for url $url #${response.code}")
+            val request = HttpRequestBuilder().apply {
+                url("https://r.jina.ai/")
+                setBody(body.toString())
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+                header("Accept", "application/json")
+                header("Content-Type", "application/json")
+                header("X-Return-Format", "markdown")
             }
-            val responseData = response.body.string().let {
+
+            val response = httpClient.post(request)
+            if (!response.status.isSuccess()) {
+                error("response failed for url $url #${response.status.value}")
+            }
+            val responseData = response.bodyAsText().let {
                 json.decodeFromString<JinaScrapeResponse>(it)
             }
 

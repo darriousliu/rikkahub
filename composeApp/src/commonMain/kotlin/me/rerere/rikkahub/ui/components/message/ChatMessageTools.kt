@@ -331,7 +331,7 @@ private fun ToolCallPreviewSheet(
                         val urls = content.jsonObject["urls"]?.jsonArray ?: emptyList()
                         Text(
                             text = stringResource(
-                                R.string.chat_message_tool_scrape_prefix,
+                                Res.string.chat_message_tool_scrape_prefix,
                                 urls.joinToString(", ") { it.jsonObject["url"]?.jsonPrimitiveOrNull?.contentOrNull ?: "" }),
                         )
                         LazyColumn(

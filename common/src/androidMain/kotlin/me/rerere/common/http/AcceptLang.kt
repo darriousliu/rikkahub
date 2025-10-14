@@ -127,7 +127,7 @@ class AcceptLanguageBuilder private constructor(
 
     /** q 值格式：最多保留 3 位小数，去掉多余 0 与小数点。*/
     private fun formatQ(value: Double): String {
-        val s = String.format(java.util.Locale.ROOT, "%.3f", value)
+        val s = String.format(Locale.ROOT, "%.3f", value)
         return s.trimEnd('0').trimEnd('.')
     }
 }

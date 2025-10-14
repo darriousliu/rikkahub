@@ -75,7 +75,6 @@ fun ShareSheet(
     }
 }
 
-@OptIn(ExperimentalEncodingApi::class)
 fun ProviderSetting.encodeForShare(): String {
     return buildString {
         append("ai-provider:")

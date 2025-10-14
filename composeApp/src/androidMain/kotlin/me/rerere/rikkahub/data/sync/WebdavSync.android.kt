@@ -100,7 +100,7 @@ actual class WebdavSync actual constructor(
                         .firstOrNull()?.contentLength ?: 0L
                     val lastModified = Instant.fromEpochMilliseconds(
                         response.properties.filterIsInstance<GetLastModified>()
-                            .firstOrNull()?.lastModified ?: Instant.EPOCH
+                            .firstOrNull()?.lastModified ?: 0L
                     )
                     files.add(
                         WebDavBackupItem(

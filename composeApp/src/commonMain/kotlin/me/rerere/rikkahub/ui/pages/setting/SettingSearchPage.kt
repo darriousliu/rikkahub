@@ -405,13 +405,13 @@ fun SearchAbilityTagLine(
         Tag(
             type = TagType.DEFAULT,
         ) {
-            Text(stringResource(R.string.search_ability_search))
+            Text(stringResource(Res.string.search_ability_search))
         }
         if (SearchService.getService(options).scrapingParameters != null) {
             Tag(
                 type = TagType.DEFAULT,
             ) {
-                Text(stringResource(R.string.search_ability_scrape))
+                Text(stringResource(Res.string.search_ability_scrape))
             }
         }
     }

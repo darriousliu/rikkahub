@@ -179,6 +179,8 @@
   <string name="chat_message_tool_create_memory">创建了记忆</string>
   <string name="chat_message_tool_delete_memory">删除了记忆</string>
   <string name="chat_message_tool_edit_memory">更新了记忆</string>
+  <string name="chat_message_tool_scrape_prefix">抓取网站：%1$s</string>
+  <string name="chat_message_tool_scrape_web">抓取网页</string>
   <string name="chat_message_tool_search_prefix">搜索: %1$s</string>
   <string name="chat_message_tool_search_results_count">共 %1$d 条结果</string>
   <string name="chat_message_tool_search_web">搜索网页: %1$s</string>
@@ -341,6 +343,8 @@
   <string name="reasoning_set_budget">设置推理预算 (%1$d tokens)</string>
   <string name="regenerate">重新生成</string>
   <string name="render_with_webview">网页视图渲染</string>
+  <string name="search_ability_scrape">抓取</string>
+  <string name="search_ability_search">搜索</string>
   <string name="search_picker_title">搜索设置</string>
   <string name="select_and_copy">选择复制</string>
   <string name="send">发送</string>
@@ -352,6 +356,8 @@
   <string name="setting_display_page_chat_list_model_icon_title">聊天列表模型图标</string>
   <string name="setting_display_page_create_new_conversation_on_start_desc">当应用启动时，自动创建一个新的对话</string>
   <string name="setting_display_page_create_new_conversation_on_start_title">启动时新建对话</string>
+  <string name="setting_display_page_developer_mode">开发者模式</string>
+  <string name="setting_display_page_developer_mode_desc">显示更多调试功能,不建议普通用户使用。</string>
   <string name="setting_display_page_enable_message_generation_haptic_effect_desc">消息生成时启用触觉反馈效果</string>
   <string name="setting_display_page_enable_message_generation_haptic_effect_title">消息生成触觉反馈</string>
   <string name="setting_display_page_font_size_preview">这是一个**示例**的聊天文本</string>
@@ -541,6 +547,7 @@
   <string name="setting_provider_page_save_success">保存成功</string>
   <string name="setting_provider_page_scan_error">错误: %1$s</string>
   <string name="setting_provider_page_scan_qr_code">扫描二维码</string>
+  <string name="setting_provider_page_search_providers">搜索提供商</string>
   <string name="setting_provider_page_select_from_gallery">从相册选择</string>
   <string name="setting_provider_page_service_account_email">服务账户邮箱</string>
   <string name="setting_provider_page_share">分享</string>

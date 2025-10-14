@@ -2,6 +2,9 @@ package me.rerere.search
 
 import androidx.compose.runtime.Composable
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRedirect
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -52,13 +55,18 @@ interface SearchService<T : SearchServiceOptions> {
         }
 
         internal val httpClient by lazy {
-            HttpClient()
-            OkHttpClient.Builder()
-                .retryOnConnectionFailure(true)
-                .followRedirects(true)
-                .followSslRedirects(true)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build()
+            HttpClient {
+                install(HttpRequestRetry) {
+                    retryOnException(maxRetries = 5,retryOnTimeout = true)
+                }
+                install(HttpRedirect)
+                install(HttpTimeout) {
+                    requestTimeoutMillis = 60000
+                    connectTimeoutMillis = 10000
+                    socketTimeoutMillis = 30000
+                }
+
+            }
         }
 
         internal val json by lazy {

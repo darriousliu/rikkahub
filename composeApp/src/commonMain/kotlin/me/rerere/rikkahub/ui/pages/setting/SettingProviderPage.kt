@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.GripHorizontal
 import com.composables.icons.lucide.Image
@@ -78,7 +79,6 @@ import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.QRCodeResult
-import me.rerere.rikkahub.utils.plus
 import me.rerere.rikkahub.utils.rememberQRCodeScanner
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -143,7 +143,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(stringResource(R.string.setting_provider_page_search_providers)) },
+                placeholder = { Text(stringResource(Res.string.setting_provider_page_search_providers)) },
                 leadingIcon = {
                     Icon(Lucide.Search, contentDescription = null)
                 },

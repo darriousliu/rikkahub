@@ -28,6 +28,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import me.rerere.ai.util.stringSafe
+import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.data.ai.mcp.McpJson
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
