@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -86,8 +87,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import rikkahub.composeapp.generated.resources.*
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
-import java.util.Locale
-import kotlinx.coroutines.launch
 
 @Composable
 fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
@@ -123,7 +122,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 actions = {
-                    if(Locale.getDefault().language == "zh") {
+                    if(Locale.current.language == "zh") {
                         IconButton(
                             onClick = {
                                 val aihubmixIndex = filteredProviders.indexOfFirst {
