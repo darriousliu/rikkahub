@@ -2,6 +2,7 @@ package me.rerere.rikkahub.ui.pages.chat
 
 import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -22,6 +23,7 @@ import me.rerere.common.utils.toFile
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.ui.BitmapComposer
+import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.getActivity
 import me.rerere.rikkahub.utils.toLocalString
@@ -57,11 +59,13 @@ internal actual suspend fun exportToImage(
         width = 540.dp,
         screenDensity = density,
         content = {
-            ExportedChatImage(
-                conversation = conversation,
-                messages = messages,
-                options = options
-            )
+            CompositionLocalProvider(LocalSettings provides settings) {
+                ExportedChatImage(
+                    conversation = conversation,
+                    messages = messages,
+                    options = options
+                )
+            }
         }
     )
 

@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -19,13 +18,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
@@ -47,6 +48,10 @@ import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.utils.createChatFilesByContents
 import me.rerere.rikkahub.utils.deleteChatFiles
 import me.rerere.rikkahub.utils.toLocalString
+import org.jetbrains.compose.resources.getString
+import rikkahub.composeapp.generated.resources.*
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatVM"
@@ -131,8 +136,8 @@ class ChatVM(
                                     ConversationListItem.PinnedHeader
                                 } else {
                                     val afterDate = after.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                                        .date
                                     ConversationListItem.DateHeader(
                                         date = afterDate,
                                         label = getDateLabel(afterDate)
@@ -145,8 +150,8 @@ class ChatVM(
                                 // 从置顶切换到非置顶，显示日期头部
                                 if (before.conversation.isPinned && !after.conversation.isPinned) {
                                     val afterDate = after.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                                        .date
                                     ConversationListItem.DateHeader(
                                         date = afterDate,
                                         label = getDateLabel(afterDate)
@@ -155,11 +160,11 @@ class ChatVM(
                                 // 对于非置顶项，检查日期变化
                                 else if (!after.conversation.isPinned) {
                                     val beforeDate = before.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                                        .date
                                     val afterDate = after.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                                        .date
 
                                     if (beforeDate != afterDate) {
                                         ConversationListItem.DateHeader(
@@ -247,7 +252,7 @@ class ChatVM(
      * @param content 消息内容
      * @param answer 是否触发消息生成，如果为false，则仅添加消息到消息列表中
      */
-    fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
+    fun handleMessageSend(content: List<UIMessagePart>, answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
         analytics.logEvent("ai_send_message", null)
 
@@ -499,13 +504,14 @@ class ChatVM(
         }
     }
 
-    private fun getDateLabel(date: LocalDate): String {
-        val today = LocalDate.now()
-        val yesterday = today.minusDays(1)
+    private suspend fun getDateLabel(date: LocalDate): String {
+        val nowInstant = Clock.System.now()
+        val today = nowInstant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val yesterday = (nowInstant - 1.days).toLocalDateTime(TimeZone.currentSystemDefault()).date
 
         return when (date) {
-            today -> context.getString(R.string.chat_page_today)
-            yesterday -> context.getString(R.string.chat_page_yesterday)
+            today -> getString(Res.string.chat_page_today)
+            yesterday -> getString(Res.string.chat_page_yesterday)
             else -> date.toLocalString(date.year != today.year)
         }
     }

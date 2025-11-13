@@ -4,8 +4,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -18,9 +25,9 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.search.generated.resources.Res
+import rikkahub.search.generated.resources.click_to_get_api_key
 
 object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
     override val name: String = "Bocha"
@@ -33,7 +40,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                 urlHandler.openUri("https://open.bochaai.com/")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
@@ -64,16 +71,16 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                 put("count", JsonPrimitive(commonOptions.resultSize))
             }
 
-            val request = Request.Builder()
-                .url("https://api.bochaai.com/v1/web-search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
+            val request = HttpRequestBuilder().apply {
+                url("https://api.bochaai.com/v1/web-search")
+                setBody(json.encodeToString(body))
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+                header("Content-Type", "application/json")
+            }
 
-            val response = httpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
+            val response = httpClient.post(request)
+            if (response.status.isSuccess()) {
+                val bodyRaw = response.bodyAsText()
                 val bochaResponse = runCatching {
                     json.decodeFromString<BochaResponse>(bodyRaw)
                 }.onFailure {
@@ -98,8 +105,8 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                     )
                 )
             } else {
-                println(response.body.string())
-                error("response failed #${response.code}")
+                println(response.bodyAsText())
+                error("response failed #${response.status.value}")
             }
         }
     }

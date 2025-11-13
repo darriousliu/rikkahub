@@ -60,7 +60,6 @@ import me.rerere.highlight.buildHighlightText
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
-import me.rerere.rikkahub.ui.hooks.heroAnimation
 import me.rerere.rikkahub.ui.modifier.onClick
 import me.rerere.rikkahub.ui.theme.AtomOneDarkPalette
 import me.rerere.rikkahub.ui.theme.AtomOneLightPalette
@@ -69,10 +68,7 @@ import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.base64Encode
 import me.rerere.rikkahub.utils.toDp
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.chat_page_save
-import rikkahub.composeapp.generated.resources.code_block_copy
-import rikkahub.composeapp.generated.resources.code_block_preview
+import rikkahub.composeapp.generated.resources.*
 import kotlin.time.Clock
 
 private const val COLLAPSE_LINES = 10
@@ -188,9 +184,9 @@ fun HighlightCodeBlock(
                     )
                     Text(
                         text = if (isExpanded) {
-                            stringResource(id = R.string.code_block_collapse)
+                            stringResource(Res.string.code_block_collapse)
                         } else {
-                            stringResource(id = R.string.code_block_expand)
+                            stringResource(Res.string.code_block_expand)
                         },
                         fontSize = textStyle.fontSize,
                         lineHeight = textStyle.lineHeight,

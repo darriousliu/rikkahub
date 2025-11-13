@@ -207,6 +207,7 @@
   <string name="chat_page_new_message">新訊息</string>
   <string name="chat_page_nickname_placeholder">請輸入暱稱</string>
   <string name="chat_page_no_conversations">沒有對話記錄</string>
+  <string name="chat_page_recent">最近</string>
   <string name="chat_page_regenerate_title">重新生成標題</string>
   <string name="chat_page_save">保存</string>
   <string name="chat_page_scroll_to_bottom">滾動到底部</string>
@@ -214,7 +215,9 @@
   <string name="chat_page_today">今天</string>
   <string name="chat_page_yesterday">昨天</string>
   <string name="citations_count">%1$d 條引用</string>
+  <string name="code_block_collapse">摺疊</string>
   <string name="code_block_copy">複製代碼</string>
+  <string name="code_block_expand">展開</string>
   <string name="code_block_preview">預覽</string>
   <string name="collapse_translation">收合翻譯</string>
   <string name="confirm">確認</string>
@@ -284,6 +287,7 @@
   <string name="language_traditional_chinese">🇨🇳 繁體中文</string>
   <string name="mcp_picker_syncing">正在同步MCP伺服器...</string>
   <string name="mcp_picker_title">MCP伺服器</string>
+  <string name="menu">選單</string>
   <string name="menu_page_afternoon_greeting">下午好\uD83D\uDC4B</string>
   <string name="menu_page_ai_translator">AI翻譯</string>
   <string name="menu_page_evening_greeting">晚上好\uD83D\uDC4B</string>
@@ -354,6 +358,10 @@
   <string name="setting_display_page_auto_collapse_thinking_title">自動折疊思考</string>
   <string name="setting_display_page_chat_list_model_icon_desc">是否在聊天列表消息中顯示模型圖標</string>
   <string name="setting_display_page_chat_list_model_icon_title">聊天列表模型圖標</string>
+  <string name="setting_display_page_code_block_auto_collapse_desc">預設自動摺疊程式碼區塊</string>
+  <string name="setting_display_page_code_block_auto_collapse_title">程式碼區塊自動摺疊</string>
+  <string name="setting_display_page_code_block_auto_wrap_desc">自動換行程式碼區塊中的長行</string>
+  <string name="setting_display_page_code_block_auto_wrap_title">程式碼區塊自動換行</string>
   <string name="setting_display_page_create_new_conversation_on_start_desc">當應用程式啟動時，自動建立一個新的對話</string>
   <string name="setting_display_page_create_new_conversation_on_start_title">啟動時新建對話</string>
   <string name="setting_display_page_developer_mode">開發者模式</string>

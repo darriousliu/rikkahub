@@ -4,12 +4,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.db.entity.ConversationEntity
@@ -191,8 +188,8 @@ class ConversationRepository(
             assistantId = Uuid.parse(entity.assistantId),
             title = entity.title,
             isPinned = entity.isPinned,
-            createAt = Instant.ofEpochMilli(entity.createAt),
-            updateAt = Instant.ofEpochMilli(entity.updateAt),
+            createAt = Instant.fromEpochMilliseconds(entity.createAt),
+            updateAt = Instant.fromEpochMilliseconds(entity.updateAt),
             messageNodes = emptyList(),
         )
     }

@@ -23,14 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Lucide
 import com.dokar.sonner.ToastType
-import me.rerere.rikkahub.BuildConfig
+import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useThrottle
@@ -42,13 +42,12 @@ import me.rerere.rikkahub.utils.onSuccess
 import me.rerere.rikkahub.utils.toLocalDateTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlin.time.toJavaInstant
 
 @OptIn(ExperimentalTime::class)
 @Composable
 fun UpdateCard(vm: ChatVM) {
     val state by vm.updateState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val toaster = LocalToaster.current
     state.onError {
         Card {
@@ -123,7 +122,7 @@ fun UpdateCard(vm: ChatVM) {
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = Instant.parse(info.publishedAt).toJavaInstant().toLocalDateTime(),
+                        text = Instant.parse(info.publishedAt).toLocalDateTime(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )

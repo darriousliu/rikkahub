@@ -225,10 +225,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
 //                ListItem(
 //                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
 //                    headlineContent = {
-//                        Text(stringResource(R.string.setting_display_page_developer_mode))
+//                        Text(stringResource(Res.string.setting_display_page_developer_mode))
 //                    },
 //                    supportingContent = {
-//                        Text(stringResource(R.string.setting_display_page_developer_mode_desc))
+//                        Text(stringResource(Res.string.setting_display_page_developer_mode_desc))
 //                    },
 //                    trailingContent = {
 //                        Switch(
@@ -414,10 +414,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_code_block_auto_wrap_title))
+                        Text(stringResource(Res.string.setting_display_page_code_block_auto_wrap_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_code_block_auto_wrap_desc))
+                        Text(stringResource(Res.string.setting_display_page_code_block_auto_wrap_desc))
                     },
                     trailingContent = {
                         Switch(
@@ -434,10 +434,10 @@ fun SettingDisplayPage(vm: SettingVM = koinViewModel()) {
                 ListItem(
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                     headlineContent = {
-                        Text(stringResource(R.string.setting_display_page_code_block_auto_collapse_title))
+                        Text(stringResource(Res.string.setting_display_page_code_block_auto_collapse_title))
                     },
                     supportingContent = {
-                        Text(stringResource(R.string.setting_display_page_code_block_auto_collapse_desc))
+                        Text(stringResource(Res.string.setting_display_page_code_block_auto_collapse_desc))
                     },
                     trailingContent = {
                         Switch(

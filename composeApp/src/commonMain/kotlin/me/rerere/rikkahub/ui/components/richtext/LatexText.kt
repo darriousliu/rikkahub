@@ -9,11 +9,11 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
-import com.agog.mathdisplay.parse.MTLineStyle
-import com.agog.mathdisplay.parse.MTMathListBuilder
-import com.agog.mathdisplay.render.MTTypesetter
-import com.agog.mathdisplay.utils.MTFontManager
 import io.github.darriousliu.katex.core.MTMathView
+import io.github.darriousliu.katex.mathdisplay.parse.MTLineStyle
+import io.github.darriousliu.katex.mathdisplay.parse.MTMathListBuilder
+import io.github.darriousliu.katex.mathdisplay.render.MTFontManager
+import io.github.darriousliu.katex.mathdisplay.render.MTTypesetter
 
 fun assumeLatexSize(latex: String, fontSize: Float): Rect {
     return runCatching {

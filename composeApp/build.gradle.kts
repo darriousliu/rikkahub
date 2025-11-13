@@ -124,11 +124,11 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.ui)
             implementation(libs.ui.backhandler)
-            implementation("org.jetbrains.compose.material3:material3:1.9.0-alpha04")
+            implementation("org.jetbrains.compose.material3:material3:1.10.0-alpha04")
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0-alpha05")
+            implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0")
 
             // lifecycle
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
@@ -224,8 +224,8 @@ android {
         applicationId = "me.rerere.rikkahub"
         minSdk = 26
         targetSdk = 36
-        versionCode = 108
-        versionName = "1.6.9"
+        versionCode = 110
+        versionName = "1.6.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

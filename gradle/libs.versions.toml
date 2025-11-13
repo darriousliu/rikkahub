@@ -20,7 +20,7 @@ ksoup = "0.2.5"
 lifecycleRuntimeKtx = "2.9.4"
 jetbrainsLifecycle = "2.9.6"
 activityCompose = "1.11.0"
-composeBom = "2025.11.01"
+composeBom = "2025.11.00"
 composeMultiplatform = "1.9.3"
 media3 = "1.8.0"
 metadataExtractor = "2.19.0"
@@ -97,7 +97,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom-beta", version.ref = "composeBom" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
@@ -105,7 +105,7 @@ androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.5.0-alpha07" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version = "1.5.0-alpha08" }
 androidx-navigation2 = { group = "androidx.navigation", name = "navigation-compose", version.ref = "nav2" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }

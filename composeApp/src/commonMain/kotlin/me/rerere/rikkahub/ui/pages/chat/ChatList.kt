@@ -171,7 +171,7 @@ private fun SharedTransitionScope.ChatListNormal(
     onDelete: (UIMessage) -> Unit,
     onUpdateMessage: (MessageNode) -> Unit,
     onClickSuggestion: (String) -> Unit,
-    onTranslate: ((UIMessage, java.util.Locale) -> Unit)?,
+    onTranslate: ((UIMessage, Locale) -> Unit)?,
     onClearTranslation: (UIMessage) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
@@ -524,7 +524,7 @@ private fun SharedTransitionScope.ChatListPreview(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text(stringResource(R.string.history_page_search)) },
+            placeholder = { Text(stringResource(Res.string.history_page_search)) },
             leadingIcon = {
                 Icon(
                     imageVector = Lucide.Search,
