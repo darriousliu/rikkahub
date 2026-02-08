@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,15 +35,16 @@ import com.composables.icons.lucide.MessageSquare
 import com.composables.icons.lucide.Settings
 import com.composables.icons.lucide.Syringe
 import com.composables.icons.lucide.Wrench
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.hooks.heroAnimation
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun AssistantDetailPage(id: String) {
@@ -62,7 +62,7 @@ fun AssistantDetailPage(id: String) {
                 title = {
                     Text(
                         text = assistant.name.ifBlank {
-                            stringResource(R.string.assistant_page_default_assistant)
+                            stringResource(Res.string.assistant_page_default_assistant)
                         },
                         maxLines = 1,
                     )
@@ -96,50 +96,50 @@ fun AssistantDetailPage(id: String) {
             ) {
                 SettingCard(
                     icon = Lucide.Settings,
-                    title = stringResource(R.string.assistant_page_tab_basic),
-                    description = stringResource(R.string.assistant_detail_basic_desc),
+                    title = stringResource(Res.string.assistant_page_tab_basic),
+                    description = stringResource(Res.string.assistant_detail_basic_desc),
                     onClick = { navController.navigate(Screen.AssistantBasic(id)) }
                 )
 
                 SettingCard(
                     icon = Lucide.MessageSquare,
-                    title = stringResource(R.string.assistant_page_tab_prompt),
-                    description = stringResource(R.string.assistant_detail_prompt_desc),
+                    title = stringResource(Res.string.assistant_page_tab_prompt),
+                    description = stringResource(Res.string.assistant_detail_prompt_desc),
                     onClick = { navController.navigate(Screen.AssistantPrompt(id)) }
                 )
 
                 SettingCard(
                     icon = Lucide.Syringe,
-                    title = stringResource(R.string.assistant_page_tab_injections),
-                    description = stringResource(R.string.assistant_detail_injections_desc),
+                    title = stringResource(Res.string.assistant_page_tab_injections),
+                    description = stringResource(Res.string.assistant_detail_injections_desc),
                     onClick = { navController.navigate(Screen.AssistantInjections(id)) }
                 )
 
                 SettingCard(
                     icon = Lucide.Brain,
-                    title = stringResource(R.string.assistant_page_tab_memory),
-                    description = stringResource(R.string.assistant_detail_memory_desc),
+                    title = stringResource(Res.string.assistant_page_tab_memory),
+                    description = stringResource(Res.string.assistant_detail_memory_desc),
                     onClick = { navController.navigate(Screen.AssistantMemory(id)) }
                 )
 
                 SettingCard(
                     icon = Lucide.Code,
-                    title = stringResource(R.string.assistant_page_tab_request),
-                    description = stringResource(R.string.assistant_detail_request_desc),
+                    title = stringResource(Res.string.assistant_page_tab_request),
+                    description = stringResource(Res.string.assistant_detail_request_desc),
                     onClick = { navController.navigate(Screen.AssistantRequest(id)) }
                 )
 
                 SettingCard(
                     icon = Lucide.Wrench,
-                    title = stringResource(R.string.assistant_page_tab_mcp),
-                    description = stringResource(R.string.assistant_detail_mcp_desc),
+                    title = stringResource(Res.string.assistant_page_tab_mcp),
+                    description = stringResource(Res.string.assistant_detail_mcp_desc),
                     onClick = { navController.navigate(Screen.AssistantMcp(id)) }
                 )
 
                 SettingCard(
                     icon = Lucide.BookOpen,
-                    title = stringResource(R.string.assistant_page_tab_local_tools),
-                    description = stringResource(R.string.assistant_detail_local_tools_desc),
+                    title = stringResource(Res.string.assistant_page_tab_local_tools),
+                    description = stringResource(Res.string.assistant_detail_local_tools_desc),
                     onClick = { navController.navigate(Screen.AssistantLocalTool(id)) }
                 )
 
@@ -161,7 +161,7 @@ private fun AssistantHeader(
     ) {
         UIAvatar(
             value = assistant.avatar,
-            name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+            name = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
             onUpdate = null,
             modifier = Modifier
                 .size(100.dp)
@@ -169,7 +169,7 @@ private fun AssistantHeader(
         )
 
         Text(
-            text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+            text = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
             style = MaterialTheme.typography.headlineSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

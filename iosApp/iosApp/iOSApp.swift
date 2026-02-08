@@ -1,6 +1,6 @@
-import SwiftUI
-import Firebase
 import ComposeApp
+import Firebase
+import SwiftUI
 
 @main
 struct iOSApp: App {
@@ -16,6 +16,7 @@ struct iOSApp: App {
                 IosQRCodeDecoder.shared,
                 DocumentUtil.shared,
                 IosQRCodeEncoder.shared,
+                IosZipUtil.shared,
             ])
         }
         AppInitializer.shared.initialize()
@@ -24,15 +25,15 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-            .onAppear {
-                setupNotifications()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToConversation"))) { notification in
-                // 处理导航到会话
-                if let conversationId = notification.userInfo?["conversationId"] as? String {
-                    NavigationController.shared.navigateToChat(conversationId: conversationId)
+                .onAppear {
+                    setupNotifications()
                 }
-            }
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToConversation"))) { notification in
+                    // 处理导航到会话
+                    if let conversationId = notification.userInfo?["conversationId"] as? String {
+                        NavigationController.shared.navigateToChat(conversationId: conversationId)
+                    }
+                }
         }
     }
 
@@ -46,7 +47,11 @@ struct iOSApp: App {
 class NotificationDelegate: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
 
     // 处理通知点击
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
 
         let userInfo = response.notification.request.content.userInfo
         if let conversationId = userInfo["conversationId"] as? String {

@@ -20,7 +20,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.ktor.utils.io.readUTF8Line
+import io.ktor.utils.io.readLine
 import io.modelcontextprotocol.kotlin.sdk.shared.AbstractTransport
 import io.modelcontextprotocol.kotlin.sdk.shared.TransportSendOptions
 import io.modelcontextprotocol.kotlin.sdk.types.JSONRPCMessage
@@ -37,9 +37,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -51,16 +48,23 @@ private const val MCP_SESSION_ID_HEADER = "mcp-session-id"
 private const val MCP_PROTOCOL_VERSION_HEADER = "mcp-protocol-version"
 private const val MCP_RESUMPTION_TOKEN_HEADER = "Last-Event-ID"
 
-class StreamableHttpError(
-    val code: Int? = null,
-    message: String? = null
-) : Exception("Streamable HTTP error: $message")
+/**
+ * Error class for Streamable HTTP transport errors.
+ */
+class StreamableHttpError(val code: Int? = null, message: String? = null) :
+    Exception("Streamable HTTP error: $message")
 
+/**
+ * Client transport for Streamable HTTP: this implements the MCP Streamable HTTP transport specification.
+ * It will connect to a server using HTTP POST for sending messages and HTTP GET with Server-Sent Events
+ * for receiving messages.
+ */
 @OptIn(ExperimentalAtomicApi::class)
-public class StreamableHttpClientTransport(
+class StreamableHttpClientTransport(
     private val client: HttpClient,
     private val url: String,
-    private val headers: Map<String, String> = emptyMap(),
+    private val reconnectionTime: Duration? = null,
+    private val requestBuilder: HttpRequestBuilder.() -> Unit = {},
 ) : AbstractTransport() {
     var sessionId: String? = null
         private set
@@ -68,6 +72,7 @@ public class StreamableHttpClientTransport(
 
     private val initialized: AtomicBoolean = AtomicBoolean(false)
 
+    private var sseSession: ClientSSESession? = null
     private var sseJob: Job? = null
 
     private val scope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
@@ -84,8 +89,8 @@ public class StreamableHttpClientTransport(
     /**
      * Sends a single message with optional resumption support
      */
-    override suspend fun send(message: JSONRPCMessage) {
-        send(message, null)
+    override suspend fun send(message: JSONRPCMessage, options: TransportSendOptions?) {
+        send(message, options?.resumptionToken, options?.onResumptionToken)
     }
 
     /**
@@ -129,7 +134,7 @@ public class StreamableHttpClientTransport(
                     try {
                         startSseSession(onResumptionToken = onResumptionToken)
                     } catch (e: Exception) {
-                        Log.w(TAG, "Failed to start SSE session, falling back to JSON-only mode", e)
+                        Logger.w(TAG, e) { "Failed to start SSE session, falling back to JSON-only mode" }
                         _onError(e)
                     }
                 }
@@ -179,6 +184,7 @@ public class StreamableHttpClientTransport(
             // Try to terminate session if we have one
             terminateSession()
 
+            sseSession?.cancel()
             sseJob?.cancelAndJoin()
             scope.cancel()
         } catch (_: Exception) {
@@ -194,7 +200,7 @@ public class StreamableHttpClientTransport(
      */
     suspend fun terminateSession() {
         if (sessionId == null) return
-        Log.d(TAG, "Terminating session: $sessionId")
+        Logger.d(TAG) { "Terminating session: $sessionId" }
         val response = client.delete(url) {
             applyCommonHeaders(this)
             requestBuilder()
@@ -206,14 +212,14 @@ public class StreamableHttpClientTransport(
                 response.status.value,
                 "Failed to terminate session: ${response.status.description}",
             )
-            Log.e(TAG, "Failed to terminate session", error)
+            Logger.e(TAG, error) { "Failed to terminate session" }
             _onError(error)
             throw error
         }
 
         sessionId = null
         lastEventId = null
-        Log.d(TAG, "Session terminated successfully")
+        Logger.d(TAG) { "Session terminated successfully" }
     }
 
     private suspend fun startSseSession(
@@ -221,9 +227,10 @@ public class StreamableHttpClientTransport(
         replayMessageId: RequestId? = null,
         onResumptionToken: ((String) -> Unit)? = null
     ) {
+        sseSession?.cancel()
         sseJob?.cancelAndJoin()
 
-        Log.d(TAG, "Client attempting to start SSE session at url: $url")
+        Logger.d(TAG) { "Client attempting to start SSE session at url: $url" }
         try {
             sseSession = client.sseSession(
                 urlString = url,
@@ -236,21 +243,21 @@ public class StreamableHttpClientTransport(
                 (resumptionToken ?: lastEventId)?.let { headers.append(MCP_RESUMPTION_TOKEN_HEADER, it) }
                 requestBuilder()
             }
-            Log.d(TAG, "Client SSE session started successfully.")
+            Logger.d(TAG) { "Client SSE session started successfully." }
         } catch (e: SSEClientException) {
             val responseStatus = e.response?.status
             val responseContentType = e.response?.contentType()
 
             // 405 means server doesn't support SSE at GET endpoint - this is expected and valid
             if (responseStatus == HttpStatusCode.MethodNotAllowed) {
-                Log.i(TAG, "Server returned 405 for GET/SSE, stream disabled.")
+                Logger.i(TAG) { "Server returned 405 for GET/SSE, stream disabled." }
                 return
             }
 
             // If server returns application/json, it means it doesn't support SSE for this session
             // This is valid per spec - server can choose to only use JSON responses
             if (responseContentType?.match(ContentType.Application.Json) == true) {
-                Log.i(TAG, "Server returned application/json for GET/SSE, using JSON-only mode.")
+                Logger.i(TAG) { "Server returned application/json for GET/SSE, using JSON-only mode." }
                 return
             }
 
@@ -281,7 +288,7 @@ public class StreamableHttpClientTransport(
                     lastEventId = it
                     onResumptionToken?.invoke(it)
                 }
-                Log.d(TAG, "Client received SSE event: event=${event.event}, data=${event.data}, id=${event.id}")
+                Logger.d(TAG) { "Client received SSE event: event=${event.event}, data=${event.data}, id=${event.id}" }
                 when (event.event) {
                     null, "message" ->
                         event.data?.takeIf { it.isNotEmpty() }?.let { json ->
@@ -318,28 +325,32 @@ public class StreamableHttpClientTransport(
         var id: String? = null
         var eventName: String? = null
 
-        fun dispatch(data: String) {
+        suspend fun dispatch(id: String?, eventName: String?, data: String) {
             id?.let {
                 lastEventId = it
                 onResumptionToken?.invoke(it)
             }
+            if (data.isBlank()) {
+                return
+            }
             if (eventName == null || eventName == "message") {
                 runCatching { McpJson.decodeFromString<JSONRPCMessage>(data) }
                     .onSuccess { msg ->
-                        scope.launch {
-                            if (replayMessageId != null && msg is JSONRPCResponse) {
-                                _onMessage(msg.copy(id = replayMessageId))
-                            } else {
-                                _onMessage(msg)
-                            }
+                        if (replayMessageId != null && msg is JSONRPCResponse) {
+                            _onMessage(msg.copy(id = replayMessageId))
+                        } else {
+                            _onMessage(msg)
                         }
                     }
-                    .onFailure(_onError)
+                    .onFailure {
+                        _onError(it)
+                        throw it
+                    }
             }
         }
 
         while (!channel.isClosedForRead) {
-            val line = channel.readUTF8Line() ?: break
+            val line = channel.readLine() ?: break
             if (line.isEmpty()) {
                 dispatch(id = id, eventName = eventName, data = sb.toString())
                 // reset

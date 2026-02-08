@@ -1,58 +1,71 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
-import android.util.Log
+import co.touchlab.kermit.Logger
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsBytes
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import me.rerere.common.PlatformContext
 import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "GroqTTSProvider"
 
 class GroqTTSProvider : TTSProvider<TTSProviderSetting.Groq> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
+    private val httpClient = HttpClient {
+        install(HttpTimeout) {
+            requestTimeoutMillis = 120_000
+        }
+    }
 
     override fun generateSpeech(
-        context: Context,
+        context: PlatformContext,
         providerSetting: TTSProviderSetting.Groq,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
+        val requestBody = buildJsonObject {
             put("model", providerSetting.model)
             put("input", request.text)
             put("voice", providerSetting.voice)
             put("response_format", "wav")
         }
 
-        Log.i(TAG, "generateSpeech: $requestBody")
+        Logger.i(TAG) { "generateSpeech: $requestBody" }
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/audio/speech")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
-
-        if (!response.isSuccessful) {
-            Log.e(TAG, "generateSpeech: ${response.code} ${response.message}")
-            Log.e(TAG, "generateSpeech: ${response.body?.string()}")
-            throw Exception("Groq TTS request failed: ${response.code} ${response.message}")
+        val httpRequest = HttpRequestBuilder().apply {
+            url("${providerSetting.baseUrl}/audio/speech")
+            header("Authorization", "Bearer ${providerSetting.apiKey}")
+            method = HttpMethod.Post
+            contentType(ContentType.Application.Json)
+            setBody(requestBody.toString())
         }
 
-        val audioData = response.body.bytes()
+        val response = httpClient.request(httpRequest)
+
+        if (!response.status.isSuccess()) {
+            Logger.e(TAG) { "generateSpeech: ${response.status.value} ${response.status.description}" }
+            val errorText = response.bodyAsText()
+            Logger.e(TAG) { "generateSpeech: ${errorText}" }
+            throw Exception("Groq TTS request failed: ${response.status.value} ${response.status.description}")
+        }
+
+        val audioData = response.bodyAsBytes()
 
         emit(
             AudioChunk(

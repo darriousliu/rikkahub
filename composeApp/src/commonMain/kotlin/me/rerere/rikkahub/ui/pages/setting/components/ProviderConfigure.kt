@@ -84,8 +84,13 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
         is ProviderSetting.Google -> this.apiKey
         is ProviderSetting.Claude -> this.apiKey
     }
-
-    return when (this) {
+    val newProvider = when (type) {
+        ProviderSetting.OpenAI::class -> ProviderSetting.OpenAI()
+        ProviderSetting.Google::class -> ProviderSetting.Google()
+        ProviderSetting.Claude::class -> ProviderSetting.Claude()
+        else -> error("Unsupported ProviderSetting type: $type")
+    }
+    return when (newProvider) {
         is ProviderSetting.OpenAI -> newProvider.copy(
             id = this.id,
             enabled = this.enabled,

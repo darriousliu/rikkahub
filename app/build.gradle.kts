@@ -20,8 +20,8 @@ android {
         applicationId = "me.rerere.rikkahub"
         minSdk = 26
         targetSdk = 36
-        versionCode = 135
-        versionName = "1.9.0-beta.1"
+        versionCode = properties["versionCode"].toString().toInt()
+        versionName = properties["versionName"].toString()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -104,7 +104,7 @@ android {
         buildConfig = true
     }
     sourceSets {
-        getByName("androidTest").assets.srcDirs("$projectDir/schemas")
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
     }
     androidResources {
         generateLocaleConfig = true
@@ -128,10 +128,6 @@ tasks.register("buildAll") {
     description = "Build both APK and AAB"
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
@@ -140,30 +136,7 @@ kotlin {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.process)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.browser)
-    implementation(libs.androidx.profileinstaller)
-
-    // Compose
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation(libs.androidx.material3.adaptive)
-    implementation(libs.androidx.material3.adaptive.layout)
-
-    // Navigation 2
-    implementation(libs.androidx.navigation2)
-
-    // Navigation 3
-//    implementation(libs.androidx.navigation3.runtime)
-//    implementation(libs.androidx.navigation3.ui)
-//    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-//    implementation(libs.androidx.material3.adaptive.navigation3)
+    implementation(project(":composeApp"))
 
     // Firebase
     implementation(platform(libs.firebase.bom))
@@ -171,99 +144,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.config)
 
-    // DataStore
-    implementation(libs.androidx.datastore.preferences)
-
-    // Image metadata extractor
-    // https://github.com/drewnoakes/metadata-extractor
-    implementation(libs.metadata.extractor)
-
-    // koin
-    implementation(platform(libs.koin.bom))
-    implementation(libs.koin.android)
-    implementation(libs.koin.compose)
-    implementation(libs.koin.androidx.workmanager)
-
-    // jetbrains markdown parser
-    implementation(libs.jetbrains.markdown)
-
-    // okhttp
-    implementation(libs.okhttp)
-    implementation(libs.okhttp.sse)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.serialization.json)
-
-    // ktor client
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-
-    // ucrop
-    implementation(libs.ucrop)
-
-    // pebble (template engine)
-    implementation(libs.pebble)
-
-    // coil
-    implementation(libs.coil.compose)
-    implementation(libs.coil.okhttp)
-    implementation(libs.coil.svg)
-
-    // serialization
-    implementation(libs.kotlinx.serialization.json)
-
-    // zxing
-    implementation(libs.zxing.core)
-
-    // quickie (qrcode scanner)
-    implementation(libs.quickie.bundled)
-    implementation(libs.barcode.scanning)
-    implementation(libs.androidx.camera.core)
-
-    // Room
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.paging)
-    ksp(libs.androidx.room.compiler)
-
-    // Paging3
-    implementation(libs.androidx.paging.runtime)
-    implementation(libs.androidx.paging.compose)
-
-    // Apache Commons Text
-    implementation(libs.commons.text)
-
-    // Toast (Sonner)
-    implementation(libs.sonner)
-
-    // Reorderable (https://github.com/Calvin-LL/Reorderable/)
-    implementation(libs.reorderable)
-
-    // lucide icons
-    implementation(libs.lucide.icons)
-
-    // image viewer
-    implementation(libs.image.viewer)
-
-    // JLatexMath
-    // https://github.com/rikkahub/jlatexmath-android
-    implementation(libs.jlatexmath)
-    implementation(libs.jlatexmath.font.greek)
-    implementation(libs.jlatexmath.font.cyrillic)
-
-    // mcp
-    implementation(libs.modelcontextprotocol.kotlin.sdk)
-
-    // modules
-    implementation(project(":ai"))
-    implementation(project(":document"))
-    implementation(project(":highlight"))
-    implementation(project(":search"))
-    implementation(project(":tts"))
-    implementation(project(":common"))
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
-    implementation(kotlin("reflect"))
 
     // Leak Canary
     // debugImplementation(libs.leakcanary.android)

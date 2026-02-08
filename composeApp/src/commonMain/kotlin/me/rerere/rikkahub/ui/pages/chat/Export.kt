@@ -36,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +58,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.Wrench
 import com.dokar.sonner.ToastType
+import com.dokar.sonner.rememberToasterState
 import io.github.vinceglb.filekit.exists
 import io.github.vinceglb.filekit.resolve
 import io.github.vinceglb.filekit.write
@@ -88,17 +88,12 @@ import me.rerere.rikkahub.ui.components.message.ThinkingStep
 import me.rerere.rikkahub.ui.components.message.groupMessageParts
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
-import me.rerere.rikkahub.ui.components.ui.BitmapComposer
 import me.rerere.rikkahub.ui.components.ui.ChainOfThought
 import me.rerere.rikkahub.ui.components.ui.ChainOfThoughtScope
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
-import com.dokar.sonner.rememberToasterState
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
-import me.rerere.rikkahub.utils.JsonInstant
-import me.rerere.rikkahub.utils.exportImage
-import me.rerere.rikkahub.utils.getActivity
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.platformAllowHardware
 import me.rerere.rikkahub.utils.toLocalString
@@ -555,7 +550,7 @@ private fun ChainOfThoughtScope.ExportedReasoningStep(
         onExpandedChange = {},
         icon = {
             Icon(
-                painter = painterResource(R.drawable.deepthink),
+                painter = painterResource(Res.drawable.deepthink),
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.secondary

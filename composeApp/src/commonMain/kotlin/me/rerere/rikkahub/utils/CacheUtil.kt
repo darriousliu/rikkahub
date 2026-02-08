@@ -1,7 +1,8 @@
 package me.rerere.rikkahub.utils
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
+import io.ktor.util.collections.ConcurrentMap
+import kotlin.time.Clock
+import kotlin.time.Duration
 
 /**
  * A simple thread-safe cache implementation with expiration support.
@@ -12,14 +13,14 @@ class SimpleCache<K, V>(
 ) {
     private data class CacheEntry<V>(
         val value: V,
-        val timestamp: Long = System.currentTimeMillis()
+        val timestamp: Long = Clock.System.now().toEpochMilliseconds()
     ) {
         fun isExpired(expireAfterWriteMillis: Long): Boolean {
-            return System.currentTimeMillis() - timestamp > expireAfterWriteMillis
+            return Clock.System.now().toEpochMilliseconds() - timestamp > expireAfterWriteMillis
         }
     }
 
-    private val cache = ConcurrentHashMap<K, CacheEntry<V>>()
+    private val cache = ConcurrentMap<K, CacheEntry<V>>()
 
     fun getIfPresent(key: K): V? {
         val entry = cache[key] ?: return null
@@ -44,7 +45,7 @@ class SimpleCache<K, V>(
     }
 
     fun cleanUp() {
-        cache.entries.removeIf { it.value.isExpired(expireAfterWriteMillis) }
+        cache.entries.removeAll { it.value.isExpired(expireAfterWriteMillis) }
     }
 
     fun size(): Int = cache.size
@@ -56,8 +57,8 @@ class SimpleCache<K, V>(
     class Builder<K, V> {
         private var expireAfterWriteMillis: Long = Long.MAX_VALUE
 
-        fun expireAfterWrite(duration: Long, unit: TimeUnit): Builder<K, V> {
-            expireAfterWriteMillis = unit.toMillis(duration)
+        fun expireAfterWrite(duration: Duration): Builder<K, V> {
+            expireAfterWriteMillis = duration.inWholeMilliseconds
             return this
         }
 

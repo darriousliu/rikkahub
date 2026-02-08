@@ -55,4 +55,12 @@ fun PlatformFile.createNewFile() = runBlocking {
 
 expect fun PlatformFile.toUri(context: PlatformContext): Uri
 
+expect fun Uri.toFile(): PlatformFile
+
+expect fun PlatformFile.canRead(): Boolean
+
 expect fun getUriForFile(context: PlatformContext, file: PlatformFile): Uri
+
+expect fun writeContentToUri(context: PlatformContext, uri: Uri, content: ByteArray)
+
+expect fun readContentFromUri(context: PlatformContext, uri: Uri): ByteArray

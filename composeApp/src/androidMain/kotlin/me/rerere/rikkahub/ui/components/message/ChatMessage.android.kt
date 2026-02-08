@@ -9,14 +9,20 @@ import me.rerere.ai.ui.UIMessagePart
 
 internal actual fun openDocument(
     context: PlatformContext,
-    document: UIMessagePart.Document
+    part: UIMessagePart
 ) {
+    val url = when (part) {
+        is UIMessagePart.Video -> part.url
+        is UIMessagePart.Audio -> part.url
+        is UIMessagePart.Document -> part.url
+        else -> return
+    }
     val intent = Intent(Intent.ACTION_VIEW)
     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     intent.data = FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",
-        document.url.toUri().toFile()
+        url.toUri().toFile()
     )
     val chooserIndent = Intent.createChooser(intent, null)
     context.startActivity(chooserIndent)

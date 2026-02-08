@@ -31,25 +31,28 @@ import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.Files
 import com.composables.icons.lucide.Image
 import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Music
 import com.dokar.sonner.ToastType
 import com.mohamedrejeb.calf.permissions.Permission
 import com.mohamedrejeb.calf.permissions.isGranted
 import com.mohamedrejeb.calf.permissions.rememberPermissionState
 import com.yalantis.ucrop.UCrop
 import com.yalantis.ucrop.UCropActivity
+import kotlinx.coroutines.runBlocking
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.PlatformContext
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.utils.toFile
+import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
-import me.rerere.rikkahub.utils.createChatFilesByContents
-import me.rerere.rikkahub.utils.getFileMimeType
-import me.rerere.rikkahub.utils.getFileNameFromUri
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import rikkahub.composeapp.generated.resources.*
 import java.io.File
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 import android.net.Uri as AndroidUri
 
@@ -76,7 +79,8 @@ private fun useCropLauncher(
     }
 
     val launchCrop: (AndroidUri) -> Unit = { sourceUri ->
-        val outputFile = File(context.appTempFolder.toFile(), "crop_output_${System.currentTimeMillis()}.jpg")
+        val outputFile =
+            File(context.appTempFolder.toFile(), "crop_output_${Clock.System.now().toEpochMilliseconds()}.jpg")
         cropOutputUri = outputFile.toUri()
 
         val cropIntent = UCrop.of(sourceUri, cropOutputUri!!)
@@ -100,12 +104,12 @@ private fun useCropLauncher(
 
 @Composable
 internal actual fun ImagePickButton(onAddImages: (List<Uri>) -> Unit) {
-    val context = LocalPlatformContext.current
     val settings = LocalSettings.current
+    val filesManager: FilesManager = koinInject()
 
     val (_, launchCrop) = useCropLauncher(
         onCroppedImageReady = { croppedUri ->
-            onAddImages(context.createChatFilesByContents(listOf(croppedUri.toCoilUri())))
+            onAddImages(filesManager.createChatFilesByContents(listOf(croppedUri.toCoilUri())))
         }
     )
 
@@ -117,7 +121,7 @@ internal actual fun ImagePickButton(onAddImages: (List<Uri>) -> Unit) {
             // Check if we should skip crop based on settings
             if (settings.displaySetting.skipCropImage) {
                 // Skip crop, directly add images
-                onAddImages(context.createChatFilesByContents(selectedUris.map { it.toCoilUri() }))
+                onAddImages(filesManager.createChatFilesByContents(selectedUris.map { it.toCoilUri() }))
             } else {
                 // Show crop interface
                 if (selectedUris.size == 1) {
@@ -125,7 +129,7 @@ internal actual fun ImagePickButton(onAddImages: (List<Uri>) -> Unit) {
                     launchCrop(selectedUris.first())
                 } else {
                     // Multiple images - no crop
-                    onAddImages(context.createChatFilesByContents(selectedUris.map { it.toCoilUri() }))
+                    onAddImages(filesManager.createChatFilesByContents(selectedUris.map { it.toCoilUri() }))
                 }
             }
         } else {
@@ -151,12 +155,13 @@ actual fun TakePicButton(onAddImages: (List<Uri>) -> Unit) {
 
     val context = LocalPlatformContext.current
     val settings = LocalSettings.current
+    val filesManager: FilesManager = koinInject()
     var cameraOutputUri by remember { mutableStateOf<AndroidUri?>(null) }
     var cameraOutputFile by remember { mutableStateOf<File?>(null) }
 
     val (_, launchCrop) = useCropLauncher(
         onCroppedImageReady = { croppedUri ->
-            onAddImages(context.createChatFilesByContents(listOf(croppedUri.toCoilUri())))
+            onAddImages(filesManager.createChatFilesByContents(listOf(croppedUri.toCoilUri())))
         },
         onCleanup = {
             // Clean up camera temp file after cropping is done
@@ -173,7 +178,7 @@ actual fun TakePicButton(onAddImages: (List<Uri>) -> Unit) {
             // Check if we should skip crop based on settings
             if (settings.displaySetting.skipCropImage) {
                 // Skip crop, directly add image
-                onAddImages(context.createChatFilesByContents(listOf(cameraOutputUri!!.toCoilUri())))
+                onAddImages(filesManager.createChatFilesByContents(listOf(cameraOutputUri!!.toCoilUri())))
                 // Clean up camera temp file
                 cameraOutputFile?.delete()
                 cameraOutputFile = null
@@ -217,8 +222,8 @@ actual fun TakePicButton(onAddImages: (List<Uri>) -> Unit) {
 
 @Composable
 actual fun FilePickButton(onAddFiles: (List<UIMessagePart.Document>) -> Unit) {
-    val context = LocalPlatformContext.current
     val toaster = LocalToaster.current
+    val filesManager: FilesManager = koinInject()
     val pickMedia =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
             if (uris.isNotEmpty()) {
@@ -241,50 +246,35 @@ actual fun FilePickButton(onAddFiles: (List<UIMessagePart.Document>) -> Unit) {
                 )
 
                 val documents = uris.mapNotNull { uri ->
-                    val fileName = context.getFileNameFromUri(uri) ?: "file"
-                    val mime = context.getFileMimeType(uri) ?: "text/plain"
+                    val fileName = filesManager.getFileNameFromUri(uri.toCoilUri()) ?: "file"
+                    val mime = filesManager.getFileMimeType(uri.toCoilUri()) ?: "text/plain"
+                    val fileExtRegex = Regex(
+                        """\.(txt|md|csv|json|js|html|css|xml|py|java|kt|ts|tsx|md|markdown|mdx|yml|yaml)$""",
+                        RegexOption.IGNORE_CASE
+                    )
 
                     // Filter by MIME type or file extension
                     val isAllowed = allowedMimeTypes.contains(mime) ||
                         mime.startsWith("text/") ||
                         mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
                         mime == "application/pdf" ||
-                        fileName.endsWith(".txt", ignoreCase = true) ||
-                        fileName.endsWith(".md", ignoreCase = true) ||
-                        fileName.endsWith(".csv", ignoreCase = true) ||
-                        fileName.endsWith(".json", ignoreCase = true) ||
-                        fileName.endsWith(".js", ignoreCase = true) ||
-                        fileName.endsWith(".html", ignoreCase = true) ||
-                        fileName.endsWith(".css", ignoreCase = true) ||
-                        fileName.endsWith(".xml", ignoreCase = true) ||
-                        fileName.endsWith(".py", ignoreCase = true) ||
-                        fileName.endsWith(".java", ignoreCase = true) ||
-                        fileName.endsWith(".kt", ignoreCase = true) ||
-                        fileName.endsWith(".ts", ignoreCase = true) ||
-                        fileName.endsWith(".tsx", ignoreCase = true) ||
-                        fileName.endsWith(".md", ignoreCase = true) ||
-                        fileName.endsWith(".markdown", ignoreCase = true) ||
-                        fileName.endsWith(".mdx", ignoreCase = true) ||
-                        fileName.endsWith(".yml", ignoreCase = true) ||
-                        fileName.endsWith(".yaml", ignoreCase = true)
+                        fileExtRegex.containsMatchIn(fileName)
 
                     if (isAllowed) {
-                        val localUri = context.createChatFilesByContents(listOf(uri))[0]
+                        val localUri = filesManager.createChatFilesByContents(listOf(uri.toCoilUri()))[0]
                         UIMessagePart.Document(
                             url = localUri.toString(),
                             fileName = fileName,
                             mime = mime
                         )
                     } else {
+                        toaster.show("不支持的文件类型: $fileName", type = ToastType.Error)
                         null
                     }
                 }
 
                 if (documents.isNotEmpty()) {
                     onAddFiles(documents)
-                } else {
-                    // Show toast for unsupported file types
-                    toaster.show("不支持的文件类型", type = ToastType.Error)
                 }
             }
         }
@@ -310,7 +300,9 @@ internal actual fun provideDialogProperties(): DialogProperties {
 
 internal actual fun createImageReceiveListener(
     state: ChatInputState,
-    context: PlatformContext
+    context: PlatformContext,
+    filesManager: FilesManager,
+    settings: Settings
 ): ReceiveContentListener {
     return ReceiveContentListener { transferableContent ->
         when {
@@ -319,10 +311,24 @@ internal actual fun createImageReceiveListener(
                     val uri = item.uri
                     if (uri != null) {
                         state.addImages(
-                            context.createChatFilesByContents(listOf(uri.toCoilUri()))
+                            filesManager.createChatFilesByContents(listOf(uri.toCoilUri()))
                         )
                     }
                     uri != null
+                }
+            }
+
+            settings.displaySetting.pasteLongTextAsFile &&
+                transferableContent.hasMediaType(MediaType.Text) -> {
+                transferableContent.consume { item ->
+                    val text = item.text?.toString()
+                    if (text != null && text.length > settings.displaySetting.pasteLongTextThreshold) {
+                        val document = runBlocking { filesManager.createChatTextFile(text) }
+                        state.addFiles(listOf(document))
+                        true
+                    } else {
+                        false
+                    }
                 }
             }
 
@@ -333,4 +339,27 @@ internal actual fun createImageReceiveListener(
 
 internal actual fun Modifier.platformContentReceiver(listener: ReceiveContentListener): Modifier {
     return this.then(Modifier.contentReceiver(listener))
+}
+
+@Composable
+actual fun AudioPickButton(onAddAudios: (List<Uri>) -> Unit) {
+    val filesManager: FilesManager = koinInject()
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { selectedUris ->
+        if (selectedUris.isNotEmpty()) {
+            onAddAudios(filesManager.createChatFilesByContents(selectedUris.map { it.toCoilUri() }))
+        }
+    }
+
+    BigIconTextButton(
+        icon = {
+            Icon(Lucide.Music, null)
+        },
+        text = {
+            Text(stringResource(Res.string.audio))
+        }
+    ) {
+        audioPickerLauncher.launch("audio/*")
+    }
 }

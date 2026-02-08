@@ -9,13 +9,7 @@ import me.rerere.ai.ui.UIMessagePart
 import java.io.ByteArrayOutputStream
 import java.io.File
 
-
-data class EncodedImage(
-    val base64: String,
-    val mimeType: String
-)
-
-actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
+actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<EncodedImage> = runCatching {
     when {
         this.url.startsWith("file://") -> {
             val filePath =
@@ -46,7 +40,7 @@ actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String>
     }
 }
 
-fun UIMessagePart.Video.encodeBase64(withPrefix: Boolean = true): Result<String> = runCatching {
+actual fun UIMessagePart.Video.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
     when {
         this.url.startsWith("file://") -> {
             val filePath =
@@ -63,7 +57,7 @@ fun UIMessagePart.Video.encodeBase64(withPrefix: Boolean = true): Result<String>
     }
 }
 
-fun UIMessagePart.Audio.encodeBase64(withPrefix: Boolean = true): Result<String> = runCatching {
+actual fun UIMessagePart.Audio.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
     when {
         this.url.startsWith("file://") -> {
             val filePath =

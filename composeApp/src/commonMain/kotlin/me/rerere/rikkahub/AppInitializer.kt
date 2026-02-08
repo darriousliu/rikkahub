@@ -1,5 +1,6 @@
 package me.rerere.rikkahub
 
+import co.touchlab.kermit.Logger
 import dev.gitlive.firebase.remoteconfig.FirebaseRemoteConfig
 import io.github.vinceglb.filekit.exists
 import kotlinx.coroutines.Dispatchers
@@ -8,6 +9,7 @@ import kotlinx.coroutines.launch
 import me.rerere.common.PlatformContext
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.utils.deleteRecursively
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.platformModule
@@ -36,6 +38,9 @@ object AppInitializer : KoinComponent {
         // delete temp files
         deleteTempFiles()
 
+        // sync upload files to DB
+        syncManagedFiles()
+
         // Init remote config
         get<AppScope>().launch(Dispatchers.IO) {
             get<FirebaseRemoteConfig>().apply {
@@ -54,6 +59,16 @@ object AppInitializer : KoinComponent {
             val dir = get<PlatformContext>().appTempFolder
             if (dir.exists()) {
                 dir.deleteRecursively()
+            }
+        }
+    }
+
+    private fun syncManagedFiles() {
+        get<AppScope>().launch(Dispatchers.IO) {
+            runCatching {
+                get<FilesManager>().syncFolder()
+            }.onFailure {
+                Logger.e("FilesManager", it){ "syncManagedFiles failed" }
             }
         }
     }

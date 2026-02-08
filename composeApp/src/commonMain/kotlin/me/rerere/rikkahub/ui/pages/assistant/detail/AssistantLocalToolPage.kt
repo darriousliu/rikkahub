@@ -17,16 +17,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.tools.LocalToolOption
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
-import org.koin.androidx.compose.koinViewModel
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun AssistantLocalToolPage(id: String) {
@@ -41,7 +41,7 @@ fun AssistantLocalToolPage(id: String) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_local_tools))
+                    Text(stringResource(Res.string.assistant_page_tab_local_tools))
                 },
                 navigationIcon = {
                     BackButton()
@@ -73,8 +73,8 @@ private fun AssistantLocalToolContent(
     ) {
         // JavaScript 引擎工具卡片
         LocalToolCard(
-            title = stringResource(R.string.assistant_page_local_tools_javascript_engine_title),
-            description = stringResource(R.string.assistant_page_local_tools_javascript_engine_desc),
+            title = stringResource(Res.string.assistant_page_local_tools_javascript_engine_title),
+            description = stringResource(Res.string.assistant_page_local_tools_javascript_engine_desc),
             isEnabled = assistant.localTools.contains(LocalToolOption.JavascriptEngine),
             onToggle = { enabled ->
                 val newLocalTools = if (enabled) {
@@ -88,8 +88,8 @@ private fun AssistantLocalToolContent(
 
         // 时间信息工具卡片
         LocalToolCard(
-            title = stringResource(R.string.assistant_page_local_tools_time_info_title),
-            description = stringResource(R.string.assistant_page_local_tools_time_info_desc),
+            title = stringResource(Res.string.assistant_page_local_tools_time_info_title),
+            description = stringResource(Res.string.assistant_page_local_tools_time_info_desc),
             isEnabled = assistant.localTools.contains(LocalToolOption.TimeInfo),
             onToggle = { enabled ->
                 val newLocalTools = if (enabled) {
@@ -103,8 +103,8 @@ private fun AssistantLocalToolContent(
 
         // 剪贴板工具卡片
         LocalToolCard(
-            title = stringResource(R.string.assistant_page_local_tools_clipboard_title),
-            description = stringResource(R.string.assistant_page_local_tools_clipboard_desc),
+            title = stringResource(Res.string.assistant_page_local_tools_clipboard_title),
+            description = stringResource(Res.string.assistant_page_local_tools_clipboard_desc),
             isEnabled = assistant.localTools.contains(LocalToolOption.Clipboard),
             onToggle = { enabled ->
                 val newLocalTools = if (enabled) {

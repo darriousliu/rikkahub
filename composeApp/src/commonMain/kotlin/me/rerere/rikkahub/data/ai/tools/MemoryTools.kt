@@ -1,7 +1,8 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -15,7 +16,7 @@ import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.utils.toLocalString
-import java.time.LocalDate
+import kotlin.time.Clock
 
 fun buildMemoryTools(
     json: Json,
@@ -35,7 +36,7 @@ fun buildMemoryTools(
             Do not store sensitive information (e.g., ethnicity, religion, sexual orientation, political views, sex life, criminal records).
             You may store: preferred name, preferences, plans, work-related notes, chat style preferences, first chat time, etc.
             Do not show memory content directly in the conversation unless the user explicitly asks.
-            Today is ${LocalDate.now().toLocalString(true)}.
+            Today is ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toLocalString(true)}.
             Similar memories should be merged; prefer updating existing records.
 
             Examples:

@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.Card
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,15 +21,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 
 
 @Composable
@@ -66,7 +64,7 @@ fun InjectionSelector(
                     }
                 },
                 text = {
-                    Text(stringResource(R.string.injection_selector_mode_injections))
+                    Text(stringResource(Res.string.injection_selector_mode_injections))
                 }
             )
             Tab(
@@ -77,7 +75,7 @@ fun InjectionSelector(
                     }
                 },
                 text = {
-                    Text(stringResource(R.string.injection_selector_lorebooks))
+                    Text(stringResource(Res.string.injection_selector_lorebooks))
                 }
             )
         }
@@ -145,7 +143,7 @@ private fun ModeInjectionsSection(
         items(modeInjections) { injection ->
             ListItem(
                 headlineContent = {
-                    Text(injection.name.ifBlank { stringResource(R.string.injection_selector_unnamed) })
+                    Text(injection.name.ifBlank { stringResource(Res.string.injection_selector_unnamed) })
                 },
                 trailingContent = {
                     Switch(
@@ -176,7 +174,7 @@ private fun LorebooksSection(
         items(lorebooks) { lorebook ->
             ListItem(
                 headlineContent = {
-                    Text(lorebook.name.ifBlank { stringResource(R.string.injection_selector_unnamed_lorebook) })
+                    Text(lorebook.name.ifBlank { stringResource(Res.string.injection_selector_unnamed_lorebook) })
                 },
                 supportingContent = if (lorebook.description.isNotBlank()) {
                     {
@@ -216,12 +214,12 @@ private fun InjectionEmptyState(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = stringResource(R.string.injection_selector_empty_title),
+                text = stringResource(Res.string.injection_selector_empty_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
             Text(
-                text = stringResource(R.string.injection_selector_empty_hint),
+                text = stringResource(Res.string.injection_selector_empty_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
@@ -241,7 +239,7 @@ private fun ModeInjectionsEmptyState() {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.injection_selector_mode_injections_empty),
+            text = stringResource(Res.string.injection_selector_mode_injections_empty),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         )
@@ -258,7 +256,7 @@ private fun LorebooksEmptyState() {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.injection_selector_lorebooks_empty),
+            text = stringResource(Res.string.injection_selector_lorebooks_empty),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         )

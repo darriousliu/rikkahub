@@ -1,11 +1,11 @@
 package me.rerere.rikkahub.data.repository
 
-import android.database.sqlite.SQLiteBlobTooBigException
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
-import androidx.room.withTransaction
+import androidx.room.useWriterConnection
+import androidx.sqlite.SQLiteException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -21,7 +21,6 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
-import me.rerere.rikkahub.utils.deleteChatFiles
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -132,7 +131,7 @@ class ConversationRepository(
     }
 
     suspend fun insertConversation(conversation: Conversation) {
-        database.withTransaction {
+        database.useWriterConnection {
             conversationDAO.insert(
                 conversationToConversationEntity(conversation)
             )
@@ -141,7 +140,7 @@ class ConversationRepository(
     }
 
     suspend fun updateConversation(conversation: Conversation) {
-        database.withTransaction {
+        database.useWriterConnection {
             conversationDAO.update(
                 conversationToConversationEntity(conversation)
             )
@@ -158,7 +157,7 @@ class ConversationRepository(
         } else {
             conversation
         }
-        database.withTransaction {
+        database.useWriterConnection {
             // message_node 会通过 CASCADE 自动删除
             conversationDAO.delete(
                 conversationToConversationEntity(conversation)
@@ -179,8 +178,8 @@ class ConversationRepository(
             id = conversation.id.toString(),
             title = conversation.title,
             nodes = "[]",  // nodes 现在存储在单独的表中
-            createAt = conversation.createAt.toEpochMilli(),
-            updateAt = conversation.updateAt.toEpochMilli(),
+            createAt = conversation.createAt.toEpochMilliseconds(),
+            updateAt = conversation.updateAt.toEpochMilliseconds(),
             assistantId = conversation.assistantId.toString(),
             truncateIndex = conversation.truncateIndex,
             chatSuggestions = JsonInstant.encodeToString(conversation.chatSuggestions),
@@ -235,14 +234,14 @@ class ConversationRepository(
     }
 
     private suspend fun loadMessageNodes(conversationId: String): List<MessageNode> {
-        return database.withTransaction {
+        return database.useWriterConnection {
             val nodes = mutableListOf<MessageNode>()
             var offset = 0
             val pageSize = 64
             while (true) {
                 val page = try {
                     messageNodeDAO.getNodesOfConversationPaged(conversationId, pageSize, offset)
-                } catch (e: SQLiteBlobTooBigException) {
+                } catch (e: SQLiteException) {
                     e.printStackTrace()
                     offset += pageSize
                     continue

@@ -91,35 +91,11 @@ import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.utils.saveMessageImage
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio
-import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_desc
-import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_landscape
-import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_portrait
-import rikkahub.composeapp.generated.resources.imggen_page_aspect_ratio_square
-import rikkahub.composeapp.generated.resources.imggen_page_cancel
-import rikkahub.composeapp.generated.resources.imggen_page_cancel_generation_message
-import rikkahub.composeapp.generated.resources.imggen_page_cancel_generation_title
-import rikkahub.composeapp.generated.resources.imggen_page_confirm
-import rikkahub.composeapp.generated.resources.imggen_page_delete
-import rikkahub.composeapp.generated.resources.imggen_page_gallery
-import rikkahub.composeapp.generated.resources.imggen_page_generate_image
-import rikkahub.composeapp.generated.resources.imggen_page_generation_count
-import rikkahub.composeapp.generated.resources.imggen_page_generation_count_desc
-import rikkahub.composeapp.generated.resources.imggen_page_image_saved_success
-import rikkahub.composeapp.generated.resources.imggen_page_model_selection
-import rikkahub.composeapp.generated.resources.imggen_page_model_selection_desc
-import rikkahub.composeapp.generated.resources.imggen_page_no_generated_images
-import rikkahub.composeapp.generated.resources.imggen_page_prompt_placeholder
-import rikkahub.composeapp.generated.resources.imggen_page_save
-import rikkahub.composeapp.generated.resources.imggen_page_save_failed
-import rikkahub.composeapp.generated.resources.imggen_page_settings_title
-import rikkahub.composeapp.generated.resources.imggen_page_title
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun ImageGenPage(

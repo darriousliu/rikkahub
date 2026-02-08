@@ -127,7 +127,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
                         val type = event.event
                         val data = event.data ?: return@collect
                         if (data == "[DONE]") {
-                            close()
+                            return@collect
                         }
                         Logger.i(TAG) { "onEvent: $id/$type $data" }
                         val json = json.parseToJsonElement(data).jsonObject
@@ -227,7 +227,7 @@ class ResponseAPI(private val client: HttpClient) : OpenAIImpl {
         }.mergeCustomBody(params.customBody)
     }
 
-    private fun buildMessages(messages: List<UIMessage>) = buildJsonArray {
+    internal fun buildMessages(messages: List<UIMessage>) = buildJsonArray {
         messages
             .filter { it.isValidToUpload() && it.role != MessageRole.SYSTEM }
             .forEach { message ->

@@ -3,6 +3,7 @@ package me.rerere.rikkahub.service
 import androidx.compose.ui.text.intl.Locale
 import co.touchlab.kermit.Logger
 import io.ktor.util.collections.ConcurrentMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.jsonObject
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.Tool
@@ -38,7 +40,6 @@ import me.rerere.common.android.Logging
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID
 import me.rerere.rikkahub.CHAT_LIVE_UPDATE_NOTIFICATION_CHANNEL_ID
-import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.ai.GenerationChunk
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.mcp.McpManager
@@ -52,7 +53,6 @@ import me.rerere.rikkahub.data.ai.transformers.PromptInjectionTransformer
 import me.rerere.rikkahub.data.ai.transformers.RegexOutputTransformer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.ai.transformers.ThinkTagTransformer
-import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -65,14 +65,11 @@ import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.utils.AppLifecycleManager
 import me.rerere.rikkahub.utils.AppLifecycleObserver
-import me.rerere.rikkahub.utils.JsonInstantPretty
+import me.rerere.rikkahub.utils.NotificationConfig
 import me.rerere.rikkahub.utils.applyPlaceholders
-import me.rerere.rikkahub.utils.sendNotification
 import me.rerere.rikkahub.utils.cancelNotification
-import me.rerere.rikkahub.utils.deleteChatFiles
 import me.rerere.rikkahub.utils.getDisplayLanguage
-import me.rerere.search.SearchService
-import me.rerere.search.SearchServiceOptions
+import me.rerere.rikkahub.utils.sendNotification
 import org.jetbrains.compose.resources.getString
 import rikkahub.composeapp.generated.resources.*
 import kotlin.time.Clock
@@ -83,7 +80,7 @@ private const val TAG = "ChatService"
 data class ChatError(
     val id: Uuid = Uuid.random(),
     val error: Throwable,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = Clock.System.now().toEpochMilliseconds()
 )
 
 private val inputTransformers by lazy {
@@ -444,7 +441,7 @@ class ChatService(
             // memory tool
             if (!model.abilities.contains(ModelAbility.TOOL)) {
                 if (settings.enableWebSearch || mcpManager.getAllAvailableTools().isNotEmpty()) {
-                    addError(IllegalStateException(context.getString(R.string.tools_warning)))
+                    addError(IllegalStateException(getString(Res.string.tools_warning)))
                 }
             }
 
@@ -725,7 +722,7 @@ class ChatService(
             messagesToKeep = allMessages.takeLast(keepRecentMessages)
         } else if (keepRecentMessages > 0) {
             // Not enough messages to compress while keeping recent ones
-            throw IllegalStateException(context.getString(R.string.chat_page_compress_not_enough_messages))
+            throw IllegalStateException(getString(Res.string.chat_page_compress_not_enough_messages))
         } else {
             messagesToCompress = allMessages
             messagesToKeep = emptyList()
@@ -747,7 +744,7 @@ class ChatService(
                 "additional_context" to if (additionalPrompt.isNotBlank()) {
                     "Additional instructions from user: $additionalPrompt"
                 } else "",
-                "locale" to Locale.getDefault().displayName
+                "locale" to Locale.current.getDisplayLanguage()
             )
 
             val result = providerHandler.generateText(
@@ -794,12 +791,11 @@ class ChatService(
             channelId = CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID,
             notificationId = 1
         ) {
-            title = context.getString(R.string.notification_chat_done_title)
+            title = runBlocking { getString(Res.string.notification_chat_done_title) }
             content = conversation.currentMessages.lastOrNull()?.toText()?.take(50) ?: ""
             autoCancel = true
             useDefaults = true
-            category = NotificationCompat.CATEGORY_MESSAGE
-            contentIntent = getPendingIntent(context, conversationId)
+            platformMessageCompleteConfigure(context, conversationId)
         }
     }
 
@@ -808,7 +804,7 @@ class ChatService(
         return conversationId.hashCode() + 10000
     }
 
-    private fun sendLiveUpdateNotification(
+    private suspend fun sendLiveUpdateNotification(
         conversationId: Uuid,
         messages: List<UIMessage>
     ) {
@@ -822,20 +818,17 @@ class ChatService(
             channelId = CHAT_LIVE_UPDATE_NOTIFICATION_CHANNEL_ID,
             notificationId = getLiveUpdateNotificationId(conversationId)
         ) {
-            title = context.getString(R.string.notification_live_update_title)
+            title = runBlocking { getString(Res.string.notification_live_update_title) }
             content = contentText
             subText = statusText
             ongoing = true
             onlyAlertOnce = true
-            category = NotificationCompat.CATEGORY_PROGRESS
             useBigTextStyle = true
-            contentIntent = getPendingIntent(context, conversationId)
-            requestPromotedOngoing = true
-            shortCriticalText = chipText
+            platformMessageUpdateConfigure(context, conversationId, chipText)
         }
     }
 
-    private fun determineNotificationContent(parts: List<UIMessagePart>): Triple<String, String, String> {
+    private suspend fun determineNotificationContent(parts: List<UIMessagePart>): Triple<String, String, String> {
         // 检查最近的 part 来确定状态
         val lastReasoning = parts.filterIsInstance<UIMessagePart.Reasoning>().lastOrNull()
         val lastTool = parts.filterIsInstance<UIMessagePart.Tool>().lastOrNull()
@@ -846,32 +839,32 @@ class ChatService(
             lastTool != null && !lastTool.isExecuted -> {
                 val toolName = lastTool.toolName.removePrefix("mcp__")
                 Triple(
-                    context.getString(R.string.notification_live_update_chip_tool),
-                    context.getString(R.string.notification_live_update_tool, toolName),
+                    getString(Res.string.notification_live_update_chip_tool),
+                    getString(Res.string.notification_live_update_tool, toolName),
                     lastTool.input.take(100)
                 )
             }
             // 正在思考（Reasoning 未结束）
             lastReasoning != null && lastReasoning.finishedAt == null -> {
                 Triple(
-                    context.getString(R.string.notification_live_update_chip_thinking),
-                    context.getString(R.string.notification_live_update_thinking),
+                    getString(Res.string.notification_live_update_chip_thinking),
+                    getString(Res.string.notification_live_update_thinking),
                     lastReasoning.reasoning.takeLast(200)
                 )
             }
             // 正在写回复
             lastText != null -> {
                 Triple(
-                    context.getString(R.string.notification_live_update_chip_writing),
-                    context.getString(R.string.notification_live_update_writing),
+                    getString(Res.string.notification_live_update_chip_writing),
+                    getString(Res.string.notification_live_update_writing),
                     lastText.text.takeLast(200)
                 )
             }
             // 默认状态
             else -> {
                 Triple(
-                    context.getString(R.string.notification_live_update_chip_writing),
-                    context.getString(R.string.notification_live_update_title),
+                    getString(Res.string.notification_live_update_chip_writing),
+                    getString(Res.string.notification_live_update_title),
                     ""
                 )
             }
@@ -880,19 +873,6 @@ class ChatService(
 
     private fun cancelLiveUpdateNotification(conversationId: Uuid) {
         context.cancelNotification(getLiveUpdateNotificationId(conversationId))
-    }
-
-    private fun getPendingIntent(context: Context, conversationId: Uuid): PendingIntent {
-        val intent = Intent(context, RouteActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra("conversationId", conversationId.toString())
-        }
-        return PendingIntent.getActivity(
-            context,
-            conversationId.hashCode(),
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
     }
 
     // 更新对话
@@ -1023,9 +1003,13 @@ class ChatService(
     }
 }
 
-// 发送生成完成通知
-internal expect suspend fun sendGenerationDoneNotification(
-    conversation: Conversation,
+expect fun NotificationConfig.platformMessageCompleteConfigure(
     context: PlatformContext,
     conversationId: Uuid
+)
+
+expect fun NotificationConfig.platformMessageUpdateConfigure(
+    context: PlatformContext,
+    conversationId: Uuid,
+    chipText: String
 )

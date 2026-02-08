@@ -2,7 +2,7 @@ package me.rerere.rikkahub.data.ai.transformers
 
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.data.files.FilesManager
-import org.koin.java.KoinJavaComponent.getKoin
+import org.koin.mp.KoinPlatform.getKoin
 
 object Base64ImageToLocalFileTransformer : OutputMessageTransformer {
     override suspend fun onGenerationFinish(

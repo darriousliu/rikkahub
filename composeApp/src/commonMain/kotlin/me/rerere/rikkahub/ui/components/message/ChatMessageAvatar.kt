@@ -11,21 +11,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.isEmptyUIMessage
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.*
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.context.LocalSettings
-import me.rerere.rikkahub.utils.formatNumber
 import me.rerere.rikkahub.utils.toLocalString
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun ChatMessageUserAvatar(
@@ -109,7 +107,7 @@ fun ChatMessageAssistantAvatar(
                             maxLines = 1,
                         )
                         Text(
-                            text = message.createdAt.toJavaLocalDateTime().toLocalString(),
+                            text = message.createdAt.toLocalString(),
                             style = MaterialTheme.typography.labelSmall,
                             color = LocalContentColor.current.copy(alpha = 0.8f),
                             maxLines = 1,
@@ -133,7 +131,7 @@ fun ChatMessageAssistantAvatar(
                             style = MaterialTheme.typography.titleSmall,
                         )
                         Text(
-                            text = message.createdAt.toJavaLocalDateTime().toLocalString(),
+                            text = message.createdAt.toLocalString(),
                             style = MaterialTheme.typography.labelSmall,
                             color = LocalContentColor.current.copy(alpha = 0.8f)
                         )

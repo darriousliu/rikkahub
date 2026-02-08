@@ -15,6 +15,7 @@ import me.rerere.rikkahub.utils.EmojiUtils
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.tts.provider.TTSManager
+import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 
 val appModule = module {
@@ -25,11 +26,11 @@ val appModule = module {
     }
 
     single {
-        LocalTools()
+        LocalTools(get())
     }
 
     single {
-        UpdateChecker(get())
+        UpdateChecker(get(qualifier(HttpClientType.Chat)))
     }
 
     single {

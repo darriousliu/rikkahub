@@ -15,7 +15,7 @@ class DocumentUtil: DocumentReader {
             // Use the throwing initializer instead of the deprecated one
             let archive = try Archive(url: url, accessMode: .read)
 
-            guard let documentEntry = archive["word/document.xml"] else {
+            guard let documentEntry = archive["word/part.xml"] else {
                 return nil
             }
 

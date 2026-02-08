@@ -6,21 +6,33 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
 import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import me.rerere.ai.provider.ProviderManager
+import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.data.ai.AIRequestInterceptorPlugin
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.requestLoggingInterceptor
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.AppDatabase
-import me.rerere.rikkahub.data.sync.WebdavSync
+import me.rerere.rikkahub.data.sync.S3Sync
+import me.rerere.rikkahub.data.sync.webdav.WebDavSync
+import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
+
+enum class HttpClientType {
+    Chat, Normal
+}
 
 val dataSourceModule = module {
     single {
@@ -40,6 +52,14 @@ val dataSourceModule = module {
         get<AppDatabase>().genMediaDao()
     }
 
+    single {
+        get<AppDatabase>().messageNodeDao()
+    }
+
+    single {
+        get<AppDatabase>().managedFileDao()
+    }
+
     single { McpManager(settingsStore = get(), appScope = get()) }
 
     single {
@@ -53,7 +73,7 @@ val dataSourceModule = module {
         )
     }
 
-    single<HttpClient> {
+    single<HttpClient>(qualifier(HttpClientType.Chat)) {
         HttpClient(httpClientEngine()) {
             install(ContentNegotiation) {
                 json(json = get())
@@ -77,25 +97,70 @@ val dataSourceModule = module {
             install(AIRequestInterceptorPlugin) {
                 remoteConfig = get<FirebaseRemoteConfig>()
             }
+        }.apply {
+            plugin(HttpSend).apply {
+                intercept { request ->
+//                    request.header(HttpHeaders.AcceptLanguage, acceptLang)
+                    if (request.headers[HttpHeaders.UserAgent] == null) {
+                        request.header(HttpHeaders.UserAgent, "RikkaHub-Android/${BuildConfig.VERSION_NAME}")
+                    }
+
+                    execute(request)
+                }
+                requestLoggingInterceptor()
+            }
         }
     }
 
     single {
-        SponsorAPI.create(get())
+        SponsorAPI.create(get(qualifier(HttpClientType.Chat)))
     }
 
     single {
-        ProviderManager(client = get())
+        ProviderManager(client = get(qualifier(HttpClientType.Chat)))
     }
 
     single {
-        WebdavSync(settingsStore = get(), json = get(), context = get())
+        WebDavSync(
+            settingsStore = get(),
+            json = get(),
+            context = get(),
+            httpClient = get(qualifier(HttpClientType.Normal)),
+            zipUtil = get()
+        )
+    }
+
+    single<HttpClient>(qualifier(HttpClientType.Normal)) {
+        HttpClient {
+            install(HttpTimeout) {
+                connectTimeoutMillis = 20_000
+                socketTimeoutMillis = 10 * 60 * 1000
+                requestTimeoutMillis = 20_000 + 10 * 60 * 1000 + 120_000
+            }
+            install(HttpRedirect) {
+                checkHttpMethod = true
+                allowHttpsDowngrade = true
+            }
+            install(HttpRequestRetry) {
+                maxRetries = 3
+            }
+        }
+    }
+
+    single {
+        S3Sync(
+            settingsStore = get(),
+            json = get(),
+            context = get(),
+            httpClient = get(qualifier(HttpClientType.Normal)),
+            zipUtil = get()
+        )
     }
 
     single<Ktorfit> {
         Ktorfit.Builder()
             .baseUrl("https://api.rikka-ai.com")
-            .httpClient(client = get())
+            .httpClient(client = get(qualifier(HttpClientType.Chat)))
             .build()
     }
 

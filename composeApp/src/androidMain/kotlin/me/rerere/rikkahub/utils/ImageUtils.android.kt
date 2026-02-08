@@ -17,6 +17,7 @@ import com.google.zxing.MultiFormatReader
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import me.rerere.common.PlatformContext
+import java.io.ByteArrayOutputStream
 
 /**
  * 图片处理工具类
@@ -253,6 +254,16 @@ actual object ImageUtils {
 
         val regex = Regex("""\[chara:\s*(.+?)]""")
         return Result.success(regex.find(value)?.groupValues?.get(1) ?: error("No character data found"))
+    }
+
+    actual fun compressToPng(data: ByteArray): ByteArray {
+        val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
+            ?: throw IllegalArgumentException("Cannot decode image bytes")
+        return ByteArrayOutputStream().use { bos ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, bos)
+            bitmap.recycle()
+            bos.toByteArray()
+        }
     }
 }
 

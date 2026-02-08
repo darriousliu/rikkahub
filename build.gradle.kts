@@ -11,4 +11,5 @@ plugins {
     alias(libs.plugins.multiplatform) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.ktorfit) apply false
+    alias(libs.plugins.android.multiplatform) apply false
 }

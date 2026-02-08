@@ -41,14 +41,10 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
-<<<<<<<< HEAD:composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantMemoryPage.kt
-import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
-========
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.Res
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import rikkahub.composeapp.generated.resources.*
->>>>>>>> 98c1bd76 (feat: 迁移到KMP):composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantMemorySubPage.kt
 
 @Composable
 fun AssistantMemoryPage(id: String) {
@@ -64,7 +60,7 @@ fun AssistantMemoryPage(id: String) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_memory))
+                    Text(stringResource(Res.string.assistant_page_tab_memory))
                 },
                 navigationIcon = {
                     BackButton()
@@ -191,11 +187,11 @@ private fun AssistantMemoryContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_global_memory))
+                    Text(stringResource(Res.string.assistant_page_global_memory))
                 },
                 description = {
                     Text(
-                        text = stringResource(R.string.assistant_page_global_memory_desc),
+                        text = stringResource(Res.string.assistant_page_global_memory_desc),
                     )
                 },
                 tail = {

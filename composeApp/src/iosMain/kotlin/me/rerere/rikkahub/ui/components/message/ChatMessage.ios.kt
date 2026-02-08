@@ -8,16 +8,24 @@ import platform.UIKit.UIDocumentInteractionController
 
 internal actual fun openDocument(
     context: PlatformContext,
-    document: UIMessagePart.Document
+    part: UIMessagePart
 ) {
-    val url = NSURL.fileURLWithPath(document.url)
+    val url = NSURL.fileURLWithPath(
+        when (part) {
+            is UIMessagePart.Video -> part.url
+            is UIMessagePart.Audio -> part.url
+            is UIMessagePart.Document -> part.url
+            else -> return
+        }
+    )
+    val fileName = if (part is UIMessagePart.Document) part.fileName else null
 
     // 获取当前活跃的 ViewController
     val currentViewController = getCurrentViewController()
 
     if (currentViewController != null) {
         val documentController = UIDocumentInteractionController.interactionControllerWithURL(url)
-        documentController.name = document.fileName
+        documentController.name = fileName
 
         // 尝试预览
         val presented = documentController.presentPreviewAnimated(true)

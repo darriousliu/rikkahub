@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,20 +32,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Fullscreen
 import com.composables.icons.lucide.Import
 import com.composables.icons.lucide.Lucide
 import com.dokar.sonner.ToastType
+import io.github.vinceglb.filekit.source
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.rerere.rikkahub.R
+import kotlinx.io.buffered
+import kotlinx.io.readString
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.modifier.onClick
+import me.rerere.rikkahub.utils.rememberFilePickerByMimeLauncher
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 
 /**
  * A multi-line text input component with a header and file import functionality.
@@ -79,27 +82,24 @@ fun TextArea(
     enableFullscreen: Boolean = true,
     onImportError: ((String) -> Unit)? = null
 ) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
     var isFullScreen by remember { mutableStateOf(false) }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        uri?.let {
+    val filePickerLauncher = rememberFilePickerByMimeLauncher { file ->
+        file?.let {
             scope.launch {
                 try {
                     val content = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.bufferedReader()
-                            ?.use { reader -> reader.readText() }
-                            ?: error("Failed to read file")
+                        file.source().buffered()
+                            .use { reader -> reader.readString() }
                     }
                     state.setTextAndPlaceCursorAtEnd(content)
-                    toaster.show(context.getString(R.string.text_area_import_success), type = ToastType.Success)
+                    toaster.show(getString(Res.string.text_area_import_success), type = ToastType.Success)
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    val errorMessage = e.message ?: context.getString(R.string.text_area_import_failed)
+                    val errorMessage = e.message ?: getString(Res.string.text_area_import_failed)
                     onImportError?.invoke(errorMessage) ?: toaster.show(
                         message = errorMessage,
                         type = ToastType.Error
@@ -134,7 +134,7 @@ fun TextArea(
                     if (enableFullscreen) {
                         Icon(
                             imageVector = Lucide.Fullscreen,
-                            contentDescription = stringResource(R.string.text_area_fullscreen_edit),
+                            contentDescription = stringResource(Res.string.text_area_fullscreen_edit),
                             modifier = Modifier
                                 .onClick(onClick = {
                                     isFullScreen = true
@@ -145,7 +145,7 @@ fun TextArea(
 
                     Icon(
                         imageVector = Lucide.Import,
-                        contentDescription = stringResource(R.string.text_area_import_from_file),
+                        contentDescription = stringResource(Res.string.text_area_import_from_file),
                         modifier = Modifier
                             .onClick(onClick = {
                                 filePickerLauncher.launch(supportedFileTypes)
@@ -225,7 +225,7 @@ private fun FullScreenTextEditor(
                                 onDismiss()
                             }
                         ) {
-                            Text(stringResource(R.string.text_area_save))
+                            Text(stringResource(Res.string.text_area_save))
                         }
                     }
                     TextField(

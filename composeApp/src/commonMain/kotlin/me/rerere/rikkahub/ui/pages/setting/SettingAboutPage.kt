@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -27,13 +26,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Code
 import com.composables.icons.lucide.Earth
@@ -47,13 +47,19 @@ import me.rerere.common.utils.OS_VERSION
 import me.rerere.common.utils.SDK_VERSION
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.buildkonfig.BuildConfig
-import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.easteregg.EmojiBurstHost
+import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.utils.openUrl
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.about_page_github
+import rikkahub.composeapp.generated.resources.about_page_license
+import rikkahub.composeapp.generated.resources.about_page_system
+import rikkahub.composeapp.generated.resources.about_page_title
+import rikkahub.composeapp.generated.resources.about_page_version
+import rikkahub.composeapp.generated.resources.about_page_website
+import rikkahub.composeapp.generated.resources.ic_launcher
 
 @Composable
 fun SettingAboutPage() {
@@ -106,7 +112,7 @@ fun SettingAboutPage() {
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AsyncImage(
-                            model = R.mipmap.ic_launcher,
+                            model = Res.drawable.ic_launcher,
                             contentDescription = "Logo",
                             modifier = Modifier
                                 .clip(CircleShape)
@@ -163,7 +169,7 @@ fun SettingAboutPage() {
                         },
                         supportingContent = {
                             Text(
-                                text = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} / Android ${android.os.Build.VERSION.RELEASE} / SDK ${android.os.Build.VERSION.SDK_INT}",
+                                text = "$DEVICE_MANUFACTURER $DEVICE_MODEL / Android $OS_VERSION / SDK $SDK_VERSION",
                             )
                         },
                         leadingContent = {
@@ -210,10 +216,6 @@ fun SettingAboutPage() {
                     )
                 }
 
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(stringResource(Res.string.about_page_license))
                 item {
                     ListItem(
                         headlineContent = {

@@ -11,4 +11,13 @@ internal val supportedTypes = setOf(
 
 private const val TAG = "FileEncoder"
 
-expect fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean = true): Result<String>
+data class EncodedImage(
+    val base64: String,
+    val mimeType: String
+)
+
+expect fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean = true): Result<EncodedImage>
+
+expect fun UIMessagePart.Video.encodeBase64(withPrefix: Boolean = true): Result<String>
+
+expect fun UIMessagePart.Audio.encodeBase64(withPrefix: Boolean = true): Result<String>

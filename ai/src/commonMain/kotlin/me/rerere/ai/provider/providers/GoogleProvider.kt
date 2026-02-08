@@ -571,7 +571,7 @@ class GoogleProvider(private val client: HttpClient) : Provider<ProviderSetting.
         }
     }
 
-    private fun buildContents(messages: List<UIMessage>): JsonArray {
+    internal fun buildContents(messages: List<UIMessage>): JsonArray {
         return buildJsonArray {
             messages
                 .filter { it.role != MessageRole.SYSTEM && it.isValidToUpload() }

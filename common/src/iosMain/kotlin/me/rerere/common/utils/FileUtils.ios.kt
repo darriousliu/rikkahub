@@ -28,3 +28,25 @@ actual fun PlatformFile.deleteRecursively(): Boolean {
 actual fun PlatformFile.toUri(context: PlatformContext): Uri {
     return this.absolutePath().toUri()
 }
+
+actual fun Uri.toFile(): PlatformFile {
+    val path = this.toString()
+    return PlatformFile(path)
+}
+
+actual fun PlatformFile.canRead(): Boolean {
+    val path = this.nsUrl.path ?: return false
+    return NSFileManager.defaultManager.isReadableFileAtPath(path)
+}
+
+actual fun writeContentToUri(
+    context: PlatformContext,
+    uri: Uri,
+    content: ByteArray
+) {
+}
+
+actual fun readContentFromUri(context: PlatformContext, uri: Uri): ByteArray {
+    TODO("Not yet implemented")
+}
+

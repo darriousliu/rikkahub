@@ -368,7 +368,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(R.string.chat_page_move_to_assistant))
+                        Text(stringResource(Res.string.chat_page_move_to_assistant))
                     },
                     onClick = {
                         onMoveToAssistant(conversation)

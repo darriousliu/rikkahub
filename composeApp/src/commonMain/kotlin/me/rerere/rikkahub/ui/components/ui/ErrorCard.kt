@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,9 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Copy
@@ -34,8 +31,10 @@ import com.composables.icons.lucide.Trash2
 import com.composables.icons.lucide.X
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
+import me.rerere.common.utils.provideClipEntry
 import me.rerere.rikkahub.service.ChatError
+import org.jetbrains.compose.resources.stringResource
+import rikkahub.composeapp.generated.resources.*
 import kotlin.uuid.Uuid
 
 @Composable
@@ -74,7 +73,7 @@ fun ErrorCardsDisplay(
                             tint = MaterialTheme.colorScheme.onErrorContainer,
                         )
                         Text(
-                            text = stringResource(R.string.chat_page_clear_all_errors),
+                            text = stringResource(Res.string.chat_page_clear_all_errors),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                         )
@@ -136,9 +135,7 @@ fun ErrorCard(
                 onClick = {
                     scope.launch {
                         clipboard.setClipEntry(
-                            ClipEntry(
-                                clipData = ClipData.newPlainText("Error", error.error.message ?: "Unknown error")
-                            )
+                            provideClipEntry("Error", error.error.message ?: "Unknown error")
                         )
                     }
                 },
@@ -157,7 +154,7 @@ fun ErrorCard(
             ) {
                 Icon(
                     imageVector = Lucide.X,
-                    contentDescription = stringResource(R.string.chat_page_dismiss_error),
+                    contentDescription = stringResource(Res.string.chat_page_dismiss_error),
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.size(18.dp),
                 )

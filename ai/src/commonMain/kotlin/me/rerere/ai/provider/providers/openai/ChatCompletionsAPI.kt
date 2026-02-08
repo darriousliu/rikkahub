@@ -372,7 +372,7 @@ class ChatCompletionsAPI(
         return !ModelRegistry.OPENAI_O_MODELS.match(model.modelId) && !ModelRegistry.GPT_5.match(model.modelId)
     }
 
-    private fun buildMessages(messages: List<UIMessage>) = buildJsonArray {
+    internal fun buildMessages(messages: List<UIMessage>) = buildJsonArray {
         val filteredMessages = messages.filter { it.isValidToUpload() }
         val lastUserMessageIndex = filteredMessages.indexOfLast { it.role == MessageRole.USER }
 

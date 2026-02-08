@@ -1,8 +1,22 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.text.intl.Locale
 import com.dokar.quickjs.QuickJs
 import com.dokar.quickjs.binding.JsObject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.UtcOffset
+import kotlinx.datetime.format
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.number
+import kotlinx.datetime.offsetAt
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
@@ -13,13 +27,15 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
-import me.rerere.highlight.JsObjectSerializer
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.PlatformContext
+import me.rerere.highlight.JsObjectSerializer
+import me.rerere.rikkahub.utils.ENGLISH
+import me.rerere.rikkahub.utils.localizedName
 import me.rerere.rikkahub.utils.readClipboardText
 import me.rerere.rikkahub.utils.writeClipboardText
-import java.time.ZonedDateTime
-import java.time.format.TextStyle
-import java.util.Locale
+import kotlin.time.Clock
+
 
 @Serializable
 sealed class LocalToolOption {
@@ -36,7 +52,7 @@ sealed class LocalToolOption {
     data object Clipboard : LocalToolOption()
 }
 
-class LocalTools(private val context: Context) {
+class LocalTools(private val context: PlatformContext) {
     private val json = Json {
         ignoreUnknownKeys = true
     }
@@ -64,25 +80,25 @@ class LocalTools(private val context: Context) {
             execute = {
                 val logs = arrayListOf<String>()
                 val context = QuickJs.create(Dispatchers.Default)
-                context.setConsole(object : QuickJSContext.Console {
-                    override fun log(info: String?) {
-                        logs.add("[LOG] $info")
-                    }
-
-                    override fun info(info: String?) {
-                        logs.add("[INFO] $info")
-                    }
-
-                    override fun warn(info: String?) {
-                        logs.add("[WARN] $info")
-                    }
-
-                    override fun error(info: String?) {
-                        logs.add("[ERROR] $info")
-                    }
-                })
+//                context.setConsole(object : QuickJSContext.Console {
+//                    override fun log(info: String?) {
+//                        logs.add("[LOG] $info")
+//                    }
+//
+//                    override fun info(info: String?) {
+//                        logs.add("[INFO] $info")
+//                    }
+//
+//                    override fun warn(info: String?) {
+//                        logs.add("[WARN] $info")
+//                    }
+//
+//                    override fun error(info: String?) {
+//                        logs.add("[ERROR] $info")
+//                    }
+//                })
                 val code = it.jsonObject["code"]?.jsonPrimitive?.contentOrNull
-                val result = context.evaluate(code)
+                val result = context.evaluate<Any>(code.orEmpty())
                 val payload = buildJsonObject {
                     if (logs.isNotEmpty()) {
                         put("logs", JsonPrimitive(logs.joinToString("\n")))
@@ -112,23 +128,28 @@ class LocalTools(private val context: Context) {
                 )
             },
             execute = {
-                val now = ZonedDateTime.now()
-                val date = now.toLocalDate()
-                val time = now.toLocalTime().withNano(0)
-                val weekday = now.dayOfWeek
+                val timeZone = TimeZone.currentSystemDefault()
+                val now = Clock.System.now()
+                val localDateTime = now.toLocalDateTime(timeZone)
+                val date = localDateTime.date
+                val time = localDateTime.time
+                val offsetNow = timeZone.offsetAt(now)
+                val weekday = date.dayOfWeek
+                val dateFormat = LocalDate.Formats.ISO
+
                 val payload = buildJsonObject {
                     put("year", date.year)
-                    put("month", date.monthValue)
-                    put("day", date.dayOfMonth)
-                    put("weekday", weekday.getDisplayName(TextStyle.FULL, Locale.getDefault()))
-                    put("weekday_en", weekday.getDisplayName(TextStyle.FULL, Locale.ENGLISH))
-                    put("weekday_index", weekday.value)
-                    put("date", date.toString())
-                    put("time", time.toString())
-                    put("datetime", now.withNano(0).toString())
-                    put("timezone", now.zone.id)
-                    put("utc_offset", now.offset.id)
-                    put("timestamp_ms", now.toInstant().toEpochMilli())
+                    put("month", date.month.number)
+                    put("day", date.day)
+                    put("weekday", weekday.localizedName())
+                    put("weekday_en", weekday.name.lowercase().capitalize(Locale.ENGLISH))
+                    put("weekday_index", weekday.isoDayNumber)
+                    put("date", date.format(LocalDate.Formats.ISO))
+                    put("time", time.format(LocalTime.Formats.ISO))
+                    put("datetime", localDateTime.format(LocalDateTime.Formats.ISO))
+                    put("timezone", timeZone.id)
+                    put("utc_offset", offsetNow.format(UtcOffset.Formats.ISO))
+                    put("timestamp_ms", now.toEpochMilliseconds())
                 }
                 listOf(UIMessagePart.Text(payload.toString()))
             }

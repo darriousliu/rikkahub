@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.Extras
 import coil3.compose.AsyncImage
@@ -18,10 +19,7 @@ import coil3.request.ImageRequest
 import me.rerere.rikkahub.ui.hooks.rememberAvatarShape
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.toCssHex
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.siliconflow_dark
-import rikkahub.composeapp.generated.resources.siliconflow_light
+import rikkahub.composeapp.generated.resources.*
 
 private val cssKey = Extras.Key<String?>(default = null)
 

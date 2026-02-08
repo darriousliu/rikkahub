@@ -42,7 +42,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,12 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-<<<<<<<< HEAD:composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptPage.kt
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-========
-import androidx.compose.ui.window.DialogProperties
 import coil3.compose.LocalPlatformContext
->>>>>>>> 98c1bd76 (feat: 迁移到KMP):composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptSubPage.kt
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Lucide
@@ -88,40 +83,11 @@ import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.insertAtCursor
 import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onSuccess
-<<<<<<<< HEAD:composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptPage.kt
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
-========
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.assistant_page_available_variables
-import rikkahub.composeapp.generated.resources.assistant_page_message_template
-import rikkahub.composeapp.generated.resources.assistant_page_message_template_desc
-import rikkahub.composeapp.generated.resources.assistant_page_preset_messages
-import rikkahub.composeapp.generated.resources.assistant_page_preset_messages_desc
-import rikkahub.composeapp.generated.resources.assistant_page_quick_message_content
-import rikkahub.composeapp.generated.resources.assistant_page_quick_message_title
-import rikkahub.composeapp.generated.resources.assistant_page_quick_messages
-import rikkahub.composeapp.generated.resources.assistant_page_quick_messages_desc
-import rikkahub.composeapp.generated.resources.assistant_page_regex_affecting_scopes
-import rikkahub.composeapp.generated.resources.assistant_page_regex_desc
-import rikkahub.composeapp.generated.resources.assistant_page_regex_find_regex
-import rikkahub.composeapp.generated.resources.assistant_page_regex_name
-import rikkahub.composeapp.generated.resources.assistant_page_regex_replace_string
-import rikkahub.composeapp.generated.resources.assistant_page_regex_title
-import rikkahub.composeapp.generated.resources.assistant_page_regex_visual_only
-import rikkahub.composeapp.generated.resources.assistant_page_save
-import rikkahub.composeapp.generated.resources.assistant_page_system_prompt
-import rikkahub.composeapp.generated.resources.assistant_page_template_preview
-import rikkahub.composeapp.generated.resources.assistant_page_template_variable_date
-import rikkahub.composeapp.generated.resources.assistant_page_template_variable_message
-import rikkahub.composeapp.generated.resources.assistant_page_template_variable_role
-import rikkahub.composeapp.generated.resources.assistant_page_template_variable_time
-import rikkahub.composeapp.generated.resources.assistant_page_template_variables_label
-import rikkahub.composeapp.generated.resources.delete
->>>>>>>> 98c1bd76 (feat: 迁移到KMP):composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptSubPage.kt
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+import rikkahub.composeapp.generated.resources.*
 import kotlin.uuid.Uuid
 
 @Composable
@@ -138,7 +104,7 @@ fun AssistantPromptPage(id: String) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_prompt))
+                    Text(stringResource(Res.string.assistant_page_tab_prompt))
                 },
                 navigationIcon = {
                     BackButton()
@@ -162,11 +128,7 @@ private fun AssistantPromptContent(
     settings: Settings,
     onUpdate: (Assistant) -> Unit
 ) {
-<<<<<<<< HEAD:composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptPage.kt
-    val context = LocalContext.current
-========
     val context = LocalPlatformContext.current
->>>>>>>> 98c1bd76 (feat: 迁移到KMP):composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptSubPage.kt
     val templateTransformer = koinInject<TemplateTransformer>()
 
     Column(
@@ -184,13 +146,7 @@ private fun AssistantPromptContent(
         ) {
             Column(
                 modifier = Modifier.padding(8.dp),
-<<<<<<<< HEAD:composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptPage.kt
                 verticalArrangement = Arrangement.spacedBy(8.dp)
-========
-                label = {
-                    Text(stringResource(Res.string.assistant_page_system_prompt))
-                },
->>>>>>>> 98c1bd76 (feat: 迁移到KMP):composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptSubPage.kt
             ) {
                 val systemPromptValue = rememberTextFieldState(
                     initialText = assistant.systemPrompt,
@@ -207,7 +163,7 @@ private fun AssistantPromptContent(
 
                 TextArea(
                     state = systemPromptValue,
-                    label = stringResource(R.string.assistant_page_system_prompt),
+                    label = stringResource(Res.string.assistant_page_system_prompt),
                     minLines = 5,
                     maxLines = 10
                 )
@@ -812,73 +768,3 @@ private fun AssistantRegexCard(
         }
     }
 }
-<<<<<<<< HEAD:composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptPage.kt
-========
-
-@Composable
-private fun FullScreenSystemPromptEditor(
-    systemPrompt: String,
-    onUpdate: (String) -> Unit,
-    onDone: () -> Unit
-) {
-    var editingText by remember(systemPrompt) { mutableStateOf(systemPrompt) }
-
-    BasicAlertDialog(
-        onDismissRequest = {
-            onDone()
-        },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom
-        ) {
-            Surface(
-                modifier = Modifier
-                    .widthIn(max = 800.dp)
-                    .fillMaxHeight(0.9f),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Row {
-                        TextButton(
-                            onClick = {
-                                onUpdate(editingText)
-                                onDone()
-                            }
-                        ) {
-                            Text(stringResource(Res.string.assistant_page_save))
-                        }
-                    }
-                    TextField(
-                        value = editingText,
-                        onValueChange = { editingText = it },
-                        modifier = Modifier
-                            .imePadding()
-                            .fillMaxSize(),
-                        shape = RoundedCornerShape(16.dp),
-                        placeholder = {
-                            Text(stringResource(Res.string.assistant_page_system_prompt))
-                        },
-                        colors = TextFieldDefaults.colors().copy(
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                        ),
-                    )
-                }
-            }
-        }
-    }
-}
->>>>>>>> 98c1bd76 (feat: 迁移到KMP):composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptSubPage.kt

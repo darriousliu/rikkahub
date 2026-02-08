@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
@@ -37,23 +37,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.composables.icons.lucide.Image
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Trash2
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalToaster
+import net.sergeych.sprintf.format
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import java.io.File
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun SettingFilesPage(
@@ -66,8 +67,8 @@ fun SettingFilesPage(
     val folders = remember { listOf(FileFolders.UPLOAD) }
 
     // 预先获取字符串资源
-    val deletedToast = stringResource(R.string.setting_files_page_deleted_toast)
-    val deleteFailedToast = stringResource(R.string.setting_files_page_delete_failed_toast)
+    val deletedToast = stringResource(Res.string.setting_files_page_deleted_toast)
+    val deleteFailedToast = stringResource(Res.string.setting_files_page_delete_failed_toast)
 
     var filesByFolder by remember { mutableStateOf<Map<String, List<ManagedFileEntity>>>(emptyMap()) }
     var selectedFolder by remember { mutableStateOf(FileFolders.UPLOAD) }
@@ -91,7 +92,7 @@ fun SettingFilesPage(
         val target = pendingDelete!!
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text(stringResource(R.string.setting_files_page_delete_file_title)) },
+            title = { Text(stringResource(Res.string.setting_files_page_delete_file_title)) },
             text = { Text(target.displayName) },
             confirmButton = {
                 TextButton(
@@ -112,12 +113,12 @@ fun SettingFilesPage(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.setting_files_page_delete_action))
+                    Text(stringResource(Res.string.setting_files_page_delete_action))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDelete = null }) {
-                    Text(stringResource(R.string.setting_files_page_cancel_action))
+                    Text(stringResource(Res.string.setting_files_page_cancel_action))
                 }
             }
         )
@@ -126,7 +127,7 @@ fun SettingFilesPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.setting_files_page_title)) },
+                title = { Text(stringResource(Res.string.setting_files_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior
             )
@@ -150,7 +151,7 @@ fun SettingFilesPage(
                         .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(stringResource(R.string.setting_files_page_loading))
+                    Text(stringResource(Res.string.setting_files_page_loading))
                 }
             } else if (files.isEmpty()) {
                 Box(
@@ -158,7 +159,7 @@ fun SettingFilesPage(
                         .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(stringResource(R.string.setting_files_page_no_files))
+                    Text(stringResource(Res.string.setting_files_page_no_files))
                 }
             } else {
                 LazyVerticalStaggeredGrid(
@@ -207,14 +208,14 @@ private fun FolderRow(
 
 @Composable
 private fun folderDisplayName(folder: String): String = when (folder) {
-    FileFolders.UPLOAD -> stringResource(R.string.setting_files_page_folder_upload)
+    FileFolders.UPLOAD -> stringResource(Res.string.setting_files_page_folder_upload)
     else -> folder
 }
 
 @Composable
 private fun FileItem(
     file: ManagedFileEntity,
-    fileOnDisk: File,
+    fileOnDisk: PlatformFile,
     onDelete: () -> Unit,
 ) {
     Card(
@@ -253,7 +254,10 @@ private fun FileItem(
                     onClick = onDelete,
                     modifier = Modifier.align(Alignment.TopEnd)
                 ) {
-                    Icon(Lucide.Trash2, contentDescription = stringResource(R.string.setting_files_page_delete_content_description))
+                    Icon(
+                        Lucide.Trash2,
+                        contentDescription = stringResource(Res.string.setting_files_page_delete_content_description)
+                    )
                 }
             }
 
@@ -286,9 +290,9 @@ private fun FileItem(
 private fun formatBytes(bytes: Long): String {
     if (bytes < 1024) return "${bytes}B"
     val kb = bytes / 1024.0
-    if (kb < 1024) return String.format("%.1fKB", kb)
+    if (kb < 1024) return "%.1fKB".format(kb)
     val mb = kb / 1024.0
-    if (mb < 1024) return String.format("%.1fMB", mb)
+    if (mb < 1024) return "%.1fMB".format(mb)
     val gb = mb / 1024.0
-    return String.format("%.1fGB", gb)
+    return "%.1fGB".format(gb)
 }

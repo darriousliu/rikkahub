@@ -25,7 +25,6 @@ import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.readString
-import io.ktor.util.decodeBase64String
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
@@ -37,26 +36,17 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.ui.UIMessage
 import me.rerere.common.PlatformContext
-import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.assistant_importer_import_failed
-import rikkahub.composeapp.generated.resources.assistant_importer_import_tavern_json
-import rikkahub.composeapp.generated.resources.assistant_importer_import_tavern_png
-import rikkahub.composeapp.generated.resources.assistant_importer_importing
-import rikkahub.composeapp.generated.resources.assistant_importer_missing_data_field
-import rikkahub.composeapp.generated.resources.assistant_importer_missing_name_field
-import rikkahub.composeapp.generated.resources.assistant_importer_missing_spec_field
-import rikkahub.composeapp.generated.resources.assistant_importer_read_json_failed
-import rikkahub.composeapp.generated.resources.assistant_importer_unsupported_file_type
-import rikkahub.composeapp.generated.resources.assistant_importer_unsupported_spec
 import org.koin.compose.koinInject
+import rikkahub.composeapp.generated.resources.*
+import kotlin.io.encoding.Base64
 
 @Composable
 fun AssistantImporter(
@@ -276,7 +266,7 @@ private suspend fun importAssistantFromUri(
                 "image/png" -> {
                     val result = ImageUtils.getTavernCharacterMeta(context, uri.toString())
                     result.map { base64Data ->
-                        val json = base64Data.decodeBase64String()
+                        val json = Base64.decode(base64Data).decodeToString()
                         val bg = filesManager.createChatFilesByContents(listOf(uri)).first().toString()
                         json to bg
                     }.getOrElse { throw it }

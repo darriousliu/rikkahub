@@ -1,9 +1,9 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
-import android.util.Log
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
+import coil3.toUri
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -89,7 +89,7 @@ class AssistantDetailVM(
                     tags = tagIds.toList()
                 )
             )
-            Log.d(TAG, "updateTags: ${tagIds.joinToString(",")}")
+            Logger.d(TAG) { "updateTags: ${tagIds.joinToString(",")}" }
             cleanupUnusedTags()
         }
     }
@@ -195,7 +195,7 @@ class AssistantDetailVM(
                     filesManager.deleteChatFiles(listOf(oldUri))
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to delete background file: $oldBackground", e)
+                Logger.w(TAG, e) { "Failed to delete background file: $oldBackground" }
             }
         }
     }

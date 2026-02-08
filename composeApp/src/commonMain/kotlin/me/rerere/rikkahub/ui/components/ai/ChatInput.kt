@@ -5,7 +5,6 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.content.MediaType
 import androidx.compose.foundation.content.ReceiveContentListener
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,10 +31,8 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
@@ -45,11 +42,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -74,7 +67,9 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.window.DialogProperties
@@ -84,28 +79,28 @@ import coil3.compose.LocalPlatformContext
 import coil3.toUri
 import com.composables.icons.lucide.ArrowUp
 import com.composables.icons.lucide.BookOpen
-import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.Eraser
-import com.composables.icons.lucide.FileArchive
 import com.composables.icons.lucide.FileAudio
-import com.composables.icons.lucide.Files
 import com.composables.icons.lucide.Fullscreen
 import com.composables.icons.lucide.Image
 import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Music
 import com.composables.icons.lucide.Package2
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Video
 import com.composables.icons.lucide.X
 import com.composables.icons.lucide.Zap
 import com.dokar.sonner.ToastType
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import kotlinx.coroutines.Job
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.common.android.appTempFolder
 import me.rerere.common.PlatformContext
+import me.rerere.common.utils.toUri
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -116,14 +111,12 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.ui.InjectionSelector
 import me.rerere.rikkahub.ui.components.ui.KeepScreenOn
-import me.rerere.rikkahub.ui.components.ui.RandomGridLoading
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
-import org.koin.compose.koinInject
+import me.rerere.rikkahub.utils.isImeVisible
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import rikkahub.composeapp.generated.resources.Res
+import org.koin.compose.koinInject
 import rikkahub.composeapp.generated.resources.*
 import kotlin.time.Duration.Companion.seconds
 
@@ -424,41 +417,7 @@ private fun TextInputRow(
                 var isFocused by remember { mutableStateOf(false) }
                 var isFullScreen by remember { mutableStateOf(false) }
                 val receiveContentListener = remember(settings.displaySetting.pasteLongTextAsFile, settings.displaySetting.pasteLongTextThreshold) {
-                    ReceiveContentListener { transferableContent ->
-                        when {
-                            transferableContent.hasMediaType(MediaType.Image) -> {
-                                transferableContent.consume { item ->
-                                    val uri = item.uri
-                                    if (uri != null) {
-                                        state.addImages(
-                                            filesManager.createChatFilesByContents(
-                                                listOf(
-                                                    uri
-                                                )
-                                            )
-                                        )
-                                    }
-                                    uri != null
-                                }
-                            }
-
-                            settings.displaySetting.pasteLongTextAsFile &&
-                                transferableContent.hasMediaType(MediaType.Text) -> {
-                                transferableContent.consume { item ->
-                                    val text = item.text?.toString()
-                                    if (text != null && text.length > settings.displaySetting.pasteLongTextThreshold) {
-                                        val document = filesManager.createChatTextFile(text)
-                                        state.addFiles(listOf(document))
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                }
-                            }
-
-                            else -> transferableContent
-                        }
-                    }
+                    createImageReceiveListener(state, context, filesManager, settings)
                 }
                 TextField(
                     state = state.textContent,
@@ -790,11 +749,11 @@ private fun FilesPicker(
                 leadingContent = {
                     Icon(
                         imageVector = Lucide.BookOpen,
-                        contentDescription = stringResource(R.string.chat_page_prompt_injections),
+                        contentDescription = stringResource(Res.string.chat_page_prompt_injections),
                     )
                 },
                 headlineContent = {
-                    Text(stringResource(R.string.chat_page_prompt_injections))
+                    Text(stringResource(Res.string.chat_page_prompt_injections))
                 },
                 trailingContent = {
                     if (activeCount > 0) {
@@ -818,11 +777,11 @@ private fun FilesPicker(
             leadingContent = {
                 Icon(
                     imageVector = Lucide.Package2,
-                    contentDescription = stringResource(R.string.chat_page_compress_context),
+                    contentDescription = stringResource(Res.string.chat_page_compress_context),
                 )
             },
             headlineContent = {
-                Text(stringResource(R.string.chat_page_compress_context))
+                Text(stringResource(Res.string.chat_page_compress_context))
             },
             modifier = Modifier
                 .clip(MaterialTheme.shapes.large)
@@ -965,6 +924,8 @@ expect fun FilePickButton(onAddFiles: (List<UIMessagePart.Document>) -> Unit = {
 internal expect fun createImageReceiveListener(
     state: ChatInputState,
     context: PlatformContext,
+    filesManager: FilesManager,
+    settings: Settings,
 ): ReceiveContentListener
 
 @Stable
@@ -975,182 +936,15 @@ internal expect fun Modifier.platformContentReceiver(
 ): Modifier
 
 @Composable
-private fun useCropLauncher(
-    onCroppedImageReady: (Uri) -> Unit,
-    onCleanup: (() -> Unit)? = null
-): Pair<ActivityResultLauncher<Intent>, (Uri) -> Unit> {
-    val context = LocalContext.current
-    var cropOutputUri by remember { mutableStateOf<Uri?>(null) }
-
-    val cropActivityLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            cropOutputUri?.let { croppedUri ->
-                onCroppedImageReady(croppedUri)
-            }
-        }
-        // Clean up crop output file
-        cropOutputUri?.toFile()?.delete()
-        cropOutputUri = null
-        onCleanup?.invoke()
-    }
-
-    val launchCrop: (Uri) -> Unit = { sourceUri ->
-        val outputFile = File(context.appTempFolder, "crop_output_${System.currentTimeMillis()}.jpg")
-        cropOutputUri = Uri.fromFile(outputFile)
-
-        val cropIntent = UCrop.of(sourceUri, cropOutputUri!!)
-            .withOptions(UCrop.Options().apply {
-                setFreeStyleCropEnabled(true)
-                setAllowedGestures(
-                    UCropActivity.SCALE,
-                    UCropActivity.ROTATE,
-                    UCropActivity.NONE
-                )
-                setCompressionFormat(Bitmap.CompressFormat.PNG)
-            })
-            .withMaxResultSize(4096, 4096)
-            .getIntent(context)
-
-        cropActivityLauncher.launch(cropIntent)
-    }
-
-    return Pair(cropActivityLauncher, launchCrop)
-}
-
-@Composable
-private fun ImagePickButton(onAddImages: (List<Uri>) -> Unit = {}) {
-    val context = LocalContext.current
-    val settings = LocalSettings.current
-    val filesManager: FilesManager = koinInject()
-
-    val (_, launchCrop) = useCropLauncher(
-        onCroppedImageReady = { croppedUri ->
-            onAddImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
-        }
-    )
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { selectedUris ->
-        if (selectedUris.isNotEmpty()) {
-            Log.d("ImagePickButton", "Selected URIs: $selectedUris")
-            // Check if we should skip crop based on settings
-            if (settings.displaySetting.skipCropImage) {
-                // Skip crop, directly add images
-                onAddImages(filesManager.createChatFilesByContents(selectedUris))
-            } else {
-                // Show crop interface
-                if (selectedUris.size == 1) {
-                    // Single image - offer crop
-                    launchCrop(selectedUris.first())
-                } else {
-                    // Multiple images - no crop
-                    onAddImages(filesManager.createChatFilesByContents(selectedUris))
-                }
-            }
-        } else {
-            Log.d("ImagePickButton", "No images selected")
-        }
-    }
-
-    BigIconTextButton(
-        icon = {
-            Icon(Lucide.Image, null)
-        },
-        text = {
-            Text(stringResource(R.string.photo))
-        }
-    ) {
-        imagePickerLauncher.launch("image/*")
-    }
-}
-
-@Composable
-fun TakePicButton(onAddImages: (List<Uri>) -> Unit = {}) {
-    val cameraPermission = rememberPermissionState(PermissionCamera)
-
-    val context = LocalContext.current
-    val settings = LocalSettings.current
-    val filesManager: FilesManager = koinInject()
-    var cameraOutputUri by remember { mutableStateOf<Uri?>(null) }
-    var cameraOutputFile by remember { mutableStateOf<File?>(null) }
-
-    val (_, launchCrop) = useCropLauncher(
-        onCroppedImageReady = { croppedUri ->
-            onAddImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
-        },
-        onCleanup = {
-            // Clean up camera temp file after cropping is done
-            cameraOutputFile?.delete()
-            cameraOutputFile = null
-            cameraOutputUri = null
-        }
-    )
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { captureSuccessful ->
-        if (captureSuccessful && cameraOutputUri != null) {
-            // Check if we should skip crop based on settings
-            if (settings.displaySetting.skipCropImage) {
-                // Skip crop, directly add image
-                onAddImages(filesManager.createChatFilesByContents(listOf(cameraOutputUri!!)))
-                // Clean up camera temp file
-                cameraOutputFile?.delete()
-                cameraOutputFile = null
-                cameraOutputUri = null
-            } else {
-                // Show crop interface
-                launchCrop(cameraOutputUri!!)
-            }
-        } else {
-            // Clean up camera temp file if capture failed
-            cameraOutputFile?.delete()
-            cameraOutputFile = null
-            cameraOutputUri = null
-        }
-    }
-
-    // 使用权限管理器包装
-    PermissionManager(
-        permissionState = cameraPermission
-    ) {
-        BigIconTextButton(
-            icon = {
-                Icon(Lucide.Camera, null)
-            },
-            text = {
-                Text(stringResource(R.string.take_picture))
-            }
-        ) {
-            if (cameraPermission.allRequiredPermissionsGranted) {
-                // 权限已授权，直接启动相机
-                cameraOutputFile = context.cacheDir.resolve("camera_${Uuid.random()}.jpg")
-                cameraOutputUri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    cameraOutputFile!!
-                )
-                cameraLauncher.launch(cameraOutputUri!!)
-            } else {
-                // 请求权限
-                cameraPermission.requestPermissions()
-            }
-        }
-    }
-}
-
-@Composable
 fun VideoPickButton(onAddVideos: (List<Uri>) -> Unit = {}) {
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     val filesManager: FilesManager = koinInject()
-    val videoPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
+    val videoPickerLauncher = rememberFilePickerLauncher(
+        type = FileKitType.Video,
+        mode = FileKitMode.Multiple()
     ) { selectedUris ->
-        if (selectedUris.isNotEmpty()) {
-            onAddVideos(filesManager.createChatFilesByContents(selectedUris))
+        if (!selectedUris.isNullOrEmpty()) {
+            onAddVideos(filesManager.createChatFilesByContents(selectedUris.map { it.toUri(context) }))
         }
     }
 
@@ -1159,121 +953,15 @@ fun VideoPickButton(onAddVideos: (List<Uri>) -> Unit = {}) {
             Icon(Lucide.Video, null)
         },
         text = {
-            Text(stringResource(R.string.video))
+            Text(stringResource(Res.string.video))
         }
     ) {
-        videoPickerLauncher.launch("video/*")
+        videoPickerLauncher.launch()
     }
 }
 
 @Composable
-fun AudioPickButton(onAddAudios: (List<Uri>) -> Unit = {}) {
-    val context = LocalContext.current
-    val filesManager: FilesManager = koinInject()
-    val audioPickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { selectedUris ->
-        if (selectedUris.isNotEmpty()) {
-            onAddAudios(filesManager.createChatFilesByContents(selectedUris))
-        }
-    }
-
-    BigIconTextButton(
-        icon = {
-            Icon(Lucide.Music, null)
-        },
-        text = {
-            Text(stringResource(R.string.audio))
-        }
-    ) {
-        audioPickerLauncher.launch("audio/*")
-    }
-}
-
-@Composable
-fun FilePickButton(onAddFiles: (List<UIMessagePart.Document>) -> Unit = {}) {
-    val context = LocalContext.current
-    val toaster = LocalToaster.current
-    val filesManager: FilesManager = koinInject()
-    val pickMedia =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-            if (uris.isNotEmpty()) {
-                val allowedMimeTypes = setOf(
-                    "text/plain",
-                    "text/html",
-                    "text/css",
-                    "text/javascript",
-                    "text/csv",
-                    "text/xml",
-                    "application/json",
-                    "application/javascript",
-                    "application/pdf",
-                    "application/msword",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    "application/vnd.ms-excel",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    "application/vnd.ms-powerpoint",
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                )
-
-                val documents = uris.mapNotNull { uri ->
-                    val fileName = filesManager.getFileNameFromUri(uri) ?: "file"
-                    val mime = filesManager.getFileMimeType(uri) ?: "text/plain"
-
-                    // Filter by MIME type or file extension
-                    val isAllowed = allowedMimeTypes.contains(mime) ||
-                        mime.startsWith("text/") ||
-                        mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-                        mime == "application/pdf" ||
-                        fileName.endsWith(".txt", ignoreCase = true) ||
-                        fileName.endsWith(".md", ignoreCase = true) ||
-                        fileName.endsWith(".csv", ignoreCase = true) ||
-                        fileName.endsWith(".json", ignoreCase = true) ||
-                        fileName.endsWith(".js", ignoreCase = true) ||
-                        fileName.endsWith(".html", ignoreCase = true) ||
-                        fileName.endsWith(".css", ignoreCase = true) ||
-                        fileName.endsWith(".xml", ignoreCase = true) ||
-                        fileName.endsWith(".py", ignoreCase = true) ||
-                        fileName.endsWith(".java", ignoreCase = true) ||
-                        fileName.endsWith(".kt", ignoreCase = true) ||
-                        fileName.endsWith(".ts", ignoreCase = true) ||
-                        fileName.endsWith(".tsx", ignoreCase = true) ||
-                        fileName.endsWith(".md", ignoreCase = true) ||
-                        fileName.endsWith(".markdown", ignoreCase = true) ||
-                        fileName.endsWith(".mdx", ignoreCase = true) ||
-                        fileName.endsWith(".yml", ignoreCase = true) ||
-                        fileName.endsWith(".yaml", ignoreCase = true)
-
-                    if (isAllowed) {
-                        val localUri = filesManager.createChatFilesByContents(listOf(uri))[0]
-                        UIMessagePart.Document(
-                            url = localUri.toString(),
-                            fileName = fileName,
-                            mime = mime
-                        )
-                    } else {
-                        toaster.show("不支持的文件类型: $fileName", type = ToastType.Error)
-                        null
-                    }
-                }
-
-                if (documents.isNotEmpty()) {
-                    onAddFiles(documents)
-                }
-            }
-        }
-    BigIconTextButton(
-        icon = {
-            Icon(Lucide.Files, null)
-        },
-        text = {
-            Text(stringResource(R.string.upload_file))
-        }
-    ) {
-        pickMedia.launch(arrayOf("*/*"))
-    }
-}
-
+expect fun AudioPickButton(onAddAudios: (List<Uri>) -> Unit = {})
 
 @Composable
 internal fun BigIconTextButton(

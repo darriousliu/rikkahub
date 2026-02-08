@@ -15,9 +15,9 @@ import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
 import java.io.File
 import java.util.Locale
-import kotlin.Exception
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "SystemTTSProvider"
@@ -51,7 +51,7 @@ actual class SystemTTSProvider :
 
                     // Create temporary file for audio output using temp directory like RikkaHubApp
                     val tempDir = context.appTempFolder.toFile()
-                    val audioFile = File(tempDir, "tts_${System.currentTimeMillis()}.wav")
+                    val audioFile = File(tempDir, "tts_${Clock.System.now().toEpochMilliseconds()}.wav")
 
                     val utteranceId = Uuid.random().toString()
 

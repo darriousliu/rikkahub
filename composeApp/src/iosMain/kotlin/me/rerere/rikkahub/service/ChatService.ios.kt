@@ -1,66 +1,41 @@
 package me.rerere.rikkahub.service
 
-import co.touchlab.kermit.Logger
 import me.rerere.common.PlatformContext
-import me.rerere.rikkahub.data.model.Conversation
-import org.jetbrains.compose.resources.getString
-import platform.UserNotifications.UNAuthorizationStatusAuthorized
-import platform.UserNotifications.UNMutableNotificationContent
-import platform.UserNotifications.UNNotificationRequest
-import platform.UserNotifications.UNNotificationSound
-import platform.UserNotifications.UNTimeIntervalNotificationTrigger
-import platform.UserNotifications.UNUserNotificationCenter
-import rikkahub.composeapp.generated.resources.*
+import me.rerere.rikkahub.utils.NotificationConfig
+import me.rerere.rikkahub.utils.ios
 import kotlin.uuid.Uuid
 
-internal actual suspend fun sendGenerationDoneNotification(
-    conversation: Conversation,
+actual fun NotificationConfig.platformMessageCompleteConfigure(
     context: PlatformContext,
     conversationId: Uuid
 ) {
-    Logger.i("ChatService") { "Sending generation done notification" }
-    val center = UNUserNotificationCenter.currentNotificationCenter()
-    val title = getString(Res.string.notification_chat_done_title)
-
-    // 检查通知权限
-    center.getNotificationSettingsWithCompletionHandler { settings ->
-        if (settings?.authorizationStatus != UNAuthorizationStatusAuthorized) {
-            return@getNotificationSettingsWithCompletionHandler
-        }
-
-        // 创建通知内容
-        val content = UNMutableNotificationContent().apply {
-            setTitle(title) // 对应 R.string.notification_chat_done_title
-            setBody(conversation.currentMessages.lastOrNull()?.toText()?.take(50) ?: "")
-            setSound(UNNotificationSound.defaultSound())
-            setCategoryIdentifier("CHAT_MESSAGE")
-
-            // 添加用户信息，用于点击处理
-            setUserInfo(
-                mapOf(
-                    "conversationId" to conversationId.toString()
-                )
-            )
-        }
-
-        // 创建触发器（立即显示）
-        val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(
-            timeInterval = 0.1,
-            repeats = false
+    ios {
+        // 通过 userInfo 传递 conversationId，供 UNUserNotificationCenterDelegate 跳转
+        userInfo = mapOf(
+            "conversationId" to conversationId.toString(),
+            "action" to "open_conversation"
         )
+        categoryIdentifier = "MESSAGE"
+        sound = true
+    }
+}
 
-        // 创建请求
-        val request = UNNotificationRequest.requestWithIdentifier(
-            identifier = "chat_done_${conversationId}",
-            content = content,
-            trigger = trigger
+actual fun NotificationConfig.platformMessageUpdateConfigure(
+    context: PlatformContext,
+    conversationId: Uuid,
+    chipText: String
+) {
+    ios {
+        userInfo = mapOf(
+            "conversationId" to conversationId.toString(),
+            "action" to "open_conversation"
         )
-
-        // 发送通知
-        center.addNotificationRequest(request) { error ->
-            error?.let {
-                println("Failed to send notification: ${it.localizedDescription}")
-            }
-        }
+        categoryIdentifier = "MESSAGE_PROGRESS"
+        // iOS 没有 Android 状态栏 chip，将 chipText 映射到 subtitle
+        subtitle = chipText
+        // 更新时不重复响铃
+        sound = false
+        // 标记为进行中的更新，App 侧可据此决定是否替换通知
+        isUpdate = true
     }
 }

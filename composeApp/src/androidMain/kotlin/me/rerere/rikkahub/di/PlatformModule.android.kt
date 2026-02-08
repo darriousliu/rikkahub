@@ -6,7 +6,8 @@ import me.rerere.common.utils.PlatformPebbleEngine
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.db.AppDatabase
-import me.rerere.rikkahub.data.db.Migration_6_7
+import me.rerere.rikkahub.data.db.migrations.Migration_11_12
+import me.rerere.rikkahub.data.db.migrations.Migration_6_7
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import java.util.Locale
@@ -14,7 +15,7 @@ import java.util.Locale
 actual val platformModule: Module = module {
     single {
         Room.databaseBuilder(get(), AppDatabase::class.java, "rikka_hub")
-            .addMigrations(Migration_6_7)
+            .addMigrations(Migration_6_7, Migration_11_12)
             .build()
     }
 

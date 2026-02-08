@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.webview
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,8 +24,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.ArrowRight
 import com.composables.icons.lucide.Bug
@@ -36,7 +35,12 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.RefreshCw
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.webview.WebView
+import me.rerere.rikkahub.ui.components.webview.configureZoom
+import me.rerere.rikkahub.ui.components.webview.lineNumber
+import me.rerere.rikkahub.ui.components.webview.message
+import me.rerere.rikkahub.ui.components.webview.messageLevelName
 import me.rerere.rikkahub.ui.components.webview.rememberWebViewState
+import me.rerere.rikkahub.ui.components.webview.sourceId
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.utils.base64Decode
 
@@ -47,8 +51,7 @@ fun WebViewPage(url: String, content: String) {
         rememberWebViewState(
             url = url,
             settings = {
-                builtInZoomControls = true
-                displayZoomControls = false
+                configureZoom()
             })
     } else {
         rememberWebViewState(
@@ -157,14 +160,14 @@ fun WebViewPage(url: String, content: String) {
                     LazyColumn {
                         items(state.consoleMessages) { message ->
                             Text(
-                                text = "${message.messageLevel().name}: ${message.message()}\n" +
+                                text = "${message.messageLevelName()}: ${message.message()}\n" +
                                     "Source: ${message.sourceId()}:${message.lineNumber()}",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = JetbrainsMono,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp),
-                                color = when (message.messageLevel().name) {
+                                color = when (message.messageLevelName()) {
                                     "ERROR" -> MaterialTheme.colorScheme.error
                                     "WARNING" -> MaterialTheme.colorScheme.secondary
                                     else -> MaterialTheme.colorScheme.onSurface

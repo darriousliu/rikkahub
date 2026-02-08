@@ -4,10 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,28 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
-import coil3.toUri
-import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import me.rerere.common.utils.toUri
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.components.ui.FormItem
-import me.rerere.rikkahub.utils.createChatFilesByContents
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.assistant_page_background_set
-import rikkahub.composeapp.generated.resources.assistant_page_cancel
-import rikkahub.composeapp.generated.resources.assistant_page_change_background
-import rikkahub.composeapp.generated.resources.assistant_page_chat_background
-import rikkahub.composeapp.generated.resources.assistant_page_chat_background_desc
-import rikkahub.composeapp.generated.resources.assistant_page_confirm
-import rikkahub.composeapp.generated.resources.assistant_page_enter_image_url
-import rikkahub.composeapp.generated.resources.assistant_page_image_url
-import rikkahub.composeapp.generated.resources.assistant_page_remove
-import rikkahub.composeapp.generated.resources.assistant_page_remove_background
-import rikkahub.composeapp.generated.resources.assistant_page_select_background
-import rikkahub.composeapp.generated.resources.assistant_page_select_from_gallery
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun BackgroundPicker(
@@ -51,6 +35,7 @@ fun BackgroundPicker(
     background: String?,
     onUpdate: (String?) -> Unit
 ) {
+    val context = LocalPlatformContext.current
     val filesManager: FilesManager = koinInject()
     var showPickOption by remember { mutableStateOf(false) }
     var showUrlInput by remember { mutableStateOf(false) }
@@ -60,7 +45,7 @@ fun BackgroundPicker(
         type = FileKitType.Image
     ) { uri ->
         uri?.let {
-            val localUris = filesManager.createChatFilesByContents(listOf(it))
+            val localUris = filesManager.createChatFilesByContents(listOf(it.toUri(context)))
             localUris.firstOrNull()?.let { localUri ->
                 onUpdate(localUri.toString())
             }

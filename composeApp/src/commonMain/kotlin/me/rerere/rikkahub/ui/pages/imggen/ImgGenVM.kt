@@ -46,7 +46,7 @@ data class GeneratedImage(
 
 private fun GenMediaEntity.toGeneratedImage(filesManager: FilesManager): GeneratedImage {
     val imagesDir = filesManager.getImagesDir()
-    val fullPath = PlatformFile(imagesDir, this.path.removePrefix("images/")).absolutePath
+    val fullPath = PlatformFile(imagesDir, this.path.removePrefix("images/")).absolutePath()
 
     return GeneratedImage(
         id = this.id,
@@ -186,7 +186,7 @@ class ImgGenVM(
         val filename = "${timestamp}_${modelName}_$index.png"
         val imageFile = PlatformFile(imagesDir, filename)
 
-        val createdFile = filesManager.createImageFileFromBase64(item.data, imageFile.absolutePath)
+        val createdFile = filesManager.createImageFileFromBase64(item.data, imageFile.absolutePath())
 
         // Save to database with relative path
         val relativePath = "images/${imageFile.name}"

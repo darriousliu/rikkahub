@@ -1,7 +1,4 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     id("multiplatform")
@@ -9,10 +6,19 @@ plugins {
 }
 
 kotlin {
+    androidLibrary {
+        namespace = "me.rerere.ai"
+
+        withHostTest {}
+
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+    }
     sourceSets {
         commonMain.dependencies {
             implementation(project(":common"))
-            implementation(compose.runtime)
+            implementation(libs.compose.runtime)
 
             // Ktor
             implementation(libs.bundles.ktor)
@@ -33,62 +39,25 @@ kotlin {
             api(project.dependencies.platform(libs.cryptography.bom))
             api(libs.cryptography.core)
         }
-    }
-}
-
-android {
-    namespace = "me.rerere.ai"
-    compileSdk = 36
-
-    defaultConfig {
-        minSdk = 26
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-//        externalNativeBuild {
-//            cmake {
-//                cppFlags += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
-//                abiFilters += listOf("arm64-v8a", "x86_64")
-//            }
-//        }
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        androidMain.dependencies {
+            // Compose
+            implementation(libs.androidx.core.ktx)
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.androidx.material3)
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
-    }
-//    externalNativeBuild {
-//        cmake {
-//            path = file("src/main/cpp/CMakeLists.txt")
-//            version = "3.22.1"
+
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+//        androidHostTest.dependencies {
+//            implementation(libs.junit)
+//            implementation(libs.androidx.junit)
+//            implementation(libs.androidx.espresso.core)
 //        }
-//    }
-    tasks.withType<KotlinCompile>().configureEach {
-        compilerOptions.optIn.add("kotlin.uuid.ExperimentalUuidApi")
-        compilerOptions.optIn.add("kotlin.time.ExperimentalTime")
+//        androidDeviceTest.dependencies {
+//            implementation(libs.junit)
+//            implementation(libs.androidx.junit)
+//            implementation(libs.androidx.espresso.core)
+//        }
     }
-}
-
-dependencies {
-    // Compose
-    implementation(libs.androidx.core.ktx)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.material3)
-
-    // tests
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

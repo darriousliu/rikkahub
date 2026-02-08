@@ -19,6 +19,27 @@ sealed interface Screen {
     data class AssistantDetail(val id: String) : Screen
 
     @Serializable
+    data class AssistantBasic(val id: String) : Screen
+
+    @Serializable
+    data class AssistantPrompt(val id: String) : Screen
+
+    @Serializable
+    data class AssistantMemory(val id: String) : Screen
+
+    @Serializable
+    data class AssistantRequest(val id: String) : Screen
+
+    @Serializable
+    data class AssistantMcp(val id: String) : Screen
+
+    @Serializable
+    data class AssistantLocalTool(val id: String) : Screen
+
+    @Serializable
+    data class AssistantInjections(val id: String) : Screen
+
+    @Serializable
     data object Menu : Screen
 
     @Serializable
@@ -64,8 +85,17 @@ sealed interface Screen {
     data object SettingDonate : Screen
 
     @Serializable
+    data object SettingFiles : Screen
+
+    @Serializable
     data object Developer : Screen
 
     @Serializable
     data object Debug : Screen
+
+    @Serializable
+    data object Log : Screen
+
+    @Serializable
+    data object Prompts : Screen
 }

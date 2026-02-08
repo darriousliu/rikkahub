@@ -2,44 +2,37 @@ package me.rerere.rikkahub.data.ai.mcp.transport
 
 import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.sse.sse
 import io.ktor.client.plugins.sse.ClientSSESession
 import io.ktor.client.plugins.sse.sseSession
 import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.header
-import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Url
 import io.ktor.http.append
-import io.ktor.http.URLBuilder
-import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.ktor.http.path
 import io.ktor.http.protocolWithAuthority
-import io.ktor.http.takeFrom
-import io.modelcontextprotocol.kotlin.sdk.JSONRPCMessage
 import io.modelcontextprotocol.kotlin.sdk.shared.AbstractTransport
+import io.modelcontextprotocol.kotlin.sdk.shared.TransportSendOptions
+import io.modelcontextprotocol.kotlin.sdk.types.JSONRPCMessage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
-import kotlinx.coroutines.withTimeout
-import me.rerere.ai.util.stringSafe
-import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.data.ai.mcp.McpJson
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Duration
 
 private const val TAG = "SseClientTransport"
 
@@ -52,29 +45,26 @@ class SseClientTransport(
 ) : AbstractTransport() {
 
     private val initialized: AtomicBoolean = AtomicBoolean(false)
-    private var session: EventSource? = null
     private val endpoint = CompletableDeferred<String>()
 
+    private lateinit var session: ClientSSESession
+    private lateinit var scope: CoroutineScope
     private var job: Job? = null
 
-    private val baseUrl by lazy {
-        URLBuilder()
-            .takeFrom(urlString)
-            .apply {
-                path() // set path to empty
-                parameters.clear() //  clear parameters
+    private val baseUrl: String by lazy {
+        session.call.request.url.let { url ->
+            val path = url.encodedPath
+            when {
+                path.isEmpty() -> url.protocolWithAuthority
+                path.endsWith("/") -> url.protocolWithAuthority + path.removeSuffix("/")
+                else -> url.protocolWithAuthority + path.take(path.lastIndexOf("/"))
             }
-            .build()
-            .toString()
-            .trimEnd('/')
+        }
     }
 
     override suspend fun start() {
-        if (!initialized.compareAndSet(false, true)) {
-            error(
-                "SSEClientTransport already started! " +
-                    "If using Client class, note that connect() calls start() automatically.",
-            )
+        check(initialized.compareAndSet(expectedValue = false, newValue = true)) {
+            "SSEClientTransport already started! If using Client class, note that connect() calls start() automatically."
         }
 
         try {
@@ -124,7 +114,7 @@ class SseClientTransport(
                 error("Error POSTing to endpoint (HTTP ${response.status}): $bodyText")
             }
 
-            Log.d(TAG, "Client successfully sent message via SSE $endpoint")
+            Logger.d(TAG) { "Client successfully sent message via SSE $endpoint" }
         } catch (e: Throwable) {
             _onError(e)
             throw e
@@ -148,9 +138,9 @@ class SseClientTransport(
                         throw error
                     }
 
-                        "open" -> {
-                            // The connection is open, but we need to wait for the endpoint to be received.
-                        }
+                    "open" -> {
+                        // The connection is open, but we need to wait for the endpoint to be received.
+                    }
 
                     "endpoint" -> handleEndpoint(event.data.orEmpty())
 
@@ -177,7 +167,7 @@ class SseClientTransport(
                 Url("$baseUrl/$eventData")
             }
             endpoint.complete(endpointUrl.toString())
-            Log.d(TAG, "Client connected to endpoint: $endpointUrl")
+            Logger.d(TAG) { "Client connected to endpoint: $endpointUrl" }
         } catch (e: Throwable) {
             _onError(e)
             endpoint.completeExceptionally(e)
@@ -204,10 +194,8 @@ class SseClientTransport(
             endpoint.cancel()
         } catch (e: Throwable) {
             _onError(e)
-            throw e
         }
 
         _onClose()
-        job?.cancelAndJoin()
     }
 }

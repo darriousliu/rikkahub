@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     `kotlin-multiplatform`
+    com.android.kotlin.multiplatform.library
 }
 
 kotlin {
@@ -23,9 +24,16 @@ kotlin {
         )
     }
 
-    androidTarget {
+    androidLibrary {
+        minSdk = 26
+        compileSdk {
+            version = release(36)
+        }
+
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            compilerOptions {
+                jvmTarget.set(JvmTarget.JVM_17)
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -13,7 +15,7 @@ import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.toLocalString
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
-import java.time.LocalDate
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 fun createSearchTools(settings: Settings): Set<Tool> {
@@ -25,7 +27,7 @@ fun createSearchTools(settings: Settings): Set<Tool> {
                     Search the web for up-to-date or specific information.
                     Use this when the user asks for the latest news, current facts, or needs verification.
                     Generate focused keywords and run multiple searches if needed.
-                    Today is ${LocalDate.now().toLocalString(true)}.
+                    Today is ${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date.toLocalString(true)}.
 
                     Response format:
                     - items[].id (short id), title, url, text

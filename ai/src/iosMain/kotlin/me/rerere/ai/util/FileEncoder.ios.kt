@@ -10,7 +10,7 @@ import platform.CoreServices.kUTTypeJPEG
 import platform.Foundation.*
 import platform.ImageIO.*
 
-actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String> = runCatching {
+actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<EncodedImage> = runCatching {
     when {
         this.url.startsWith("file://") -> {
             val nsUrl = NSURL(string = this.url)
@@ -31,13 +31,29 @@ actual fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean): Result<String>
             val finalMimeType = if (mimeType !in supportedTypes) "image/jpeg" else mimeType
             val encoded = processedData.base64EncodedStringWithOptions(0u)
 
-            if (withPrefix) "data:$finalMimeType;base64,$encoded" else encoded
+            EncodedImage(
+                base64 = if (withPrefix) "data:$finalMimeType;base64,$encoded" else encoded,
+                mimeType = finalMimeType
+            )
         }
 
-        this.url.startsWith("data:") -> url
-        this.url.startsWith("http:") -> url
+        this.url.startsWith("data:") -> {
+            // 从 data URL 提取 mime type
+            val mimeType = url.substringAfter("data:").substringBefore(";")
+            EncodedImage(base64 = url, mimeType = mimeType)
+        }
+
+        this.url.startsWith("http:") -> EncodedImage(base64 = url, mimeType = "image/png")
         else -> throw IllegalArgumentException("Unsupported URL format: $url")
     }
+}
+
+actual fun UIMessagePart.Video.encodeBase64(withPrefix: Boolean): Result<String> {
+    TODO("Not yet implemented")
+}
+
+actual fun UIMessagePart.Audio.encodeBase64(withPrefix: Boolean): Result<String> {
+    TODO("Not yet implemented")
 }
 
 private fun convertToJpeg(imageData: NSData): NSData? {

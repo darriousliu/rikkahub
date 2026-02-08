@@ -1,6 +1,9 @@
 package me.rerere.common.android
 
+import kotlinx.atomicfu.locks.reentrantLock
+import kotlinx.atomicfu.locks.withLock
 import kotlinx.serialization.Serializable
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val MAX_RECENT_LOGS = 100
@@ -14,7 +17,7 @@ sealed class LogEntry {
     @Serializable
     data class TextLog(
         override val id: Uuid = Uuid.random(),
-        override val timestamp: Long = System.currentTimeMillis(),
+        override val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
         override val tag: String,
         val message: String
     ) : LogEntry()
@@ -22,7 +25,7 @@ sealed class LogEntry {
     @Serializable
     data class RequestLog(
         override val id: Uuid = Uuid.random(),
-        override val timestamp: Long = System.currentTimeMillis(),
+        override val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
         override val tag: String,
         val url: String,
         val method: String,
@@ -38,6 +41,8 @@ sealed class LogEntry {
 object Logging {
     private val recentLogs = arrayListOf<LogEntry>()
 
+    private val lock = reentrantLock()
+
     fun log(tag: String, message: String) {
         addLog(LogEntry.TextLog(tag = tag, message = message))
     }
@@ -47,7 +52,7 @@ object Logging {
     }
 
     private fun addLog(entry: LogEntry) {
-        synchronized(recentLogs) {
+        lock.withLock {
             recentLogs.add(0, entry)
             if (recentLogs.size > MAX_RECENT_LOGS) {
                 recentLogs.removeLastOrNull()
@@ -56,25 +61,25 @@ object Logging {
     }
 
     fun getRecentLogs(): List<LogEntry> {
-        synchronized(recentLogs) {
+        lock.withLock {
             return recentLogs.toList()
         }
     }
 
     fun getTextLogs(): List<LogEntry.TextLog> {
-        synchronized(recentLogs) {
+        lock.withLock {
             return recentLogs.filterIsInstance<LogEntry.TextLog>()
         }
     }
 
     fun getRequestLogs(): List<LogEntry.RequestLog> {
-        synchronized(recentLogs) {
+        lock.withLock {
             return recentLogs.filterIsInstance<LogEntry.RequestLog>()
         }
     }
 
     fun clear() {
-        synchronized(recentLogs) {
+        lock.withLock {
             recentLogs.clear()
         }
     }

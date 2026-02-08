@@ -20,6 +20,8 @@ import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.PlatformContext
 import me.rerere.common.utils.toUri
+import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
@@ -27,7 +29,9 @@ import me.rerere.rikkahub.utils.createChatFilesByContents
 import me.rerere.rikkahub.utils.getFileMimeType
 import me.rerere.rikkahub.utils.getFileNameFromUri
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.photo
+import rikkahub.composeapp.generated.resources.upload_file
 
 @Composable
 internal actual fun ImagePickButton(onAddImages: (List<Uri>) -> Unit) {
@@ -110,7 +114,7 @@ actual fun FilePickButton(onAddFiles: (List<UIMessagePart.Document>) -> Unit) {
                 val fileName = context.getFileNameFromUri(uri) ?: "file"
                 val mime = context.getFileMimeType(uri) ?: "text/plain"
                 val fileExtRegex = Regex(
-                    """\.(txt|md|csv|json|js|html|css|xml|py|java|kt|ts|tsx|markdown|mdx|yml|yaml)$""",
+                    """\.(txt|md|csv|json|js|html|css|xml|py|java|kt|ts|tsx|md|markdown|mdx|yml|yaml)$""",
                     RegexOption.IGNORE_CASE
                 )
 
@@ -162,11 +166,18 @@ internal actual fun provideDialogProperties(): DialogProperties {
 
 internal actual fun createImageReceiveListener(
     state: ChatInputState,
-    context: PlatformContext
+    context: PlatformContext,
+    filesManager: FilesManager,
+    settings: Settings
 ): ReceiveContentListener {
     return ReceiveContentListener { it }
 }
 
 internal actual fun Modifier.platformContentReceiver(listener: ReceiveContentListener): Modifier {
     return this
+}
+
+@Composable
+actual fun AudioPickButton(onAddAudios: (List<Uri>) -> Unit) {
+    // todo
 }

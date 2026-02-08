@@ -1,7 +1,9 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,7 +19,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -29,15 +30,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.BadgeInfo
-import com.composables.icons.lucide.Bot
+import com.composables.icons.lucide.BookOpen
 import com.composables.icons.lucide.Boxes
 import com.composables.icons.lucide.Database
+import com.composables.icons.lucide.Drama
 import com.composables.icons.lucide.Earth
 import com.composables.icons.lucide.Hammer
 import com.composables.icons.lucide.HardDrive
@@ -46,25 +47,27 @@ import com.composables.icons.lucide.Library
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MessageCircleWarning
 import com.composables.icons.lucide.Monitor
-import com.composables.icons.lucide.Palette
 import com.composables.icons.lucide.ScrollText
 import com.composables.icons.lucide.Share2
 import com.composables.icons.lucide.SunMoon
 import com.composables.icons.lucide.Terminal
 import com.composables.icons.lucide.Volume2
-import com.composables.icons.lucide.FolderOpen
+import me.rerere.common.PlatformContext
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.isNotConfigured
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.Select
+import me.rerere.rikkahub.ui.components.ui.icons.DiscordIcon
+import me.rerere.rikkahub.ui.components.ui.icons.TencentQQIcon
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.hooks.rememberColorMode
-import me.rerere.rikkahub.ui.pages.setting.components.PresetThemeButtonGroup
 import me.rerere.rikkahub.ui.theme.ColorMode
-import me.rerere.rikkahub.utils.countChatFiles
+import me.rerere.rikkahub.utils.joinQQGroup
 import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.plus
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import rikkahub.composeapp.generated.resources.*
 
@@ -73,18 +76,19 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val navController = LocalNavController.current
     val settings by vm.settings.collectAsStateWithLifecycle()
+    val filesManager: FilesManager = koinInject()
     Scaffold(
         topBar = {
             LargeTopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.settings))
+                    Text(text = stringResource(Res.string.settings))
                 },
                 navigationIcon = {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    if(settings.developerMode) {
+                    if (settings.developerMode) {
                         IconButton(
                             onClick = {
                                 navController.navigate(Screen.Developer)
@@ -110,7 +114,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
 
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_general_settings),
+                    text = stringResource(Res.string.setting_page_general_settings),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
@@ -121,7 +125,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                 var colorMode by rememberColorMode()
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(R.string.setting_page_color_mode))
+                        Text(stringResource(Res.string.setting_page_color_mode))
                     },
                     leadingContent = {
                         Icon(Lucide.SunMoon, null)
@@ -141,9 +145,9 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                             },
                             optionToString = {
                                 when (it) {
-                                    ColorMode.SYSTEM -> stringResource(R.string.setting_page_color_mode_system)
-                                    ColorMode.LIGHT -> stringResource(R.string.setting_page_color_mode_light)
-                                    ColorMode.DARK -> stringResource(R.string.setting_page_color_mode_dark)
+                                    ColorMode.SYSTEM -> stringResource(Res.string.setting_page_color_mode_system)
+                                    ColorMode.LIGHT -> stringResource(Res.string.setting_page_color_mode_light)
+                                    ColorMode.DARK -> stringResource(Res.string.setting_page_color_mode_dark)
                                 }
                             },
                             modifier = Modifier.width(150.dp)
@@ -156,8 +160,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_display_setting)) },
-                    description = { Text(stringResource(R.string.setting_page_display_setting_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_display_setting)) },
+                    description = { Text(stringResource(Res.string.setting_page_display_setting_desc)) },
                     icon = { Icon(Lucide.Monitor, "Display Setting") },
                     link = Screen.SettingDisplay
                 )
@@ -173,9 +177,19 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                 )
             }
 
+            item {
+                SettingItem(
+                    navController = navController,
+                    title = { Text(stringResource(Res.string.setting_page_prompts_title)) },
+                    description = { Text(stringResource(Res.string.setting_page_prompts_desc)) },
+                    icon = { Icon(Lucide.BookOpen, "Prompts") },
+                    link = Screen.Prompts
+                )
+            }
+
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_model_and_services),
+                    text = stringResource(Res.string.setting_page_model_and_services),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
@@ -185,9 +199,9 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_default_model)) },
-                    description = { Text(stringResource(R.string.setting_page_default_model_desc)) },
-                    icon = { Icon(Lucide.Hammer, stringResource(R.string.setting_page_default_model)) },
+                    title = { Text(stringResource(Res.string.setting_page_default_model)) },
+                    description = { Text(stringResource(Res.string.setting_page_default_model_desc)) },
+                    icon = { Icon(Lucide.Hammer, stringResource(Res.string.setting_page_default_model)) },
                     link = Screen.SettingModels
                 )
             }
@@ -195,8 +209,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_providers)) },
-                    description = { Text(stringResource(R.string.setting_page_providers_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_providers)) },
+                    description = { Text(stringResource(Res.string.setting_page_providers_desc)) },
                     icon = { Icon(Lucide.Boxes, "Models") },
                     link = Screen.SettingProvider
                 )
@@ -205,8 +219,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_search_service)) },
-                    description = { Text(stringResource(R.string.setting_page_search_service_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_search_service)) },
+                    description = { Text(stringResource(Res.string.setting_page_search_service_desc)) },
                     icon = { Icon(Lucide.Earth, "Search") },
                     link = Screen.SettingSearch
                 )
@@ -215,8 +229,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_tts_service)) },
-                    description = { Text(stringResource(R.string.setting_page_tts_service_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_tts_service)) },
+                    description = { Text(stringResource(Res.string.setting_page_tts_service_desc)) },
                     icon = { Icon(Lucide.Volume2, "TTS") },
                     link = Screen.SettingTTS
                 )
@@ -225,8 +239,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_mcp)) },
-                    description = { Text(stringResource(R.string.setting_page_mcp_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_mcp)) },
+                    description = { Text(stringResource(Res.string.setting_page_mcp_desc)) },
                     icon = { Icon(Lucide.Terminal, "MCP") },
                     link = Screen.SettingMcp
                 )
@@ -234,7 +248,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
 
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_data_settings),
+                    text = stringResource(Res.string.setting_page_data_settings),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
@@ -244,8 +258,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_data_backup)) },
-                    description = { Text(stringResource(R.string.setting_page_data_backup_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_data_backup)) },
+                    description = { Text(stringResource(Res.string.setting_page_data_backup_desc)) },
                     icon = { Icon(Lucide.Database, "Backup") },
                     link = Screen.Backup
                 )
@@ -253,18 +267,18 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
 
             item {
                 val storageState by produceState(-1 to 0L) {
-                    value = context.countChatFiles()
+                    value = filesManager.countChatFiles()
                 }
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_chat_storage)) },
+                    title = { Text(stringResource(Res.string.setting_page_chat_storage)) },
                     description = {
                         if (storageState.first == -1) {
-                            Text(stringResource(R.string.calculating))
+                            Text(stringResource(Res.string.calculating))
                         } else {
                             Text(
                                 stringResource(
-                                    R.string.setting_page_chat_storage_desc,
+                                    Res.string.setting_page_chat_storage_desc,
                                     storageState.first,
                                     storageState.second / 1024 / 1024.0
                                 )
@@ -274,12 +288,13 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                     icon = {
                         Icon(Lucide.HardDrive, "Storage")
                     },
+                    link = Screen.SettingFiles,
                 )
             }
 
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.setting_page_about),
+                    text = stringResource(Res.string.setting_page_about),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
@@ -287,22 +302,53 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             }
 
             item {
+                val context = LocalPlatformContext.current
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_about)) },
-                    description = { Text(stringResource(R.string.setting_page_about_desc)) },
+                    title = { Text(stringResource(Res.string.setting_page_about)) },
+                    description = { Text(stringResource(Res.string.setting_page_about_desc)) },
                     icon = { Icon(Lucide.BadgeInfo, "About") },
-                    link = Screen.SettingAbout
+                    link = Screen.SettingAbout,
+                    trailingContent = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    context.joinQQGroup("wMdqlDETtzIz6o49HrBR2TeQlwcX6RH9")
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = TencentQQIcon,
+                                    contentDescription = "QQ",
+                                    tint = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    context.openUrl("https://discord.gg/9weBqxe5c4")
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = DiscordIcon,
+                                    contentDescription = "Discord",
+                                    tint = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        }
+                    }
                 )
             }
 
             item {
-                val context = LocalContext.current
+                val context = LocalPlatformContext.current
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_documentation)) },
-                    description = { Text(stringResource(R.string.setting_page_documentation_desc)) },
-                    icon = { Icon(Lucide.Library, stringResource(R.string.setting_page_documentation)) },
+                    title = { Text(stringResource(Res.string.setting_page_documentation)) },
+                    description = { Text(stringResource(Res.string.setting_page_documentation_desc)) },
+                    icon = { Icon(Lucide.Library, stringResource(Res.string.setting_page_documentation)) },
                     onClick = {
                         context.openUrl("https://docs.rikka-ai.com/docs/basic/get-started")
                     }
@@ -312,9 +358,19 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             item {
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_donate)) },
+                    title = { Text(stringResource(Res.string.setting_page_request_logs)) },
+                    description = { Text(stringResource(Res.string.setting_page_request_logs_desc)) },
+                    icon = { Icon(Lucide.ScrollText, stringResource(Res.string.setting_page_request_logs)) },
+                    link = Screen.Log
+                )
+            }
+
+            item {
+                SettingItem(
+                    navController = navController,
+                    title = { Text(stringResource(Res.string.setting_page_donate)) },
                     description = {
-                        Text(stringResource(R.string.setting_page_donate_desc))
+                        Text(stringResource(Res.string.setting_page_donate_desc))
                     },
                     icon = {
                         Icon(Lucide.Heart, "Donate")
@@ -324,28 +380,21 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             }
 
             item {
-                val context = LocalContext.current
-                val shareText = stringResource(R.string.setting_page_share_text)
-                val share = stringResource(R.string.setting_page_share)
-                val noShareApp = stringResource(R.string.setting_page_no_share_app)
+                val context = LocalPlatformContext.current
+                val shareText = stringResource(Res.string.setting_page_share_text)
+                val share = stringResource(Res.string.setting_page_share)
+                val noShareApp = stringResource(Res.string.setting_page_no_share_app)
                 SettingItem(
                     navController = navController,
-                    title = { Text(stringResource(R.string.setting_page_share)) },
+                    title = { Text(stringResource(Res.string.setting_page_share)) },
                     description = {
-                        Text(stringResource(R.string.setting_page_share_desc))
+                        Text(stringResource(Res.string.setting_page_share_desc))
                     },
                     icon = {
                         Icon(Lucide.Share2, "Share")
                     },
                     onClick = {
-                        val intent = Intent(Intent.ACTION_SEND)
-                        intent.type = "text/plain"
-                        intent.putExtra(Intent.EXTRA_TEXT, shareText)
-                        try {
-                            context.startActivity(Intent.createChooser(intent, share))
-                        } catch (e: ActivityNotFoundException) {
-                            Toast.makeText(context, noShareApp, Toast.LENGTH_SHORT).show()
-                        }
+                        onShareClick(shareText, context, share, noShareApp)
                     }
                 )
             }
@@ -369,10 +418,10 @@ private fun ProviderConfigWarningCard(navController: NavHostController) {
         ) {
             ListItem(
                 headlineContent = {
-                    Text(stringResource(R.string.setting_page_config_api_title))
+                    Text(stringResource(Res.string.setting_page_config_api_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.setting_page_config_api_desc))
+                    Text(stringResource(Res.string.setting_page_config_api_desc))
                 },
                 leadingContent = {
                     Icon(Lucide.MessageCircleWarning, null)
@@ -387,7 +436,7 @@ private fun ProviderConfigWarningCard(navController: NavHostController) {
                     navController.navigate(Screen.SettingProvider)
                 }
             ) {
-                Text(stringResource(R.string.setting_page_config))
+                Text(stringResource(Res.string.setting_page_config))
             }
         }
     }
@@ -400,6 +449,7 @@ fun SettingItem(
     description: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     link: Screen? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
     onClick: () -> Unit = {}
 ) {
     Surface(
@@ -417,7 +467,15 @@ fun SettingItem(
             },
             leadingContent = {
                 icon()
-            }
+            },
+            trailingContent = trailingContent
         )
     }
 }
+
+internal expect fun onShareClick(
+    shareText: String,
+    context: PlatformContext,
+    share: String,
+    noShareApp: String
+)

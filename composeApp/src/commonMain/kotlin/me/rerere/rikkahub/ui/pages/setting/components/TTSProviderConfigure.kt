@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,7 +62,7 @@ fun TTSProviderConfigure(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -220,7 +222,7 @@ private fun OpenAITTSConfiguration(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = voiceExpanded)
                 }
@@ -323,7 +325,7 @@ private fun MiniMaxTTSConfiguration(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = voiceIdExpanded)
                 }
@@ -364,7 +366,7 @@ private fun MiniMaxTTSConfiguration(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = emotionExpanded)
                 }
@@ -517,8 +519,8 @@ private fun QwenTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -532,8 +534,8 @@ private fun QwenTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -541,14 +543,14 @@ private fun QwenTTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -572,8 +574,8 @@ private fun QwenTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         ExposedDropdownMenuBox(
             expanded = voiceExpanded,
@@ -586,7 +588,7 @@ private fun QwenTTSConfiguration(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = voiceExpanded)
                 }
@@ -627,7 +629,7 @@ private fun QwenTTSConfiguration(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded)
                 }
@@ -657,8 +659,8 @@ private fun GroqTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -672,8 +674,8 @@ private fun GroqTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -681,14 +683,14 @@ private fun GroqTTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -705,8 +707,8 @@ private fun GroqTTSConfiguration(
     val voices = listOf("austin", "natalie", "kailin")
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         ExposedDropdownMenuBox(
             expanded = voiceExpanded,
@@ -719,7 +721,7 @@ private fun GroqTTSConfiguration(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = voiceExpanded)
                 }

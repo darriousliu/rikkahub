@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
@@ -43,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.LinkAnnotation
@@ -63,7 +60,6 @@ import com.composables.icons.lucide.Video
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -399,15 +395,7 @@ private fun MessagePartsBlock(
                     Surface(
                         tonalElevation = 2.dp,
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW)
-                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            intent.data = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                part.url.toUri().toFile()
-                            )
-                            val chooserIndent = Intent.createChooser(intent, null)
-                            context.startActivity(chooserIndent)
+                            openDocument(context, part)
                         },
                         modifier = Modifier,
                         shape = RoundedCornerShape(8.dp),
@@ -422,15 +410,7 @@ private fun MessagePartsBlock(
                     Surface(
                         tonalElevation = 2.dp,
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW)
-                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            intent.data = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                part.url.toUri().toFile()
-                            )
-                            val chooserIndent = Intent.createChooser(intent, null)
-                            context.startActivity(chooserIndent)
+                            openDocument(context, part)
                         },
                         modifier = Modifier,
                         shape = RoundedCornerShape(50),
@@ -466,15 +446,7 @@ private fun MessagePartsBlock(
                     Surface(
                         tonalElevation = 2.dp,
                         onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW)
-                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            intent.data = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.fileprovider",
-                                part.url.toUri().toFile()
-                            )
-                            val chooserIndent = Intent.createChooser(intent, null)
-                            context.startActivity(chooserIndent)
+                            openDocument(context, part)
                         },
                         modifier = Modifier,
                         shape = RoundedCornerShape(50),
@@ -489,7 +461,7 @@ private fun MessagePartsBlock(
                                 when (part.mime) {
                                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> {
                                         Icon(
-                                            painter = painterResource(R.drawable.docx),
+                                            painter = painterResource(Res.drawable.docx),
                                             contentDescription = null,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -497,7 +469,7 @@ private fun MessagePartsBlock(
 
                                     "application/pdf" -> {
                                         Icon(
-                                            painter = painterResource(R.drawable.pdf),
+                                            painter = painterResource(Res.drawable.pdf),
                                             contentDescription = null,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -590,5 +562,5 @@ private fun MessagePartsBlock(
 
 internal expect fun openDocument(
     context: PlatformContext,
-    document: UIMessagePart.Document
+    part: UIMessagePart
 )

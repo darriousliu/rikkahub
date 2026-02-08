@@ -1,16 +1,16 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import android.content.Context
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
-import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.common.PlatformContext
+import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 
 class TransformerContext(
-    val context: Context,
+    val context: PlatformContext,
     val model: Model,
     val assistant: Assistant,
+    val settings: Settings,
 )
 
 interface MessageTransformer {
@@ -57,11 +57,12 @@ interface OutputMessageTransformer : MessageTransformer {
 
 suspend fun List<UIMessage>.transforms(
     transformers: List<MessageTransformer>,
-    context: Context,
+    context: PlatformContext,
     model: Model,
     assistant: Assistant,
+    settings: Settings,
 ): List<UIMessage> {
-    val ctx = TransformerContext(context, model, assistant)
+    val ctx = TransformerContext(context, model, assistant, settings)
     return transformers.fold(this) { acc, transformer ->
         transformer.transform(ctx, acc)
     }
@@ -69,11 +70,12 @@ suspend fun List<UIMessage>.transforms(
 
 suspend fun List<UIMessage>.visualTransforms(
     transformers: List<MessageTransformer>,
-    context: Context,
+    context: PlatformContext,
     model: Model,
     assistant: Assistant,
+    settings: Settings,
 ): List<UIMessage> {
-    val ctx = TransformerContext(context, model, assistant)
+    val ctx = TransformerContext(context, model, assistant, settings)
     return transformers.fold(this) { acc, transformer ->
         if (transformer is OutputMessageTransformer) {
             transformer.visualTransform(ctx, acc)
@@ -85,11 +87,12 @@ suspend fun List<UIMessage>.visualTransforms(
 
 suspend fun List<UIMessage>.onGenerationFinish(
     transformers: List<MessageTransformer>,
-    context: Context,
+    context: PlatformContext,
     model: Model,
     assistant: Assistant,
+    settings: Settings,
 ): List<UIMessage> {
-    val ctx = TransformerContext(context, model, assistant)
+    val ctx = TransformerContext(context, model, assistant, settings)
     return transformers.fold(this) { acc, transformer ->
         if (transformer is OutputMessageTransformer) {
             transformer.onGenerationFinish(ctx, acc)

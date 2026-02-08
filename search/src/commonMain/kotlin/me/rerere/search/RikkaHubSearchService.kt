@@ -1,8 +1,19 @@
 package me.rerere.search
 
-import android.util.Log
 import androidx.compose.runtime.Composable
+import co.touchlab.kermit.Logger
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -14,8 +25,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "RikkaHubSearchService"
 
@@ -54,18 +63,20 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
                 put("includeImages", JsonPrimitive("false"))
             }
 
-            val request = Request.Builder()
-                .url("https://api.rikka-ai.com/v1/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
+            val request = HttpRequestBuilder().apply {
+                url("https://api.rikka-ai.com/v1/search")
+                header("Authorization", "Bearer ${serviceOptions.apiKey}")
+                header("Content-Type", "application/json")
+                method = HttpMethod.Post
+                contentType(ContentType.Application.Json)
+                setBody(body.toString())
+            }
 
-            Log.i(TAG, "search: $query")
+            Logger.i(TAG) { "search: $query" }
 
-            val response = httpClient.newCall(request).await()
-            if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+            val response = httpClient.request(request)
+            if (response.status.isSuccess()) {
+                val responseBody = response.bodyAsText().let {
                     json.decodeFromString<RikkaHubSearchResponse>(it)
                 }
 
@@ -82,7 +93,7 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.status.value}: ${response.bodyAsText()}")
             }
         }
     }

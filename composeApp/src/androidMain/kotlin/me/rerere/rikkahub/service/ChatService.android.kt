@@ -1,44 +1,13 @@
 package me.rerere.rikkahub.service
 
-import android.Manifest
 import android.app.PendingIntent
 import android.content.Intent
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import me.rerere.common.PlatformContext
-import me.rerere.rikkahub.CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.RouteActivity
-import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.utils.NotificationConfig
+import me.rerere.rikkahub.utils.android
 import kotlin.uuid.Uuid
-
-internal actual suspend fun sendGenerationDoneNotification(
-    conversation: Conversation,
-    context: PlatformContext,
-    conversationId: Uuid
-) {
-    val notification =
-        NotificationCompat.Builder(context, CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.notification_chat_done_title))
-            .setContentText(conversation.currentMessages.lastOrNull()?.toText()?.take(50) ?: "")
-            .setSmallIcon(R.drawable.small_icon)
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setAutoCancel(true)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setContentIntent(getPendingIntent(context, conversationId))
-
-    if (ActivityCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS
-        ) != PackageManager.PERMISSION_GRANTED
-    ) {
-        return
-    }
-    NotificationManagerCompat.from(context).notify(1, notification.build())
-}
 
 private fun getPendingIntent(
     context: PlatformContext,
@@ -56,3 +25,25 @@ private fun getPendingIntent(
     )
 }
 
+actual fun NotificationConfig.platformMessageCompleteConfigure(
+    context: PlatformContext,
+    conversationId: Uuid
+) {
+    android {
+        category = NotificationCompat.CATEGORY_MESSAGE
+        contentIntent = getPendingIntent(context, conversationId)
+    }
+}
+
+actual fun NotificationConfig.platformMessageUpdateConfigure(
+    context: PlatformContext,
+    conversationId: Uuid,
+    chipText: String
+) {
+    android {
+        category = NotificationCompat.CATEGORY_PROGRESS
+        contentIntent = getPendingIntent(context, conversationId)
+        requestPromotedOngoing = true
+        shortCriticalText = chipText
+    }
+}

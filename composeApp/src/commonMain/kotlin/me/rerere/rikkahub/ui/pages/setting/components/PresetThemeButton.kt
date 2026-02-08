@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.composables.icons.lucide.Check
@@ -36,7 +37,6 @@ import com.composables.icons.lucide.Lucide
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.PresetTheme
 import me.rerere.rikkahub.ui.theme.PresetThemes
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun PresetThemeButton(

@@ -4,15 +4,8 @@ import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.sse.SSE
-import io.modelcontextprotocol.kotlin.sdk.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.Implementation
-import io.modelcontextprotocol.kotlin.sdk.Tool
-import android.util.Log
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.sse.*
+import io.ktor.client.plugins.sse.SSE
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.util.StringValues
 import io.modelcontextprotocol.kotlin.sdk.client.Client
@@ -58,7 +51,7 @@ class McpManager(
     private val settingsStore: SettingsStore,
     private val appScope: AppScope,
 ) {
-    private val okHttpClient = HttpClient {
+    private val client = HttpClient {
         install(SSE)
         install(HttpTimeout) {
             requestTimeoutMillis = 10.minutes.inWholeMilliseconds
@@ -69,19 +62,12 @@ class McpManager(
             checkHttpMethod = true
             allowHttpsDowngrade = true
         }
-    }
-
-    private val client = HttpClient(OkHttp) {
-        engine {
-            preconfigured = okHttpClient
-        }
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
                 isLenient = true
             })
         }
-        install(SSE)
     }
 
     private val clients: MutableMap<McpServerConfig, Client> = mutableMapOf()
@@ -205,7 +191,7 @@ class McpManager(
 
         // 注册 transport 回调以支持自动重连
         transport.onClose {
-            Log.i(TAG, "Transport closed for ${config.commonOptions.name}")
+            Logger.i(TAG) { "Transport closed for ${config.commonOptions.name}" }
             val currentStatus = syncingStatus.value[config.id]
             // 只有在已连接状态下才触发重连，避免正常关闭时重连
             if (currentStatus == McpStatus.Connected) {
@@ -214,7 +200,7 @@ class McpManager(
         }
 
         transport.onError { error ->
-            Log.e(TAG, "Transport error for ${config.commonOptions.name}: ${error.message}")
+            Logger.e(TAG) { "Transport error for ${config.commonOptions.name}: ${error.message}" }
             val currentStatus = syncingStatus.value[config.id]
             // 只有在已连接状态下才触发重连
             if (currentStatus == McpStatus.Connected) {
@@ -332,7 +318,7 @@ class McpManager(
         val currentAttempt = (reconnectAttempts[configId] ?: 0) + 1
 
         if (currentAttempt > MAX_RECONNECT_ATTEMPTS) {
-            Log.w(TAG, "Max reconnect attempts reached for ${config.commonOptions.name}")
+            Logger.w(TAG) { "Max reconnect attempts reached for ${config.commonOptions.name}" }
             appScope.launch {
                 setStatus(config, McpStatus.Error("连接断开，已达最大重连次数"))
             }
@@ -346,7 +332,7 @@ class McpManager(
 
         // 计算指数退避延迟
         val delayMs = calculateBackoffDelay(currentAttempt)
-        Log.i(TAG, "Scheduling reconnect for ${config.commonOptions.name}, attempt $currentAttempt/$MAX_RECONNECT_ATTEMPTS, delay ${delayMs}ms")
+        Logger.i(TAG) { "Scheduling reconnect for ${config.commonOptions.name}, attempt $currentAttempt/$MAX_RECONNECT_ATTEMPTS, delay ${delayMs}ms" }
 
         reconnectJobs[configId] = appScope.launch {
             try {
@@ -358,17 +344,17 @@ class McpManager(
                     .find { it.id == configId && it.commonOptions.enable }
 
                 if (currentConfig == null) {
-                    Log.i(TAG, "Config disabled or removed, cancelling reconnect for ${config.commonOptions.name}")
+                    Logger.i(TAG) { "Config disabled or removed, cancelling reconnect for ${config.commonOptions.name}" }
                     return@launch
                 }
 
-                Log.i(TAG, "Attempting reconnect for ${config.commonOptions.name}")
+                Logger.i(TAG) { "Attempting reconnect for ${config.commonOptions.name}" }
                 reconnectClient(currentConfig)
             } catch (e: CancellationException) {
-                Log.i(TAG, "Reconnect cancelled for ${config.commonOptions.name}")
+                Logger.i(TAG) { "Reconnect cancelled for ${config.commonOptions.name}" }
                 throw e
             } catch (e: Exception) {
-                Log.e(TAG, "Reconnect failed for ${config.commonOptions.name}", e)
+                Logger.e(TAG, e) { "Reconnect failed for ${config.commonOptions.name}" }
                 // 继续尝试重连
                 scheduleReconnect(config)
             }
@@ -404,7 +390,7 @@ class McpManager(
 
         // 注册回调
         transport.onClose {
-            Log.i(TAG, "Transport closed for ${config.commonOptions.name}")
+            Logger.i(TAG) { "Transport closed for ${config.commonOptions.name}" }
             val currentStatus = syncingStatus.value[config.id]
             if (currentStatus == McpStatus.Connected) {
                 scheduleReconnect(config)
@@ -412,7 +398,7 @@ class McpManager(
         }
 
         transport.onError { error ->
-            Log.e(TAG, "Transport error for ${config.commonOptions.name}: ${error.message}")
+            Logger.e(TAG) { "Transport error for ${config.commonOptions.name}: ${error.message}" }
             val currentStatus = syncingStatus.value[config.id]
             if (currentStatus == McpStatus.Connected) {
                 scheduleReconnect(config)
@@ -425,7 +411,7 @@ class McpManager(
         sync(config)
         setStatus(config, McpStatus.Connected)
         reconnectAttempts[config.id] = 0 // 重置重连计数
-        Log.i(TAG, "Reconnected successfully: ${config.commonOptions.name}")
+        Logger.i(TAG) { "Reconnected successfully: ${config.commonOptions.name}" }
     }
 
     private suspend fun setStatus(config: McpServerConfig, status: McpStatus) {

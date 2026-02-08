@@ -14,10 +14,7 @@ import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import org.jetbrains.compose.resources.stringResource
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.silicon_flow_built_in_models
-import rikkahub.composeapp.generated.resources.silicon_flow_description
-import rikkahub.composeapp.generated.resources.silicon_flow_website
+import rikkahub.composeapp.generated.resources.*
 import kotlin.uuid.Uuid
 
 val DEFAULT_AUTO_MODEL_ID = Uuid.parse("b7055fb4-39f9-4042-a88a-0d80ed76cf08")
@@ -31,7 +28,7 @@ val DEFAULT_PROVIDERS = listOf(
         enabled = true,
         builtIn = true,
         description = {
-            Text(stringResource(R.string.rikkahub_provider_description))
+            Text(stringResource(Res.string.rikkahub_provider_description))
         },
         models = listOf(
             Model(
@@ -135,8 +132,8 @@ val DEFAULT_PROVIDERS = listOf(
         description = {
             MarkdownBlock(
                 content = """
-                    ${stringResource(R.string.silicon_flow_description)}
-                    ${stringResource(R.string.silicon_flow_website)}
+                    ${stringResource(Res.string.silicon_flow_description)}
+                    ${stringResource(Res.string.silicon_flow_website)}
                 """.trimIndent()
             )
         },

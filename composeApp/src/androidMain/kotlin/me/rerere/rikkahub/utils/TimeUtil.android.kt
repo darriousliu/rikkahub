@@ -1,12 +1,21 @@
 package me.rerere.rikkahub.utils
 
-import kotlinx.datetime.*
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.toJavaLocalDate
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toJavaLocalTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.time.temporal.ChronoField
 import java.util.Locale
+import kotlin.time.Instant
+import kotlin.time.toKotlinInstant
 
 actual fun formatLocalizedDate(date: LocalDate): String {
     val javaDate = date.toJavaLocalDate()
@@ -60,4 +69,25 @@ private fun isMonthFirstLocale(locale: Locale): Boolean {
         "CN", // 中国
     )
     return monthFirstCountries.contains(locale.country)
+}
+
+actual fun LocalDateTime.formatLocalizedTime(format: String): String {
+    val javaDate = this.toJavaLocalDateTime()
+    val formatter = DateTimeFormatter.ofPattern(format).withLocale(Locale.getDefault())
+    return formatter.format(javaDate)
+}
+
+actual fun DayOfWeek.localizedName(): String {
+    val javaDow = java.time.DayOfWeek.of(this.isoDayNumber)
+    return javaDow.getDisplayName(TextStyle.FULL, Locale.getDefault())
+}
+
+actual fun parseRFC1123DateTime(dateTime: String): Instant {
+    val zdt = ZonedDateTime.parse(dateTime, DateTimeFormatter.RFC_1123_DATE_TIME)
+    return zdt.toInstant().toKotlinInstant()
+}
+
+actual fun parseRFC850DateTime(dateTime: String): Instant {
+    val zdt = ZonedDateTime.parse(dateTime, DateTimeFormatter.ofPattern("EEEE, dd-MMM-yy HH:mm:ss zzz"))
+    return zdt.toInstant().toKotlinInstant()
 }

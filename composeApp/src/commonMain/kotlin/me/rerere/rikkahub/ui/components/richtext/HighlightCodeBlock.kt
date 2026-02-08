@@ -198,9 +198,9 @@ fun HighlightCodeBlock(
                                 )
                                 Text(
                                     text = if (isExpanded) {
-                                        stringResource(id = R.string.code_block_collapse)
+                                        stringResource(Res.string.code_block_collapse)
                                     } else {
-                                        stringResource(id = R.string.code_block_expand)
+                                        stringResource(Res.string.code_block_expand)
                                     },
                                     fontSize = textStyle.fontSize,
                                     lineHeight = textStyle.lineHeight,

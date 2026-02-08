@@ -209,8 +209,8 @@ fun ColumnScope.ChatMessageActionButtons(
     if (showRegenerateConfirm) {
         AlertDialog(
             onDismissRequest = { showRegenerateConfirm = false },
-            title = { Text(stringResource(R.string.regenerate)) },
-            text = { Text(stringResource(R.string.regenerate_confirm_message)) },
+            title = { Text(stringResource(Res.string.regenerate)) },
+            text = { Text(stringResource(Res.string.regenerate_confirm_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -218,12 +218,12 @@ fun ColumnScope.ChatMessageActionButtons(
                         onRegenerate()
                     }
                 ) {
-                    Text(stringResource(R.string.confirm))
+                    Text(stringResource(Res.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRegenerateConfirm = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             }
         )

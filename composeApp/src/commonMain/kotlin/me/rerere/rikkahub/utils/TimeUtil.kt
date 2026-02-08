@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.utils
 
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -40,3 +41,11 @@ expect fun formatLocalizedDate(date: LocalDate): String
 expect fun formatLocalizedDateTime(dateTime: LocalDateTime): String
 expect fun formatLocalizedTime(dateTime: LocalDateTime): String
 expect fun formatLocalizedDateWithoutYear(date: LocalDate): String
+
+expect fun LocalDateTime.formatLocalizedTime(format: String): String
+
+expect fun DayOfWeek.localizedName(): String
+
+expect fun parseRFC1123DateTime(dateTime: String): Instant
+
+expect fun parseRFC850DateTime(dateTime: String): Instant

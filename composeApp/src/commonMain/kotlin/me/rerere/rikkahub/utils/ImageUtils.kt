@@ -8,6 +8,8 @@ expect fun ImageRequest.Builder.platformAllowHardware(enable: Boolean): ImageReq
 expect object ImageUtils {
     fun getTavernCharacterMeta(context: PlatformContext, uri: String): Result<String>
     fun decodeQRCodeFromUri(context: PlatformContext, uri: String, maxSize: Int = 1024): String?
+
+    fun compressToPng(data: ByteArray): ByteArray
 }
 
 data class ImageInfo(

@@ -21,12 +21,12 @@ import com.composables.icons.lucide.ArrowUp
 import com.composables.icons.lucide.Clock
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Zap
-import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.utils.formatNumber
 import me.rerere.rikkahub.utils.toFixed
-import java.time.Duration
 
 /**
  * 显示消息的技术统计信息（如 token 使用量）
@@ -83,12 +83,12 @@ fun ChatMessageNerdLine(
                     )
                     // TPS
                     if (message.finishedAt != null) {
-                        val duration = Duration.between(
-                            message.createdAt.toJavaLocalDateTime(),
-                            message.finishedAt!!.toJavaLocalDateTime()
-                        )
-                        val tps = usage.completionTokens.toFloat() / duration.toMillis() * 1000
-                        val seconds = (duration.toMillis() / 1000f).toFixed(1)
+                        val timeZone = TimeZone.currentSystemDefault()
+                        val startInstant = message.createdAt.toInstant(timeZone)
+                        val endInstant = message.finishedAt!!.toInstant(timeZone)
+                        val duration = endInstant - startInstant
+                        val tps = usage.completionTokens.toFloat() / duration.inWholeMilliseconds * 1000
+                        val seconds = (duration.inWholeMilliseconds / 1000f).toFixed(1)
                         StatsItem(
                             icon = {
                                 Icon(

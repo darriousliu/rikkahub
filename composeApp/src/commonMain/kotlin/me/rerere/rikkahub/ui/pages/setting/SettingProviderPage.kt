@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -48,12 +45,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.Uri
+import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.GripHorizontal
 import com.composables.icons.lucide.Image
@@ -63,10 +61,13 @@ import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.X
 import com.dokar.sonner.ToastType
-import io.github.g00fy2.quickie.QRResult
-import io.github.g00fy2.quickie.ScanQRCode
+import com.dokar.sonner.ToasterState
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ProviderSetting
-import me.rerere.rikkahub.R
+import me.rerere.common.PlatformContext
+import me.rerere.common.utils.toUri
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
@@ -78,10 +79,29 @@ import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
 import me.rerere.rikkahub.utils.ImageUtils
-import org.koin.androidx.compose.koinViewModel
+import me.rerere.rikkahub.utils.QRCodeResult
+import me.rerere.rikkahub.utils.rememberQRCodeScanner
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.cancel
+import rikkahub.composeapp.generated.resources.setting_provider_page_add
+import rikkahub.composeapp.generated.resources.setting_provider_page_add_provider
+import rikkahub.composeapp.generated.resources.setting_provider_page_disabled
+import rikkahub.composeapp.generated.resources.setting_provider_page_enabled
+import rikkahub.composeapp.generated.resources.setting_provider_page_image_qr_decode_failed
+import rikkahub.composeapp.generated.resources.setting_provider_page_import_dialog_message
+import rikkahub.composeapp.generated.resources.setting_provider_page_import_dialog_title
+import rikkahub.composeapp.generated.resources.setting_provider_page_import_success
+import rikkahub.composeapp.generated.resources.setting_provider_page_model_count
+import rikkahub.composeapp.generated.resources.setting_provider_page_no_qr_found
+import rikkahub.composeapp.generated.resources.setting_provider_page_scan_qr_code
+import rikkahub.composeapp.generated.resources.setting_provider_page_search_providers
+import rikkahub.composeapp.generated.resources.setting_provider_page_select_from_gallery
+import rikkahub.composeapp.generated.resources.setting_provider_page_title
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
-import kotlin.uuid.Uuid
 
 @Composable
 fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
@@ -111,13 +131,13 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.setting_provider_page_title))
+                    Text(text = stringResource(Res.string.setting_provider_page_title))
                 },
                 navigationIcon = {
                     BackButton()
                 },
                 actions = {
-                    if(Locale.getDefault().language == "zh") {
+                    if (Locale.current.language == "zh") {
                         IconButton(
                             onClick = {
                                 val aihubmixIndex = filteredProviders.indexOfFirst {
@@ -163,7 +183,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(stringResource(R.string.setting_provider_page_search_providers)) },
+                placeholder = { Text(stringResource(Res.string.setting_provider_page_search_providers)) },
                 leadingIcon = {
                     Icon(Lucide.Search, contentDescription = null)
                 },
@@ -236,18 +256,23 @@ private fun ImportProviderButton(
     onAdd: (ProviderSetting) -> Unit
 ) {
     val toaster = LocalToaster.current
-    val context = LocalContext.current
+    val context = LocalPlatformContext.current
     var showImportDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
-        handleQRResult(result, onAdd, toaster, context)
+    val scanQrCodeLauncher = rememberQRCodeScanner { result ->
+        scope.launch {
+            handleQRResult(result, onAdd, toaster, context)
+        }
     }
 
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+    val pickImageLauncher = rememberFilePickerLauncher(
+        type = FileKitType.Image
     ) { uri ->
         uri?.let {
-            handleImageQRCode(it, onAdd, toaster, context)
+            scope.launch {
+                handleImageQRCode(it.toUri(context), onAdd, toaster, context)
+            }
         }
     }
 
@@ -264,7 +289,7 @@ private fun ImportProviderButton(
             onDismissRequest = { showImportDialog = false },
             title = {
                 Text(
-                    text = stringResource(R.string.setting_provider_page_import_dialog_title),
+                    text = stringResource(Res.string.setting_provider_page_import_dialog_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
             },
@@ -273,7 +298,7 @@ private fun ImportProviderButton(
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_import_dialog_message),
+                        text = stringResource(Res.string.setting_provider_page_import_dialog_message),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -286,7 +311,7 @@ private fun ImportProviderButton(
                         Button(
                             onClick = {
                                 showImportDialog = false
-                                scanQrCodeLauncher.launch(null)
+                                scanQrCodeLauncher.startScanning()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -305,7 +330,7 @@ private fun ImportProviderButton(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = stringResource(R.string.setting_provider_page_scan_qr_code),
+                                    text = stringResource(Res.string.setting_provider_page_scan_qr_code),
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -315,11 +340,7 @@ private fun ImportProviderButton(
                         OutlinedButton(
                             onClick = {
                                 showImportDialog = false
-                                pickImageLauncher.launch(
-                                    androidx.activity.result.PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
+                                pickImageLauncher.launch()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -338,7 +359,7 @@ private fun ImportProviderButton(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = stringResource(R.string.setting_provider_page_select_from_gallery),
+                                    text = stringResource(Res.string.setting_provider_page_select_from_gallery),
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -353,7 +374,7 @@ private fun ImportProviderButton(
                     shape = MaterialTheme.shapes.large
                 ) {
                     Text(
-                        text = stringResource(R.string.cancel),
+                        text = stringResource(Res.string.cancel),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -362,62 +383,26 @@ private fun ImportProviderButton(
     }
 }
 
-private fun handleQRResult(
-    result: QRResult,
+internal expect suspend fun handleQRResult(
+    result: QRCodeResult,
     onAdd: (ProviderSetting) -> Unit,
-    toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context
-) {
-    runCatching {
-        when (result) {
-            is QRResult.QRError -> {
-                toaster.show(
-                    context.getString(
-                        R.string.setting_provider_page_scan_error,
-                        result
-                    ), type = ToastType.Error
-                )
-            }
+    toaster: ToasterState,
+    context: PlatformContext
+)
 
-            QRResult.QRMissingPermission -> {
-                toaster.show(
-                    context.getString(R.string.setting_provider_page_no_permission),
-                    type = ToastType.Error
-                )
-            }
-
-            is QRResult.QRSuccess -> {
-                val setting = decodeProviderSetting(result.content.rawValue ?: "")
-                onAdd(setting)
-                toaster.show(
-                    context.getString(R.string.setting_provider_page_import_success),
-                    type = ToastType.Success
-                )
-            }
-
-            QRResult.QRUserCanceled -> {}
-        }
-    }.onFailure { error ->
-        toaster.show(
-            context.getString(R.string.setting_provider_page_qr_decode_failed, error.message ?: ""),
-            type = ToastType.Error
-        )
-    }
-}
-
-private fun handleImageQRCode(
+private suspend fun handleImageQRCode(
     uri: Uri,
     onAdd: (ProviderSetting) -> Unit,
-    toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context
+    toaster: ToasterState,
+    context: PlatformContext
 ) {
     runCatching {
         // 使用ImageUtils解析二维码
-        val qrContent = ImageUtils.decodeQRCodeFromUri(context, uri)
+        val qrContent = ImageUtils.decodeQRCodeFromUri(context, uri.toString())
 
         if (qrContent.isNullOrEmpty()) {
             toaster.show(
-                context.getString(R.string.setting_provider_page_no_qr_found),
+                getString(Res.string.setting_provider_page_no_qr_found),
                 type = ToastType.Error
             )
             return
@@ -426,12 +411,12 @@ private fun handleImageQRCode(
         val setting = decodeProviderSetting(qrContent)
         onAdd(setting)
         toaster.show(
-            context.getString(R.string.setting_provider_page_import_success),
+            getString(Res.string.setting_provider_page_import_success),
             type = ToastType.Success
         )
     }.onFailure { error ->
         toaster.show(
-            context.getString(R.string.setting_provider_page_image_qr_decode_failed, error.message ?: ""),
+            getString(Res.string.setting_provider_page_image_qr_decode_failed, error.message ?: ""),
             type = ToastType.Error
         )
     }
@@ -458,7 +443,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                 dialogState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.setting_provider_page_add_provider))
+                Text(stringResource(Res.string.setting_provider_page_add_provider))
             },
             text = {
                 dialogState.currentState?.let {
@@ -473,7 +458,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                         dialogState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.setting_provider_page_add))
+                    Text(stringResource(Res.string.setting_provider_page_add))
                 }
             },
             dismissButton = {
@@ -482,7 +467,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                         dialogState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
         )
@@ -542,12 +527,12 @@ private fun ProviderItem(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Tag(type = if (provider.enabled) TagType.SUCCESS else TagType.WARNING) {
-                        Text(stringResource(if (provider.enabled) R.string.setting_provider_page_enabled else R.string.setting_provider_page_disabled))
+                        Text(stringResource(if (provider.enabled) Res.string.setting_provider_page_enabled else Res.string.setting_provider_page_disabled))
                     }
                     Tag(type = TagType.INFO) {
                         Text(
                             stringResource(
-                                R.string.setting_provider_page_model_count,
+                                Res.string.setting_provider_page_model_count,
                                 provider.models.size
                             )
                         )

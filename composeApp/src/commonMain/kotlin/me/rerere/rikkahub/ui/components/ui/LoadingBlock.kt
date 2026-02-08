@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -26,13 +25,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.tooling.preview.AndroidUiModes.UI_MODE_NIGHT_YES
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import kotlin.math.abs
@@ -145,21 +143,41 @@ private fun GridCell(
         modifier = modifier
             .drawBehind {
                 if (glow && intensity > 0.1f) {
-                    val paint = Paint().asFrameworkPaint().apply {
-                        this.color = activeColor.copy(alpha = intensity * 0.6f).toArgb()
-                        setShadowLayer(
-                            glowRadius, 0f, 0f,
-                            activeColor.copy(alpha = intensity).toArgb()
-                        )
-                    }
-                    drawIntoCanvas { canvas ->
-                        canvas.nativeCanvas.drawRect(
-                            0f, 0f, size.width, size.height, paint
-                        )
-                    }
+                    drawGlow(
+                        color = activeColor,
+                        intensity = intensity,
+                        glowRadius = glowRadius
+                    )
                 }
             }
             .background(color)
+    )
+}
+
+/**
+ * 用多层递增尺寸 + 递减透明度的矩形模拟辉光
+ */
+private fun DrawScope.drawGlow(
+    color: Color,
+    intensity: Float,
+    glowRadius: Float,
+    layers: Int = 3
+) {
+    for (i in layers downTo 1) {
+        val fraction = i.toFloat() / layers
+        val expand = glowRadius * fraction
+        val alpha = (intensity * 0.6f * (1f - fraction + 0.2f)).coerceIn(0f, 1f)
+        drawRect(
+            color = color.copy(alpha = alpha),
+            topLeft = Offset(-expand, -expand),
+            size = Size(size.width + expand * 2, size.height + expand * 2)
+        )
+    }
+    // 最内层：原始区域
+    drawRect(
+        color = color.copy(alpha = intensity * 0.6f),
+        topLeft = Offset.Zero,
+        size = size
     )
 }
 

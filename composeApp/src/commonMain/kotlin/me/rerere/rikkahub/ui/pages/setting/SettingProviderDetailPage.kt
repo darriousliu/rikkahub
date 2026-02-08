@@ -1091,7 +1091,7 @@ private fun ModelPicker(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_avaliable_models),
+                        text = stringResource(Res.string.setting_provider_page_avaliable_models),
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -1110,9 +1110,9 @@ private fun ModelPicker(
                     ) {
                         Text(
                             if (unselectedCount > 0) stringResource(
-                                R.string.setting_provider_page_select_all,
+                                Res.string.setting_provider_page_select_all,
                                 unselectedCount
-                            ) else stringResource(R.string.setting_provider_page_deselect_models)
+                            ) else stringResource(Res.string.setting_provider_page_deselect_models)
                         )
                     }
                 }

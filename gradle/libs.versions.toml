@@ -22,6 +22,7 @@ jetbrainsLifecycle = "2.9.6"
 activityCompose = "1.12.3"
 composeBom = "2026.01.01"
 composeMultiplatform = "1.10.0"
+material3-composeMultiplatform = "1.10.0-alpha05"
 media3 = "1.9.1"
 metadataExtractor = "2.19.0"
 mp_stools = "1.6.0"
@@ -72,13 +73,14 @@ profileinstaller = "1.4.1"
 ktor = "3.4.0"
 sqlite-vector = "0.9.70"
 kermit = "2.0.8"
-ktorfit = "2.6.4"
-okio = "3.16.2"
-atomicfu = "0.29.0"
+ktorfit = "2.7.2"
+okio = "3.16.4"
+atomicfu = "0.31.0"
 buildkonfig = "0.17.1"
 calf = "0.9.0"
 
 [libraries]
+android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
@@ -199,9 +201,18 @@ gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", ve
 gitlive-firebase-config = { module = "dev.gitlive:firebase-config", version.ref = "gitlive-firebase" }
 
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
+
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3-composeMultiplatform" }
+compose-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+compose-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
+compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
+compose-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 
 calf-permissions = { module = "com.mohamedrejeb.calf:calf-permissions", version.ref = "calf" }
+
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [bundles]
 ktor = ["ktor-client-core", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json", "ktor-client-logging"]
@@ -221,3 +232,4 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMul
 ktorfit = { id = "de.jensklingenberg.ktorfit", version.ref = "ktorfit" }
 androidx-room = { id = "androidx.room", version.ref = "room" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
+android-multiplatform = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }

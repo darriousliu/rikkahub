@@ -16,7 +16,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +23,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDeepLink
@@ -52,7 +52,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import me.rerere.highlight.Highlighter
 import me.rerere.highlight.LocalHighlighter
+import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.di.HttpClientType
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalAnimatedVisibilityScope
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -99,12 +101,15 @@ import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import org.koin.compose.getKoin
 import org.koin.compose.koinInject
+import org.koin.core.qualifier.qualifier
+import kotlin.jvm.JvmSuppressWildcards
 import kotlin.reflect.KType
 import kotlin.uuid.Uuid
 
 private const val TAG = "RikkaHubApp"
 
 const val CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID = "chat_completed"
+const val CHAT_LIVE_UPDATE_NOTIFICATION_CHANNEL_ID = "chat_live_update"
 
 @Composable
 fun App(
@@ -119,7 +124,7 @@ fun App(
         ImageLoader.Builder(context)
             .crossfade(true)
             .components {
-                add(KtorNetworkFetcherFactory(koin.get<HttpClient>()))
+                add(KtorNetworkFetcherFactory(koin.get<HttpClient>(qualifier(HttpClientType.Chat))))
                 add(SvgDecoder.Factory(scaleToDensity = true))
             }
             .build()
@@ -156,10 +161,10 @@ fun App(
                         modifier = Modifier
                             .fillMaxSize(),
                         startDestination = Screen.Chat(
-                        id = if (readBooleanPreference("create_new_conversation_on_start", true)) {
+                        id = if (context.readBooleanPreference("create_new_conversation_on_start", true)) {
                             Uuid.random().toString()
                         } else {
-                            readStringPreference(
+                            context.readStringPreference(
                                 "lastConversationId",
                                 Uuid.random().toString()
                             ) ?: Uuid.random().toString()
@@ -384,107 +389,11 @@ inline fun <reified T : Any> NavGraphBuilder.composableWrapper(
     )
 }
 
-sealed interface Screen {
-    @Serializable
-    data class Chat(val id: String, val text: String? = null, val files: List<String> = emptyList()) : Screen
 
-    @Serializable
-    data class ShareHandler(val text: String, val streamUri: String? = null) : Screen
-
-    @Serializable
-    data object History : Screen
-
-    @Serializable
-    data object Assistant : Screen
-
-    @Serializable
-    data class AssistantDetail(val id: String) : Screen
-
-    @Serializable
-    data class AssistantBasic(val id: String) : Screen
-
-    @Serializable
-    data class AssistantPrompt(val id: String) : Screen
-
-    @Serializable
-    data class AssistantMemory(val id: String) : Screen
-
-    @Serializable
-    data class AssistantRequest(val id: String) : Screen
-
-    @Serializable
-    data class AssistantMcp(val id: String) : Screen
-
-    @Serializable
-    data class AssistantLocalTool(val id: String) : Screen
-
-    @Serializable
-    data class AssistantInjections(val id: String) : Screen
-
-    @Serializable
-    data object Menu : Screen
-
-    @Serializable
-    data object Translator : Screen
-
-    @Serializable
-    data object Setting : Screen
-
-    @Serializable
-    data object Backup : Screen
-
-    @Serializable
-    data object ImageGen : Screen
-
-    @Serializable
-    data class WebView(val url: String = "", val content: String = "") : Screen
-
-    @Serializable
-    data object SettingDisplay : Screen
-
-    @Serializable
-    data object SettingProvider : Screen
-
-    @Serializable
-    data class SettingProviderDetail(val providerId: String) : Screen
-
-    @Serializable
-    data object SettingModels : Screen
-
-    @Serializable
-    data object SettingAbout : Screen
-
-    @Serializable
-    data object SettingSearch : Screen
-
-    @Serializable
-    data object SettingTTS : Screen
-
-    @Serializable
-    data object SettingMcp : Screen
-
-    @Serializable
-    data object SettingDonate : Screen
-
-    @Serializable
-    data object SettingFiles : Screen
-
-    @Serializable
-    data object Developer : Screen
-
-    @Serializable
-    data object Debug : Screen
-
-    @Serializable
-    data object Log : Screen
-
-    @Serializable
-    data object Prompts : Screen
-}
 
 class AppScope : CoroutineScope by CoroutineScope(
     SupervisorJob()
-        + Dispatchers.Default
+        + Dispatchers.Main
         + CoroutineName("AppScope")
         + CoroutineExceptionHandler { _, e ->
         Logger.e(TAG, e) { "AppScope exception" }

@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +12,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -39,21 +35,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Pencil
-import me.rerere.rikkahub.data.files.FilesManager
-import coil3.compose.LocalPlatformContext
 import coil3.toUri
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.ui.hooks.rememberAvatarShape
-import me.rerere.rikkahub.utils.createChatFilesByContents
 import org.jetbrains.compose.resources.stringResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import rikkahub.composeapp.generated.resources.*
 import org.koin.compose.koinInject
+import rikkahub.composeapp.generated.resources.*
 
 @Composable
 fun TextAvatar(
@@ -166,7 +157,7 @@ fun UIAvatar(
                 showPickOption = false
             },
             title = {
-                Text(text = stringResource(id = R.string.avatar_change_avatar))
+                Text(text = stringResource(Res.string.avatar_change_avatar))
             },
             text = {
                 Column(
@@ -175,11 +166,11 @@ fun UIAvatar(
                     Button(
                         onClick = {
                             showPickOption = false
-                            imagePickerLauncher.launch("image/*")
+                            imagePickerLauncher.launch()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_pick_image))
+                        Text(text = stringResource(Res.string.avatar_pick_image))
                     }
                     Button(
                         onClick = {
@@ -188,7 +179,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_pick_emoji))
+                        Text(text = stringResource(Res.string.avatar_pick_emoji))
                     }
                     Button(
                         onClick = {
@@ -198,7 +189,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_input_url))
+                        Text(text = stringResource(Res.string.avatar_input_url))
                     }
                     Button(
                         onClick = {
@@ -207,7 +198,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_reset))
+                        Text(text = stringResource(Res.string.avatar_reset))
                     }
                 }
             },
@@ -217,7 +208,7 @@ fun UIAvatar(
                         showPickOption = false
                     }
                 ) {
-                    Text(stringResource(id = R.string.avatar_cancel))
+                    Text(stringResource(Res.string.avatar_cancel))
                 }
             }
         )
@@ -249,13 +240,13 @@ fun UIAvatar(
                 showUrlInput = false
             },
             title = {
-                Text(text = stringResource(id = R.string.avatar_url_dialog_title))
+                Text(text = stringResource(Res.string.avatar_url_dialog_title))
             },
             text = {
                 OutlinedTextField(
                     value = urlInput,
                     onValueChange = { urlInput = it },
-                    label = { Text(stringResource(id = R.string.avatar_url_hint)) },
+                    label = { Text(stringResource(Res.string.avatar_url_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -269,7 +260,7 @@ fun UIAvatar(
                         }
                     }
                 ) {
-                    Text(stringResource(id = R.string.avatar_url_confirm))
+                    Text(stringResource(Res.string.avatar_url_confirm))
                 }
             },
             dismissButton = {
@@ -278,7 +269,7 @@ fun UIAvatar(
                         showUrlInput = false
                     }
                 ) {
-                    Text(stringResource(id = R.string.avatar_cancel))
+                    Text(stringResource(Res.string.avatar_cancel))
                 }
             }
         )

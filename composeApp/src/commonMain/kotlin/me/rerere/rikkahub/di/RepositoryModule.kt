@@ -5,11 +5,12 @@ import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FilesRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import org.koin.core.qualifier.qualifier
 import org.koin.dsl.module
 
 val repositoryModule = module {
     single {
-        ConversationRepository(get(), get(), get(), get())
+        ConversationRepository(get(), get(), get(), get(), get())
     }
 
     single {
@@ -25,6 +26,6 @@ val repositoryModule = module {
     }
 
     single {
-        FilesManager(get(), get())
+        FilesManager(get(), get(), get(qualifier(HttpClientType.Normal)))
     }
 }
