@@ -25,12 +25,8 @@ actual fun PlatformContext.joinQQGroup(key: String?): Boolean {
     val urlString =
         "mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D$key"
     val url = NSURL(string = urlString)
-    return if (UIApplication.sharedApplication.canOpenURL(url)) {
-        UIApplication.sharedApplication.openURL(url)
-        true
-    } else {
-        false
-    }
+    UIApplication.sharedApplication.openURL(url, options = emptyMap<Any?, Any>(), completionHandler = null)
+    return true
 }
 
 actual fun PlatformContext.writeClipboardText(text: String) {
@@ -46,7 +42,7 @@ actual fun PlatformContext.openUrl(url: String) {
     Logger.i(TAG) { "openUrl: $url" }
     runCatching {
         val nsUrl = NSURL(string = url)
-        UIApplication.sharedApplication.openURL(nsUrl)
+        UIApplication.sharedApplication.openURL(nsUrl, options = emptyMap<Any?, Any>(), completionHandler = null)
     }.onFailure {
         Logger.e(TAG, it) { "Failed to open URL: $url" }
     }
