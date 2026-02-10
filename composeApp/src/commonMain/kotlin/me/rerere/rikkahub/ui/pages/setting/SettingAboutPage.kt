@@ -43,6 +43,7 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Phone
 import me.rerere.common.utils.DEVICE_MANUFACTURER
 import me.rerere.common.utils.DEVICE_MODEL
+import me.rerere.common.utils.OS_NAME
 import me.rerere.common.utils.OS_VERSION
 import me.rerere.common.utils.SDK_VERSION
 import me.rerere.rikkahub.Screen
@@ -169,7 +170,7 @@ fun SettingAboutPage() {
                         },
                         supportingContent = {
                             Text(
-                                text = "$DEVICE_MANUFACTURER $DEVICE_MODEL / Android $OS_VERSION / SDK $SDK_VERSION",
+                                text = "$DEVICE_MANUFACTURER $DEVICE_MODEL / $OS_NAME $OS_VERSION / SDK $SDK_VERSION",
                             )
                         },
                         leadingContent = {

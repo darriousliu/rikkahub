@@ -100,7 +100,25 @@ import me.rerere.rikkahub.utils.toLocalString
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.chat_message_tool_call_generic
+import rikkahub.composeapp.generated.resources.chat_message_tool_create_memory
+import rikkahub.composeapp.generated.resources.chat_message_tool_delete_memory
+import rikkahub.composeapp.generated.resources.chat_message_tool_edit_memory
+import rikkahub.composeapp.generated.resources.chat_message_tool_scrape_web
+import rikkahub.composeapp.generated.resources.chat_message_tool_search_web
+import rikkahub.composeapp.generated.resources.chat_page_export_format
+import rikkahub.composeapp.generated.resources.chat_page_export_image
+import rikkahub.composeapp.generated.resources.chat_page_export_image_desc
+import rikkahub.composeapp.generated.resources.chat_page_export_image_expand_reasoning
+import rikkahub.composeapp.generated.resources.chat_page_export_markdown
+import rikkahub.composeapp.generated.resources.chat_page_export_markdown_desc
+import rikkahub.composeapp.generated.resources.chat_page_export_success
+import rikkahub.composeapp.generated.resources.deep_thinking
+import rikkahub.composeapp.generated.resources.deepthink
+import rikkahub.composeapp.generated.resources.export_image_warning
+import rikkahub.composeapp.generated.resources.ic_launcher_foreground
+import rikkahub.composeapp.generated.resources.mermaid_export
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -489,19 +507,19 @@ private fun ExportedChatMessage(
                                 }
                             }
 
-                    is UIMessagePart.Image -> {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(part.url)
-                                .platformAllowHardware(false)
-                                .crossfade(false)
-                                .build(),
-                            contentDescription = "Image",
-                            modifier = Modifier
-                                .sizeIn(maxHeight = 300.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                        )
-                    }
+                            is UIMessagePart.Image -> {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(part.url)
+                                        .platformAllowHardware(false)
+                                        .crossfade(false)
+                                        .build(),
+                                    contentDescription = "Image",
+                                    modifier = Modifier
+                                        .sizeIn(maxHeight = 300.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
+                                )
+                            }
 
                             else -> {
                                 // Other parts are not rendered in image export for now

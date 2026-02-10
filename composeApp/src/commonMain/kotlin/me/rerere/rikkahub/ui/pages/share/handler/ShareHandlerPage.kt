@@ -1,9 +1,20 @@
 package me.rerere.rikkahub.ui.pages.share.handler
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -21,7 +32,9 @@ import me.rerere.rikkahub.utils.plus
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.assistant_page_default_assistant
+import rikkahub.composeapp.generated.resources.share_handler_page_title
 
 @Composable
 fun ShareHandlerPage(text: String, image: String?) {

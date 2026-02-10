@@ -16,6 +16,8 @@ actual const val DEVICE_MANUFACTURER: String = "Apple"
 
 actual val DEVICE_MODEL: String = UIDevice.currentDevice.modelName
 
+actual const val OS_NAME: String = "iOS"
+
 actual val OS_VERSION: String = "iOS ${UIDevice.currentDevice.systemVersion}"
 
 actual val SDK_VERSION: String = ""

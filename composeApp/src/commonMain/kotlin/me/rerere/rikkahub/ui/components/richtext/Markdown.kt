@@ -501,7 +501,7 @@ private fun MarkdownNode(
             MathInline(
                 formula,
                 modifier = modifier
-                    .padding(1.dp)
+                    .padding(horizontal = 1.dp)
             )
         }
 
@@ -946,7 +946,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                 val domain = linkText.substringAfter("citation,")
                 val id = linkDest
                 if (id.length == 6) {
-                    inlineContents.put(
+                    inlineContents.putIfAbsent(
                         "citation:$linkDest", InlineTextContent(
                             placeholder = Placeholder(
                                 width = (domain.length * 7).sp,

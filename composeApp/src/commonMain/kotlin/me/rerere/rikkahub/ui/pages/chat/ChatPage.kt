@@ -40,20 +40,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.Uri
-import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.List
 import com.composables.icons.lucide.ListTree
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.MessageCirclePlus
-import com.composables.icons.lucide.Option
-import com.composables.icons.lucide.Sparkles
 import com.composables.icons.lucide.X
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -62,9 +58,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.ChatInput
-import me.rerere.ai.core.MessageRole
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.context.LocalTTSState
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
@@ -75,7 +69,13 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.assistant_page_default_assistant
+import rikkahub.composeapp.generated.resources.chat_page_cancel
+import rikkahub.composeapp.generated.resources.chat_page_edit_title
+import rikkahub.composeapp.generated.resources.chat_page_edit_title_warning
+import rikkahub.composeapp.generated.resources.chat_page_new_chat
+import rikkahub.composeapp.generated.resources.chat_page_save
 import kotlin.uuid.Uuid
 
 @Composable
@@ -87,8 +87,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>) {
     )
     val filesManager: FilesManager = koinInject()
     val navController = LocalNavController.current
-    val toaster = LocalToaster.current
-    val context = LocalPlatformContext.current
     val scope = rememberCoroutineScope()
 
     val setting by vm.settings.collectAsStateWithLifecycle()

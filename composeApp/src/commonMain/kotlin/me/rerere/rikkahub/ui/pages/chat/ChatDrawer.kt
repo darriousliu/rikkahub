@@ -34,7 +34,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,7 +41,6 @@ import androidx.navigation.NavHostController
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Drama
-import com.composables.icons.lucide.Download
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Pencil
 import com.composables.icons.lucide.Settings
@@ -50,7 +48,6 @@ import com.composables.icons.lucide.Sparkles
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
@@ -60,7 +57,6 @@ import me.rerere.rikkahub.ui.components.ui.Greeting
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.components.ui.UpdateCard
-import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
@@ -70,9 +66,18 @@ import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.toDp
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import rikkahub.composeapp.generated.resources.*
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.assistant_page_current_assistant
+import rikkahub.composeapp.generated.resources.assistant_page_default_assistant
+import rikkahub.composeapp.generated.resources.assistant_page_title
+import rikkahub.composeapp.generated.resources.chat_page_cancel
+import rikkahub.composeapp.generated.resources.chat_page_edit_nickname
+import rikkahub.composeapp.generated.resources.chat_page_move_to_assistant
+import rikkahub.composeapp.generated.resources.chat_page_nickname_placeholder
+import rikkahub.composeapp.generated.resources.chat_page_save
+import rikkahub.composeapp.generated.resources.menu
+import rikkahub.composeapp.generated.resources.settings
+import rikkahub.composeapp.generated.resources.user_default_name
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalMaterial3Api::class)

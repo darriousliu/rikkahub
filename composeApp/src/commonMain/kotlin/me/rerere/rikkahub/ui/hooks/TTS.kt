@@ -38,7 +38,7 @@ fun rememberCustomTtsState(): CustomTtsState {
     // Remember the CustomTtsState instance across recompositions
     val ttsState = remember {
         CustomTtsStateImpl(
-            context = context,
+            context = context.applicationContext,
             settingsStore = settingsStore
         )
     }
@@ -170,3 +170,5 @@ private class CustomTtsStateImpl(
         currentJob = null
     }
 }
+
+internal expect val PlatformContext.applicationContext: PlatformContext

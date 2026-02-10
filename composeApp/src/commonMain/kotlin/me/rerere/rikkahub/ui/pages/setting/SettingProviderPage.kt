@@ -83,9 +83,25 @@ import me.rerere.rikkahub.utils.rememberQRCodeScanner
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import rikkahub.composeapp.generated.resources.*
+import rikkahub.composeapp.generated.resources.Res
+import rikkahub.composeapp.generated.resources.cancel
+import rikkahub.composeapp.generated.resources.setting_provider_page_add
+import rikkahub.composeapp.generated.resources.setting_provider_page_add_provider
+import rikkahub.composeapp.generated.resources.setting_provider_page_disabled
+import rikkahub.composeapp.generated.resources.setting_provider_page_enabled
+import rikkahub.composeapp.generated.resources.setting_provider_page_image_qr_decode_failed
+import rikkahub.composeapp.generated.resources.setting_provider_page_import_dialog_message
+import rikkahub.composeapp.generated.resources.setting_provider_page_import_dialog_title
+import rikkahub.composeapp.generated.resources.setting_provider_page_import_success
+import rikkahub.composeapp.generated.resources.setting_provider_page_model_count
+import rikkahub.composeapp.generated.resources.setting_provider_page_no_qr_found
+import rikkahub.composeapp.generated.resources.setting_provider_page_scan_qr_code
+import rikkahub.composeapp.generated.resources.setting_provider_page_search_providers
+import rikkahub.composeapp.generated.resources.setting_provider_page_select_from_gallery
+import rikkahub.composeapp.generated.resources.setting_provider_page_title
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
+import kotlin.uuid.Uuid
 
 @Composable
 fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
@@ -140,7 +156,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                     ImportProviderButton {
                         vm.updateSettings(
                             settings.copy(
-                                providers = listOf(it) + settings.providers
+                                providers = listOf(it.copyProvider(Uuid.random())) + settings.providers
                             )
                         )
                     }
