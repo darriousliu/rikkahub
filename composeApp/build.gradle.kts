@@ -80,9 +80,6 @@ kotlin {
             // serialization
             implementation(libs.kotlinx.serialization.json)
 
-            // WebDav
-            implementation(libs.dav4kmp)
-
             // Room
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.room.paging)
@@ -90,9 +87,7 @@ kotlin {
 
             // Paging3
 //            implementation(libs.androidx.paging.runtime)
-            implementation(libs.androidx.paging.compose.get().toString()) {
-                exclude(group = "androidx.compose.ui", module = "ui-android")
-            }
+            implementation(libs.androidx.paging.compose)
 
             // Reorderable (https://github.com/Calvin-LL/Reorderable/)
             implementation(libs.reorderable)
@@ -128,8 +123,6 @@ kotlin {
             implementation(libs.katex.core)
             // Permission
             implementation(libs.calf.permissions)
-
-
         }
         androidMain.dependencies {
             implementation(project(":document"))

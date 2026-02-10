@@ -36,43 +36,44 @@ class IosZipUtil: NSObject, ZipUtil {
 
     func getZipEntryContent(zipFilePath: String, entryName: String) -> KotlinByteArray? {
         let sourceURL = getValidURL(path: zipFilePath)
-        guard let archive = try? Archive(url: sourceURL, accessMode: .read),
-              let entry = archive[entryName]
-        else {
-            return nil
-        }
-
-        var data = Data()
         do {
+            let archive = try Archive(url: sourceURL, accessMode: .read)
+            guard let entry = archive[entryName] else {
+                return nil
+            }
+
+            var data = Data()
             _ = try archive.extract(entry) {
                 data.append($0)
             }
+
+            let byteArray = KotlinByteArray(size: Int32(data.count))
+            for (index, byte) in data.enumerated() {
+                byteArray.set(index: Int32(index), value: Int8(bitPattern: byte))
+            }
+            return byteArray
         } catch {
             print("extract error: \(error)")
             return nil
         }
-
-        let byteArray = KotlinByteArray(size: Int32(data.count))
-        for (index, byte) in data.enumerated() {
-            byteArray.set(index: Int32(index), value: Int8(bitPattern: byte))
-        }
-        return byteArray
     }
 
     func getZipEntryList(zipFilePath: String) -> [KotlinPair<NSString, KotlinBoolean>] {
         let sourceURL = getValidURL(path: zipFilePath)
-        guard let archive = try? Archive(url: sourceURL, accessMode: .read) else {
+        do {
+            let archive = try Archive(url: sourceURL, accessMode: .read)
+            var list: [KotlinPair<NSString, KotlinBoolean>] = []
+            for entry in archive {
+                let path = entry.path as NSString
+                let isDir = entry.type == .directory
+                let pair = KotlinPair(first: path, second: KotlinBoolean(bool: isDir))
+                list.append(pair)
+            }
+            return list
+        } catch {
+            print("getZipEntryList error: \(error)")
             return []
         }
-
-        var list: [KotlinPair<NSString, KotlinBoolean>] = []
-        for entry in archive {
-            let path = entry.path as NSString
-            let isDir = entry.type == .directory
-            let pair = KotlinPair(first: path, second: KotlinBoolean(bool: isDir))
-            list.append(pair)
-        }
-        return list
     }
 
     func unzip(sourcePath: String, destinationPath: String) -> Bool {
@@ -97,11 +98,8 @@ class IosZipUtil: NSObject, ZipUtil {
             if FileManager.default.fileExists(atPath: destinationURL.path) {
                 try? FileManager.default.removeItem(at: destinationURL)
             }
-            guard let archive = Archive(url: destinationURL, accessMode: .create) else {
-                print("createZipFromEntries: Failed to create archive at \(destinationPath)")
-                return false
-            }
             do {
+                let archive = try Archive(url: destinationURL, accessMode: .create)
                 for (entryName, kotlinByteArray) in entries {
                     let size = Int(kotlinByteArray.size)
                     var data = Data(count: size)
@@ -156,10 +154,12 @@ class IosZipWriter: NSObject, ZipWriter {
         if FileManager.default.fileExists(atPath: url.path) {
             try? FileManager.default.removeItem(at: url)
         }
-        guard let archive = Archive(url: url, accessMode: .create) else {
+        do {
+            self.archive = try Archive(url: url, accessMode: .create)
+        } catch {
+            print("IosZipWriter init error: \(error)")
             return nil
         }
-        self.archive = archive
         super.init()
     }
     func addEntry(entryName: String, data: KotlinByteArray) {
