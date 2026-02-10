@@ -59,7 +59,7 @@ interface SearchService<T : SearchServiceOptions> {
         internal val httpClient by lazy {
             HttpClient {
                 install(HttpRequestRetry) {
-                    retryOnException(maxRetries = 5,retryOnTimeout = true)
+                    retryOnException(maxRetries = 5, retryOnTimeout = true)
                 }
                 install(HttpRedirect)
                 install(HttpTimeout) {
@@ -262,6 +262,10 @@ fun <T : SearchServiceOptions> KClass<out T>.createDefaultInstance(): T {
         SearchServiceOptions.MetasoOptions::class -> SearchServiceOptions.MetasoOptions()
         SearchServiceOptions.OllamaOptions::class -> SearchServiceOptions.OllamaOptions()
         SearchServiceOptions.PerplexityOptions::class -> SearchServiceOptions.PerplexityOptions()
+        SearchServiceOptions.FirecrawlOptions::class -> SearchServiceOptions.FirecrawlOptions()
+        SearchServiceOptions.JinaOptions::class -> SearchServiceOptions.JinaOptions()
+        SearchServiceOptions.BochaOptions::class -> SearchServiceOptions.BochaOptions()
+        SearchServiceOptions.RikkaHubOptions::class -> SearchServiceOptions.RikkaHubOptions()
         else -> throw IllegalArgumentException("Unknown SearchServiceOptions type: $this")
     } as T
 }
