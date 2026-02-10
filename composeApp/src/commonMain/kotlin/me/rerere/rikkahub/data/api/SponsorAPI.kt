@@ -21,7 +21,7 @@ interface SponsorAPI {
                         json(JsonInstant)
                     }
                 })
-                .baseUrl("https://sponsors.rikka-ai.com")
+                .baseUrl("https://sponsors.rikka-ai.com/")
                 .converterFactories()
                 .build()
                 .createSponsorAPI()
