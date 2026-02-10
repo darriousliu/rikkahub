@@ -50,7 +50,6 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.Uri
 import coil3.compose.LocalPlatformContext
 import com.composables.icons.lucide.Camera
 import com.composables.icons.lucide.GripHorizontal
@@ -62,12 +61,12 @@ import com.composables.icons.lucide.Search
 import com.composables.icons.lucide.X
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.common.PlatformContext
-import me.rerere.common.utils.toUri
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
@@ -84,22 +83,7 @@ import me.rerere.rikkahub.utils.rememberQRCodeScanner
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import rikkahub.composeapp.generated.resources.Res
-import rikkahub.composeapp.generated.resources.cancel
-import rikkahub.composeapp.generated.resources.setting_provider_page_add
-import rikkahub.composeapp.generated.resources.setting_provider_page_add_provider
-import rikkahub.composeapp.generated.resources.setting_provider_page_disabled
-import rikkahub.composeapp.generated.resources.setting_provider_page_enabled
-import rikkahub.composeapp.generated.resources.setting_provider_page_image_qr_decode_failed
-import rikkahub.composeapp.generated.resources.setting_provider_page_import_dialog_message
-import rikkahub.composeapp.generated.resources.setting_provider_page_import_dialog_title
-import rikkahub.composeapp.generated.resources.setting_provider_page_import_success
-import rikkahub.composeapp.generated.resources.setting_provider_page_model_count
-import rikkahub.composeapp.generated.resources.setting_provider_page_no_qr_found
-import rikkahub.composeapp.generated.resources.setting_provider_page_scan_qr_code
-import rikkahub.composeapp.generated.resources.setting_provider_page_search_providers
-import rikkahub.composeapp.generated.resources.setting_provider_page_select_from_gallery
-import rikkahub.composeapp.generated.resources.setting_provider_page_title
+import rikkahub.composeapp.generated.resources.*
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 
@@ -271,7 +255,7 @@ private fun ImportProviderButton(
     ) { uri ->
         uri?.let {
             scope.launch {
-                handleImageQRCode(it.toUri(context), onAdd, toaster, context)
+                handleImageQRCode(it, onAdd, toaster, context)
             }
         }
     }
@@ -391,7 +375,7 @@ internal expect suspend fun handleQRResult(
 )
 
 private suspend fun handleImageQRCode(
-    uri: Uri,
+    uri: PlatformFile,
     onAdd: (ProviderSetting) -> Unit,
     toaster: ToasterState,
     context: PlatformContext

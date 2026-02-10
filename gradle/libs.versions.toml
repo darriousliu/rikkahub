@@ -141,7 +141,9 @@ coil-svg = { group = "io.coil-kt.coil3", name = "coil-svg", version.ref = "coil"
 quickjs = { group = "wang.harlon.quickjs", name = "wrapper-android", version.ref = "quickjs" }
 koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin-bom" }
 koin-android = { group = "io.insert-koin", name = "koin-android" }
-koin-compose = { group = "io.insert-koin", name = "koin-androidx-compose" }
+koin-core = { group = "io.insert-koin", name = "koin-core" }
+koin-compose = { group = "io.insert-koin", name = "koin-compose" }
+koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel" }
 koin-androidx-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlin-coroutines-core" }

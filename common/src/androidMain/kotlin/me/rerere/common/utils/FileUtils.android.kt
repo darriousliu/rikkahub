@@ -10,20 +10,30 @@ import coil3.toAndroidUri
 import coil3.toCoilUri
 import io.github.vinceglb.filekit.AndroidFile
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.path
 import me.rerere.common.PlatformContext
 import java.io.File
 import kotlin.io.deleteRecursively
 import kotlin.io.readBytes
 import kotlin.use
 
+private const val TAG = "FileUtils"
+
 inline fun File.toPlatformFile() = PlatformFile(this)
 
+/**
+ * 从文件选择器中得到的PlatformFile以content://开头，禁止使用
+ */
 inline fun PlatformFile.toFile() = androidFile.let {
     when (it) {
         is AndroidFile.FileWrapper -> it.file
         is AndroidFile.UriWrapper -> it.uri.toFile()
     }
 }
+
+private fun PlatformFile.isContentUri(): Boolean =
+    androidFile is AndroidFile.UriWrapper && this.path.startsWith("content://")
+
 
 actual fun getUriForFile(
     context: PlatformContext,
@@ -33,9 +43,14 @@ actual fun getUriForFile(
 }
 
 actual fun PlatformFile.deleteRecursively(): Boolean {
-    return toFile().deleteRecursively()
+    return if (isContentUri()) {
+        val uri = (androidFile as AndroidFile.UriWrapper).uri
+        // todo
+        true
+    } else {
+        toFile().deleteRecursively()
+    }
 }
-
 
 
 actual fun PlatformFile.toUri(context: PlatformContext): Uri {
