@@ -1,12 +1,28 @@
 package me.rerere.ai.provider.providers.vertex
 
-import kotlinx.cinterop.*
+import io.github.vinceglb.filekit.utils.toByteArray
+import io.github.vinceglb.filekit.utils.toNSData
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.value
 import platform.CoreFoundation.CFDataRef
 import platform.CoreFoundation.CFDictionaryRef
 import platform.CoreFoundation.CFErrorRefVar
-import platform.Foundation.*
-import platform.Security.*
-import platform.posix.memcpy
+import platform.Foundation.CFBridgingRelease
+import platform.Foundation.CFBridgingRetain
+import platform.Foundation.NSData
+import platform.Foundation.NSDictionary
+import platform.Foundation.create
+import platform.Security.SecKeyCreateSignature
+import platform.Security.SecKeyCreateWithData
+import platform.Security.SecKeyRef
+import platform.Security.kSecAttrKeyClass
+import platform.Security.kSecAttrKeyClassPublic
+import platform.Security.kSecAttrKeyType
+import platform.Security.kSecAttrKeyTypeRSA
+import platform.Security.kSecKeyAlgorithmRSASignatureMessagePKCS1v15SHA256
 
 actual interface PrivateKey {
     val secKey: SecKeyRef
@@ -58,15 +74,5 @@ actual fun signRs256(data: ByteArray, privateKey: PrivateKey): ByteArray {
         val signatureData = CFBridgingRelease(signature) as NSData
 
         return signatureData.toByteArray()
-    }
-}
-
-private fun ByteArray.toNSData(): NSData = memScoped {
-    NSData.create(bytes = allocArrayOf(this@toNSData), length = size.convert())
-}
-
-private fun NSData.toByteArray(): ByteArray = ByteArray(length.toInt()).apply {
-    usePinned {
-        memcpy(it.addressOf(0), bytes, length)
     }
 }
