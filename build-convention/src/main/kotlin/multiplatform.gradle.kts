@@ -40,5 +40,14 @@ kotlin {
 //    iosX64()
     iosArm64()
     iosSimulatorArm64()
+
+    val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(project.dependencies.platform(libs.findLibrary("koin-bom").get()))
+            implementation(libs.findLibrary("koin-core").get())
+        }
+    }
 }
 

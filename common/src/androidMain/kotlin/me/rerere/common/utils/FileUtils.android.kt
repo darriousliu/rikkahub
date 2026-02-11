@@ -14,11 +14,11 @@ import io.github.vinceglb.filekit.AndroidFile
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.path
 import me.rerere.common.PlatformContext
+import org.koin.mp.KoinPlatform
 import java.io.File
 import kotlin.io.deleteRecursively
 import kotlin.io.readBytes
 import kotlin.use
-import org.koin.mp.KoinPlatform
 
 private const val TAG = "FileUtils"
 
@@ -49,7 +49,7 @@ actual fun PlatformFile.deleteRecursively(): Boolean {
     return if (isContentUri()) {
         val uri = (androidFile as AndroidFile.UriWrapper).uri
         try {
-            val context = KoinPlatform.getKoin().get<Context>() as Context
+            val context = KoinPlatform.getKoin().get<Context>()
             val resolver = context.contentResolver
             // 方案 1: 针对 DocumentsProvider (SAF 选择的文件通常是这种)
             // 检查是否支持 DocumentsContract

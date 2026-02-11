@@ -34,10 +34,6 @@ kotlin {
             api(libs.kermit)
 
             api(libs.okio)
-
-            // koin
-            implementation(project.dependencies.platform(libs.koin.bom))
-            implementation(libs.koin.core)
         }
         androidMain.dependencies {
             api(project.dependencies.platform(libs.firebase.bom))
