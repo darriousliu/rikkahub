@@ -15,6 +15,7 @@ import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.platformModule
 import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.di.viewModelModule
+import me.rerere.rikkahub.ui.components.richtext.initMermaidRenderer
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.context.startKoin
@@ -51,6 +52,9 @@ object AppInitializer : KoinComponent {
                 setDefaults(*remoteConfigDefaults)
                 fetchAndActivate()
             }
+        }
+        get<AppScope>().launch {
+            initMermaidRenderer()
         }
     }
 

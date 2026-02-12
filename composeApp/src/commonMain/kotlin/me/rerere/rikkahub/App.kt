@@ -55,6 +55,7 @@ import me.rerere.highlight.LocalHighlighter
 import me.rerere.rikkahub.buildkonfig.BuildConfig
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.di.HttpClientType
+import me.rerere.rikkahub.ui.components.richtext.LoadMermaidEffect
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalAnimatedVisibilityScope
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -129,6 +130,7 @@ fun App(
             }
             .build()
     }
+    LoadMermaidEffect()
     RikkahubTheme(
         platformConfigure = platformConfigure,
     ) {

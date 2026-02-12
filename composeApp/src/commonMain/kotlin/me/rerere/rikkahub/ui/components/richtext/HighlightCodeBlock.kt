@@ -137,7 +137,7 @@ fun HighlightCodeBlock(
         ) {
             when {
                 completeCodeBlock && language == "mermaid" -> {
-                    Mermaid(
+                    MermaidImage(
                         code = code,
                         modifier = Modifier.fillMaxWidth(),
                     )
