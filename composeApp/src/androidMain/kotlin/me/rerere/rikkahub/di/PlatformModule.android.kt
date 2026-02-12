@@ -8,6 +8,8 @@ import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.migrations.Migration_11_12
 import me.rerere.rikkahub.data.db.migrations.Migration_6_7
+import me.rerere.rikkahub.utils.AndroidZipUtil
+import me.rerere.rikkahub.utils.ZipUtil
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import java.util.Locale
@@ -36,4 +38,8 @@ actual val platformModule: Module = module {
     }
 
     single { TemplateTransformer(engine = get(), settingsStore = get()) }
+
+    single<ZipUtil> {
+        AndroidZipUtil()
+    }
 }
