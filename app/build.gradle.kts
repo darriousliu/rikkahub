@@ -197,6 +197,7 @@ dependencies {
 
     // jetbrains markdown parser
     implementation(libs.jetbrains.markdown)
+    implementation(libs.jsoup)
 
     // okhttp
     implementation(libs.okhttp)

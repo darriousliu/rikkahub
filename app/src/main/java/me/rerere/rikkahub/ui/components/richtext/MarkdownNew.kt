@@ -79,10 +79,6 @@ import me.rerere.rikkahub.utils.toDp
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
-import org.jsoup.nodes.Node
-import org.jsoup.nodes.TextNode
 
 // ---- Preprocessing (mirrors Markdown.kt logic) ----
 
@@ -144,7 +140,7 @@ fun MarkdownNew(
     }
 
     val document = remember(html) {
-        runCatching { Jsoup.parse(html) }.getOrElse { Jsoup.parse("") }
+        runCatching { parseRichHtml(html) }.getOrElse { parseRichHtml("") }
     }
 
     ProvideTextStyle(style) {
@@ -156,11 +152,11 @@ fun MarkdownNew(
     }
 }
 
-// ---- Node dispatching ----
+// ---- RichHtmlNode dispatching ----
 
 @Composable
 private fun HtmlStyledElement(
-    element: Element,
+    element: RichHtmlElement,
     content: @Composable () -> Unit,
 ) {
     val baseTextStyle = LocalTextStyle.current
@@ -183,10 +179,10 @@ private fun HtmlStyledElement(
 }
 
 @Composable
-private fun HtmlBodyNode(node: Node, onClickCitation: (String) -> Unit) {
+private fun HtmlBodyNode(node: RichHtmlNode, onClickCitation: (String) -> Unit) {
     when (node) {
-        is Element -> HtmlBlockElement(element = node, onClickCitation = onClickCitation)
-        is TextNode -> {
+        is RichHtmlElement -> HtmlBlockElement(element = node, onClickCitation = onClickCitation)
+        is RichHtmlTextNode -> {
             val text = node.text().trim()
             if (text.isNotEmpty()) Text(text = text)
         }
@@ -195,7 +191,7 @@ private fun HtmlBodyNode(node: Node, onClickCitation: (String) -> Unit) {
 
 @Composable
 private fun HtmlBlockElement(
-    element: Element,
+    element: RichHtmlElement,
     onClickCitation: (String) -> Unit,
     listLevel: Int = 0,
 ) {
@@ -292,7 +288,7 @@ private fun HtmlBlockElement(
 
 @Composable
 private fun HtmlParagraph(
-    element: Element,
+    element: RichHtmlElement,
     onClickCitation: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -319,7 +315,7 @@ private fun HtmlParagraph(
 
 @Composable
 private fun HtmlParagraphContent(
-    element: Element,
+    element: RichHtmlElement,
     onClickCitation: (String) -> Unit,
     density: Density,
     modifier: Modifier = Modifier,
@@ -387,7 +383,7 @@ private fun HtmlParagraphContent(
 }
 
 @Composable
-private fun HtmlHeading(element: Element, onClickCitation: (String) -> Unit) {
+private fun HtmlHeading(element: RichHtmlElement, onClickCitation: (String) -> Unit) {
     val level = element.tagName().removePrefix("h").toIntOrNull() ?: 1
     val headingStyle = HeaderStyle.fromLevel(
         level = level,
@@ -403,7 +399,7 @@ private fun HtmlHeading(element: Element, onClickCitation: (String) -> Unit) {
 
 @Composable
 private fun HtmlList(
-    element: Element,
+    element: RichHtmlElement,
     ordered: Boolean,
     onClickCitation: (String) -> Unit,
     level: Int,
@@ -431,7 +427,7 @@ private fun HtmlList(
 
 @Composable
 private fun HtmlListItem(
-    item: Element,
+    item: RichHtmlElement,
     bulletText: String,
     onClickCitation: (String) -> Unit,
     level: Int,
@@ -479,19 +475,19 @@ private fun HtmlListItem(
                 // Item inline content (excluding nested lists and the checkbox input)
                 Column(modifier = Modifier.weight(1f)) {
                     val directContentNodes = item.childNodes().filter { node ->
-                        !(node is Element &&
+                        !(node is RichHtmlElement &&
                             (node.tagName().lowercase() in listOf("ul", "ol") ||
                                 (node.tagName().lowercase() == "input" && node.attr("type") == "checkbox")))
                     }
                     // Group consecutive inline nodes and render as a single paragraph
-                    val groups = mutableListOf<MutableList<Node>>()
+                    val groups = mutableListOf<MutableList<RichHtmlNode>>()
                     directContentNodes.fastForEach { node ->
-                        if (node is Element && node.tagName().lowercase() == "p") {
+                        if (node is RichHtmlElement && node.tagName().lowercase() == "p") {
                             groups.add(mutableListOf(node))
                         } else {
                             val last = groups.lastOrNull()
                             if (last != null && last.none {
-                                    it is Element && it.tagName().lowercase() == "p"
+                                    it is RichHtmlElement && it.tagName().lowercase() == "p"
                                 }) {
                                 last.add(node)
                             } else {
@@ -501,7 +497,7 @@ private fun HtmlListItem(
                     }
                     groups.fastForEach { group ->
                         val first = group.firstOrNull()
-                        if (first is Element && first.tagName().lowercase() == "p") {
+                        if (first is RichHtmlElement && first.tagName().lowercase() == "p") {
                             HtmlParagraph(element = first, onClickCitation = onClickCitation)
                         } else {
                             HtmlInlineGroup(nodes = group, onClickCitation = onClickCitation)
@@ -527,7 +523,7 @@ private fun HtmlListItem(
 }
 
 @Composable
-private fun HtmlCodeBlock(element: Element) {
+private fun HtmlCodeBlock(element: RichHtmlElement) {
     val codeElement = element.selectFirst("code")
     val language = codeElement?.classNames()
         ?.find { it.startsWith("language-") }
@@ -546,7 +542,7 @@ private fun HtmlCodeBlock(element: Element) {
 }
 
 @Composable
-private fun HtmlBlockquote(element: Element, onClickCitation: (String) -> Unit) {
+private fun HtmlBlockquote(element: RichHtmlElement, onClickCitation: (String) -> Unit) {
     ProvideTextStyle(LocalTextStyle.current.copy(fontStyle = FontStyle.Italic)) {
         val borderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
         val bgColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
@@ -586,7 +582,7 @@ private fun HtmlMathBlock(formula: String) {
 }
 
 @Composable
-private fun HtmlTable(element: Element, onClickCitation: (String) -> Unit) {
+private fun HtmlTable(element: RichHtmlElement, onClickCitation: (String) -> Unit) {
     val headerElements = element.select("thead tr th")
     val columnCount = headerElements.size.takeIf { it > 0 }
         ?: element.select("tbody tr:first-child td").size
@@ -632,7 +628,7 @@ private fun HtmlTable(element: Element, onClickCitation: (String) -> Unit) {
 }
 
 @Composable
-private fun HtmlDetails(element: Element, onClickCitation: (String) -> Unit) {
+private fun HtmlDetails(element: RichHtmlElement, onClickCitation: (String) -> Unit) {
     // Delegate to the existing SimpleHtmlBlock details renderer via a mini-document
     val summaryElement = element.children().find { it.tagName().lowercase() == "summary" }
     val summaryText = summaryElement?.text() ?: "Details"
@@ -653,7 +649,7 @@ private fun HtmlDetails(element: Element, onClickCitation: (String) -> Unit) {
         if (expanded) {
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 element.childNodes().fastForEach { child ->
-                    if (!(child is Element && child.tagName().lowercase() == "summary")) {
+                    if (!(child is RichHtmlElement && child.tagName().lowercase() == "summary")) {
                         HtmlBodyNode(child, onClickCitation)
                     }
                 }
@@ -663,7 +659,7 @@ private fun HtmlDetails(element: Element, onClickCitation: (String) -> Unit) {
 }
 
 @Composable
-private fun HtmlProgress(element: Element) {
+private fun HtmlProgress(element: RichHtmlElement) {
     val value = element.attr("value").toFloatOrNull() ?: 0f
     val max = element.attr("max").toFloatOrNull()?.takeIf { it > 0 } ?: 100f
     val progress = (value / max).coerceIn(0f, 1f)
@@ -690,18 +686,18 @@ private fun HtmlProgress(element: Element) {
 // ---- Inline group rendering (for list items with mixed inline nodes) ----
 
 /**
- * Renders a list of inline Jsoup nodes as a single Text composable with AnnotatedString.
+ * Renders a list of inline HTML nodes as a single Text composable with AnnotatedString.
  * This prevents inline siblings (e.g. <strong>A</strong>和<strong>B</strong>) from being
  * rendered on separate lines.
  */
 @Composable
-private fun HtmlInlineGroup(nodes: List<Node>, onClickCitation: (String) -> Unit) {
+private fun HtmlInlineGroup(nodes: List<RichHtmlNode>, onClickCitation: (String) -> Unit) {
     val enableLatexRendering = LocalSettings.current.displaySetting.enableLatexRendering
     val colorScheme = MaterialTheme.colorScheme
     val textStyle = LocalTextStyle.current
     val density = LocalDensity.current
 
-    val key = remember(nodes) { nodes.joinToString("") { if (it is Element) it.outerHtml() else it.toString() } }
+    val key = remember(nodes) { nodes.joinToString("") { if (it is RichHtmlElement) it.outerHtml() else it.toString() } }
     val (annotatedString, inlineContents) = remember(
         key,
         enableLatexRendering,
@@ -735,18 +731,18 @@ private fun HtmlInlineGroup(nodes: List<Node>, onClickCitation: (String) -> Unit
 // ---- Inline-as-Composable rendering (for FlowRow mixed content) ----
 
 /**
- * Renders an individual Jsoup node as a standalone Composable.
+ * Renders an individual HTML node as a standalone Composable.
  * Used inside FlowRow for paragraphs that mix images, math, and text.
  */
 @Composable
-private fun HtmlInlineAsComposable(node: Node, onClickCitation: (String) -> Unit) {
+private fun HtmlInlineAsComposable(node: RichHtmlNode, onClickCitation: (String) -> Unit) {
     when (node) {
-        is TextNode -> {
+        is RichHtmlTextNode -> {
             val text = node.text()
             if (text.isNotEmpty()) Text(text = text)
         }
 
-        is Element -> {
+        is RichHtmlElement -> {
             val tag = node.tagName().lowercase()
             when {
                 tag == "img" -> {
@@ -809,8 +805,8 @@ private fun HtmlInlineAsComposable(node: Node, onClickCitation: (String) -> Unit
 
 // ---- Inline AnnotatedString building ----
 
-private fun AnnotatedString.Builder.appendHtmlInlineNode(
-    node: Node,
+internal fun AnnotatedString.Builder.appendHtmlInlineNode(
+    node: RichHtmlNode,
     colorScheme: androidx.compose.material3.ColorScheme,
     inlineContents: MutableMap<String, InlineTextContent>,
     density: Density,
@@ -819,8 +815,8 @@ private fun AnnotatedString.Builder.appendHtmlInlineNode(
     onClickCitation: (String) -> Unit,
 ) {
     when (node) {
-        is TextNode -> append(node.text())
-        is Element -> appendHtmlInlineElement(
+        is RichHtmlTextNode -> append(node.text())
+        is RichHtmlElement -> appendHtmlInlineElement(
             element = node,
             colorScheme = colorScheme,
             inlineContents = inlineContents,
@@ -832,8 +828,8 @@ private fun AnnotatedString.Builder.appendHtmlInlineNode(
     }
 }
 
-private fun AnnotatedString.Builder.appendHtmlInlineElement(
-    element: Element,
+internal fun AnnotatedString.Builder.appendHtmlInlineElement(
+    element: RichHtmlElement,
     colorScheme: androidx.compose.material3.ColorScheme,
     inlineContents: MutableMap<String, InlineTextContent>,
     density: Density,
@@ -849,7 +845,7 @@ private fun AnnotatedString.Builder.appendHtmlInlineElement(
         )
     }
 
-    fun recurseChildren(el: Element, inheritedStyle: TextStyle = style) = el.childNodes().fastForEach {
+    fun recurseChildren(el: RichHtmlElement, inheritedStyle: TextStyle = style) = el.childNodes().fastForEach {
         appendHtmlInlineNode(
             node = it,
             colorScheme = colorScheme,
@@ -1022,7 +1018,7 @@ private fun SpanStyle.asTextStyle(): TextStyle {
 }
 
 private fun buildFontTagStyle(
-    element: Element,
+    element: RichHtmlElement,
     density: Density,
     baseFontSize: TextUnit,
 ): SpanStyle? {

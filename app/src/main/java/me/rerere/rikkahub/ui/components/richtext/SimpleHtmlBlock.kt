@@ -36,10 +36,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import me.rerere.rikkahub.ui.components.table.DataTable
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
-import org.jsoup.nodes.Node
-import org.jsoup.nodes.TextNode
 
 @Composable
 fun SimpleHtmlBlock(
@@ -47,8 +43,8 @@ fun SimpleHtmlBlock(
     modifier: Modifier = Modifier
 ) {
     val document = remember(html) {
-        runCatching { Jsoup.parse(html) }.getOrElse {
-            Jsoup.parse("<p>Error parsing HTML: ${it.message}</p>")
+        runCatching { parseRichHtml(html) }.getOrElse {
+            parseRichHtml("<p>Error parsing HTML: ${it.message}</p>")
         }
     }
 
@@ -72,11 +68,11 @@ fun SimpleHtmlBlock(
 
 @Composable
 private fun RenderNode(
-    node: Node,
+    node: RichHtmlNode,
     onLinkClick: (String) -> Unit
 ) {
     when (node) {
-        is TextNode -> {
+        is RichHtmlTextNode -> {
             if (node.text().isNotBlank()) {
                 Text(
                     text = node.text(),
@@ -87,7 +83,7 @@ private fun RenderNode(
             }
         }
 
-        is Element -> {
+        is RichHtmlElement -> {
             when (node.tagName().lowercase()) {
                 "p" -> {
                     val annotatedString = buildAnnotatedStringFromElement(node, onLinkClick)
@@ -191,7 +187,7 @@ private fun RenderNode(
 
 @Composable
 private fun RenderList(
-    listElement: Element,
+    listElement: RichHtmlElement,
     isOrdered: Boolean,
     onLinkClick: (String) -> Unit
 ) {
@@ -225,7 +221,7 @@ private fun RenderList(
 
 @Composable
 private fun RenderDetails(
-    detailsElement: Element,
+    detailsElement: RichHtmlElement,
     onLinkClick: (String) -> Unit
 ) {
     val isOpenByDefault = detailsElement.hasAttr("open")
@@ -286,7 +282,7 @@ private fun RenderDetails(
 
 @Composable
 private fun RenderImage(
-    imgElement: Element
+    imgElement: RichHtmlElement
 ) {
     val src = imgElement.attr("src")
     val alt = imgElement.attr("alt")
@@ -310,8 +306,8 @@ private fun RenderImage(
     }
 }
 
-private fun buildAnnotatedStringFromElement(
-    element: Element,
+internal fun buildAnnotatedStringFromElement(
+    element: RichHtmlElement,
     onLinkClick: (String) -> Unit
 ): AnnotatedString {
     return buildAnnotatedString {
@@ -320,17 +316,17 @@ private fun buildAnnotatedStringFromElement(
 }
 
 private fun processElementNodes(
-    element: Element,
+    element: RichHtmlElement,
     builder: AnnotatedString.Builder,
     onLinkClick: (String) -> Unit
 ) {
     element.childNodes().forEach { node ->
         when (node) {
-            is TextNode -> {
+            is RichHtmlTextNode -> {
                 builder.append(node.text())
             }
 
-            is Element -> {
+            is RichHtmlElement -> {
                 when (node.tagName().lowercase()) {
                     "b", "strong" -> {
                         val start = builder.length
@@ -567,7 +563,7 @@ private fun parseFontWeight(weightString: String): FontWeight? {
 
 @Composable
 private fun RenderProgress(
-    progressElement: Element
+    progressElement: RichHtmlElement
 ) {
     val value = progressElement.attr("value").toFloatOrNull() ?: 0f
     val max = progressElement.attr("max").toFloatOrNull() ?: 100f
@@ -632,7 +628,7 @@ private fun RenderProgress(
 
 @Composable
 private fun RenderTable(
-    tableElement: Element,
+    tableElement: RichHtmlElement,
     onLinkClick: (String) -> Unit
 ) {
     val rows = mutableListOf<List<@Composable () -> Unit>>()
