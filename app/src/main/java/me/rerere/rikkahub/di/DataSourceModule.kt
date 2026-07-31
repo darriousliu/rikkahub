@@ -7,7 +7,6 @@ import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.http.HttpHeaders
-import io.pebbletemplates.pebble.PebbleEngine
 import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import io.requery.android.database.sqlite.SQLiteCustomExtension
 import kotlinx.serialization.json.Json
@@ -16,9 +15,8 @@ import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
-import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.GenerationHandler
-import me.rerere.rikkahub.data.ai.transformers.PebbleMessageTemplateRenderer
+import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.RikkaHubAPI
 import me.rerere.rikkahub.data.api.SponsorAPI
@@ -34,6 +32,7 @@ import me.rerere.rikkahub.data.db.migrations.Migration_15_16
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
+import me.rerere.rikkahub.shared.template.MessageTemplateSource
 import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.search.SearchService
 import me.rerere.rikkahub.data.sync.S3Sync
@@ -103,23 +102,25 @@ val dataSourceModule = module {
             .build()
     }
 
-    single {
-        AssistantTemplateLoader(settingsStore = get())
+    single<MessageTemplateSource> {
+        val settingsStore = get<SettingsStore>()
+        MessageTemplateSource { templateName ->
+            settingsStore.settingsFlow.value.assistants
+                .find { it.id.toString() == templateName }
+                ?.messageTemplate
+        }
     }
 
     single {
-        PebbleEngine.Builder()
-            .loader(get<AssistantTemplateLoader>())
-            .defaultLocale(Locale.getDefault())
-            .autoEscaping(false)
-            .build()
+        DefaultMessageTemplateRenderer(
+            templateSource = get(),
+            locale = Locale.getDefault(),
+        )
     }
 
-    single { PebbleMessageTemplateRenderer(engine = get()) }
+    single<MessageTemplateRenderer> { get<DefaultMessageTemplateRenderer>() }
 
-    single<MessageTemplateRenderer> { get<PebbleMessageTemplateRenderer>() }
-
-    single<TemplateCacheInvalidator> { get<PebbleMessageTemplateRenderer>() }
+    single<TemplateCacheInvalidator> { get<DefaultMessageTemplateRenderer>() }
 
     single { TemplateTransformer(renderer = get()) }
 

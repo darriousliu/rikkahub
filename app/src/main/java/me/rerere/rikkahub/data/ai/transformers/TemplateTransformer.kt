@@ -6,9 +6,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.shared.template.MessageTemplate
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
+import me.rerere.rikkahub.shared.template.MessageTemplateSource
 import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.rikkahub.utils.toLocalDate
 import me.rerere.rikkahub.utils.toLocalTime
@@ -65,9 +65,16 @@ class MessageTemplateContextFactory(
     }
 }
 
-class PebbleMessageTemplateRenderer(
-    private val engine: PebbleEngine,
+class DefaultMessageTemplateRenderer(
+    templateSource: MessageTemplateSource,
+    locale: Locale = Locale.getDefault(),
 ) : MessageTemplateRenderer, TemplateCacheInvalidator {
+    private val engine = PebbleEngine.Builder()
+        .loader(MessageTemplateLoader(templateSource))
+        .defaultLocale(locale)
+        .autoEscaping(false)
+        .build()
+
     override suspend fun get(templateName: String): MessageTemplate {
         val template = engine.getTemplate(templateName)
         return MessageTemplate { context ->
@@ -82,13 +89,12 @@ class PebbleMessageTemplateRenderer(
     }
 }
 
-class AssistantTemplateLoader(private val settingsStore: SettingsStore) : Loader<String> {
-    override fun getReader(cacheKey: String?): Reader? {
-        val content = settingsStore.settingsFlow.value.assistants
-            .find { it.id.toString() == cacheKey }?.messageTemplate
-            ?: return null
-        return StringReader(content)
-    }
+private class MessageTemplateLoader(
+    private val templateSource: MessageTemplateSource,
+) : Loader<String> {
+    override fun getReader(cacheKey: String?): Reader? = cacheKey
+        ?.let(templateSource::get)
+        ?.let(::StringReader)
 
     override fun setCharset(charset: String?) {}
 
@@ -108,6 +114,6 @@ class AssistantTemplateLoader(private val settingsStore: SettingsStore) : Loader
     }
 
     override fun resourceExists(templateName: String?): Boolean {
-        return settingsStore.settingsFlow.value.assistants.any { it.id.toString() == templateName }
+        return templateName?.let(templateSource::get) != null
     }
 }
