@@ -1,33 +1,39 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
-import ru.noties.jlatexmath.JLatexMathDrawable
+import androidx.compose.ui.unit.takeOrElse
+import io.ratex.DisplayList
+import io.ratex.RaTeXEngine
+import io.ratex.compose.RaTeX
+import io.ratex.compose.rememberBlockingRaTeXDisplayList
+import io.ratex.compose.rememberRaTeXDisplayList
+import io.ratex.measure
+import kotlin.math.ceil
 
 fun assumeLatexSize(
     latex: String,
     fontSize: Float,
     displayMode: LatexDisplayMode = LatexDisplayMode.Inline,
 ): LatexSize {
-    return runCatching {
-        JLatexMathDrawable.builder(parseLatexFormula(latex, displayMode).source)
-            .textSize(fontSize)
-            .padding(0)
-            .build()
-            .bounds
-            .let { LatexSize(width = it.width().toFloat(), height = it.height().toFloat()) }
-    }.getOrElse { LatexSize(width = 0f, height = 0f) }
+    val formula = parseLatexFormula(latex, displayMode)
+    return parseLatexBlocking(
+        source = formula.source,
+        fontSizePx = fontSize,
+        displayMode = formula.displayMode,
+        color = Color.Black,
+    )?.size ?: LatexSize(width = 0f, height = 0f)
 }
 
 @Composable
@@ -39,77 +45,57 @@ fun LatexText(
     style: TextStyle = LocalTextStyle.current,
     displayMode: LatexDisplayMode = LatexDisplayMode.Inline,
 ) {
-    val style = style.merge(
-        fontSize = fontSize,
-        color = color
-    )
-    val density = LocalDensity.current
-
+    val localTextStyle = LocalTextStyle.current
+    val contentColor = LocalContentColor.current
+    val mergedStyle = style.merge(fontSize = fontSize, color = color)
+    val resolvedFontSize = mergedStyle.fontSize.takeOrElse { localTextStyle.fontSize }
+    val resolvedColor = if (mergedStyle.color == Color.Unspecified) contentColor else mergedStyle.color
     val formula = remember(latex, displayMode) { parseLatexFormula(latex, displayMode) }
-    val drawable = remember(formula, fontSize, style) {
-        runCatching {
-            with(density) {
-                getLatexDrawable(
-                    latex = formula.source,
-                    fontSize = fontSize.toPx(),
-                    color = style.color.toArgb(),
-                    background = style.background.toArgb()
-                )
-            }
-        }.onFailure {
-            it.printStackTrace()
-        }.getOrNull()
-    }
 
-    if (drawable != null) {
-        with(density) {
-            Canvas(
-                modifier = modifier
-                    .size(
-                        width = drawable.bounds.width().toDp(),
-                        height = drawable.bounds.height().toDp()
-                    )
-            ) {
-                drawable.draw(drawContext.canvas.nativeCanvas)
-            }
+    val displayListResult: Result<DisplayList?>? = when (formula.displayMode) {
+        LatexDisplayMode.Inline -> rememberBlockingRaTeXDisplayList(
+            latex = formula.source,
+            displayMode = false,
+            color = resolvedColor,
+        )
+
+        LatexDisplayMode.Display -> {
+            val result by rememberRaTeXDisplayList(
+                latex = formula.source,
+                displayMode = true,
+                color = resolvedColor,
+            )
+            result
         }
+    }
+    val displayList = displayListResult?.getOrNull()
+
+    if (displayList != null) {
+        val renderModifier = if (mergedStyle.background == Color.Unspecified) {
+            modifier
+        } else {
+            modifier.background(mergedStyle.background)
+        }
+        RaTeX(
+            displayList = displayList,
+            modifier = renderModifier,
+            fontSize = resolvedFontSize,
+        )
     } else {
         Text(
             text = latex,
-            style = style,
-            modifier = modifier
+            style = mergedStyle,
+            modifier = modifier,
         )
     }
 }
 
-private fun getLatexDrawable(
-    latex: String,
-    fontSize: Float,
-    color: Int,
-    background: Int
-): JLatexMathDrawable? {
-    return runCatching {
-        JLatexMathDrawable.builder(latex)
-            .textSize(fontSize)
-            .color(color)
-            .background(background)
-            .padding(0)
-            .align(JLatexMathDrawable.ALIGN_LEFT)
-            .build()
-    }.onFailure {
-        it.printStackTrace()
-    }.getOrNull()
-}
-
 class LatexRenderSegment internal constructor(
     val source: String,
-    internal val drawable: JLatexMathDrawable,
-) {
-    val size = LatexSize(
-        width = drawable.bounds.width().toFloat(),
-        height = drawable.bounds.height().toFloat(),
-    )
-}
+    internal val displayList: DisplayList,
+    internal val fontSizePx: Float,
+    val size: LatexSize,
+)
 
 /**
  * 将一条行内公式按顶层运算符水平拆分为多段，
@@ -120,58 +106,81 @@ fun splitLatex(
     latex: String,
     maxWidthPx: Float,
     fontSize: Float,
-    color: Int
+    color: Int,
 ): List<LatexRenderSegment> {
-    return runCatching {
-        val source = parseLatexFormula(latex).source
-        when (
-            val result = splitLatexFormula(
-                source = source,
-                maxWidthPx = maxWidthPx,
-                measureWidth = { segment ->
-                    try {
-                        JLatexMathDrawable.builder(segment)
-                            .textSize(fontSize)
-                            .build()
-                            .intrinsicWidth
-                            .toFloat()
-                    } catch (_: Exception) {
-                        Float.MAX_VALUE
-                    }
-                },
+    val source = parseLatexFormula(latex).source
+    val parsedSegments = mutableMapOf<String, ParsedLatex?>()
+    fun parseSegment(segment: String): ParsedLatex? = if (parsedSegments.containsKey(segment)) {
+        parsedSegments[segment]
+    } else {
+        parseLatexBlocking(
+            source = segment,
+            fontSizePx = fontSize,
+            displayMode = LatexDisplayMode.Inline,
+            color = Color(color),
+        ).also { parsedSegments[segment] = it }
+    }
+
+    return when (
+        val result = splitLatexFormula(
+            source = source,
+            maxWidthPx = maxWidthPx,
+            measureWidth = { segment -> parseSegment(segment)?.size?.width ?: Float.MAX_VALUE },
+        )
+    ) {
+        is LatexSplitResult.Fallback -> emptyList()
+        is LatexSplitResult.Segments -> result.values.map { segment ->
+            val parsed = parseSegment(segment) ?: return emptyList()
+            LatexRenderSegment(
+                source = segment,
+                displayList = parsed.displayList,
+                fontSizePx = fontSize,
+                size = parsed.size,
             )
-        ) {
-            is LatexSplitResult.Fallback -> emptyList()
-            is LatexSplitResult.Segments -> result.values.map { segment ->
-                LatexRenderSegment(
-                    source = segment,
-                    drawable = JLatexMathDrawable.builder(segment)
-                        .textSize(fontSize)
-                        .color(color)
-                        .build(),
-                )
-            }
         }
-    }.onFailure {
-        it.printStackTrace()
-    }.getOrElse { emptyList() }
+    }
 }
 
 @Composable
 fun LatexDrawable(
     segment: LatexRenderSegment,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val density = LocalDensity.current
-    val drawable = segment.drawable
     with(density) {
-        Canvas(
+        RaTeX(
+            displayList = segment.displayList,
             modifier = modifier.size(
-                width = drawable.bounds.width().toDp(),
-                height = drawable.bounds.height().toDp()
-            )
-        ) {
-            drawable.draw(drawContext.canvas.nativeCanvas)
-        }
+                width = segment.size.width.toDp(),
+                height = segment.size.height.toDp(),
+            ),
+            fontSize = segment.fontSizePx.toSp(),
+        )
     }
 }
+
+private data class ParsedLatex(
+    val displayList: DisplayList,
+    val size: LatexSize,
+)
+
+private fun parseLatexBlocking(
+    source: String,
+    fontSizePx: Float,
+    displayMode: LatexDisplayMode,
+    color: Color,
+): ParsedLatex? = runCatching {
+    val displayList = RaTeXEngine.parseBlocking(
+        latex = source,
+        displayMode = displayMode == LatexDisplayMode.Display,
+        color = color,
+    )
+    val measured = displayList.measure(fontSizePx)
+    ParsedLatex(
+        displayList = displayList,
+        size = LatexSize(
+            width = ceil(measured.widthPx.toDouble()).toFloat(),
+            height = ceil(measured.totalHeightPx.toDouble()).toFloat(),
+        ),
+    )
+}.getOrNull()

@@ -3,7 +3,6 @@ agp = "9.3.1"
 barcodeScanning = "17.3.0"
 cameraCore = "1.6.1"
 dom4j = "2.2.0"
-jlatexmath = "1.5"
 kotlin = "2.4.20-Beta2"
 composeMultiplatform = "1.11.1"
 buildkonfig = "0.22.0"
@@ -86,9 +85,6 @@ androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", versi
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
 dom4j = { module = "org.dom4j:dom4j", version.ref = "dom4j" }
-jlatexmath = { module = "com.github.rikkahub.jlatexmath-android:jlatexmath", version.ref = "jlatexmath" }
-jlatexmath-font-greek = { module = "com.github.rikkahub.jlatexmath-android:jlatexmath-font-greek", version.ref = "jlatexmath" }
-jlatexmath-font-cyrillic = { module = "com.github.rikkahub.jlatexmath-android:jlatexmath-font-cyrillic", version.ref = "jlatexmath" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
