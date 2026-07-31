@@ -13,6 +13,11 @@ from typing import Any
 import yaml
 from lxml import etree
 
+from services.resource_compatibility_overlay import (
+    ResourceCompatibilityOverlayError,
+    ResourceCompatibilityOverlayService,
+)
+
 
 SCHEMA_VERSION = 1
 RESOURCE_TYPES = ("string", "plural", "string-array")
@@ -492,7 +497,17 @@ class ResourceInventoryService:
 
         self._verify_strings(baseline)
         self._verify_binaries(baseline)
+        self._verify_compatibility_overlays()
         return baseline["summary"]
+
+    def _verify_compatibility_overlays(self) -> None:
+        try:
+            ResourceCompatibilityOverlayService(
+                self.project_root,
+                self.migration_map_path,
+            ).verify()
+        except ResourceCompatibilityOverlayError as error:
+            raise ResourceInventoryError(str(error)) from error
 
     def _verify_strings(self, baseline: dict[str, Any]) -> None:
         map_modules = {item["name"]: item for item in self._string_modules()}

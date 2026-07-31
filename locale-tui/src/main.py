@@ -14,6 +14,10 @@ from app import LocaleTuiApp
 from services.xml_parser import StringsXmlParser
 from services.translator import AITranslator
 from services.resource_inventory import ResourceInventoryError, ResourceInventoryService
+from services.resource_compatibility_overlay import (
+    ResourceCompatibilityOverlayError,
+    ResourceCompatibilityOverlayService,
+)
 from services.kotlin_resource_migrator import KotlinResourceCallMigrator
 from models.entry import TranslationEntry
 
@@ -377,6 +381,68 @@ def resource_verify(migration_map: Path, baseline: Path):
         f"{sum(summary['resource_counts'].values())} 个值资源, "
         f"{summary['binary_resource_count']} 个文件资源"
     )
+
+
+@cli.command("resource-overlay-sync")
+@click.option(
+    "--migration-map",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=DEFAULT_MIGRATION_MAP,
+    show_default=True,
+)
+@click.option(
+    "--project-root",
+    type=click.Path(path_type=Path, file_okay=False),
+    default=None,
+    help="项目根目录（默认读取 locale-tui 配置）。",
+)
+@click.option(
+    "--mode",
+    type=click.Choice(["dry-run", "check", "apply"], case_sensitive=True),
+    default="dry-run",
+    show_default=True,
+    help="预览差异、CI 检查或写入兼容覆盖文件。",
+)
+@click.pass_context
+def resource_overlay_sync(
+    ctx: click.Context,
+    migration_map: Path,
+    project_root: Path | None,
+    mode: str,
+):
+    """从声明的源语言确定性同步 Compose locale 兼容覆盖层。"""
+    if project_root is None:
+        project_root = load_config(warn_missing_api_key=False).project_root
+    elif not project_root.is_absolute():
+        project_root = Path.cwd() / project_root
+
+    try:
+        service = ResourceCompatibilityOverlayService(project_root, migration_map)
+        report = service.sync(mode=mode)
+    except (ResourceCompatibilityOverlayError, ValueError) as error:
+        raise click.ClickException(str(error)) from error
+
+    if mode == "dry-run":
+        if report.files_changed:
+            click.echo(report.unified_diff(service.project_root), nl=False)
+        click.echo(
+            f"预览完成：扫描 {report.overlays_scanned} 个兼容覆盖层，"
+            f"需要同步 {report.files_changed} 个。"
+        )
+        return
+
+    if mode == "check":
+        if report.files_changed:
+            click.echo(
+                f"需要同步 {report.files_changed} 个兼容覆盖层；"
+                "请使用 --mode apply 写入结果。",
+                err=True,
+            )
+            ctx.exit(1)
+        click.echo(f"✓ {report.overlays_scanned} 个兼容覆盖层均为最新。")
+        return
+
+    click.echo(f"✓ 已同步 {report.files_changed} 个兼容覆盖层。")
 
 
 @cli.command("migrate-kotlin-resource-calls")

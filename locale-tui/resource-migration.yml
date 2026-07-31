@@ -14,6 +14,17 @@ string_modules:
     destination_root: search/src/commonMain/composeResources
     android_key_allowlist: []
 
+compatibility_overlays:
+  - logical_id: app.strings.zh_tw_android_fallbacks
+    module: app
+    source_qualifier: values
+    target_qualifier: values-zh-rTW
+    destination_file: composeApp/src/commonMain/composeResources/values-zh-rTW/android_fallbacks.xml
+    keys:
+      - setting_tts_page_fish_audio_speed_description
+      - setting_tts_page_temperature
+      - setting_tts_page_temperature_description
+
 binary_resources:
   - logical_id: app.drawable.afdian
     source_path: app/src/main/res/drawable/afdian.xml
