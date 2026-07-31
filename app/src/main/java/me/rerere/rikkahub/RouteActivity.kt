@@ -228,8 +228,8 @@ class RouteActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         // Navigate to the chat screen if a conversation ID is provided
-        intent.getStringExtra("conversationId")?.let { text ->
-            navStack?.add(Screen.Chat(text))
+        conversationScreen(intent.getStringExtra(CONVERSATION_ID_EXTRA))?.let { screen ->
+            navStack?.add(screen)
         }
     }
 
