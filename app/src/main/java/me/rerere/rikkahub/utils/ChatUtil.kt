@@ -2,7 +2,7 @@ package me.rerere.rikkahub.utils
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.context.Navigator

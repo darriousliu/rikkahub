@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

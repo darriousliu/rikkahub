@@ -2,7 +2,7 @@ package me.rerere.rikkahub.ui.components.webview
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import android.view.ViewGroup.LayoutParams
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient

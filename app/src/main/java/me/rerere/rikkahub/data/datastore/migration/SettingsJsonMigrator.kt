@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.data.datastore.migration
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject

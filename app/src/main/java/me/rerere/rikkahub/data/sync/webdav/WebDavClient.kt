@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.data.sync.webdav
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import android.util.Xml
 import io.ktor.client.HttpClient
 import io.ktor.client.request.basicAuth

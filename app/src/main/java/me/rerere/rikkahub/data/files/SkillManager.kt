@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.files
 
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

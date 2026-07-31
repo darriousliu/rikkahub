@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.ui.pages.imggen
 
 import android.app.Application
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager

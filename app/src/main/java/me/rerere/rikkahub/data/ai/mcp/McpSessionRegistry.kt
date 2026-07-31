@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.data.ai.mcp
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.util.StringValues

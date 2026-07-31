@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.sync
 
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

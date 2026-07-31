@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.ui.pages.history
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow

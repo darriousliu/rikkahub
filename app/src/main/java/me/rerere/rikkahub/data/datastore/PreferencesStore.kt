@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.datastore
 
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.booleanPreferencesKey

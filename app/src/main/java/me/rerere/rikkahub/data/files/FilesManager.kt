@@ -3,7 +3,7 @@ package me.rerere.rikkahub.data.files
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import java.io.File

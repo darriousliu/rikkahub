@@ -2,7 +2,7 @@ package me.rerere.rikkahub.service
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.net.toUri
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

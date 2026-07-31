@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import android.webkit.MimeTypeMap
 import java.io.ByteArrayOutputStream
 import java.io.File

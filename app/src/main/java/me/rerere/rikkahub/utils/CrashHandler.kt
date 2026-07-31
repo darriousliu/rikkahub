@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.utils
 
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.content.edit
 
 private const val TAG = "CrashHandler"

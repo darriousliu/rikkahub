@@ -16,7 +16,7 @@ import android.os.Environment
 import android.os.Process
 import android.provider.MediaStore
 import android.provider.Settings
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.browser.customtabs.CustomTabsIntent

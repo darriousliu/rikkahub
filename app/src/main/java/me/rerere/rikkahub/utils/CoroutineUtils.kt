@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.utils
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

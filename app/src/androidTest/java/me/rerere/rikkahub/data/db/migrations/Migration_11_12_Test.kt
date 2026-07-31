@@ -2,7 +2,7 @@ package me.rerere.rikkahub.data.db.migrations
 
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4

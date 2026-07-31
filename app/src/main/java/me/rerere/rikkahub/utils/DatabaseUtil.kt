@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.utils
 
 import android.database.CursorWindow
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 
 private const val TAG = "DatabaseUtil"
 

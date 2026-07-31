@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.ui.pages.chat
 
 import android.net.Uri
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

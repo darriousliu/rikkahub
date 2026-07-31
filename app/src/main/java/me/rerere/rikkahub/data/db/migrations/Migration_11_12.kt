@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.db.migrations
 
 import android.database.sqlite.SQLiteBlobTooBigException
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.serialization.json.JsonArray

@@ -1,6 +1,6 @@
 package me.rerere.rikkahub.data.db.fts
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.rerere.ai.ui.UIMessage
