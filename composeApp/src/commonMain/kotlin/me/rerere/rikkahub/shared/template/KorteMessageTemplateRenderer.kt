@@ -31,7 +31,13 @@ class KorteMessageTemplateRenderer(
     )
 
     override suspend fun get(templateName: String): MessageTemplate {
-        val template = templates.get(templateName)
+        val template = try {
+            templates.get(templateName)
+        } catch (error: Throwable) {
+            // Korte retains failed deferreds in its cache; Pebble only cached successful compilation.
+            templates.invalidateCache()
+            throw error
+        }
         return MessageTemplate { context -> template(context) }
     }
 
