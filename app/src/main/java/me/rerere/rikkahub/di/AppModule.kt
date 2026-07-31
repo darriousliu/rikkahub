@@ -5,10 +5,13 @@ import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
 import kotlinx.serialization.json.Json
 import me.rerere.rikkahub.AppScope
+import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.createPlatformBuildInfo
 import me.rerere.rikkahub.utils.EmojiData
 import me.rerere.rikkahub.utils.EmojiUtils
 import me.rerere.rikkahub.utils.JsonInstant
@@ -19,6 +22,15 @@ import me.rerere.tts.provider.TTSManager
 import org.koin.dsl.module
 
 val appModule = module {
+    single<PlatformBuildInfo> {
+        createPlatformBuildInfo(
+            debug = BuildConfig.DEBUG,
+            applicationId = BuildConfig.APPLICATION_ID,
+            versionName = BuildConfig.VERSION_NAME,
+            versionCode = BuildConfig.VERSION_CODE,
+        )
+    }
+
     single<Json> { JsonInstant }
 
     single {
@@ -30,7 +42,7 @@ val appModule = module {
     }
 
     single {
-        UpdateChecker(get())
+        UpdateChecker(client = get(), buildInfo = get())
     }
 
     single {

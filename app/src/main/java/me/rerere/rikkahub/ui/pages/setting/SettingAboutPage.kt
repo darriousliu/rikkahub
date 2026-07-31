@@ -38,10 +38,11 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.displayVersion
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.easteregg.EmojiBurstHost
 import me.rerere.rikkahub.ui.components.ui.CardGroup
@@ -52,7 +53,7 @@ import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.plus
 
 @Composable
-fun SettingAboutPage() {
+fun SettingAboutPage(buildInfo: PlatformBuildInfo) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
     val navController = LocalNavController.current
@@ -139,7 +140,7 @@ fun SettingAboutPage() {
                             ),
                             leadingContent = { Icon(HugeIcons.Code, null) },
                             supportingContent = {
-                                Text("${BuildConfig.VERSION_NAME} / ${BuildConfig.VERSION_CODE}")
+                                Text(buildInfo.displayVersion)
                             },
                             headlineContent = { Text(stringResource(Res.string.about_page_version)) },
                         )

@@ -34,9 +34,9 @@ import com.dokar.sonner.ToastType
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Download01
-import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useThrottle
@@ -53,7 +53,7 @@ import kotlin.time.toJavaInstant
 
 @OptIn(ExperimentalTime::class)
 @Composable
-fun UpdateCard(vm: ChatVM) {
+fun UpdateCard(vm: ChatVM, buildInfo: PlatformBuildInfo) {
     val state by vm.updateState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val toaster = LocalToaster.current
@@ -81,7 +81,7 @@ fun UpdateCard(vm: ChatVM) {
     state.onSuccess { info ->
         var showDetail by remember { mutableStateOf(false) }
         var dismissed by remember { mutableStateOf(false) }
-        val current = remember { Version(BuildConfig.VERSION_NAME) }
+        val current = remember(buildInfo.versionName) { Version(buildInfo.versionName) }
         val latest = remember(info) { Version(info.version) }
         if (latest > current && !dismissed) {
             Card(

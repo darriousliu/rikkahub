@@ -63,6 +63,7 @@ import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalASRState
@@ -242,6 +243,7 @@ class RouteActivity : ComponentActivity() {
         val tts = rememberCustomTtsState()
         val asr = rememberCustomAsrState()
         val eventBus = koinInject<AppEventBus>()
+        val buildInfo = koinInject<PlatformBuildInfo>()
         LaunchedEffect(tts) {
             eventBus.events.collect { event ->
                 when (event) {
@@ -439,7 +441,7 @@ class RouteActivity : ComponentActivity() {
                             }
 
                             entry<Screen.SettingAbout> {
-                                SettingAboutPage()
+                                SettingAboutPage(buildInfo)
                             }
 
                             entry<Screen.SettingSearch> {
@@ -528,7 +530,7 @@ class RouteActivity : ComponentActivity() {
                             }
                         }
                     )
-                    if (BuildConfig.DEBUG) {
+                    if (buildInfo.debug) {
                         Text(
                             text = "[开发模式]",
                             modifier = Modifier

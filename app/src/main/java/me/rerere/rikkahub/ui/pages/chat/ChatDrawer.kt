@@ -74,6 +74,7 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.Folder
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.ui.components.ai.AssistantPicker
 import me.rerere.rikkahub.ui.components.ui.BackupReminderCard
 import me.rerere.rikkahub.ui.components.ui.Greeting
@@ -108,6 +109,7 @@ fun ChatDrawerContent(
     val toaster = LocalToaster.current
     val isPlayStore = rememberIsPlayStoreVersion()
     val repo = koinInject<ConversationRepository>()
+    val buildInfo = koinInject<PlatformBuildInfo>()
 
     val activity = context as ComponentActivity
     val drawerVm: ChatDrawerVM = koinViewModel(viewModelStoreOwner = activity)
@@ -170,7 +172,7 @@ fun ChatDrawerContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (settings.displaySetting.showUpdates && !isPlayStore) {
-                UpdateCard(vm)
+                UpdateCard(vm, buildInfo)
             }
 
             BackupReminderCard(

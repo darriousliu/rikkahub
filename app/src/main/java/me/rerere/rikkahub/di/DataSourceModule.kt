@@ -13,7 +13,6 @@ import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.common.logging.RikkaLog as Log
-import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.GenerationHandler
@@ -35,6 +34,8 @@ import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
 import me.rerere.rikkahub.shared.template.MessageTemplateSource
 import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.apiUserAgent
 import me.rerere.search.SearchService
 import me.rerere.rikkahub.data.sync.S3Sync
 import okhttp3.MediaType.Companion.toMediaType
@@ -175,6 +176,7 @@ val dataSourceModule = module {
     single<OkHttpClient> {
         val acceptLang = AcceptLanguageBuilder.fromAndroid(get())
             .build()
+        val buildInfo = get<PlatformBuildInfo>()
         OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(10, TimeUnit.MINUTES)
@@ -188,7 +190,7 @@ val dataSourceModule = module {
                     .addHeader(HttpHeaders.AcceptLanguage, acceptLang)
 
                 if (originalRequest.header(HttpHeaders.UserAgent) == null) {
-                    requestBuilder.addHeader(HttpHeaders.UserAgent, "RikkaHub-Android/${BuildConfig.VERSION_NAME}")
+                    requestBuilder.addHeader(HttpHeaders.UserAgent, buildInfo.apiUserAgent("Android"))
                 }
 
                 chain.proceed(requestBuilder.build())

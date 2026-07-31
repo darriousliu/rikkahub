@@ -13,13 +13,17 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.rerere.common.http.await
-import me.rerere.rikkahub.BuildConfig
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.updateCheckUserAgent
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 private const val API_URL = "https://updates.rikka-ai.com/"
 
-class UpdateChecker(private val client: OkHttpClient) {
+class UpdateChecker(
+    private val client: OkHttpClient,
+    private val buildInfo: PlatformBuildInfo,
+) {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun checkUpdate(): Flow<UiState<UpdateInfo>> = flow {
@@ -33,7 +37,7 @@ class UpdateChecker(private val client: OkHttpClient) {
                             .get()
                             .addHeader(
                                 "User-Agent",
-                                "RikkaHub ${BuildConfig.VERSION_NAME} #${BuildConfig.VERSION_CODE}"
+                                buildInfo.updateCheckUserAgent
                             )
                             .build()
                     ).await()
