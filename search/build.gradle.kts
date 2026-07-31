@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
 }
@@ -40,6 +41,10 @@ kotlin {
     iosSimulatorArm64()
 
     sourceSets {
+        commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.components.resources)
+        }
         androidMain.dependencies {
             implementation(project(":ai"))
             implementation(project(":common"))
@@ -63,4 +68,8 @@ kotlin {
             }
         }
     }
+}
+
+compose.resources {
+    packageOfResClass = "me.rerere.search.generated.resources"
 }

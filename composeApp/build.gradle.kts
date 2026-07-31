@@ -24,6 +24,8 @@ kotlin {
         compileSdk = 37
         minSdk = 26
 
+        androidResources.enable = true
+
         withHostTest {}
         withDeviceTest {
             instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -66,6 +68,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            api(compose.components.resources)
             implementation(libs.androidx.room3.runtime)
             implementation(libs.androidx.room3.paging)
             implementation(libs.androidx.sqlite.bundled)
@@ -132,4 +135,9 @@ buildkonfig {
         buildConfigField(STRING, "VERSION_NAME", "2.4.5")
         buildConfigField(STRING, "VERSION_CODE", "172")
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "me.rerere.rikkahub.generated.resources"
 }
