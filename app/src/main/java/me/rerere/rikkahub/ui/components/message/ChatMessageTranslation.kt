@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
@@ -49,9 +48,10 @@ import me.rerere.hugeicons.stroke.ArrowDown01
 import me.rerere.hugeicons.stroke.ArrowUp01
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.LanguageCircle
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import java.util.Locale
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun LanguageSelectionDialog(
@@ -78,15 +78,15 @@ fun LanguageSelectionDialog(
     @Composable
     fun getLanguageDisplayName(locale: Locale): String {
         return when (locale) {
-            Locale.SIMPLIFIED_CHINESE -> stringResource(R.string.language_simplified_chinese)
-            Locale.ENGLISH -> stringResource(R.string.language_english)
-            Locale.TRADITIONAL_CHINESE -> stringResource(R.string.language_traditional_chinese)
-            Locale.JAPANESE -> stringResource(R.string.language_japanese)
-            Locale.KOREAN -> stringResource(R.string.language_korean)
-            Locale.FRENCH -> stringResource(R.string.language_french)
-            Locale.GERMAN -> stringResource(R.string.language_german)
-            Locale.ITALIAN -> stringResource(R.string.language_italian)
-            Locale("es", "ES") -> stringResource(R.string.language_spanish)
+            Locale.SIMPLIFIED_CHINESE -> stringResource(Res.string.language_simplified_chinese)
+            Locale.ENGLISH -> stringResource(Res.string.language_english)
+            Locale.TRADITIONAL_CHINESE -> stringResource(Res.string.language_traditional_chinese)
+            Locale.JAPANESE -> stringResource(Res.string.language_japanese)
+            Locale.KOREAN -> stringResource(Res.string.language_korean)
+            Locale.FRENCH -> stringResource(Res.string.language_french)
+            Locale.GERMAN -> stringResource(Res.string.language_german)
+            Locale.ITALIAN -> stringResource(Res.string.language_italian)
+            Locale("es", "ES") -> stringResource(Res.string.language_spanish)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
     }
@@ -103,7 +103,7 @@ fun LanguageSelectionDialog(
         ) {
             // 标题
             Text(
-                text = stringResource(R.string.translation_language_selection_title),
+                text = stringResource(Res.string.translation_language_selection_title),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -159,7 +159,7 @@ fun LanguageSelectionDialog(
                                 contentDescription = null,
                             )
                             Text(
-                                text = stringResource(R.string.translation_clear),
+                                text = stringResource(Res.string.translation_clear),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                         }
@@ -202,7 +202,7 @@ fun CollapsibleTranslationText(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = stringResource(R.string.translation_text),
+                    text = stringResource(Res.string.translation_text),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
@@ -216,8 +216,8 @@ fun CollapsibleTranslationText(
             ) {
                 Icon(
                     imageVector = if (isCollapsed) HugeIcons.ArrowDown01 else HugeIcons.ArrowUp01,
-                    contentDescription = if (isCollapsed) stringResource(R.string.expand_translation) else stringResource(
-                        R.string.collapse_translation
+                    contentDescription = if (isCollapsed) stringResource(Res.string.expand_translation) else stringResource(
+                        Res.string.collapse_translation
                     ),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -241,7 +241,7 @@ fun CollapsibleTranslationText(
                 shape = MaterialTheme.shapes.medium
             ) {
                 // Check if it's loading state
-                val isTranslating = content == stringResource(R.string.translating)
+                val isTranslating = content == stringResource(Res.string.translating)
 
                 if (isTranslating) {
                     // Show loading animation for translation
@@ -270,7 +270,7 @@ fun CollapsibleTranslationText(
                         )
 
                         Text(
-                            text = stringResource(R.string.translating),
+                            text = stringResource(Res.string.translating),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.graphicsLayer(alpha = alpha)

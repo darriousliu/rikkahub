@@ -24,19 +24,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
 import me.rerere.ai.provider.ClaudePromptCacheTtl
 import me.rerere.ai.provider.ProviderSetting
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.View
 import me.rerere.hugeicons.stroke.ViewOff
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.serialization.json.Json
@@ -210,7 +210,7 @@ private fun ProviderConfigureOpenAI(
     OutlinedTextField(
         value = provider.name,
         onValueChange = { onEdit(provider.copy(name = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_name)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_name)) },
         modifier = Modifier.fillMaxWidth(),
     )
 
@@ -218,7 +218,7 @@ private fun ProviderConfigureOpenAI(
     OutlinedTextField(
         value = provider.apiKey,
         onValueChange = { onEdit(provider.copy(apiKey = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_api_key)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_api_key)) },
         modifier = Modifier.fillMaxWidth(),
         maxLines = 3,
         visualTransformation = if (keyVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -232,7 +232,7 @@ private fun ProviderConfigureOpenAI(
     OutlinedTextField(
         value = provider.baseUrl,
         onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_api_base_url)) },
         modifier = Modifier.fillMaxWidth(),
         isError = provider.baseUrl.isNotBlank() && !provider.baseUrl.isValidBaseUrl(),
     )
@@ -241,7 +241,7 @@ private fun ProviderConfigureOpenAI(
         OutlinedTextField(
             value = provider.chatCompletionsPath,
             onValueChange = { onEdit(provider.copy(chatCompletionsPath = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_api_path)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_api_path)) },
             modifier = Modifier.fillMaxWidth(),
             enabled = !provider.builtIn,
         )
@@ -252,20 +252,20 @@ private fun ProviderConfigureOpenAI(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_enable))
+        Text(stringResource(Res.string.setting_provider_page_enable))
         Switch(
             checked = provider.enabled,
             onCheckedChange = { onEdit(provider.copy(enabled = it)) }
         )
     }
 
-    val responseAPIWarning = stringResource(R.string.setting_provider_page_response_api_warning)
+    val responseAPIWarning = stringResource(Res.string.setting_provider_page_response_api_warning)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_response_api))
+        Text(stringResource(Res.string.setting_provider_page_response_api))
         Switch(
             checked = provider.useResponseApi,
             onCheckedChange = {
@@ -282,7 +282,7 @@ private fun ProviderConfigureOpenAI(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_include_history_reasoning))
+        Text(stringResource(Res.string.setting_provider_page_include_history_reasoning))
         Switch(
             checked = provider.includeHistoryReasoning,
             onCheckedChange = { onEdit(provider.copy(includeHistoryReasoning = it)) }
@@ -300,7 +300,7 @@ private fun ProviderConfigureClaude(
     OutlinedTextField(
         value = provider.name,
         onValueChange = { onEdit(provider.copy(name = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_name)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_name)) },
         modifier = Modifier.fillMaxWidth(),
         maxLines = 3,
     )
@@ -309,7 +309,7 @@ private fun ProviderConfigureClaude(
     OutlinedTextField(
         value = provider.apiKey,
         onValueChange = { onEdit(provider.copy(apiKey = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_api_key)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_api_key)) },
         modifier = Modifier.fillMaxWidth(),
         maxLines = 3,
         visualTransformation = if (keyVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -323,7 +323,7 @@ private fun ProviderConfigureClaude(
     OutlinedTextField(
         value = provider.baseUrl,
         onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_api_base_url)) },
         modifier = Modifier.fillMaxWidth(),
         isError = provider.baseUrl.isNotBlank() && !provider.baseUrl.isValidBaseUrl(),
     )
@@ -333,7 +333,7 @@ private fun ProviderConfigureClaude(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_enable))
+        Text(stringResource(Res.string.setting_provider_page_enable))
         Switch(
             checked = provider.enabled,
             onCheckedChange = { onEdit(provider.copy(enabled = it)) }
@@ -345,7 +345,7 @@ private fun ProviderConfigureClaude(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_claude_prompt_caching))
+        Text(stringResource(Res.string.setting_provider_page_claude_prompt_caching))
         Switch(
             checked = provider.promptCaching,
             onCheckedChange = { onEdit(provider.copy(promptCaching = it)) }
@@ -353,7 +353,7 @@ private fun ProviderConfigureClaude(
     }
 
     if (provider.promptCaching) {
-        Text(stringResource(R.string.setting_provider_page_claude_prompt_cache_ttl))
+        Text(stringResource(Res.string.setting_provider_page_claude_prompt_cache_ttl))
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             ClaudePromptCacheTtl.entries.forEachIndexed { index, ttl ->
                 SegmentedButton(
@@ -364,8 +364,8 @@ private fun ProviderConfigureClaude(
                     label = {
                         Text(
                             when (ttl) {
-                                ClaudePromptCacheTtl.FIVE_MINUTES -> stringResource(R.string.setting_provider_page_claude_prompt_cache_ttl_5m)
-                                ClaudePromptCacheTtl.ONE_HOUR -> stringResource(R.string.setting_provider_page_claude_prompt_cache_ttl_1h)
+                                ClaudePromptCacheTtl.FIVE_MINUTES -> stringResource(Res.string.setting_provider_page_claude_prompt_cache_ttl_5m)
+                                ClaudePromptCacheTtl.ONE_HOUR -> stringResource(Res.string.setting_provider_page_claude_prompt_cache_ttl_1h)
                             }
                         )
                     },
@@ -412,7 +412,7 @@ private fun ProviderConfigureGoogle(
     OutlinedTextField(
         value = provider.name,
         onValueChange = { onEdit(provider.copy(name = it.trim())) },
-        label = { Text(stringResource(R.string.setting_provider_page_name)) },
+        label = { Text(stringResource(Res.string.setting_provider_page_name)) },
         modifier = Modifier.fillMaxWidth(),
     )
 
@@ -421,7 +421,7 @@ private fun ProviderConfigureGoogle(
         OutlinedTextField(
             value = provider.apiKey,
             onValueChange = { onEdit(provider.copy(apiKey = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_api_key)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_api_key)) },
             modifier = Modifier.fillMaxWidth(),
             maxLines = 3,
             visualTransformation = if (keyVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -437,7 +437,7 @@ private fun ProviderConfigureGoogle(
         OutlinedTextField(
             value = provider.baseUrl,
             onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_api_base_url)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_api_base_url)) },
             modifier = Modifier.fillMaxWidth(),
             isError = provider.baseUrl.isNotBlank() && (
                 !provider.baseUrl.isValidBaseUrl() || !provider.baseUrl.endsWith("/v1beta")
@@ -453,7 +453,7 @@ private fun ProviderConfigureGoogle(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_enable))
+        Text(stringResource(Res.string.setting_provider_page_enable))
         Switch(
             checked = provider.enabled,
             onCheckedChange = { onEdit(provider.copy(enabled = it)) }
@@ -465,7 +465,7 @@ private fun ProviderConfigureGoogle(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(stringResource(R.string.setting_provider_page_vertex_ai))
+        Text(stringResource(Res.string.setting_provider_page_vertex_ai))
         Switch(
             checked = provider.vertexAI,
             onCheckedChange = { onEdit(provider.copy(vertexAI = it)) }
@@ -478,7 +478,7 @@ private fun ProviderConfigureGoogle(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(stringResource(R.string.setting_provider_page_use_service_account))
+            Text(stringResource(Res.string.setting_provider_page_use_service_account))
             Switch(
                 checked = provider.useServiceAccount,
                 onCheckedChange = { onEdit(provider.copy(useServiceAccount = it)) }
@@ -491,13 +491,13 @@ private fun ProviderConfigureGoogle(
             onClick = { serviceAccountJsonLauncher.launch(arrayOf("application/json", "*/*")) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.setting_provider_page_import_service_account_json))
+            Text(stringResource(Res.string.setting_provider_page_import_service_account_json))
         }
 
         OutlinedTextField(
             value = provider.serviceAccountEmail,
             onValueChange = { onEdit(provider.copy(serviceAccountEmail = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_service_account_email)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_service_account_email)) },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -505,7 +505,7 @@ private fun ProviderConfigureGoogle(
         OutlinedTextField(
             value = provider.privateKey,
             onValueChange = { onEdit(provider.copy(privateKey = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_private_key)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_private_key)) },
             modifier = Modifier.fillMaxWidth(),
             maxLines = 6,
             minLines = 3,
@@ -521,14 +521,14 @@ private fun ProviderConfigureGoogle(
         OutlinedTextField(
             value = provider.location,
             onValueChange = { onEdit(provider.copy(location = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_location)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_location)) },
             modifier = Modifier.fillMaxWidth(),
         )
 
         OutlinedTextField(
             value = provider.projectId,
             onValueChange = { onEdit(provider.copy(projectId = it.trim())) },
-            label = { Text(stringResource(R.string.setting_provider_page_project_id)) },
+            label = { Text(stringResource(Res.string.setting_provider_page_project_id)) },
             modifier = Modifier.fillMaxWidth(),
         )
     }

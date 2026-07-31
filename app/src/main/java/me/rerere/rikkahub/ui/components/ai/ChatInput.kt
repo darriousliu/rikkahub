@@ -67,7 +67,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,6 +97,7 @@ import me.rerere.rikkahub.data.datastore.getQuickMessagesOfAssistant
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.QuickMessage
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionContext
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionItem
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionList
@@ -110,6 +110,7 @@ import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.SoundEffectPlayer
 import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.seconds
@@ -264,8 +265,8 @@ fun ChatInput(
                             )
 
                             // Search
-                            val enableSearchMsg = stringResource(R.string.web_search_enabled)
-                            val disableSearchMsg = stringResource(R.string.web_search_disabled)
+                            val enableSearchMsg = stringResource(Res.string.web_search_enabled)
+                            val disableSearchMsg = stringResource(Res.string.web_search_disabled)
                             val chatModel = settings.getCurrentChatModel()
                             SearchPickerButton(
                                 enableSearch = enableSearch,
@@ -305,7 +306,7 @@ fun ChatInput(
                         ) {
                             Icon(
                                 imageVector = HugeIcons.Add01,
-                                contentDescription = stringResource(R.string.more_options)
+                                contentDescription = stringResource(Res.string.more_options)
                             )
                         }
 
@@ -373,14 +374,14 @@ fun ChatInput(
                                     KeepScreenOn()
                                     Icon(
                                         imageVector = HugeIcons.Cancel01,
-                                        contentDescription = stringResource(R.string.stop),
+                                        contentDescription = stringResource(Res.string.stop),
                                         tint = contentColor,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 } else {
                                     Icon(
                                         imageVector = HugeIcons.ArrowUp02,
-                                        contentDescription = stringResource(R.string.send),
+                                        contentDescription = stringResource(Res.string.send),
                                         tint = contentColor,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -443,11 +444,11 @@ private fun TextInputRow(
                         .padding(horizontal = 14.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = stringResource(R.string.editing))
+                    Text(text = stringResource(Res.string.editing))
                     Spacer(Modifier.weight(1f))
                     Icon(
                         imageVector = HugeIcons.Cancel01,
-                        contentDescription = stringResource(R.string.cancel_edit),
+                        contentDescription = stringResource(Res.string.cancel_edit),
                         modifier = Modifier.clickable { state.clearInput() }
                     )
                 }
@@ -554,7 +555,7 @@ private fun TextInputRow(
                 },
             shape = MaterialTheme.shapes.largeIncreased,
             placeholder = {
-                Text(stringResource(R.string.chat_input_placeholder))
+                Text(stringResource(Res.string.chat_input_placeholder))
             },
             lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
             keyboardOptions = KeyboardOptions(
@@ -761,7 +762,7 @@ private fun FullScreenEditor(
                             onClick = {
                                 onDone()
                             }) {
-                            Text(stringResource(R.string.chat_page_save))
+                            Text(stringResource(Res.string.chat_page_save))
                         }
                     }
                     TextField(
@@ -771,7 +772,7 @@ private fun FullScreenEditor(
                             .fillMaxSize(),
                         shape = RoundedCornerShape(32.dp),
                         placeholder = {
-                            Text(stringResource(R.string.chat_input_placeholder))
+                            Text(stringResource(Res.string.chat_input_placeholder))
                         },
                         colors = TextFieldDefaults.colors().copy(
                             unfocusedIndicatorColor = Color.Transparent,

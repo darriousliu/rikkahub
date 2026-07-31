@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,14 +61,15 @@ import me.rerere.hugeicons.stroke.CalendarAdd01
 import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Time02
 import me.rerere.hugeicons.stroke.VolumeHigh
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.Favicon
 import me.rerere.rikkahub.ui.components.ui.FaviconRow
 import me.rerere.rikkahub.ui.modifier.shimmer
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.openUrl
@@ -99,10 +99,10 @@ object MemoryToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String = when (action(context)) {
-        ACTION_CREATE -> stringResource(R.string.chat_message_tool_create_memory)
-        ACTION_EDIT -> stringResource(R.string.chat_message_tool_edit_memory)
-        ACTION_DELETE -> stringResource(R.string.chat_message_tool_delete_memory)
-        else -> stringResource(R.string.chat_message_tool_call_generic, toolName)
+        ACTION_CREATE -> stringResource(Res.string.chat_message_tool_create_memory)
+        ACTION_EDIT -> stringResource(Res.string.chat_message_tool_edit_memory)
+        ACTION_DELETE -> stringResource(Res.string.chat_message_tool_delete_memory)
+        else -> stringResource(Res.string.chat_message_tool_call_generic, toolName)
     }
 
     override fun hasSummary(context: ToolUIContext): Boolean =
@@ -142,7 +142,7 @@ object MemoryToolUI : ToolUIRenderer {
                     ) {
                         Icon(
                             imageVector = HugeIcons.Delete01,
-                            contentDescription = stringResource(R.string.tool_ui_delete_memory)
+                            contentDescription = stringResource(Res.string.tool_ui_delete_memory)
                         )
                     }
                 }
@@ -163,7 +163,7 @@ object SearchWebToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String = stringResource(
-        R.string.chat_message_tool_search_web,
+        Res.string.chat_message_tool_search_web,
         context.arguments.getStringContent("query") ?: ""
     )
 
@@ -196,7 +196,7 @@ object SearchWebToolUI : ToolUIRenderer {
                     size = 18.dp,
                 )
                 Text(
-                    text = stringResource(R.string.chat_message_tool_search_results_count, items.size),
+                    text = stringResource(Res.string.chat_message_tool_search_results_count, items.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                 )
@@ -225,7 +225,7 @@ object ScrapeWebToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_scrape_web)
+        stringResource(Res.string.chat_message_tool_scrape_web)
 
     override fun hasSummary(context: ToolUIContext): Boolean =
         context.arguments.getStringContent("url") != null
@@ -260,7 +260,7 @@ object GetTimeInfoToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_get_time)
+        stringResource(Res.string.chat_message_tool_get_time)
 }
 
 /**
@@ -277,9 +277,9 @@ object ClipboardToolUI : ToolUIRenderer {
     @Composable
     override fun title(context: ToolUIContext): String =
         when (context.arguments.getStringContent("action")) {
-            ACTION_READ -> stringResource(R.string.chat_message_tool_clipboard_read)
-            ACTION_WRITE -> stringResource(R.string.chat_message_tool_clipboard_write)
-            else -> stringResource(R.string.chat_message_tool_call_generic, toolName)
+            ACTION_READ -> stringResource(Res.string.chat_message_tool_clipboard_read)
+            ACTION_WRITE -> stringResource(Res.string.chat_message_tool_clipboard_write)
+            else -> stringResource(Res.string.chat_message_tool_call_generic, toolName)
         }
 }
 
@@ -296,7 +296,7 @@ object TextToSpeechToolUI : ToolUIRenderer {
         val preview = context.arguments.getStringContent("text")?.let { text ->
             if (text.length > 24) text.take(24) + "…" else text
         } ?: ""
-        return stringResource(R.string.tool_ui_speaking, preview)
+        return stringResource(Res.string.tool_ui_speaking, preview)
     }
 
     override fun hasSummary(context: ToolUIContext): Boolean =
@@ -326,7 +326,7 @@ object TextToSpeechToolUI : ToolUIRenderer {
             ) {
                 Icon(
                     imageVector = HugeIcons.Refresh01,
-                    contentDescription = stringResource(R.string.tool_ui_replay),
+                    contentDescription = stringResource(Res.string.tool_ui_replay),
                     modifier = Modifier.size(14.dp),
                 )
             }
@@ -360,7 +360,7 @@ object RecentChatsToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_recent_chats)
+        stringResource(Res.string.chat_message_tool_recent_chats)
 
     private fun chats(context: ToolUIContext): List<JsonElement> =
         (context.content as? JsonArray) ?: emptyList()
@@ -392,7 +392,7 @@ object ConversationSearchToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String = stringResource(
-        R.string.chat_message_tool_conversation_search,
+        Res.string.chat_message_tool_conversation_search,
         context.arguments.getStringContent("query") ?: ""
     )
 
@@ -406,7 +406,7 @@ object ConversationSearchToolUI : ToolUIRenderer {
         val results = results(context)
         if (results.isEmpty()) return
         Text(
-            text = stringResource(R.string.chat_message_tool_search_results_count, results.size),
+            text = stringResource(Res.string.chat_message_tool_search_results_count, results.size),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
         )
@@ -426,7 +426,7 @@ object GetScreenTimeToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_screen_time)
+        stringResource(Res.string.chat_message_tool_screen_time)
 
     private fun apps(context: ToolUIContext): List<JsonElement> =
         context.content?.jsonObjectOrNull?.get("apps")?.let { it as? JsonArray } ?: emptyList()
@@ -441,7 +441,7 @@ object GetScreenTimeToolUI : ToolUIRenderer {
     override fun Summary(context: ToolUIContext) {
         if (isNoPermission(context)) {
             Text(
-                text = stringResource(R.string.assistant_page_local_tools_screen_time_permission_required),
+                text = stringResource(Res.string.assistant_page_local_tools_screen_time_permission_required),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -460,7 +460,7 @@ object GetScreenTimeToolUI : ToolUIRenderer {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.tool_ui_screen_time_total),
+                    text = stringResource(Res.string.tool_ui_screen_time_total),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                     modifier = Modifier.weight(1f),
@@ -513,7 +513,7 @@ object CalendarQueryToolUI : ToolUIRenderer {
 
     @Composable
     override fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_calendar_query)
+        stringResource(Res.string.chat_message_tool_calendar_query)
 
     private fun events(context: ToolUIContext): List<JsonElement> =
         context.content?.jsonObjectOrNull?.get("events")?.let { it as? JsonArray } ?: emptyList()
@@ -529,7 +529,7 @@ object CalendarQueryToolUI : ToolUIRenderer {
             modifier = Modifier.shimmer(isLoading = context.loading),
         ) {
             Text(
-                text = stringResource(R.string.chat_message_tool_search_results_count, events.size),
+                text = stringResource(Res.string.chat_message_tool_search_results_count, events.size),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
             )
@@ -555,7 +555,7 @@ object CalendarCreateToolUI : ToolUIRenderer {
     @Composable
     override fun title(context: ToolUIContext): String {
         val eventTitle = context.arguments.getStringContent("title") ?: ""
-        return stringResource(R.string.chat_message_tool_calendar_create, eventTitle)
+        return stringResource(Res.string.chat_message_tool_calendar_create, eventTitle)
     }
 }
 
@@ -578,7 +578,7 @@ private fun ScreenTimePreview(content: JsonElement, apps: List<JsonElement>) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.tool_ui_screen_time_total),
+                        text = stringResource(Res.string.tool_ui_screen_time_total),
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f),
                     )
@@ -686,7 +686,7 @@ private fun SearchWebPreview(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            Text(stringResource(R.string.chat_message_tool_search_prefix, query))
+            Text(stringResource(Res.string.chat_message_tool_search_prefix, query))
         }
 
         if (answer != null) {
@@ -795,7 +795,7 @@ private fun ScrapeWebPreview(content: JsonElement) {
         item {
             Text(
                 text = stringResource(
-                    R.string.chat_message_tool_scrape_prefix,
+                    Res.string.chat_message_tool_scrape_prefix,
                     urls.joinToString(", ") { it.getStringContent("url") ?: "" }
                 )
             )

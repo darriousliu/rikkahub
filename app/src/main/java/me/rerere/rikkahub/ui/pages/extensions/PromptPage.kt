@@ -75,14 +75,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.rerere.ai.core.MessageRole
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.export.LorebookSerializer
 import me.rerere.rikkahub.data.export.ModeInjectionSerializer
 import me.rerere.rikkahub.data.export.rememberExporter
@@ -90,6 +88,7 @@ import me.rerere.rikkahub.data.export.rememberImporter
 import me.rerere.rikkahub.data.model.InjectionPosition
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.ExportDialog
 import me.rerere.rikkahub.ui.components.ui.FormItem
@@ -98,6 +97,7 @@ import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -115,7 +115,7 @@ fun PromptPage(vm: PromptVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 navigationIcon = { BackButton() },
-                title = { Text(stringResource(R.string.prompt_page_title)) },
+                title = { Text(stringResource(Res.string.prompt_page_title)) },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
             )
@@ -124,7 +124,7 @@ fun PromptPage(vm: PromptVM = koinViewModel()) {
             NavigationBar {
                 NavigationBarItem(
                     selected = pagerState.currentPage == 0,
-                    label = { Text(stringResource(R.string.prompt_page_mode_injection_tab)) },
+                    label = { Text(stringResource(Res.string.prompt_page_mode_injection_tab)) },
                     icon = { Icon(HugeIcons.MagicWand01, null) },
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(0) }
@@ -132,7 +132,7 @@ fun PromptPage(vm: PromptVM = koinViewModel()) {
                 )
                 NavigationBarItem(
                     selected = pagerState.currentPage == 1,
-                    label = { Text(stringResource(R.string.prompt_page_lorebook_tab)) },
+                    label = { Text(stringResource(Res.string.prompt_page_lorebook_tab)) },
                     icon = { Icon(HugeIcons.Book01, null) },
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(1) }
@@ -187,8 +187,8 @@ private fun ModeInjectionTab(
             onUpdate(modeInjections + edited)
         }
     }
-    val importSuccessMsg = stringResource(R.string.export_import_success)
-    val importFailedMsg = stringResource(R.string.export_import_failed)
+    val importSuccessMsg = stringResource(Res.string.export_import_success)
+    val importFailedMsg = stringResource(Res.string.export_import_failed)
     val importer = rememberImporter(ModeInjectionSerializer) { result ->
         result.onSuccess { imported ->
             onUpdate(currentModeInjections + imported)
@@ -221,12 +221,12 @@ private fun ModeInjectionTab(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.prompt_page_mode_injection_empty),
+                            text = stringResource(Res.string.prompt_page_mode_injection_empty),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = stringResource(R.string.prompt_page_empty_hint),
+                            text = stringResource(Res.string.prompt_page_empty_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -276,7 +276,7 @@ private fun ModeInjectionTab(
                     AnimatedVisibility(expanded) {
                         Row {
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(R.string.prompt_page_add_mode_injection))
+                            Text(stringResource(Res.string.prompt_page_add_mode_injection))
                         }
                     }
                 }
@@ -327,7 +327,7 @@ private fun ModeInjectionCard(
                         swipeState.reset()
                     }
                 }) {
-                    Icon(HugeIcons.Delete01, stringResource(R.string.prompt_page_delete))
+                    Icon(HugeIcons.Delete01, stringResource(Res.string.prompt_page_delete))
                 }
             }
         },
@@ -351,7 +351,7 @@ private fun ModeInjectionCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = injection.name.ifEmpty { stringResource(R.string.prompt_page_unnamed) },
+                        text = injection.name.ifEmpty { stringResource(Res.string.prompt_page_unnamed) },
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -363,20 +363,20 @@ private fun ModeInjectionCard(
                             Text(getPositionLabel(injection.position))
                         }
                         Tag(type = TagType.DEFAULT) {
-                            Text(stringResource(R.string.prompt_page_priority_format, injection.priority))
+                            Text(stringResource(Res.string.prompt_page_priority_format, injection.priority))
                         }
                         if (!injection.enabled) {
                             Tag(type = TagType.WARNING) {
-                                Text(stringResource(R.string.prompt_page_disabled))
+                                Text(stringResource(Res.string.prompt_page_disabled))
                             }
                         }
                     }
                 }
                 IconButton(onClick = { showExportDialog = true }) {
-                    Icon(HugeIcons.Share03, stringResource(R.string.export_title))
+                    Icon(HugeIcons.Share03, stringResource(Res.string.export_title))
                 }
                 IconButton(onClick = onEdit) {
-                    Icon(HugeIcons.Tools, stringResource(R.string.prompt_page_edit))
+                    Icon(HugeIcons.Tools, stringResource(Res.string.prompt_page_edit))
                 }
             }
         }
@@ -423,7 +423,7 @@ private fun ModeInjectionEditSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.prompt_page_edit_mode_injection),
+                text = stringResource(Res.string.prompt_page_edit_mode_injection),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
@@ -437,12 +437,12 @@ private fun ModeInjectionEditSheet(
                 OutlinedTextField(
                     value = injection.name,
                     onValueChange = { onEdit(injection.copy(name = it)) },
-                    label = { Text(stringResource(R.string.prompt_page_name)) },
+                    label = { Text(stringResource(Res.string.prompt_page_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 FormItem(
-                    label = { Text(stringResource(R.string.prompt_page_enabled)) },
+                    label = { Text(stringResource(Res.string.prompt_page_enabled)) },
                     tail = {
                         Switch(
                             checked = injection.enabled,
@@ -456,13 +456,13 @@ private fun ModeInjectionEditSheet(
                     onValueChange = {
                         it.toIntOrNull()?.let { p -> onEdit(injection.copy(priority = p)) }
                     },
-                    label = { Text(stringResource(R.string.prompt_page_priority_label)) },
+                    label = { Text(stringResource(Res.string.prompt_page_priority_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 Text(
-                    stringResource(R.string.prompt_page_injection_position),
+                    stringResource(Res.string.prompt_page_injection_position),
                     style = MaterialTheme.typography.titleSmall
                 )
                 InjectionPositionSelector(
@@ -476,7 +476,7 @@ private fun ModeInjectionEditSheet(
                         onValueChange = {
                             it.toIntOrNull()?.let { d -> onEdit(injection.copy(injectDepth = d)) }
                         },
-                        label = { Text(stringResource(R.string.prompt_page_inject_depth)) },
+                        label = { Text(stringResource(Res.string.prompt_page_inject_depth)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
@@ -485,7 +485,7 @@ private fun ModeInjectionEditSheet(
                 AnimatedVisibility(visible = injection.position.usesStandaloneMessage()) {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            stringResource(R.string.prompt_page_injection_role),
+                            stringResource(Res.string.prompt_page_injection_role),
                             style = MaterialTheme.typography.titleSmall
                         )
                         InjectionRoleSelector(
@@ -498,7 +498,7 @@ private fun ModeInjectionEditSheet(
                 OutlinedTextField(
                     value = injection.content,
                     onValueChange = { onEdit(injection.copy(content = it)) },
-                    label = { Text(stringResource(R.string.prompt_page_injection_content)) },
+                    label = { Text(stringResource(Res.string.prompt_page_injection_content)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp),
@@ -511,10 +511,10 @@ private fun ModeInjectionEditSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.prompt_page_cancel))
+                    Text(stringResource(Res.string.prompt_page_cancel))
                 }
                 TextButton(onClick = onConfirm) {
-                    Text(stringResource(R.string.prompt_page_confirm))
+                    Text(stringResource(Res.string.prompt_page_confirm))
                 }
             }
         }
@@ -546,11 +546,11 @@ private fun InjectionPosition.usesStandaloneMessage(): Boolean = when (this) {
 
 @Composable
 private fun getPositionLabel(position: InjectionPosition): String = when (position) {
-    InjectionPosition.BEFORE_SYSTEM_PROMPT -> stringResource(R.string.prompt_page_position_before_system)
-    InjectionPosition.AFTER_SYSTEM_PROMPT -> stringResource(R.string.prompt_page_position_after_system)
-    InjectionPosition.TOP_OF_CHAT -> stringResource(R.string.prompt_page_position_top_of_chat)
-    InjectionPosition.BOTTOM_OF_CHAT -> stringResource(R.string.prompt_page_position_bottom_of_chat)
-    InjectionPosition.AT_DEPTH -> stringResource(R.string.prompt_page_position_at_depth)
+    InjectionPosition.BEFORE_SYSTEM_PROMPT -> stringResource(Res.string.prompt_page_position_before_system)
+    InjectionPosition.AFTER_SYSTEM_PROMPT -> stringResource(Res.string.prompt_page_position_after_system)
+    InjectionPosition.TOP_OF_CHAT -> stringResource(Res.string.prompt_page_position_top_of_chat)
+    InjectionPosition.BOTTOM_OF_CHAT -> stringResource(Res.string.prompt_page_position_bottom_of_chat)
+    InjectionPosition.AT_DEPTH -> stringResource(Res.string.prompt_page_position_at_depth)
 }
 
 @Composable
@@ -569,8 +569,8 @@ private fun InjectionRoleSelector(
 
 @Composable
 private fun getRoleLabel(role: MessageRole): String = when (role) {
-    MessageRole.USER -> stringResource(R.string.prompt_page_role_user)
-    MessageRole.ASSISTANT -> stringResource(R.string.prompt_page_role_assistant)
+    MessageRole.USER -> stringResource(Res.string.prompt_page_role_user)
+    MessageRole.ASSISTANT -> stringResource(Res.string.prompt_page_role_assistant)
     else -> role.name
 }
 
@@ -599,8 +599,8 @@ private fun LorebookTab(
             onUpdate(lorebooks + edited)
         }
     }
-    val importSuccessMsg = stringResource(R.string.export_import_success)
-    val importFailedMsg = stringResource(R.string.export_import_failed)
+    val importSuccessMsg = stringResource(Res.string.export_import_success)
+    val importFailedMsg = stringResource(Res.string.export_import_failed)
     val importer = rememberImporter(LorebookSerializer) { result ->
         result.onSuccess { imported ->
             onUpdate(currentLorebooks + imported)
@@ -633,12 +633,12 @@ private fun LorebookTab(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.prompt_page_lorebook_empty),
+                            text = stringResource(Res.string.prompt_page_lorebook_empty),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = stringResource(R.string.prompt_page_empty_hint),
+                            text = stringResource(Res.string.prompt_page_empty_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -688,7 +688,7 @@ private fun LorebookTab(
                     AnimatedVisibility(expanded) {
                         Row {
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(R.string.prompt_page_add_lorebook))
+                            Text(stringResource(Res.string.prompt_page_add_lorebook))
                         }
                     }
                 }
@@ -739,7 +739,7 @@ private fun LorebookCard(
                         swipeState.reset()
                     }
                 }) {
-                    Icon(HugeIcons.Delete01, stringResource(R.string.prompt_page_delete))
+                    Icon(HugeIcons.Delete01, stringResource(Res.string.prompt_page_delete))
                 }
             }
         },
@@ -763,7 +763,7 @@ private fun LorebookCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = book.name.ifEmpty { stringResource(R.string.prompt_page_unnamed_lorebook) },
+                        text = book.name.ifEmpty { stringResource(Res.string.prompt_page_unnamed_lorebook) },
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -783,23 +783,23 @@ private fun LorebookCard(
                         Tag(type = TagType.INFO) {
                             Text(
                                 stringResource(
-                                    R.string.prompt_page_entries_count_format,
+                                    Res.string.prompt_page_entries_count_format,
                                     book.entries.size
                                 )
                             )
                         }
                         if (!book.enabled) {
                             Tag(type = TagType.WARNING) {
-                                Text(stringResource(R.string.prompt_page_disabled))
+                                Text(stringResource(Res.string.prompt_page_disabled))
                             }
                         }
                     }
                 }
                 IconButton(onClick = { showExportDialog = true }) {
-                    Icon(HugeIcons.Share03, stringResource(R.string.export_title))
+                    Icon(HugeIcons.Share03, stringResource(Res.string.export_title))
                 }
                 IconButton(onClick = onEdit) {
-                    Icon(HugeIcons.Tools, stringResource(R.string.prompt_page_edit))
+                    Icon(HugeIcons.Tools, stringResource(Res.string.prompt_page_edit))
                 }
             }
         }
@@ -854,7 +854,7 @@ private fun LorebookEditSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.prompt_page_edit_lorebook),
+                text = stringResource(Res.string.prompt_page_edit_lorebook),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
@@ -868,19 +868,19 @@ private fun LorebookEditSheet(
                 OutlinedTextField(
                     value = book.name,
                     onValueChange = { onEdit(book.copy(name = it)) },
-                    label = { Text(stringResource(R.string.prompt_page_name)) },
+                    label = { Text(stringResource(Res.string.prompt_page_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = book.description,
                     onValueChange = { onEdit(book.copy(description = it)) },
-                    label = { Text(stringResource(R.string.prompt_page_description)) },
+                    label = { Text(stringResource(Res.string.prompt_page_description)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 FormItem(
-                    label = { Text(stringResource(R.string.prompt_page_enabled)) },
+                    label = { Text(stringResource(Res.string.prompt_page_enabled)) },
                     tail = {
                         Switch(
                             checked = book.enabled,
@@ -896,13 +896,13 @@ private fun LorebookEditSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        stringResource(R.string.prompt_page_entries_format, book.entries.size),
+                        stringResource(Res.string.prompt_page_entries_format, book.entries.size),
                         style = MaterialTheme.typography.titleSmall
                     )
                     IconButton(onClick = {
                         entryEditState.open(PromptInjection.RegexInjection())
                     }) {
-                        Icon(HugeIcons.Add01, stringResource(R.string.prompt_page_add_entry))
+                        Icon(HugeIcons.Add01, stringResource(Res.string.prompt_page_add_entry))
                     }
                 }
 
@@ -922,10 +922,10 @@ private fun LorebookEditSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.prompt_page_cancel))
+                    Text(stringResource(Res.string.prompt_page_cancel))
                 }
                 TextButton(onClick = onConfirm) {
-                    Text(stringResource(R.string.prompt_page_confirm))
+                    Text(stringResource(Res.string.prompt_page_confirm))
                 }
             }
         }
@@ -962,12 +962,12 @@ private fun RegexInjectionEntryCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = entry.name.ifEmpty { stringResource(R.string.prompt_page_unnamed_entry) },
+                    text = entry.name.ifEmpty { stringResource(Res.string.prompt_page_unnamed_entry) },
                     style = MaterialTheme.typography.bodyMedium
                 )
                 if (entry.keywords.isNotEmpty()) {
                     Text(
-                        text = stringResource(R.string.prompt_page_keywords_format, entry.keywords.joinToString(", ")),
+                        text = stringResource(Res.string.prompt_page_keywords_format, entry.keywords.joinToString(", ")),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -979,16 +979,16 @@ private fun RegexInjectionEntryCard(
                 ) {
                     if (!entry.enabled) {
                         Tag(type = TagType.WARNING) {
-                            Text(stringResource(R.string.prompt_page_disabled))
+                            Text(stringResource(Res.string.prompt_page_disabled))
                         }
                     }
                 }
             }
             IconButton(onClick = onEdit) {
-                Icon(HugeIcons.Tools, stringResource(R.string.prompt_page_edit))
+                Icon(HugeIcons.Tools, stringResource(Res.string.prompt_page_edit))
             }
             IconButton(onClick = onDelete) {
-                Icon(HugeIcons.Delete01, stringResource(R.string.prompt_page_delete))
+                Icon(HugeIcons.Delete01, stringResource(Res.string.prompt_page_delete))
             }
         }
     }
@@ -1006,7 +1006,7 @@ private fun RegexInjectionEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.prompt_page_edit_entry)) },
+        title = { Text(stringResource(Res.string.prompt_page_edit_entry)) },
         text = {
             Column(
                 modifier = Modifier
@@ -1018,12 +1018,12 @@ private fun RegexInjectionEditDialog(
                 OutlinedTextField(
                     value = entry.name,
                     onValueChange = { onEdit(entry.copy(name = it)) },
-                    label = { Text(stringResource(R.string.prompt_page_name)) },
+                    label = { Text(stringResource(Res.string.prompt_page_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 FormItem(
-                    label = { Text(stringResource(R.string.prompt_page_enabled)) },
+                    label = { Text(stringResource(Res.string.prompt_page_enabled)) },
                     tail = {
                         Switch(
                             checked = entry.enabled,
@@ -1037,13 +1037,13 @@ private fun RegexInjectionEditDialog(
                     onValueChange = {
                         it.toIntOrNull()?.let { p -> onEdit(entry.copy(priority = p)) }
                     },
-                    label = { Text(stringResource(R.string.prompt_page_priority_label)) },
+                    label = { Text(stringResource(Res.string.prompt_page_priority_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
 
                 Text(
-                    stringResource(R.string.prompt_page_injection_position),
+                    stringResource(Res.string.prompt_page_injection_position),
                     style = MaterialTheme.typography.titleSmall
                 )
                 InjectionPositionSelector(
@@ -1057,14 +1057,14 @@ private fun RegexInjectionEditDialog(
                         onValueChange = {
                             it.toIntOrNull()?.let { d -> onEdit(entry.copy(injectDepth = d)) }
                         },
-                        label = { Text(stringResource(R.string.prompt_page_inject_depth)) },
+                        label = { Text(stringResource(Res.string.prompt_page_inject_depth)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
 
                 // 关键词
-                Text(stringResource(R.string.prompt_page_keywords_label), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(Res.string.prompt_page_keywords_label), style = MaterialTheme.typography.titleSmall)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -1095,7 +1095,7 @@ private fun RegexInjectionEditDialog(
                     OutlinedTextField(
                         value = newKeyword,
                         onValueChange = { newKeyword = it },
-                        label = { Text(stringResource(R.string.prompt_page_new_keyword)) },
+                        label = { Text(stringResource(Res.string.prompt_page_new_keyword)) },
                         modifier = Modifier.weight(1f),
                         singleLine = true
                     )
@@ -1107,12 +1107,12 @@ private fun RegexInjectionEditDialog(
                             }
                         }
                     ) {
-                        Icon(HugeIcons.Add01, stringResource(R.string.prompt_page_add))
+                        Icon(HugeIcons.Add01, stringResource(Res.string.prompt_page_add))
                     }
                 }
 
                 FormItem(
-                    label = { Text(stringResource(R.string.prompt_page_use_regex)) },
+                    label = { Text(stringResource(Res.string.prompt_page_use_regex)) },
                     tail = {
                         Switch(
                             checked = entry.useRegex,
@@ -1122,7 +1122,7 @@ private fun RegexInjectionEditDialog(
                 )
 
                 FormItem(
-                    label = { Text(stringResource(R.string.prompt_page_case_sensitive)) },
+                    label = { Text(stringResource(Res.string.prompt_page_case_sensitive)) },
                     tail = {
                         Switch(
                             checked = entry.caseSensitive,
@@ -1132,8 +1132,8 @@ private fun RegexInjectionEditDialog(
                 )
 
                 FormItem(
-                    label = { Text(stringResource(R.string.prompt_page_constant_active)) },
-                    description = { Text(stringResource(R.string.prompt_page_constant_active_desc)) },
+                    label = { Text(stringResource(Res.string.prompt_page_constant_active)) },
+                    description = { Text(stringResource(Res.string.prompt_page_constant_active_desc)) },
                     tail = {
                         Switch(
                             checked = entry.constantActive,
@@ -1147,7 +1147,7 @@ private fun RegexInjectionEditDialog(
                     onValueChange = {
                         it.toIntOrNull()?.let { d -> onEdit(entry.copy(scanDepth = d)) }
                     },
-                    label = { Text(stringResource(R.string.prompt_page_scan_depth)) },
+                    label = { Text(stringResource(Res.string.prompt_page_scan_depth)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -1155,7 +1155,7 @@ private fun RegexInjectionEditDialog(
                 AnimatedVisibility(visible = entry.position.usesStandaloneMessage()) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text(
-                            stringResource(R.string.prompt_page_injection_role),
+                            stringResource(Res.string.prompt_page_injection_role),
                             style = MaterialTheme.typography.titleSmall
                         )
                         InjectionRoleSelector(
@@ -1168,7 +1168,7 @@ private fun RegexInjectionEditDialog(
                 OutlinedTextField(
                     value = entry.content,
                     onValueChange = { onEdit(entry.copy(content = it)) },
-                    label = { Text(stringResource(R.string.prompt_page_injection_content)) },
+                    label = { Text(stringResource(Res.string.prompt_page_injection_content)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(150.dp),
@@ -1182,12 +1182,12 @@ private fun RegexInjectionEditDialog(
                 onClick = onConfirm,
                 enabled = canSave
             ) {
-                Text(stringResource(R.string.prompt_page_confirm))
+                Text(stringResource(Res.string.prompt_page_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.prompt_page_cancel))
+                Text(stringResource(Res.string.prompt_page_cancel))
             }
         }
     )

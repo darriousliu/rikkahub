@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,10 +43,11 @@ import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.Edit01
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Zap
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.QuickMessage
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -63,7 +63,7 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.assistant_page_quick_messages)) },
+                title = { Text(stringResource(Res.string.assistant_page_quick_messages)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -98,12 +98,12 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = stringResource(R.string.quick_messages_page_empty_title),
+                            text = stringResource(Res.string.quick_messages_page_empty_title),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = stringResource(R.string.quick_messages_page_empty_hint),
+                            text = stringResource(Res.string.quick_messages_page_empty_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -123,7 +123,7 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
 
     if (showAddDialog) {
         EditQuickMessageDialog(
-            title = stringResource(R.string.quick_messages_page_add_title),
+            title = stringResource(Res.string.quick_messages_page_add_title),
             initialQuickMessage = null,
             onDismiss = { showAddDialog = false },
             onConfirm = { title, content ->
@@ -135,7 +135,7 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
 
     editTarget?.let { quickMessage ->
         EditQuickMessageDialog(
-            title = stringResource(R.string.quick_messages_page_edit_title),
+            title = stringResource(Res.string.quick_messages_page_edit_title),
             initialQuickMessage = quickMessage,
             onDismiss = { editTarget = null },
             onConfirm = { title, content ->
@@ -152,16 +152,16 @@ fun QuickMessagesPage(vm: QuickMessagesVM = koinViewModel()) {
 
     RikkaConfirmDialog(
         show = deleteTarget != null,
-        title = stringResource(R.string.quick_messages_page_delete_title),
-        confirmText = stringResource(R.string.delete),
-        dismissText = stringResource(R.string.cancel),
+        title = stringResource(Res.string.quick_messages_page_delete_title),
+        confirmText = stringResource(Res.string.delete),
+        dismissText = stringResource(Res.string.cancel),
         onConfirm = {
             deleteTarget?.let { vm.deleteQuickMessage(it.id) }
             deleteTarget = null
         },
         onDismiss = { deleteTarget = null },
     ) {
-        Text(stringResource(R.string.quick_messages_page_delete_message, deleteTarget?.title ?: ""))
+        Text(stringResource(Res.string.quick_messages_page_delete_message, deleteTarget?.title ?: ""))
     }
 }
 
@@ -196,13 +196,13 @@ private fun QuickMessageCard(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    text = quickMessage.title.ifBlank { stringResource(R.string.quick_messages_page_untitled) },
+                    text = quickMessage.title.ifBlank { stringResource(Res.string.quick_messages_page_untitled) },
                     style = MaterialTheme.typography.titleSmallEmphasized,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = quickMessage.content.ifBlank { stringResource(R.string.quick_messages_page_empty_content) },
+                    text = quickMessage.content.ifBlank { stringResource(Res.string.quick_messages_page_empty_content) },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -213,7 +213,7 @@ private fun QuickMessageCard(
                 IconButton(onClick = { menuExpanded = true }) {
                     Icon(
                         imageVector = HugeIcons.MoreVertical,
-                        contentDescription = stringResource(R.string.skills_page_more_actions),
+                        contentDescription = stringResource(Res.string.skills_page_more_actions),
                     )
                 }
                 DropdownMenu(
@@ -221,7 +221,7 @@ private fun QuickMessageCard(
                     onDismissRequest = { menuExpanded = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.edit)) },
+                        text = { Text(stringResource(Res.string.edit)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Edit01,
@@ -234,7 +234,7 @@ private fun QuickMessageCard(
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(Res.string.delete), color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Delete01,
@@ -276,14 +276,14 @@ private fun EditQuickMessageDialog(
                     value = quickMessageTitle,
                     onValueChange = { quickMessageTitle = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_quick_message_title)) },
+                    label = { Text(stringResource(Res.string.assistant_page_quick_message_title)) },
                     singleLine = true,
                 )
                 OutlinedTextField(
                     value = quickMessageContent,
                     onValueChange = { quickMessageContent = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_quick_message_content)) },
+                    label = { Text(stringResource(Res.string.assistant_page_quick_message_content)) },
                     minLines = 4,
                     maxLines = 8,
                 )
@@ -294,12 +294,12 @@ private fun EditQuickMessageDialog(
                 onClick = { onConfirm(quickMessageTitle.trim(), quickMessageContent.trim()) },
                 enabled = quickMessageTitle.isNotBlank() && quickMessageContent.isNotBlank(),
             ) {
-                Text(stringResource(R.string.assistant_page_save))
+                Text(stringResource(Res.string.assistant_page_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(Res.string.cancel))
             }
         },
     )

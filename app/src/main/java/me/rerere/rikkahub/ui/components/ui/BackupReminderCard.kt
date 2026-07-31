@@ -18,13 +18,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.DatabaseRestore
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun BackupReminderCard(
@@ -55,15 +55,15 @@ fun BackupReminderCard(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.backup_page_reminder_title),
+                    text = stringResource(Res.string.backup_page_reminder_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 val lastBackupText = if (config.lastBackupTime == 0L) {
-                    stringResource(R.string.backup_page_reminder_never_backed_up)
+                    stringResource(Res.string.backup_page_reminder_never_backed_up)
                 } else {
                     val days = (System.currentTimeMillis() - config.lastBackupTime) / (24L * 60 * 60 * 1000)
-                    stringResource(R.string.backup_page_reminder_last_days, days)
+                    stringResource(Res.string.backup_page_reminder_last_days, days)
                 }
                 Text(
                     text = lastBackupText,
@@ -76,7 +76,7 @@ fun BackupReminderCard(
             ) {
                 Icon(
                     imageVector = HugeIcons.Cancel01,
-                    contentDescription = stringResource(R.string.backup_page_reminder_dismiss),
+                    contentDescription = stringResource(Res.string.backup_page_reminder_dismiss),
                     modifier = Modifier.size(16.dp),
                 )
             }

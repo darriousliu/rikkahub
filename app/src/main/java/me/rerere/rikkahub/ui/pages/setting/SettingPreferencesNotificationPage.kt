@@ -18,16 +18,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DisplaySetting
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionNotification
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -55,7 +55,7 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_page_preferences_notification))
+                    Text(stringResource(Res.string.setting_page_preferences_notification))
                 },
                 navigationIcon = {
                     BackButton()
@@ -77,8 +77,8 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                     modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_updates_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_updates_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_updates_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_updates_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showUpdates,
@@ -89,8 +89,8 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_notification_message_generated)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_notification_message_generated_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_notification_message_generated)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_notification_message_generated_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableNotificationOnMessageGeneration,
@@ -105,8 +105,8 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                     )
                     if (displaySetting.enableNotificationOnMessageGeneration) {
                         item(
-                            headlineContent = { Text(stringResource(R.string.setting_display_page_live_update_notification)) },
-                            supportingContent = { Text(stringResource(R.string.setting_display_page_live_update_notification_desc)) },
+                            headlineContent = { Text(stringResource(Res.string.setting_display_page_live_update_notification)) },
+                            supportingContent = { Text(stringResource(Res.string.setting_display_page_live_update_notification_desc)) },
                             trailingContent = {
                                 Switch(
                                     checked = displaySetting.enableLiveUpdateNotification,

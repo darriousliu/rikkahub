@@ -28,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,8 +41,9 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Connect
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.UiState
 import org.koin.compose.koinInject
@@ -79,7 +79,7 @@ fun ProviderConnectionTester(
         AlertDialog(
             onDismissRequest = { showTestDialog = false },
             title = {
-                Text(stringResource(R.string.setting_provider_page_test_connection))
+                Text(stringResource(Res.string.setting_provider_page_test_connection))
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -113,7 +113,7 @@ fun ProviderConnectionTester(
             },
             dismissButton = {
                 TextButton(onClick = { showTestDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
             confirmButton = {
@@ -197,7 +197,7 @@ fun ProviderConnectionTester(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.setting_provider_page_test))
+                    Text(stringResource(Res.string.setting_provider_page_test))
                 }
             }
         )

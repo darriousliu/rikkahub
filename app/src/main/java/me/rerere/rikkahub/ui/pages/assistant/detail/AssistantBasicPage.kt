@@ -30,15 +30,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.ai.provider.ModelType
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -47,6 +46,7 @@ import me.rerere.rikkahub.ui.components.ui.Select
 import me.rerere.rikkahub.ui.components.ui.TagsInput
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.hooks.heroAnimation
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.toFixed
 import org.koin.compose.viewmodel.koinViewModel
@@ -72,7 +72,7 @@ fun AssistantBasicPage(id: String) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_basic))
+                    Text(stringResource(Res.string.assistant_page_tab_basic))
                 },
                 navigationIcon = {
                     BackButton()
@@ -124,7 +124,7 @@ internal fun AssistantBasicContent(
         ) {
             UIAvatar(
                 value = assistant.avatar,
-                name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                name = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                 onUpdate = { avatar ->
                     onUpdate(
                         assistant.copy(
@@ -143,7 +143,7 @@ internal fun AssistantBasicContent(
         ) {
             FormItem(
                 label = {
-                    Text(stringResource(R.string.assistant_page_name))
+                    Text(stringResource(Res.string.assistant_page_name))
                 },
                 modifier = Modifier.padding(8.dp),
 
@@ -165,7 +165,7 @@ internal fun AssistantBasicContent(
 
             FormItem(
                 label = {
-                    Text(stringResource(R.string.assistant_page_tags))
+                    Text(stringResource(Res.string.assistant_page_tags))
                 },
                 modifier = Modifier.padding(8.dp),
             ) {
@@ -182,10 +182,10 @@ internal fun AssistantBasicContent(
 
             FormItem(
                 label = {
-                    Text(stringResource(R.string.assistant_page_workspace))
+                    Text(stringResource(Res.string.assistant_page_workspace))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_workspace_desc))
+                    Text(stringResource(Res.string.assistant_page_workspace_desc))
                 },
                 modifier = Modifier.padding(8.dp),
             ) {
@@ -202,7 +202,7 @@ internal fun AssistantBasicContent(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     optionToString = { workspace ->
-                        workspace?.name ?: stringResource(R.string.workspace_no_binding)
+                        workspace?.name ?: stringResource(Res.string.workspace_no_binding)
                     },
                 )
             }
@@ -212,10 +212,10 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_use_assistant_avatar))
+                    Text(stringResource(Res.string.assistant_page_use_assistant_avatar))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_use_assistant_avatar_desc))
+                    Text(stringResource(Res.string.assistant_page_use_assistant_avatar_desc))
                 },
                 tail = {
                     Switch(
@@ -238,10 +238,10 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_chat_model))
+                    Text(stringResource(Res.string.assistant_page_chat_model))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_chat_model_desc))
+                    Text(stringResource(Res.string.assistant_page_chat_model_desc))
                 },
                 content = {
                     ModelSelector(
@@ -262,12 +262,12 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_temperature))
+                    Text(stringResource(Res.string.assistant_page_temperature))
                 },
                 description = {
                     Text(
                         text = buildAnnotatedString {
-                            append(stringResource(R.string.assistant_page_temperature_warning))
+                            append(stringResource(Res.string.assistant_page_temperature_warning))
                         }
                     )
                 },
@@ -315,12 +315,12 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_top_p))
+                    Text(stringResource(Res.string.assistant_page_top_p))
                 },
                 description = {
                     Text(
                         text = buildAnnotatedString {
-                            append(stringResource(R.string.assistant_page_top_p_warning))
+                            append(stringResource(Res.string.assistant_page_top_p_warning))
                         }
                     )
                 },
@@ -368,11 +368,11 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_context_message_limit))
+                    Text(stringResource(Res.string.assistant_page_context_message_limit))
                 },
                 description = {
                     Text(
-                        text = stringResource(R.string.assistant_page_context_message_limit_desc),
+                        text = stringResource(Res.string.assistant_page_context_message_limit_desc),
                     )
                 }
             ) {
@@ -392,16 +392,16 @@ internal fun AssistantBasicContent(
 
                 Text(
                     text = if (assistant.contextMessageLimit > 0) stringResource(
-                        R.string.assistant_page_context_message_limit_count,
+                        Res.string.assistant_page_context_message_limit_count,
                         assistant.contextMessageLimit
-                    ) else stringResource(R.string.assistant_page_context_message_limit_unlimited),
+                    ) else stringResource(Res.string.assistant_page_context_message_limit_unlimited),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.75f),
                 )
 
                 if (assistant.contextMessageLimit > 0) {
                     Text(
-                        text = stringResource(R.string.assistant_page_context_message_limit_warning),
+                        text = stringResource(Res.string.assistant_page_context_message_limit_warning),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -411,10 +411,10 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_stream_output))
+                    Text(stringResource(Res.string.assistant_page_stream_output))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_stream_output_desc))
+                    Text(stringResource(Res.string.assistant_page_stream_output_desc))
                 },
                 tail = {
                     Switch(
@@ -433,7 +433,7 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_thinking_budget))
+                    Text(stringResource(Res.string.assistant_page_thinking_budget))
                 },
             ) {
                 ReasoningButton(
@@ -447,10 +447,10 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_max_tokens))
+                    Text(stringResource(Res.string.assistant_page_max_tokens))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_max_tokens_desc))
+                    Text(stringResource(Res.string.assistant_page_max_tokens_desc))
                 }
             ) {
                 OutlinedTextField(
@@ -469,13 +469,13 @@ internal fun AssistantBasicContent(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
-                        Text(stringResource(R.string.assistant_page_max_tokens_no_limit))
+                        Text(stringResource(Res.string.assistant_page_max_tokens_no_limit))
                     },
                     supportingText = {
                         if (assistant.maxTokens != null) {
-                            Text(stringResource(R.string.assistant_page_max_tokens_limit, assistant.maxTokens))
+                            Text(stringResource(Res.string.assistant_page_max_tokens_limit, assistant.maxTokens))
                         } else {
-                            Text(stringResource(R.string.assistant_page_max_tokens_no_token_limit))
+                            Text(stringResource(Res.string.assistant_page_max_tokens_no_token_limit))
                         }
                     }
                 )
@@ -488,10 +488,10 @@ internal fun AssistantBasicContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_gradient_background))
+                    Text(stringResource(Res.string.assistant_page_gradient_background))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_gradient_background_desc))
+                    Text(stringResource(Res.string.assistant_page_gradient_background_desc))
                 },
                 tail = {
                     Switch(
@@ -530,10 +530,10 @@ internal fun AssistantBasicContent(
                 FormItem(
                     modifier = Modifier.padding(8.dp),
                     label = {
-                        Text(stringResource(R.string.assistant_page_background_opacity))
+                        Text(stringResource(Res.string.assistant_page_background_opacity))
                     },
                     description = {
-                        Text(stringResource(R.string.assistant_page_background_opacity_desc))
+                        Text(stringResource(Res.string.assistant_page_background_opacity_desc))
                     }
                 ) {
                     Slider(
@@ -551,7 +551,7 @@ internal fun AssistantBasicContent(
                     )
                     Text(
                         text = stringResource(
-                            R.string.assistant_page_background_opacity_value,
+                            Res.string.assistant_page_background_opacity_value,
                             (backgroundOpacity * 100).roundToInt()
                         ),
                         style = MaterialTheme.typography.labelSmall,

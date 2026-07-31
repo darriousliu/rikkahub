@@ -47,12 +47,12 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.db.fts.MessageSearchResult
 import me.rerere.rikkahub.data.db.fts.MessageSearchSort
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
@@ -76,8 +76,8 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
     if (showRebuildDialog) {
         AlertDialog(
             onDismissRequest = { showRebuildDialog = false },
-            title = { Text(stringResource(R.string.search_page_rebuild_index)) },
-            text = { Text(stringResource(R.string.search_page_rebuild_index_desc)) },
+            title = { Text(stringResource(Res.string.search_page_rebuild_index)) },
+            text = { Text(stringResource(Res.string.search_page_rebuild_index_desc)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -85,12 +85,12 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
                         vm.rebuildIndex()
                     }
                 ) {
-                    Text(stringResource(R.string.confirm))
+                    Text(stringResource(Res.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRebuildDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             }
         )
@@ -100,7 +100,7 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 navigationIcon = { BackButton() },
-                title = { Text(stringResource(R.string.search_page_title)) },
+                title = { Text(stringResource(Res.string.search_page_title)) },
                 actions = {
                     SortMenuButton(
                         current = vm.sortOrder,
@@ -112,7 +112,7 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
                     ) {
                         Icon(
                             HugeIcons.Refresh01,
-                            contentDescription = stringResource(R.string.search_page_rebuild_button)
+                            contentDescription = stringResource(Res.string.search_page_rebuild_button)
                         )
                     }
                 },
@@ -135,7 +135,7 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .focusRequester(focusRequester),
-                placeholder = { Text(stringResource(R.string.search_page_placeholder)) },
+                placeholder = { Text(stringResource(Res.string.search_page_placeholder)) },
                 shape = RoundedCornerShape(50),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -158,10 +158,10 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
                             val (current, total) = vm.rebuildProgress
                             Text(
                                 text = if (total > 0) stringResource(
-                                    R.string.search_page_rebuilding,
+                                    Res.string.search_page_rebuilding,
                                     current,
                                     total
-                                ) else stringResource(R.string.search_page_rebuilding_simple),
+                                ) else stringResource(Res.string.search_page_rebuilding_simple),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -173,7 +173,7 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.search_page_hint),
+                                text = stringResource(Res.string.search_page_hint),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -186,7 +186,7 @@ fun SearchPage(vm: SearchVM = koinViewModel()) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.search_page_no_results),
+                                text = stringResource(Res.string.search_page_no_results),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -229,7 +229,7 @@ private fun SortMenuButton(
         IconButton(onClick = { expanded = true }) {
             Icon(
                 HugeIcons.Sorting01,
-                contentDescription = stringResource(R.string.search_page_sort)
+                contentDescription = stringResource(Res.string.search_page_sort)
             )
         }
         DropdownMenu(
@@ -242,9 +242,9 @@ private fun SortMenuButton(
                         Text(
                             stringResource(
                                 when (sort) {
-                                    MessageSearchSort.RELEVANCE -> R.string.search_page_sort_relevance
-                                    MessageSearchSort.NEWEST_FIRST -> R.string.search_page_sort_newest
-                                    MessageSearchSort.OLDEST_FIRST -> R.string.search_page_sort_oldest
+                                    MessageSearchSort.RELEVANCE -> Res.string.search_page_sort_relevance
+                                    MessageSearchSort.NEWEST_FIRST -> Res.string.search_page_sort_newest
+                                    MessageSearchSort.OLDEST_FIRST -> Res.string.search_page_sort_oldest
                                 }
                             )
                         )
@@ -271,7 +271,7 @@ private fun SearchResultItem(
     onClick: () -> Unit,
 ) {
     val highlightColor = MaterialTheme.colorScheme.tertiaryContainer
-    val untitled = stringResource(R.string.search_page_untitled)
+    val untitled = stringResource(Res.string.search_page_untitled)
     val snippetText = buildAnnotatedString {
         val snippet = result.snippet
         var index = 0

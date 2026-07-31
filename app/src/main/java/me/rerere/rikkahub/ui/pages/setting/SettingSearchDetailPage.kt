@@ -39,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,11 +46,12 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.highlight.LocalCodeHighlighter
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.richtext.HighlightCodeVisualTransformation
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
@@ -104,7 +104,7 @@ fun SettingSearchDetailPage(
                         ) {
                             Icon(
                                 imageVector = HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.delete)
+                                contentDescription = stringResource(Res.string.delete)
                             )
                         }
                     }
@@ -137,7 +137,7 @@ fun SettingSearchDetailPage(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.setting_page_search_config),
+                            text = stringResource(Res.string.setting_page_search_config),
                             style = MaterialTheme.typography.titleMedium
                         )
 
@@ -248,7 +248,7 @@ private fun SearchTestSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = stringResource(R.string.setting_page_search_test),
+                text = stringResource(Res.string.setting_page_search_test),
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -260,7 +260,7 @@ private fun SearchTestSection(
                     value = query,
                     onValueChange = { query = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.setting_page_search_test_query_hint)) },
+                    placeholder = { Text(stringResource(Res.string.setting_page_search_test_query_hint)) },
                     singleLine = true
                 )
 
@@ -289,7 +289,7 @@ private fun SearchTestSection(
                     } else {
                         Icon(
                             imageVector = HugeIcons.Play,
-                            contentDescription = stringResource(R.string.setting_page_search_test_run)
+                            contentDescription = stringResource(Res.string.setting_page_search_test_run)
                         )
                     }
                 }
@@ -336,7 +336,7 @@ private fun SearchTestSection(
                 }
                 res.onFailure { error ->
                     Text(
-                        text = error.message ?: stringResource(R.string.search_detail_unknown_error),
+                        text = error.message ?: stringResource(Res.string.search_detail_unknown_error),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -353,7 +353,7 @@ internal fun TavilyOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -367,7 +367,7 @@ internal fun TavilyOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_depth))
+            Text(stringResource(Res.string.search_detail_depth))
         }
     ) {
         val depthOptions = listOf("basic", "advanced")
@@ -396,7 +396,7 @@ internal fun ExaOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -416,7 +416,7 @@ internal fun ZhipuOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -436,7 +436,7 @@ internal fun SearXNGOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_url))
+            Text(stringResource(Res.string.search_detail_api_url))
         }
     ) {
         OutlinedTextField(
@@ -450,7 +450,7 @@ internal fun SearXNGOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_engines))
+            Text(stringResource(Res.string.search_detail_engines))
         }
     ) {
         OutlinedTextField(
@@ -464,7 +464,7 @@ internal fun SearXNGOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_language))
+            Text(stringResource(Res.string.search_detail_language))
         }
     ) {
         OutlinedTextField(
@@ -478,7 +478,7 @@ internal fun SearXNGOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_username))
+            Text(stringResource(Res.string.search_detail_username))
         }
     ) {
         OutlinedTextField(
@@ -492,7 +492,7 @@ internal fun SearXNGOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_password))
+            Text(stringResource(Res.string.search_detail_password))
         }
     ) {
         OutlinedTextField(
@@ -512,7 +512,7 @@ internal fun SearchLinkUpOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -526,7 +526,7 @@ internal fun SearchLinkUpOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_depth))
+            Text(stringResource(Res.string.search_detail_depth))
         }
     ) {
         val depthOptions = listOf("standard", "deep")
@@ -555,7 +555,7 @@ internal fun BraveOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -575,7 +575,7 @@ internal fun SerperOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -595,7 +595,7 @@ internal fun MetasoOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -615,7 +615,7 @@ internal fun OllamaOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -635,7 +635,7 @@ internal fun PerplexityOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -649,7 +649,7 @@ internal fun PerplexityOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_max_tokens))
+            Text(stringResource(Res.string.search_detail_max_tokens))
         }
     ) {
         OutlinedTextField(
@@ -664,7 +664,7 @@ internal fun PerplexityOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_max_tokens_per_page))
+            Text(stringResource(Res.string.search_detail_max_tokens_per_page))
         }
     ) {
         OutlinedTextField(
@@ -685,7 +685,7 @@ internal fun FirecrawlOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -705,7 +705,7 @@ internal fun JinaOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -719,7 +719,7 @@ internal fun JinaOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_search_url))
+            Text(stringResource(Res.string.search_detail_search_url))
         }
     ) {
         OutlinedTextField(
@@ -736,7 +736,7 @@ internal fun JinaOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_scrape_url))
+            Text(stringResource(Res.string.search_detail_scrape_url))
         }
     ) {
         OutlinedTextField(
@@ -759,7 +759,7 @@ internal fun BochaOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -773,10 +773,10 @@ internal fun BochaOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_summary))
+            Text(stringResource(Res.string.search_detail_summary))
         },
         description = {
-            Text(stringResource(R.string.search_detail_summary_desc))
+            Text(stringResource(Res.string.search_detail_summary_desc))
         },
         tail = {
             Switch(
@@ -796,7 +796,7 @@ internal fun RikkaHubOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -810,7 +810,7 @@ internal fun RikkaHubOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_depth))
+            Text(stringResource(Res.string.search_detail_depth))
         }
     ) {
         val depthOptions = listOf("standard", "deep")
@@ -839,7 +839,7 @@ internal fun TinyfishOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -859,7 +859,7 @@ internal fun GrokOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_api_key))
+            Text(stringResource(Res.string.search_detail_api_key))
         }
     ) {
         OutlinedTextField(
@@ -873,7 +873,7 @@ internal fun GrokOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_model))
+            Text(stringResource(Res.string.search_detail_model))
         }
     ) {
         OutlinedTextField(
@@ -887,7 +887,7 @@ internal fun GrokOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_custom_url))
+            Text(stringResource(Res.string.search_detail_custom_url))
         }
     ) {
         OutlinedTextField(
@@ -901,7 +901,7 @@ internal fun GrokOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_system_prompt))
+            Text(stringResource(Res.string.search_detail_system_prompt))
         }
     ) {
         OutlinedTextField(
@@ -922,7 +922,7 @@ internal fun CustomJsOptions(
 ) {
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_name))
+            Text(stringResource(Res.string.search_detail_name))
         }
     ) {
         OutlinedTextField(
@@ -931,7 +931,7 @@ internal fun CustomJsOptions(
                 onUpdateOptions(options.copy(name = it))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.search_detail_custom_search_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.search_detail_custom_search_placeholder)) }
         )
     }
 
@@ -940,7 +940,7 @@ internal fun CustomJsOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_search_script))
+            Text(stringResource(Res.string.search_detail_search_script))
         }
     ) {
         OutlinedTextField(
@@ -962,10 +962,10 @@ internal fun CustomJsOptions(
 
     FormItem(
         label = {
-            Text(stringResource(R.string.search_detail_scrape_script))
+            Text(stringResource(Res.string.search_detail_scrape_script))
         },
         description = {
-            Text(stringResource(R.string.search_detail_scrape_script_desc))
+            Text(stringResource(Res.string.search_detail_scrape_script_desc))
         }
     ) {
         OutlinedTextField(

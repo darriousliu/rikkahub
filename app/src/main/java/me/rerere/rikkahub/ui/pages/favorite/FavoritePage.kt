@@ -35,14 +35,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
@@ -57,8 +57,8 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val favorites = vm.nodeFavorites.collectAsStateWithLifecycle().value
-    val favoriteRemovedText = stringResource(R.string.favorite_page_removed)
-    val undoText = stringResource(R.string.history_page_undo)
+    val favoriteRemovedText = stringResource(Res.string.favorite_page_removed)
+    val undoText = stringResource(Res.string.history_page_undo)
 
     Scaffold(
         topBar = {
@@ -67,7 +67,7 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
                     BackButton()
                 },
                 title = {
-                    Text(stringResource(R.string.favorite_page_title))
+                    Text(stringResource(Res.string.favorite_page_title))
                 },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -87,7 +87,7 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(R.string.favorite_page_no_favorites),
+                    text = stringResource(Res.string.favorite_page_no_favorites),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                 )
             }
@@ -163,7 +163,7 @@ private fun SwipeableFavoriteCard(
             ) {
                 Icon(
                     imageVector = HugeIcons.Delete01,
-                    contentDescription = stringResource(R.string.assistant_page_remove),
+                    contentDescription = stringResource(Res.string.assistant_page_remove),
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
@@ -195,7 +195,7 @@ private fun FavoriteCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = item.conversationTitle.ifBlank { stringResource(R.string.favorite_page_untitled_conversation) },
+                    text = item.conversationTitle.ifBlank { stringResource(Res.string.favorite_page_untitled_conversation) },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium,

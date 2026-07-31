@@ -60,13 +60,12 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.asr.ASRProviderSetting
 import me.rerere.rikkahub.data.datastore.DEFAULT_SYSTEM_TTS_ID
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.Tag
@@ -74,6 +73,7 @@ import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.context.LocalTTSState
 import me.rerere.rikkahub.ui.pages.setting.components.ASRProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.TTSProviderConfigure
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import me.rerere.tts.provider.TTSProviderSetting
@@ -94,7 +94,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.speech_page_title))
+                    Text(text = stringResource(Res.string.speech_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -131,13 +131,13 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                     selected = selectedPage == 0,
                     onClick = { selectedPage = 0 },
                     icon = { Icon(HugeIcons.VolumeHigh, contentDescription = null) },
-                    label = { Text(stringResource(R.string.speech_tab_tts)) }
+                    label = { Text(stringResource(Res.string.speech_tab_tts)) }
                 )
                 NavigationBarItem(
                     selected = selectedPage == 1,
                     onClick = { selectedPage = 1 },
                     icon = { Icon(HugeIcons.Mic01, contentDescription = null) },
-                    label = { Text(stringResource(R.string.speech_tab_asr)) }
+                    label = { Text(stringResource(Res.string.speech_tab_asr)) }
                 )
             }
         },
@@ -192,7 +192,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.setting_tts_page_edit_provider),
+                    text = stringResource(Res.string.setting_tts_page_edit_provider),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -214,7 +214,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.cancel))
+                        Text(stringResource(Res.string.cancel))
                     }
 
                     TextButton(
@@ -227,7 +227,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.chat_page_save))
+                        Text(stringResource(Res.string.chat_page_save))
                     }
                 }
             }
@@ -255,7 +255,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.setting_asr_page_edit_provider),
+                    text = stringResource(Res.string.setting_asr_page_edit_provider),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -277,7 +277,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.cancel))
+                        Text(stringResource(Res.string.cancel))
                     }
 
                     TextButton(
@@ -290,7 +290,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.chat_page_save))
+                        Text(stringResource(Res.string.chat_page_save))
                     }
                 }
             }
@@ -398,7 +398,7 @@ private fun TTSPlaybackSpeedSetting(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.setting_tts_page_default_playback_speed),
+                    text = stringResource(Res.string.setting_tts_page_default_playback_speed),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
@@ -414,7 +414,7 @@ private fun TTSPlaybackSpeedSetting(
                 steps = 14,
             )
             Text(
-                text = stringResource(R.string.setting_tts_page_default_playback_speed_description),
+                text = stringResource(Res.string.setting_tts_page_default_playback_speed_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -514,7 +514,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
             showBottomSheet = true
         }
     ) {
-        Icon(HugeIcons.Add01, stringResource(R.string.setting_tts_page_add_provider_content_description))
+        Icon(HugeIcons.Add01, stringResource(Res.string.setting_tts_page_add_provider_content_description))
     }
 
     if (showBottomSheet) {
@@ -536,7 +536,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.setting_tts_page_add_provider),
+                    text = stringResource(Res.string.setting_tts_page_add_provider),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -558,7 +558,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.cancel))
+                        Text(stringResource(Res.string.cancel))
                     }
 
                     TextButton(
@@ -568,7 +568,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.setting_tts_page_add))
+                        Text(stringResource(Res.string.setting_tts_page_add))
                     }
                 }
             }
@@ -586,7 +586,7 @@ private fun AddASRProviderButton(onAdd: (ASRProviderSetting) -> Unit) {
         IconButton(
             onClick = { showTypeMenu = true }
         ) {
-            Icon(HugeIcons.Add01, stringResource(R.string.setting_asr_page_add_provider))
+            Icon(HugeIcons.Add01, stringResource(Res.string.setting_asr_page_add_provider))
         }
         DropdownMenu(
             expanded = showTypeMenu,
@@ -654,7 +654,7 @@ private fun AddASRProviderButton(onAdd: (ASRProviderSetting) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.setting_asr_page_add_provider),
+                    text = stringResource(Res.string.setting_asr_page_add_provider),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -676,7 +676,7 @@ private fun AddASRProviderButton(onAdd: (ASRProviderSetting) -> Unit) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.cancel))
+                        Text(stringResource(Res.string.cancel))
                     }
 
                     TextButton(
@@ -686,7 +686,7 @@ private fun AddASRProviderButton(onAdd: (ASRProviderSetting) -> Unit) {
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringResource(R.string.setting_tts_page_add))
+                        Text(stringResource(Res.string.setting_tts_page_add))
                     }
                 }
             }
@@ -728,7 +728,7 @@ private fun TTSProviderItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AutoAIIcon(
-                    name = provider.name.ifEmpty { stringResource(R.string.setting_tts_page_default_name) },
+                    name = provider.name.ifEmpty { stringResource(Res.string.setting_tts_page_default_name) },
                     modifier = Modifier.size(32.dp)
                 )
 
@@ -736,7 +736,7 @@ private fun TTSProviderItem(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = provider.name.ifEmpty { stringResource(R.string.setting_tts_page_default_name) },
+                        text = provider.name.ifEmpty { stringResource(Res.string.setting_tts_page_default_name) },
                         style = MaterialTheme.typography.titleMedium,
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.onPrimaryContainer
@@ -747,10 +747,10 @@ private fun TTSProviderItem(
 
                     Text(
                         text = when (provider) {
-                            is TTSProviderSetting.OpenAI -> stringResource(R.string.setting_tts_page_provider_openai)
-                            is TTSProviderSetting.Gemini -> stringResource(R.string.setting_tts_page_provider_gemini)
+                            is TTSProviderSetting.OpenAI -> stringResource(Res.string.setting_tts_page_provider_openai)
+                            is TTSProviderSetting.Gemini -> stringResource(Res.string.setting_tts_page_provider_gemini)
                             is TTSProviderSetting.MiniMax -> "MiniMax"
-                            is TTSProviderSetting.SystemTTS -> stringResource(R.string.setting_tts_page_provider_system)
+                            is TTSProviderSetting.SystemTTS -> stringResource(Res.string.setting_tts_page_provider_system)
                             is TTSProviderSetting.Qwen -> "Qwen"
                             is TTSProviderSetting.Groq -> "Groq"
                             is TTSProviderSetting.XAI -> "xAI"
@@ -779,7 +779,7 @@ private fun TTSProviderItem(
                 // 状态标签
                 if (isSelected) {
                     Tag(type = TagType.SUCCESS) {
-                        Text(stringResource(R.string.setting_tts_page_selected))
+                        Text(stringResource(Res.string.setting_tts_page_selected))
                     }
                 }
 
@@ -787,7 +787,7 @@ private fun TTSProviderItem(
 
                 // TTS测试播放按钮
                 if (isSelected && isAvailable) {
-                    val testText = stringResource(R.string.setting_tts_page_test_text)
+                    val testText = stringResource(Res.string.setting_tts_page_test_text)
                     IconButton(
                         onClick = {
                             if (!isSpeaking) {
@@ -799,7 +799,7 @@ private fun TTSProviderItem(
                     ) {
                         Icon(
                             imageVector = if (isSpeaking) HugeIcons.StopCircle else HugeIcons.VolumeHigh,
-                            contentDescription = if (isSpeaking) stringResource(R.string.stop) else stringResource(R.string.test_tts),
+                            contentDescription = if (isSpeaking) stringResource(Res.string.stop) else stringResource(Res.string.test_tts),
                             tint = if (isSpeaking) MaterialTheme.colorScheme.error else LocalContentColor.current
                         )
                     }
@@ -810,14 +810,14 @@ private fun TTSProviderItem(
                 ) {
                     Icon(
                         imageVector = HugeIcons.Tools,
-                        contentDescription = stringResource(R.string.setting_tts_page_more_options_content_description)
+                        contentDescription = stringResource(Res.string.setting_tts_page_more_options_content_description)
                     )
                     DropdownMenu(
                         expanded = showDropdownMenu,
                         onDismissRequest = { showDropdownMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit)) },
+                            text = { Text(stringResource(Res.string.edit)) },
                             onClick = {
                                 showDropdownMenu = false
                                 onEdit()
@@ -827,7 +827,7 @@ private fun TTSProviderItem(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.delete)) },
+                            text = { Text(stringResource(Res.string.delete)) },
                             onClick = {
                                 showDropdownMenu = false
                                 onDelete()
@@ -875,7 +875,7 @@ private fun ASRProviderItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AutoAIIcon(
-                    name = provider.name.ifEmpty { stringResource(R.string.setting_asr_page_default_name) },
+                    name = provider.name.ifEmpty { stringResource(Res.string.setting_asr_page_default_name) },
                     modifier = Modifier.size(32.dp)
                 )
 
@@ -883,7 +883,7 @@ private fun ASRProviderItem(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = provider.name.ifEmpty { stringResource(R.string.setting_asr_page_default_name) },
+                        text = provider.name.ifEmpty { stringResource(Res.string.setting_asr_page_default_name) },
                         style = MaterialTheme.typography.titleMedium,
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.onPrimaryContainer
@@ -919,7 +919,7 @@ private fun ASRProviderItem(
             ) {
                 if (isSelected) {
                     Tag(type = TagType.SUCCESS) {
-                        Text(stringResource(R.string.setting_tts_page_selected))
+                        Text(stringResource(Res.string.setting_tts_page_selected))
                     }
                 }
 
@@ -930,14 +930,14 @@ private fun ASRProviderItem(
                 ) {
                     Icon(
                         imageVector = HugeIcons.Tools,
-                        contentDescription = stringResource(R.string.setting_tts_page_more_options_content_description)
+                        contentDescription = stringResource(Res.string.setting_tts_page_more_options_content_description)
                     )
                     DropdownMenu(
                         expanded = showDropdownMenu,
                         onDismissRequest = { showDropdownMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.edit)) },
+                            text = { Text(stringResource(Res.string.edit)) },
                             onClick = {
                                 showDropdownMenu = false
                                 onEdit()
@@ -947,7 +947,7 @@ private fun ASRProviderItem(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.delete)) },
+                            text = { Text(stringResource(Res.string.delete)) },
                             onClick = {
                                 showDropdownMenu = false
                                 onDelete()

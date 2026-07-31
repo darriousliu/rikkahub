@@ -50,7 +50,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
@@ -75,7 +74,6 @@ import me.rerere.hugeicons.stroke.Image03
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Text
 import me.rerere.hugeicons.stroke.Tools
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
@@ -86,6 +84,7 @@ import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.components.ui.icons.HeartIcon
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.toDp
 import org.jetbrains.compose.resources.painterResource
@@ -195,7 +194,7 @@ fun ModelSelector(
                     )
                 }
                 Text(
-                    text = model?.displayName ?: stringResource(R.string.model_list_select_model),
+                    text = model?.displayName ?: stringResource(Res.string.model_list_select_model),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall
@@ -229,7 +228,7 @@ fun ModelSelector(
             } else {
                 Icon(
                     imageVector = HugeIcons.Brain02,
-                    contentDescription = stringResource(R.string.setting_model_page_chat_model),
+                    contentDescription = stringResource(Res.string.setting_model_page_chat_model),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -431,7 +430,7 @@ private fun ColumnScope.ModelList(
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(
-                    text = stringResource(R.string.model_list_search_placeholder),
+                    text = stringResource(Res.string.model_list_search_placeholder),
                 )
             },
             shape = RoundedCornerShape(50),
@@ -459,7 +458,7 @@ private fun ColumnScope.ModelList(
         if (providers.isEmpty()) {
             item {
                 Text(
-                    text = stringResource(R.string.model_list_no_providers),
+                    text = stringResource(Res.string.model_list_no_providers),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.extendColors.gray6,
                     modifier = Modifier.padding(8.dp)
@@ -470,7 +469,7 @@ private fun ColumnScope.ModelList(
         if (favoriteModels.isNotEmpty()) {
             stickyHeader {
                 Text(
-                    text = stringResource(R.string.model_list_favorite),
+                    text = stringResource(Res.string.model_list_favorite),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
@@ -761,9 +760,9 @@ fun ModelTypeTag(model: Model) {
         Text(
             text = stringResource(
                 when (model.type) {
-                    ModelType.CHAT -> R.string.setting_provider_page_chat_model
-                    ModelType.EMBEDDING -> R.string.setting_provider_page_embedding_model
-                    ModelType.IMAGE -> R.string.setting_provider_page_image_model
+                    ModelType.CHAT -> Res.string.setting_provider_page_chat_model
+                    ModelType.EMBEDDING -> Res.string.setting_provider_page_embedding_model
+                    ModelType.IMAGE -> Res.string.setting_provider_page_image_model
                 }
             )
         )

@@ -20,11 +20,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Setting07
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun ConversationSystemPromptButton(
@@ -51,9 +51,9 @@ fun ConversationSystemPromptButton(
             Spacer(Modifier.size(4.dp))
             Text(
                 text = if (!customSystemPrompt.isNullOrBlank()) {
-                    stringResource(R.string.chat_page_conversation_system_prompt) + " ✎"
+                    stringResource(Res.string.chat_page_conversation_system_prompt) + " ✎"
                 } else {
-                    stringResource(R.string.chat_page_conversation_system_prompt)
+                    stringResource(Res.string.chat_page_conversation_system_prompt)
                 },
                 style = MaterialTheme.typography.labelSmall,
             )
@@ -70,7 +70,7 @@ fun ConversationSystemPromptButton(
                     value = editText,
                     onValueChange = { editText = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.chat_page_conversation_system_prompt_hint)) },
+                    label = { Text(stringResource(Res.string.chat_page_conversation_system_prompt_hint)) },
                     minLines = 3,
                     maxLines = 8,
                 )
@@ -85,7 +85,7 @@ fun ConversationSystemPromptButton(
                                 onSystemPromptChange(null)
                             },
                         ) {
-                            Text(stringResource(R.string.chat_page_conversation_system_prompt_clear))
+                            Text(stringResource(Res.string.chat_page_conversation_system_prompt_clear))
                         }
                     }
                     TextButton(
@@ -94,7 +94,7 @@ fun ConversationSystemPromptButton(
                             expanded = false
                         },
                     ) {
-                        Text(stringResource(R.string.chat_page_conversation_system_prompt_save))
+                        Text(stringResource(Res.string.chat_page_conversation_system_prompt_save))
                     }
                 }
             }

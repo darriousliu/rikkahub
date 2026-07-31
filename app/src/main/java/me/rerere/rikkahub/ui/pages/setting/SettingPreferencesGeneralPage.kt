@@ -21,14 +21,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DisplaySetting
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.hooks.rememberSharedPreferenceBoolean
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -49,7 +49,7 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_page_preferences_general))
+                    Text(stringResource(Res.string.setting_page_preferences_general))
                 },
                 navigationIcon = {
                     BackButton()
@@ -75,8 +75,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                     modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_create_new_conversation_on_start_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_create_new_conversation_on_start_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_create_new_conversation_on_start_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_create_new_conversation_on_start_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = createNewConversationOnStart,
@@ -85,8 +85,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_send_on_enter_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_send_on_enter_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_send_on_enter_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_send_on_enter_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.sendOnEnter,
@@ -97,8 +97,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_message_jumper_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_message_jumper_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_message_jumper_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_message_jumper_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showMessageJumper,
@@ -110,8 +110,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                     )
                     if (displaySetting.showMessageJumper) {
                         item(
-                            headlineContent = { Text(stringResource(R.string.setting_display_page_message_jumper_position_title)) },
-                            supportingContent = { Text(stringResource(R.string.setting_display_page_message_jumper_position_desc)) },
+                            headlineContent = { Text(stringResource(Res.string.setting_display_page_message_jumper_position_title)) },
+                            supportingContent = { Text(stringResource(Res.string.setting_display_page_message_jumper_position_desc)) },
                             trailingContent = {
                                 Switch(
                                     checked = displaySetting.messageJumperOnLeft,
@@ -123,8 +123,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         )
                     }
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_enable_auto_scroll_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_enable_auto_scroll_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_enable_auto_scroll_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_enable_auto_scroll_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableAutoScroll,
@@ -135,9 +135,9 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_use_app_icon_style_loading_indicator_title)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_use_app_icon_style_loading_indicator_title)) },
                         supportingContent = {
-                            Text(stringResource(R.string.setting_display_page_use_app_icon_style_loading_indicator_desc))
+                            Text(stringResource(Res.string.setting_display_page_use_app_icon_style_loading_indicator_desc))
                         },
                         trailingContent = {
                             Switch(
@@ -149,8 +149,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_enable_blur_effect_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_enable_blur_effect_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_enable_blur_effect_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_enable_blur_effect_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableBlurEffect,
@@ -161,8 +161,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_enable_message_generation_haptic_effect_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_enable_message_generation_haptic_effect_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_enable_message_generation_haptic_effect_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_enable_message_generation_haptic_effect_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableMessageGenerationHapticEffect,
@@ -173,8 +173,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_skip_crop_image_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_skip_crop_image_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_skip_crop_image_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_skip_crop_image_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.skipCropImage,
@@ -185,8 +185,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_paste_long_text_as_file_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_paste_long_text_as_file_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_paste_long_text_as_file_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_paste_long_text_as_file_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.pasteLongTextAsFile,
@@ -198,7 +198,7 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                     )
                     if (displaySetting.pasteLongTextAsFile) {
                         item(
-                            headlineContent = { Text(stringResource(R.string.setting_display_page_paste_long_text_threshold_title)) },
+                            headlineContent = { Text(stringResource(Res.string.setting_display_page_paste_long_text_threshold_title)) },
                             supportingContent = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -219,8 +219,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         )
                     }
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_volume_key_scroll_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_volume_key_scroll_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_volume_key_scroll_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_volume_key_scroll_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableVolumeKeyScroll,
@@ -232,7 +232,7 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                     )
                     if (displaySetting.enableVolumeKeyScroll) {
                         item(
-                            headlineContent = { Text(stringResource(R.string.setting_display_page_volume_key_scroll_ratio)) },
+                            headlineContent = { Text(stringResource(Res.string.setting_display_page_volume_key_scroll_ratio)) },
                             supportingContent = {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -259,11 +259,11 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
             item {
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),
-                    title = { Text(stringResource(R.string.setting_page_tts_settings)) },
+                    title = { Text(stringResource(Res.string.setting_page_tts_settings)) },
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_tts_only_read_quoted_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_tts_only_read_quoted_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_tts_only_read_quoted_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_tts_only_read_quoted_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.ttsOnlyReadQuoted,
@@ -274,8 +274,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_tts_read_outside_brackets_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_tts_read_outside_brackets_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_tts_read_outside_brackets_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_tts_read_outside_brackets_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.ttsOnlyReadOutsideBrackets,
@@ -286,8 +286,8 @@ fun SettingPreferencesGeneralPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_auto_play_tts_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_auto_play_tts_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_auto_play_tts_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_auto_play_tts_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.autoPlayTTSAfterGeneration,

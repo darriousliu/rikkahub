@@ -37,19 +37,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -69,7 +69,7 @@ fun AssistantMemoryPage(id: String) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_memory))
+                    Text(stringResource(Res.string.assistant_page_tab_memory))
                 },
                 navigationIcon = {
                     BackButton()
@@ -119,7 +119,7 @@ private fun AssistantMemoryContent(
                 memoryDialogState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.assistant_page_manage_memory_title))
+                Text(stringResource(Res.string.assistant_page_manage_memory_title))
             },
             text = {
                 TextField(
@@ -128,7 +128,7 @@ private fun AssistantMemoryContent(
                         update(memory.copy(content = it))
                     },
                     label = {
-                        Text(stringResource(R.string.assistant_page_manage_memory_title))
+                        Text(stringResource(Res.string.assistant_page_manage_memory_title))
                     },
                     minLines = 2,
                     maxLines = 8
@@ -140,7 +140,7 @@ private fun AssistantMemoryContent(
                         memoryDialogState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_save))
+                    Text(stringResource(Res.string.assistant_page_save))
                 }
             },
             dismissButton = {
@@ -149,7 +149,7 @@ private fun AssistantMemoryContent(
                         memoryDialogState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_cancel))
+                    Text(stringResource(Res.string.assistant_page_cancel))
                 }
             }
         )
@@ -166,10 +166,10 @@ private fun AssistantMemoryContent(
     ) {
         CardGroup {
             item(
-                headlineContent = { Text(stringResource(R.string.assistant_page_memory)) },
+                headlineContent = { Text(stringResource(Res.string.assistant_page_memory)) },
                 supportingContent = {
                     Text(
-                        text = stringResource(R.string.assistant_page_memory_desc),
+                        text = stringResource(Res.string.assistant_page_memory_desc),
                     )
                 },
                 trailingContent = {
@@ -186,10 +186,10 @@ private fun AssistantMemoryContent(
                 }
             )
             item(
-                headlineContent = { Text(stringResource(R.string.assistant_page_global_memory)) },
+                headlineContent = { Text(stringResource(Res.string.assistant_page_global_memory)) },
                 supportingContent = {
                     Text(
-                        text = stringResource(R.string.assistant_page_global_memory_desc),
+                        text = stringResource(Res.string.assistant_page_global_memory_desc),
                     )
                 },
                 trailingContent = {
@@ -207,10 +207,10 @@ private fun AssistantMemoryContent(
                 }
             )
             item(
-                headlineContent = { Text(stringResource(R.string.assistant_page_recent_chats)) },
+                headlineContent = { Text(stringResource(Res.string.assistant_page_recent_chats)) },
                 supportingContent = {
                     Text(
-                        text = stringResource(R.string.assistant_page_recent_chats_desc),
+                        text = stringResource(Res.string.assistant_page_recent_chats_desc),
                     )
                 },
                 trailingContent = {
@@ -227,10 +227,10 @@ private fun AssistantMemoryContent(
                 }
             )
             item(
-                headlineContent = { Text(stringResource(R.string.assistant_page_time_reminder)) },
+                headlineContent = { Text(stringResource(Res.string.assistant_page_time_reminder)) },
                 supportingContent = {
                     Text(
-                        text = stringResource(R.string.assistant_page_time_reminder_desc),
+                        text = stringResource(Res.string.assistant_page_time_reminder_desc),
                     )
                 },
                 trailingContent = {
@@ -254,7 +254,7 @@ private fun AssistantMemoryContent(
                 .padding(horizontal = 8.dp)
         ) {
             Text(
-                text = stringResource(R.string.assistant_page_manage_memory_title),
+                text = stringResource(Res.string.assistant_page_manage_memory_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .padding(bottom = 8.dp)
@@ -291,9 +291,9 @@ private fun AssistantMemoryContent(
 
     RikkaConfirmDialog(
         show = pendingDeleteMemory != null,
-        title = stringResource(R.string.confirm_delete),
-        confirmText = stringResource(R.string.confirm),
-        dismissText = stringResource(R.string.cancel),
+        title = stringResource(Res.string.confirm_delete),
+        confirmText = stringResource(Res.string.confirm),
+        dismissText = stringResource(Res.string.cancel),
         onConfirm = {
             pendingDeleteMemory?.let(onDeleteMemory)
             pendingDeleteMemory = null
@@ -352,7 +352,7 @@ private fun MemoryItem(
             ) {
                 Icon(
                     HugeIcons.Delete01,
-                    stringResource(R.string.assistant_page_delete)
+                    stringResource(Res.string.assistant_page_delete)
                 )
             }
         }

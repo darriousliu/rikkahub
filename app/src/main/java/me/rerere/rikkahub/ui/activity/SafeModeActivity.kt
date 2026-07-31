@@ -44,8 +44,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import me.rerere.rikkahub.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,7 +51,9 @@ import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.utils.CrashHandler
@@ -79,7 +79,7 @@ class SafeModeActivity : ComponentActivity() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        TopAppBar(title = { Text(stringResource(R.string.safe_mode_title)) })
+                        TopAppBar(title = { Text(stringResource(Res.string.safe_mode_title)) })
                     }
                 ) { innerPadding ->
                     Column(
@@ -90,15 +90,15 @@ class SafeModeActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.safe_mode_description),
+                            text = stringResource(Res.string.safe_mode_description),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         Text(
                             text = stringResource(
-                                R.string.safe_mode_current_assistant,
-                                settings.getCurrentAssistant().name.ifEmpty { stringResource(R.string.safe_mode_default_assistant) }),
+                                Res.string.safe_mode_current_assistant,
+                                settings.getCurrentAssistant().name.ifEmpty { stringResource(Res.string.safe_mode_default_assistant) }),
                             style = MaterialTheme.typography.bodyLarge,
                         )
 
@@ -106,7 +106,7 @@ class SafeModeActivity : ComponentActivity() {
                             onClick = { showAssistantPicker = true },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(stringResource(R.string.safe_mode_switch_assistant))
+                            Text(stringResource(Res.string.safe_mode_switch_assistant))
                         }
 
                         OutlinedButton(
@@ -116,7 +116,7 @@ class SafeModeActivity : ComponentActivity() {
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(stringResource(R.string.safe_mode_enter_app))
+                            Text(stringResource(Res.string.safe_mode_enter_app))
                         }
 
                         if (stackTrace != null) {
@@ -125,7 +125,7 @@ class SafeModeActivity : ComponentActivity() {
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = stringResource(R.string.safe_mode_crash_report),
+                                    text = stringResource(Res.string.safe_mode_crash_report),
                                     style = MaterialTheme.typography.titleSmall,
                                 )
                                 OutlinedButton(
@@ -134,7 +134,7 @@ class SafeModeActivity : ComponentActivity() {
                                         cm.setPrimaryClip(ClipData.newPlainText("crash", stackTrace))
                                     }
                                 ) {
-                                    Text(stringResource(R.string.safe_mode_copy))
+                                    Text(stringResource(Res.string.safe_mode_copy))
                                 }
                             }
                             Card(
@@ -204,7 +204,7 @@ private fun AssistantPickerSheet(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = stringResource(R.string.safe_mode_assistants),
+                text = stringResource(Res.string.safe_mode_assistants),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -254,7 +254,7 @@ private fun AssistantPickerSheet(
                         ),
                     ) {
                         Text(
-                            text = assistant.name.ifEmpty { stringResource(R.string.safe_mode_default_assistant) },
+                            text = assistant.name.ifEmpty { stringResource(Res.string.safe_mode_default_assistant) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),

@@ -16,13 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.BackupReminderConfig
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.toLocalDateTime
 import java.time.Instant
 
@@ -53,12 +53,12 @@ fun ReminderTab(vm: BackupVM) {
                         onCheckedChange = { updateConfig(config.copy(enabled = it)) },
                     )
                 },
-                headlineContent = { Text(stringResource(R.string.backup_page_reminder_enable)) },
+                headlineContent = { Text(stringResource(Res.string.backup_page_reminder_enable)) },
             )
 
             if (config.enabled) {
                 item(
-                    headlineContent = { Text(stringResource(R.string.backup_page_reminder_interval)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_reminder_interval)) },
                     supportingContent = {
                         val intervals = listOf(1, 3, 7, 14, 30)
                         SingleChoiceSegmentedButtonRow(
@@ -73,7 +73,7 @@ fun ReminderTab(vm: BackupVM) {
                                     onClick = { updateConfig(config.copy(intervalDays = days)) },
                                     selected = config.intervalDays == days,
                                 ) {
-                                    Text(stringResource(R.string.backup_page_reminder_interval_days, days))
+                                    Text(stringResource(Res.string.backup_page_reminder_interval_days, days))
                                 }
                             }
                         }
@@ -84,10 +84,10 @@ fun ReminderTab(vm: BackupVM) {
                     headlineContent = {
                         Text(
                             if (config.lastBackupTime == 0L) {
-                                stringResource(R.string.backup_page_reminder_no_record)
+                                stringResource(Res.string.backup_page_reminder_no_record)
                             } else {
                                 stringResource(
-                                    R.string.backup_page_reminder_last_time,
+                                    Res.string.backup_page_reminder_last_time,
                                     Instant.ofEpochMilli(config.lastBackupTime).toLocalDateTime()
                                 )
                             }

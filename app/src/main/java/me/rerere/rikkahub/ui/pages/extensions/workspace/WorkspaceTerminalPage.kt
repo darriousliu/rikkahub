@@ -41,9 +41,10 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.termux.terminal.TerminalSession
 import com.termux.view.TerminalView
-import androidx.compose.ui.res.stringResource
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.ColorMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import kotlinx.coroutines.Dispatchers
@@ -63,7 +64,7 @@ fun WorkspaceTerminalPage(id: String) {
                 TopAppBar(
                     title = {
                         Text(
-                            text = state.workspace?.name?.let { stringResource(R.string.workspace_terminal_title_with_name, it) } ?: stringResource(R.string.workspace_terminal_title),
+                            text = state.workspace?.name?.let { stringResource(Res.string.workspace_terminal_title_with_name, it) } ?: stringResource(Res.string.workspace_terminal_title),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -149,9 +150,9 @@ private fun WorkspaceTerminalContent(
         ) {
             Text(
                 text = if (currentState is TerminalSessionUiState.NotInstalled) {
-                    stringResource(R.string.workspace_terminal_not_installed)
+                    stringResource(Res.string.workspace_terminal_not_installed)
                 } else {
-                    stringResource(R.string.workspace_terminal_loading)
+                    stringResource(Res.string.workspace_terminal_loading)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
@@ -225,7 +226,7 @@ private fun WorkspaceTerminalContent(
                 )
                 if (finished) {
                     Text(
-                        text = stringResource(R.string.workspace_terminal_exited),
+                        text = stringResource(Res.string.workspace_terminal_exited),
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                         .padding(12.dp),

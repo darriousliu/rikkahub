@@ -38,11 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -62,7 +62,7 @@ fun StatsPage(vm: StatsVM = koinViewModel()) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.stats_page_title)) },
+                title = { Text(stringResource(Res.string.stats_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -112,7 +112,7 @@ private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modi
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(R.string.stats_page_heatmap_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.stats_page_heatmap_title), style = MaterialTheme.typography.titleMedium)
 
             ChatHeatmap(conversationsPerDay = conversationsPerDay)
 
@@ -122,7 +122,7 @@ private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modi
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.stats_page_heatmap_less),
+                    text = stringResource(Res.string.stats_page_heatmap_less),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -132,7 +132,7 @@ private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modi
                 }
                 Spacer(Modifier.width(2.dp))
                 Text(
-                    text = stringResource(R.string.stats_page_heatmap_more),
+                    text = stringResource(Res.string.stats_page_heatmap_more),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -161,11 +161,11 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
     // Day-of-week labels (only Mon/Wed/Fri to save space, Sun=0)
     val dowLabels = listOf(
         "",
-        stringResource(R.string.stats_page_dow_mon),
+        stringResource(Res.string.stats_page_dow_mon),
         "",
-        stringResource(R.string.stats_page_dow_wed),
+        stringResource(Res.string.stats_page_dow_wed),
         "",
-        stringResource(R.string.stats_page_dow_fri),
+        stringResource(Res.string.stats_page_dow_fri),
         ""
     )
 
@@ -286,13 +286,13 @@ private fun StatsGrid(stats: AppStats, modifier: Modifier = Modifier) {
             StatCard(
                 modifier = Modifier.weight(1f),
                 icon = HugeIcons.ChartColumn,
-                label = stringResource(R.string.stats_page_total_conversations),
+                label = stringResource(Res.string.stats_page_total_conversations),
                 value = formatCount(stats.totalConversations.toLong()),
             )
             StatCard(
                 modifier = Modifier.weight(1f),
                 icon = HugeIcons.Message01,
-                label = stringResource(R.string.stats_page_total_messages),
+                label = stringResource(Res.string.stats_page_total_messages),
                 value = formatCount(stats.totalMessages.toLong()),
             )
         }
@@ -303,13 +303,13 @@ private fun StatsGrid(stats: AppStats, modifier: Modifier = Modifier) {
             StatCard(
                 modifier = Modifier.weight(1f),
                 icon = HugeIcons.Cpu,
-                label = stringResource(R.string.stats_page_input_tokens),
+                label = stringResource(Res.string.stats_page_input_tokens),
                 value = formatTokens(stats.totalPromptTokens),
             )
             StatCard(
                 modifier = Modifier.weight(1f),
                 icon = HugeIcons.Cpu,
-                label = stringResource(R.string.stats_page_output_tokens),
+                label = stringResource(Res.string.stats_page_output_tokens),
                 value = formatTokens(stats.totalCompletionTokens),
             )
         }
@@ -317,14 +317,14 @@ private fun StatsGrid(stats: AppStats, modifier: Modifier = Modifier) {
             StatCard(
                 modifier = Modifier.fillMaxWidth(),
                 icon = HugeIcons.Zap,
-                label = stringResource(R.string.stats_page_cached_tokens),
+                label = stringResource(Res.string.stats_page_cached_tokens),
                 value = formatTokens(stats.totalCachedTokens),
             )
         }
         StatCard(
             modifier = Modifier.fillMaxWidth(),
             icon = HugeIcons.Rocket01,
-            label = stringResource(R.string.stats_page_launch_count),
+            label = stringResource(Res.string.stats_page_launch_count),
             value = formatCount(stats.launchCount.toLong()),
         )
     }

@@ -26,16 +26,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.Cancel01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Tag
 import kotlin.uuid.Uuid
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun TagsInput(
@@ -84,7 +84,7 @@ fun TagsInput(
                 .clickable { showAddDialog = true }) {
             Icon(
                 imageVector = HugeIcons.Add01,
-                contentDescription = stringResource(R.string.add),
+                contentDescription = stringResource(Res.string.add),
                 modifier = Modifier
                     .padding(6.dp)
                     .size(16.dp),
@@ -106,13 +106,13 @@ fun TagsInput(
             tagName = ""
             showError = false
         }, title = {
-            Text(stringResource(R.string.tag_input_dialog_title))
+            Text(stringResource(Res.string.tag_input_dialog_title))
         }, text = {
             Column {
                 // 显示现有标签列表（如果有未选择的标签）
                 if (unselectedTags.isNotEmpty()) {
                     Text(
-                        text = stringResource(R.string.tag_input_dialog_existing_tags),
+                        text = stringResource(Res.string.tag_input_dialog_existing_tags),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -139,7 +139,7 @@ fun TagsInput(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = stringResource(R.string.tag_input_dialog_create_new),
+                        text = stringResource(Res.string.tag_input_dialog_create_new),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -154,8 +154,8 @@ fun TagsInput(
                         tagName = it
                         showError = false
                     },
-                    label = { Text(stringResource(R.string.tag_input_dialog_label)) },
-                    placeholder = { Text(stringResource(R.string.tag_input_dialog_placeholder)) },
+                    label = { Text(stringResource(Res.string.tag_input_dialog_label)) },
+                    placeholder = { Text(stringResource(Res.string.tag_input_dialog_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     isError = showError
@@ -165,7 +165,7 @@ fun TagsInput(
                 if (showError) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.tag_input_dialog_tag_exists),
+                        text = stringResource(Res.string.tag_input_dialog_tag_exists),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -193,7 +193,7 @@ fun TagsInput(
                     }
                 }, enabled = tagName.isNotBlank()
             ) {
-                Text(stringResource(R.string.confirm))
+                Text(stringResource(Res.string.confirm))
             }
         }, dismissButton = {
             TextButton(
@@ -202,7 +202,7 @@ fun TagsInput(
                     tagName = ""
                     showError = false
                 }) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(Res.string.cancel))
             }
         })
     }

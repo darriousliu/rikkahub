@@ -9,10 +9,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.res.stringResource
 import me.rerere.ai.core.MessageRole
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 // 消息节点数量警告阈值
 const val MESSAGE_NODE_WARNING_THRESHOLD = 768
@@ -71,14 +71,14 @@ fun ConversationSizeWarningDialog(
             )
         },
         title = {
-            Text(text = stringResource(R.string.chat_size_dialog_title))
+            Text(text = stringResource(Res.string.chat_size_dialog_title))
         },
         text = {
-            Text(text = stringResource(R.string.chat_size_dialog_content, sizeInfo.nodeCount))
+            Text(text = stringResource(Res.string.chat_size_dialog_content, sizeInfo.nodeCount))
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.confirm))
+                Text(stringResource(Res.string.confirm))
             }
         }
     )

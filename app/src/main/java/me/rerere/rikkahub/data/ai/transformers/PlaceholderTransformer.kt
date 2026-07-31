@@ -5,14 +5,14 @@ import android.os.BatteryManager
 import android.os.Build
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.time.LocalDate
@@ -58,47 +58,47 @@ fun buildPlaceholders(block: PlaceholderBuilder.() -> Unit): Map<String, Placeho
 
 object DefaultPlaceholderProvider : PlaceholderProvider {
     override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
-        placeholder("cur_date", { Text(stringResource(R.string.placeholder_current_date)) }) {
+        placeholder("cur_date", { Text(stringResource(Res.string.placeholder_current_date)) }) {
             LocalDate.now().toDateString()
         }
 
-        placeholder("model_id", { Text(stringResource(R.string.placeholder_model_id)) }) {
+        placeholder("model_id", { Text(stringResource(Res.string.placeholder_model_id)) }) {
             it.model.modelId
         }
 
-        placeholder("model_name", { Text(stringResource(R.string.placeholder_model_name)) }) {
+        placeholder("model_name", { Text(stringResource(Res.string.placeholder_model_name)) }) {
             it.model.displayName
         }
 
-        placeholder("locale", { Text(stringResource(R.string.placeholder_locale)) }) {
+        placeholder("locale", { Text(stringResource(Res.string.placeholder_locale)) }) {
             Locale.getDefault().displayName
         }
 
-        placeholder("timezone", { Text(stringResource(R.string.placeholder_timezone)) }) {
+        placeholder("timezone", { Text(stringResource(Res.string.placeholder_timezone)) }) {
             TimeZone.getDefault().displayName
         }
 
-        placeholder("system_version", { Text(stringResource(R.string.placeholder_system_version)) }) {
+        placeholder("system_version", { Text(stringResource(Res.string.placeholder_system_version)) }) {
             "Android SDK v${Build.VERSION.SDK_INT} (${Build.VERSION.RELEASE})"
         }
 
-        placeholder("device_info", { Text(stringResource(R.string.placeholder_device_info)) }) {
+        placeholder("device_info", { Text(stringResource(Res.string.placeholder_device_info)) }) {
             "${Build.BRAND} ${Build.MODEL}"
         }
 
-        placeholder("battery_level", { Text(stringResource(R.string.placeholder_battery_level)) }) {
+        placeholder("battery_level", { Text(stringResource(Res.string.placeholder_battery_level)) }) {
             it.context.batteryLevel().toString()
         }
 
-        placeholder("nickname", { Text(stringResource(R.string.placeholder_nickname)) }) {
+        placeholder("nickname", { Text(stringResource(Res.string.placeholder_nickname)) }) {
             it.settingsStore.settingsFlow.value.displaySetting.userNickname.ifBlank { "user" }
         }
 
-        placeholder("char", { Text(stringResource(R.string.placeholder_char)) }) {
+        placeholder("char", { Text(stringResource(Res.string.placeholder_char)) }) {
             it.assistant.name.ifBlank { "assistant" }
         }
 
-        placeholder("user", { Text(stringResource(R.string.placeholder_user)) }) {
+        placeholder("user", { Text(stringResource(Res.string.placeholder_user)) }) {
             it.settingsStore.settingsFlow.value.displaySetting.userNickname.ifBlank { "user" }
         }
     }

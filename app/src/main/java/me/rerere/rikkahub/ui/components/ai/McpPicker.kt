@@ -37,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
@@ -46,14 +45,15 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Alert01
 import me.rerere.hugeicons.stroke.Icon1stBracket
 import me.rerere.hugeicons.stroke.McpServer
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.components.ui.ToggleSurface
+import me.rerere.rikkahub.ui.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
@@ -105,7 +105,7 @@ fun McpPickerButton(
                     ) {
                         Icon(
                             imageVector = HugeIcons.McpServer,
-                            contentDescription = stringResource(R.string.mcp_picker_title),
+                            contentDescription = stringResource(Res.string.mcp_picker_title),
                         )
                     }
 
@@ -127,7 +127,7 @@ fun McpPickerButton(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(id = R.string.mcp_picker_title),
+                    text = stringResource(id = Res.string.mcp_picker_title),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
@@ -140,7 +140,7 @@ fun McpPickerButton(
                     ) {
                         LinearWavyProgressIndicator()
                         Text(
-                            text = stringResource(id = R.string.mcp_picker_syncing),
+                            text = stringResource(id = Res.string.mcp_picker_syncing),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -182,12 +182,12 @@ fun McpPickerListItem(
             } else {
                 Icon(
                     imageVector = HugeIcons.McpServer,
-                    contentDescription = stringResource(R.string.mcp_picker_title),
+                    contentDescription = stringResource(Res.string.mcp_picker_title),
                 )
             }
         },
         headlineContent = {
-            Text(stringResource(R.string.mcp_picker_title))
+            Text(stringResource(Res.string.mcp_picker_title))
         },
         trailingContent = {
             if (enabledServers.isNotEmpty()) {
@@ -240,7 +240,7 @@ private fun McpPickerSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(id = R.string.mcp_picker_title),
+                text = stringResource(id = Res.string.mcp_picker_title),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold
                 )
@@ -253,7 +253,7 @@ private fun McpPickerSheet(
                 ) {
                     LinearWavyProgressIndicator()
                     Text(
-                        text = stringResource(id = R.string.mcp_picker_syncing),
+                        text = stringResource(id = Res.string.mcp_picker_syncing),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }

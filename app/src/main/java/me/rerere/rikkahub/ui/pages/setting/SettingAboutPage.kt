@@ -36,16 +36,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.easteregg.EmojiBurstHost
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.plus
@@ -71,7 +72,7 @@ fun SettingAboutPage() {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.about_page_title))
+                    Text(stringResource(Res.string.about_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -140,14 +141,14 @@ fun SettingAboutPage() {
                             supportingContent = {
                                 Text("${BuildConfig.VERSION_NAME} / ${BuildConfig.VERSION_CODE}")
                             },
-                            headlineContent = { Text(stringResource(R.string.about_page_version)) },
+                            headlineContent = { Text(stringResource(Res.string.about_page_version)) },
                         )
                         item(
                             leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
                             supportingContent = {
                                 Text("${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} / Android ${android.os.Build.VERSION.RELEASE} / SDK ${android.os.Build.VERSION.SDK_INT}")
                             },
-                            headlineContent = { Text(stringResource(R.string.about_page_system)) },
+                            headlineContent = { Text(stringResource(Res.string.about_page_system)) },
                         )
                     }
                 }
@@ -160,19 +161,19 @@ fun SettingAboutPage() {
                             onClick = { context.openUrl("https://rikka-ai.com/") },
                             leadingContent = { Icon(HugeIcons.Earth, null) },
                             supportingContent = { Text("https://rikka-ai.com") },
-                            headlineContent = { Text(stringResource(R.string.about_page_website)) },
+                            headlineContent = { Text(stringResource(Res.string.about_page_website)) },
                         )
                         item(
                             onClick = { context.openUrl("https://github.com/rikkahub/rikkahub") },
                             leadingContent = { Icon(HugeIcons.Github, null) },
                             supportingContent = { Text("https://github.com/rikkahub/rikkahub") },
-                            headlineContent = { Text(stringResource(R.string.about_page_github)) },
+                            headlineContent = { Text(stringResource(Res.string.about_page_github)) },
                         )
                         item(
                             onClick = { context.openUrl("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
                             leadingContent = { Icon(HugeIcons.File02, null) },
                             supportingContent = { Text("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
-                            headlineContent = { Text(stringResource(R.string.about_page_license)) },
+                            headlineContent = { Text(stringResource(Res.string.about_page_license)) },
                         )
                     }
                 }

@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,7 +50,8 @@ import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Search01
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.Emoji
 import me.rerere.rikkahub.utils.EmojiData
 import org.koin.compose.koinInject
@@ -91,7 +91,7 @@ fun EmojiPicker(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text(stringResource(R.string.emoji_picker_search_placeholder)) },
+                        placeholder = { Text(stringResource(Res.string.emoji_picker_search_placeholder)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Search01,
@@ -288,7 +288,7 @@ private fun EmojiModifierPicker(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.emoji_picker_select_skin_tone),
+                    text = stringResource(Res.string.emoji_picker_select_skin_tone),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )

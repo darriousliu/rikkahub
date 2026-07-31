@@ -4,3 +4,7 @@ app/src/release/generated/baselineProfiles/*.txt text eol=lf
 # Locale source files are mirrored byte-for-byte so the migration verifier can
 # prove that no translation content changed, including their existing EOF bytes.
 composeApp/src/commonMain/composeResources/values*/strings.xml whitespace=-blank-at-eof
+
+# RouteActivity is a legacy CRLF file; keep normal whitespace checks while
+# treating CR at EOL as part of its existing line ending.
+app/src/main/java/me/rerere/rikkahub/RouteActivity.kt whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

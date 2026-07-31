@@ -23,12 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.FormItem
+import me.rerere.rikkahub.ui.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
@@ -59,10 +59,10 @@ fun BackgroundPicker(
     FormItem(
         modifier = modifier,
         label = {
-            Text(stringResource(R.string.assistant_page_chat_background))
+            Text(stringResource(Res.string.assistant_page_chat_background))
         },
         description = {
-            Text(stringResource(R.string.assistant_page_chat_background_desc))
+            Text(stringResource(Res.string.assistant_page_chat_background_desc))
         }
     ) {
         Button(
@@ -73,9 +73,9 @@ fun BackgroundPicker(
         ) {
             Text(
                 text = if (background != null) {
-                    stringResource(R.string.assistant_page_change_background)
+                    stringResource(Res.string.assistant_page_change_background)
                 } else {
-                    stringResource(R.string.assistant_page_select_background)
+                    stringResource(Res.string.assistant_page_select_background)
                 }
             )
         }
@@ -87,7 +87,7 @@ fun BackgroundPicker(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.assistant_page_background_set),
+                    text = stringResource(Res.string.assistant_page_background_set),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
@@ -97,7 +97,7 @@ fun BackgroundPicker(
                         onUpdate(null)
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_remove))
+                    Text(stringResource(Res.string.assistant_page_remove))
                 }
             }
 
@@ -117,7 +117,7 @@ fun BackgroundPicker(
                 showPickOption = false
             },
             title = {
-                Text(stringResource(R.string.assistant_page_select_background))
+                Text(stringResource(Res.string.assistant_page_select_background))
             },
             text = {
                 Column(
@@ -130,7 +130,7 @@ fun BackgroundPicker(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(stringResource(R.string.assistant_page_select_from_gallery))
+                        Text(stringResource(Res.string.assistant_page_select_from_gallery))
                     }
                     Button(
                         onClick = {
@@ -140,7 +140,7 @@ fun BackgroundPicker(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(stringResource(R.string.assistant_page_enter_image_url))
+                        Text(stringResource(Res.string.assistant_page_enter_image_url))
                     }
                     if (background != null) {
                         Button(
@@ -150,7 +150,7 @@ fun BackgroundPicker(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(stringResource(R.string.assistant_page_remove_background))
+                            Text(stringResource(Res.string.assistant_page_remove_background))
                         }
                     }
                 }
@@ -161,7 +161,7 @@ fun BackgroundPicker(
                         showPickOption = false
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_cancel))
+                    Text(stringResource(Res.string.assistant_page_cancel))
                 }
             }
         )
@@ -173,13 +173,13 @@ fun BackgroundPicker(
                 showUrlInput = false
             },
             title = {
-                Text(stringResource(R.string.assistant_page_enter_image_url))
+                Text(stringResource(Res.string.assistant_page_enter_image_url))
             },
             text = {
                 OutlinedTextField(
                     value = urlInput,
                     onValueChange = { urlInput = it },
-                    label = { Text(stringResource(R.string.assistant_page_image_url)) },
+                    label = { Text(stringResource(Res.string.assistant_page_image_url)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("https://example.com/image.jpg") },
                     singleLine = true
@@ -194,7 +194,7 @@ fun BackgroundPicker(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_confirm))
+                    Text(stringResource(Res.string.assistant_page_confirm))
                 }
             },
             dismissButton = {
@@ -203,7 +203,7 @@ fun BackgroundPicker(
                         showUrlInput = false
                     }
                 ) {
-                    Text(stringResource(R.string.assistant_page_cancel))
+                    Text(stringResource(Res.string.assistant_page_cancel))
                 }
             }
         )

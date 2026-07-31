@@ -69,7 +69,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -101,12 +100,14 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.files.FileUtils
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.ImageUtils
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
@@ -140,7 +141,7 @@ fun ImageGenPage(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.imggen_page_title))
+                    Text(stringResource(Res.string.imggen_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -180,16 +181,16 @@ private fun CancelDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.imggen_page_cancel_generation_title)) },
-        text = { Text(stringResource(R.string.imggen_page_cancel_generation_message)) },
+        title = { Text(stringResource(Res.string.imggen_page_cancel_generation_title)) },
+        text = { Text(stringResource(Res.string.imggen_page_cancel_generation_message)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.imggen_page_confirm))
+                Text(stringResource(Res.string.imggen_page_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.imggen_page_cancel))
+                Text(stringResource(Res.string.imggen_page_cancel))
             }
         }
     )
@@ -204,7 +205,7 @@ private fun BottomBar(
         NavigationBarItem(
             selected = 0 == pagerState.currentPage,
             label = {
-                Text(stringResource(R.string.imggen_page_title))
+                Text(stringResource(Res.string.imggen_page_title))
             },
             icon = {
                 Icon(HugeIcons.Colors, null)
@@ -219,7 +220,7 @@ private fun BottomBar(
         NavigationBarItem(
             selected = 1 == pagerState.currentPage,
             label = {
-                Text(stringResource(R.string.imggen_page_gallery))
+                Text(stringResource(Res.string.imggen_page_gallery))
             },
             icon = {
                 Icon(HugeIcons.Image03, null)
@@ -375,7 +376,7 @@ private fun InputBar(
         OutlinedTextField(
             value = prompt,
             onValueChange = vm::updatePrompt,
-            placeholder = { Text(stringResource(R.string.imggen_page_prompt_placeholder)) },
+            placeholder = { Text(stringResource(Res.string.imggen_page_prompt_placeholder)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 140.dp),
@@ -449,7 +450,7 @@ private fun InputBar(
                 ) {
                     Icon(
                         imageVector = if (isGenerating) HugeIcons.Cancel01 else HugeIcons.ArrowUp02,
-                        contentDescription = stringResource(R.string.imggen_page_generate_image),
+                        contentDescription = stringResource(Res.string.imggen_page_generate_image),
                         tint = when {
                             isGenerating -> MaterialTheme.colorScheme.onErrorContainer
                             !canSend -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -546,7 +547,7 @@ private fun ImageGalleryScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = stringResource(R.string.imggen_page_no_generated_images),
+                        text = stringResource(Res.string.imggen_page_no_generated_images),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -646,7 +647,7 @@ private fun ImageGalleryScreen(
                                         ) {
                                             Icon(
                                                 imageVector = HugeIcons.FloppyDisk,
-                                                contentDescription = stringResource(R.string.imggen_page_save),
+                                                contentDescription = stringResource(Res.string.imggen_page_save),
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
@@ -657,7 +658,7 @@ private fun ImageGalleryScreen(
                                         ) {
                                             Icon(
                                                 imageVector = HugeIcons.Delete01,
-                                                contentDescription = stringResource(R.string.imggen_page_delete),
+                                                contentDescription = stringResource(Res.string.imggen_page_delete),
                                                 modifier = Modifier.size(16.dp),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
@@ -703,14 +704,14 @@ private fun SettingsBottomSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.imggen_page_settings_title),
+                text = stringResource(Res.string.imggen_page_settings_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             FormItem(
-                label = { Text(stringResource(R.string.imggen_page_generation_count)) },
-                description = { Text(stringResource(R.string.imggen_page_generation_count_desc)) }
+                label = { Text(stringResource(Res.string.imggen_page_generation_count)) },
+                description = { Text(stringResource(Res.string.imggen_page_generation_count_desc)) }
             ) {
                 OutlinedNumberInput(
                     value = numberOfImages,

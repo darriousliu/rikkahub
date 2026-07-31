@@ -42,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -64,7 +63,6 @@ import me.rerere.hugeicons.stroke.Package
 import me.rerere.hugeicons.stroke.Package01
 import me.rerere.hugeicons.stroke.Settings02
 import me.rerere.hugeicons.stroke.Video01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.datastore.Settings
@@ -74,6 +72,7 @@ import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.ExtensionSelector
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
@@ -81,6 +80,7 @@ import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.hooks.ChatInputState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.workspace.WorkspaceShellStatus
 import org.koin.compose.koinInject
 import kotlin.uuid.Uuid
@@ -184,11 +184,11 @@ internal fun FilesPicker(
             leadingContent = {
                 Icon(
                     imageVector = HugeIcons.Package,
-                    contentDescription = stringResource(R.string.assistant_page_tab_extensions),
+                    contentDescription = stringResource(Res.string.assistant_page_tab_extensions),
                 )
             },
             headlineContent = {
-                Text(stringResource(R.string.assistant_page_tab_extensions))
+                Text(stringResource(Res.string.assistant_page_tab_extensions))
             },
             trailingContent = {
                 if (activeCount > 0) {
@@ -214,16 +214,16 @@ internal fun FilesPicker(
             leadingContent = {
                 Icon(
                     imageVector = HugeIcons.Package01,
-                    contentDescription = stringResource(R.string.chat_page_compress_context),
+                    contentDescription = stringResource(Res.string.chat_page_compress_context),
                 )
             },
             headlineContent = {
-                Text(stringResource(R.string.chat_page_compress_context))
+                Text(stringResource(Res.string.chat_page_compress_context))
             },
             trailingContent = {
                 if (conversation.messageNodes.isNotEmpty()) {
                     Text(
-                        text = stringResource(R.string.chat_page_message_count, conversation.messageNodes.size),
+                        text = stringResource(Res.string.chat_page_message_count, conversation.messageNodes.size),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -319,15 +319,15 @@ private fun WorkspacePickerListItem(
         leadingContent = {
             Icon(
                 imageVector = HugeIcons.Codesandbox,
-                contentDescription = stringResource(R.string.assistant_page_workspace),
+                contentDescription = stringResource(Res.string.assistant_page_workspace),
             )
         },
         headlineContent = {
-            Text(stringResource(R.string.assistant_page_workspace))
+            Text(stringResource(Res.string.assistant_page_workspace))
         },
         supportingContent = {
             Text(
-                text = boundWorkspace?.name ?: stringResource(R.string.assistant_page_workspace_unbound),
+                text = boundWorkspace?.name ?: stringResource(Res.string.assistant_page_workspace_unbound),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -340,14 +340,14 @@ private fun WorkspacePickerListItem(
                     IconButton(onClick = { onNavigateToDetail(boundWorkspace.id) }) {
                         Icon(
                             imageVector = HugeIcons.Settings02,
-                            contentDescription = stringResource(R.string.workspace_detail),
+                            contentDescription = stringResource(Res.string.workspace_detail),
                         )
                     }
                     if (boundWorkspace.shellStatus != WorkspaceShellStatus.DISABLED.name) {
                         IconButton(onClick = { onNavigateToTerminal(boundWorkspace.id) }) {
                             Icon(
                                 imageVector = HugeIcons.ComputerTerminal01,
-                                contentDescription = stringResource(R.string.workspace_terminal),
+                                contentDescription = stringResource(Res.string.workspace_terminal),
                             )
                         }
                     }
@@ -438,7 +438,7 @@ private fun ImagePickButton(onClick: () -> Unit = {}) {
     BigIconTextButton(icon = {
         Icon(HugeIcons.Image02, null)
     }, text = {
-        Text(stringResource(R.string.photo))
+        Text(stringResource(Res.string.photo))
     }) {
         onClick()
     }
@@ -449,7 +449,7 @@ fun TakePicButton(onLaunchCamera: () -> Unit = {}) {
     BigIconTextButton(icon = {
         Icon(HugeIcons.Camera01, null)
     }, text = {
-        Text(stringResource(R.string.take_picture))
+        Text(stringResource(Res.string.take_picture))
     }) {
         onLaunchCamera()
     }
@@ -460,7 +460,7 @@ fun VideoPickButton(onClick: () -> Unit = {}) {
     BigIconTextButton(icon = {
         Icon(HugeIcons.Video01, null)
     }, text = {
-        Text(stringResource(R.string.video))
+        Text(stringResource(Res.string.video))
     }) {
         onClick()
     }
@@ -471,7 +471,7 @@ fun AudioPickButton(onClick: () -> Unit = {}) {
     BigIconTextButton(icon = {
         Icon(HugeIcons.MusicNote03, null)
     }, text = {
-        Text(stringResource(R.string.audio))
+        Text(stringResource(Res.string.audio))
     }) {
         onClick()
     }
@@ -482,7 +482,7 @@ fun FilePickButton(onClick: () -> Unit = {}) {
     BigIconTextButton(icon = {
         Icon(HugeIcons.Files02, null)
     }, text = {
-        Text(stringResource(R.string.upload_file))
+        Text(stringResource(Res.string.upload_file))
     }) {
         onClick()
     }
@@ -532,7 +532,7 @@ private fun BigIconTextButtonPreview() {
         BigIconTextButton(icon = {
             Icon(HugeIcons.Image02, null)
         }, text = {
-            Text(stringResource(R.string.photo))
+            Text(stringResource(Res.string.photo))
         }) {}
     }
 }

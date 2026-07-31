@@ -35,12 +35,12 @@ import androidx.compose.ui.unit.dp
 import java.util.concurrent.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.res.stringResource
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowTurnBackward
 import me.rerere.hugeicons.stroke.Folder01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.workspace.WorkspaceFileEntry
 import me.rerere.workspace.WorkspaceStorageArea
 import org.koin.compose.koinInject
@@ -83,11 +83,11 @@ fun WorkspaceCwdPickerSheet(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = stringResource(R.string.workspace_cwd_select_directory),
+                text = stringResource(Res.string.workspace_cwd_select_directory),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             )
             Text(
-                text = stringResource(R.string.workspace_cwd_select_desc),
+                text = stringResource(Res.string.workspace_cwd_select_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -150,7 +150,7 @@ fun WorkspaceCwdPickerSheet(
                 if (!loading && dirs.isEmpty()) {
                     item {
                         Text(
-                            text = stringResource(R.string.workspace_cwd_no_subdirectories),
+                            text = stringResource(Res.string.workspace_cwd_no_subdirectories),
                             modifier = Modifier.padding(16.dp),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -171,14 +171,14 @@ fun WorkspaceCwdPickerSheet(
                         onSelectCwd(null)
                         onDismiss()
                     }) {
-                        Text(stringResource(R.string.workspace_cwd_reset))
+                        Text(stringResource(Res.string.workspace_cwd_reset))
                     }
                 }
                 FilledTonalButton(onClick = {
                     onSelectCwd(toAbsolutePath(browsePath))
                     onDismiss()
                 }) {
-                    Text(stringResource(R.string.workspace_cwd_set))
+                    Text(stringResource(Res.string.workspace_cwd_set))
                 }
             }
         }

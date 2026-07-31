@@ -68,7 +68,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -89,12 +88,12 @@ import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.hugeicons.stroke.McpServer
 import me.rerere.hugeicons.stroke.MessageBlocked
 import me.rerere.hugeicons.stroke.Settings03
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.mcp.McpCommonOptions
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
 import me.rerere.rikkahub.data.ai.mcp.McpTool
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.Switch
@@ -104,6 +103,7 @@ import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.hooks.EditState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.writeClipboardText
@@ -139,7 +139,7 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_mcp_page_title))
+                    Text(stringResource(Res.string.setting_mcp_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -218,9 +218,9 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(text = stringResource(R.string.setting_mcp_page_no_mcp_servers_found))
+                    Text(text = stringResource(Res.string.setting_mcp_page_no_mcp_servers_found))
                     Text(
-                        text = stringResource(R.string.setting_mcp_page_add_one_to_get_started),
+                        text = stringResource(Res.string.setting_mcp_page_add_one_to_get_started),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -279,12 +279,12 @@ private fun McpServerItem(
                         errorDetail = null
                     }
                 ) {
-                    Text(stringResource(R.string.copy))
+                    Text(stringResource(Res.string.copy))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { errorDetail = null }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
         )
@@ -464,7 +464,7 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
                             }
                         },
                         text = {
-                            Text(stringResource(R.string.setting_mcp_page_basic_settings))
+                            Text(stringResource(Res.string.setting_mcp_page_basic_settings))
                         }
                     )
                     Tab(
@@ -475,7 +475,7 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
                             }
                         },
                         text = {
-                            Text(stringResource(R.string.setting_mcp_page_tools))
+                            Text(stringResource(Res.string.setting_mcp_page_tools))
                         }
                     )
                 }
@@ -512,7 +512,7 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
                             }
                         }
                     ) {
-                        Text(stringResource(R.string.setting_mcp_page_save))
+                        Text(stringResource(Res.string.setting_mcp_page_save))
                     }
                 }
             }
@@ -536,10 +536,10 @@ private fun McpCommonOptionsConfigure(
         // 启用/禁用开关
         FormItem(
             label = {
-                Text(stringResource(R.string.setting_mcp_page_enable))
+                Text(stringResource(Res.string.setting_mcp_page_enable))
             },
             description = {
-                Text(stringResource(R.string.setting_mcp_page_enable_desc))
+                Text(stringResource(Res.string.setting_mcp_page_enable_desc))
             }
         ) {
             Row(
@@ -547,7 +547,7 @@ private fun McpCommonOptionsConfigure(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.setting_mcp_page_enable))
+                Text(stringResource(Res.string.setting_mcp_page_enable))
                 Spacer(Modifier.weight(1f))
                 Switch(
                     checked = config.commonOptions.enable,
@@ -573,10 +573,10 @@ private fun McpCommonOptionsConfigure(
         // 名称输入框
         FormItem(
             label = {
-                Text(stringResource(R.string.setting_mcp_page_name))
+                Text(stringResource(Res.string.setting_mcp_page_name))
             },
             description = {
-                Text(stringResource(R.string.setting_mcp_page_name_desc))
+                Text(stringResource(Res.string.setting_mcp_page_name_desc))
             }
         ) {
             val nameInvalid = !isValidMcpName(config.commonOptions.name)
@@ -595,12 +595,12 @@ private fun McpCommonOptionsConfigure(
                         }
                     )
                 },
-                label = { Text(stringResource(R.string.setting_mcp_page_name)) },
+                label = { Text(stringResource(Res.string.setting_mcp_page_name)) },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.setting_mcp_page_name_placeholder)) },
+                placeholder = { Text(stringResource(Res.string.setting_mcp_page_name_placeholder)) },
                 isError = nameInvalid,
                 supportingText = if (nameInvalid) {
-                    { Text(stringResource(R.string.setting_mcp_page_name_invalid)) }
+                    { Text(stringResource(Res.string.setting_mcp_page_name_invalid)) }
                 } else null
             )
         }
@@ -610,10 +610,10 @@ private fun McpCommonOptionsConfigure(
         // 传输类型选择
         FormItem(
             label = {
-                Text(stringResource(R.string.setting_mcp_page_transport_type))
+                Text(stringResource(Res.string.setting_mcp_page_transport_type))
             },
             description = {
-                Text(stringResource(R.string.setting_mcp_page_transport_type_desc))
+                Text(stringResource(Res.string.setting_mcp_page_transport_type_desc))
             }
         ) {
             val transportTypes = listOf(
@@ -670,13 +670,13 @@ private fun McpCommonOptionsConfigure(
         // 服务器地址配置
         FormItem(
             label = {
-                Text(stringResource(R.string.setting_mcp_page_server_url))
+                Text(stringResource(Res.string.setting_mcp_page_server_url))
             },
             description = {
                 Text(
                     when (config) {
-                        is McpServerConfig.SseTransportServer -> stringResource(R.string.setting_mcp_page_sse_url_desc)
-                        is McpServerConfig.StreamableHTTPServer -> stringResource(R.string.setting_mcp_page_streamable_http_url_desc)
+                        is McpServerConfig.SseTransportServer -> stringResource(Res.string.setting_mcp_page_sse_url_desc)
+                        is McpServerConfig.StreamableHTTPServer -> stringResource(Res.string.setting_mcp_page_streamable_http_url_desc)
                     }
                 )
             }
@@ -694,13 +694,13 @@ private fun McpCommonOptionsConfigure(
                         }
                     )
                 },
-                label = { Text(stringResource(R.string.setting_mcp_page_url_label)) },
+                label = { Text(stringResource(Res.string.setting_mcp_page_url_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
                         when (config) {
-                            is McpServerConfig.SseTransportServer -> stringResource(R.string.setting_mcp_page_sse_url_placeholder)
-                            is McpServerConfig.StreamableHTTPServer -> stringResource(R.string.setting_mcp_page_streamable_http_url_placeholder)
+                            is McpServerConfig.SseTransportServer -> stringResource(Res.string.setting_mcp_page_sse_url_placeholder)
+                            is McpServerConfig.StreamableHTTPServer -> stringResource(Res.string.setting_mcp_page_streamable_http_url_placeholder)
                         }
                     )
                 }
@@ -712,10 +712,10 @@ private fun McpCommonOptionsConfigure(
         // 请求头配置
         FormItem(
             label = {
-                Text(stringResource(R.string.setting_mcp_page_custom_headers))
+                Text(stringResource(Res.string.setting_mcp_page_custom_headers))
             },
             description = {
-                Text(stringResource(R.string.setting_mcp_page_custom_headers_desc))
+                Text(stringResource(Res.string.setting_mcp_page_custom_headers_desc))
             }
         ) {
             Column(
@@ -750,9 +750,9 @@ private fun McpCommonOptionsConfigure(
                                         }
                                     )
                                 },
-                                label = { Text(stringResource(R.string.setting_mcp_page_header_name)) },
+                                label = { Text(stringResource(Res.string.setting_mcp_page_header_name)) },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.setting_mcp_page_header_name_placeholder)) }
+                                placeholder = { Text(stringResource(Res.string.setting_mcp_page_header_name_placeholder)) }
                             )
                             Spacer(Modifier.height(8.dp))
                             OutlinedTextField(
@@ -774,9 +774,9 @@ private fun McpCommonOptionsConfigure(
                                         }
                                     )
                                 },
-                                label = { Text(stringResource(R.string.setting_mcp_page_header_value)) },
+                                label = { Text(stringResource(Res.string.setting_mcp_page_header_value)) },
                                 modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.setting_mcp_page_header_value_placeholder)) }
+                                placeholder = { Text(stringResource(Res.string.setting_mcp_page_header_value_placeholder)) }
                             )
                         }
                         IconButton(onClick = {
@@ -796,7 +796,7 @@ private fun McpCommonOptionsConfigure(
                         }) {
                             Icon(
                                 HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.setting_mcp_page_delete_header)
+                                contentDescription = stringResource(Res.string.setting_mcp_page_delete_header)
                             )
                         }
                     }
@@ -822,10 +822,10 @@ private fun McpCommonOptionsConfigure(
                 ) {
                     Icon(
                         HugeIcons.Add01,
-                        contentDescription = stringResource(R.string.setting_mcp_page_add_header)
+                        contentDescription = stringResource(Res.string.setting_mcp_page_add_header)
                     )
                     Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.setting_mcp_page_add_header))
+                    Text(stringResource(Res.string.setting_mcp_page_add_header))
                 }
             }
         }
@@ -845,7 +845,7 @@ private fun McpToolsConfigure(
     ) {
         if (mcpManager.getClient(config) == null) {
             item {
-                Text(stringResource(R.string.setting_mcp_page_tools_unavailable_message))
+                Text(stringResource(Res.string.setting_mcp_page_tools_unavailable_message))
             }
         }
         items(config.commonOptions.tools) { tool ->
@@ -924,7 +924,7 @@ private fun McpToolCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_mcp_page_needs_approval),
+                        text = stringResource(Res.string.setting_mcp_page_needs_approval),
                         style = MaterialTheme.typography.labelSmall,
                     )
                     Switch(
@@ -1024,8 +1024,8 @@ private fun McpImportModal(
 ) {
     var jsonText by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val noValidConfigMsg = stringResource(R.string.setting_mcp_page_import_no_valid_config)
-    val parseErrorMsg = stringResource(R.string.setting_mcp_page_import_parse_error)
+    val noValidConfigMsg = stringResource(Res.string.setting_mcp_page_import_no_valid_config)
+    val parseErrorMsg = stringResource(Res.string.setting_mcp_page_import_parse_error)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1039,9 +1039,9 @@ private fun McpImportModal(
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(stringResource(R.string.setting_mcp_page_import_title), style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(Res.string.setting_mcp_page_import_title), style = MaterialTheme.typography.titleLarge)
             Text(
-                stringResource(R.string.setting_mcp_page_import_desc),
+                stringResource(Res.string.setting_mcp_page_import_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1063,7 +1063,7 @@ private fun McpImportModal(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
                 Button(
                     onClick = {
@@ -1079,7 +1079,7 @@ private fun McpImportModal(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.setting_mcp_page_import_confirm))
+                    Text(stringResource(Res.string.setting_mcp_page_import_confirm))
                 }
             }
         }

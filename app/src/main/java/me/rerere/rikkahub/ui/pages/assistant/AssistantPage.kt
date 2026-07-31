@@ -52,18 +52,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.hugeicons.stroke.MoreVertical
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANTS_IDS
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.Tag
@@ -76,6 +75,7 @@ import me.rerere.rikkahub.ui.hooks.heroAnimation
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.modifier.onClick
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantImporter
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
@@ -114,7 +114,7 @@ fun AssistantPage(vm: AssistantVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_title))
+                    Text(stringResource(Res.string.assistant_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -124,7 +124,7 @@ fun AssistantPage(vm: AssistantVM = koinViewModel()) {
                         onClick = {
                             createState.open(Assistant())
                         }) {
-                        Icon(HugeIcons.Add01, stringResource(R.string.assistant_page_add))
+                        Icon(HugeIcons.Add01, stringResource(Res.string.assistant_page_add))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -161,7 +161,7 @@ fun AssistantPage(vm: AssistantVM = koinViewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                placeholder = { Text(stringResource(R.string.assistant_page_search_placeholder)) },
+                placeholder = { Text(stringResource(Res.string.assistant_page_search_placeholder)) },
                 leadingIcon = {
                     Icon(HugeIcons.Search01, contentDescription = null)
                 },
@@ -345,7 +345,7 @@ private fun AssistantCreationSheet(
                 ) {
                     FormItem(
                         label = {
-                            Text(stringResource(R.string.assistant_page_name))
+                            Text(stringResource(Res.string.assistant_page_name))
                         },
                     ) {
                         OutlinedTextField(
@@ -375,13 +375,13 @@ private fun AssistantCreationSheet(
                         onClick = {
                             state.dismiss()
                         }) {
-                        Text(stringResource(R.string.assistant_page_cancel))
+                        Text(stringResource(Res.string.assistant_page_cancel))
                     }
                     TextButton(
                         onClick = {
                             state.confirm()
                         }) {
-                        Text(stringResource(R.string.assistant_page_save))
+                        Text(stringResource(Res.string.assistant_page_save))
                     }
                 }
             }
@@ -413,7 +413,7 @@ private fun AssistantItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             UIAvatar(
-                name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                name = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                 value = assistant.avatar,
                 modifier = Modifier
                     .size(48.dp)
@@ -426,7 +426,7 @@ private fun AssistantItem(
             ) {
 
                 Text(
-                    text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                    text = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -438,7 +438,7 @@ private fun AssistantItem(
                 ) {
                     if (assistant.enableMemory) {
                         Tag(type = TagType.SUCCESS) {
-                            Text(stringResource(R.string.assistant_page_memory_count, memories.size))
+                            Text(stringResource(Res.string.assistant_page_memory_count, memories.size))
                         }
                     }
 
@@ -473,7 +473,7 @@ private fun AssistantItem(
             ) {
                 Icon(
                     imageVector = HugeIcons.MoreVertical,
-                    contentDescription = stringResource(R.string.assistant_page_actions)
+                    contentDescription = stringResource(Res.string.assistant_page_actions)
                 )
             }
         }
@@ -506,12 +506,12 @@ private fun AssistantActionSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 UIAvatar(
-                    name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                    name = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                     value = assistant.avatar,
                     modifier = Modifier.size(40.dp)
                 )
                 Text(
-                    text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                    text = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -520,7 +520,7 @@ private fun AssistantActionSheet(
 
             // 克隆选项
             ListItem(
-                headlineContent = { Text(stringResource(R.string.assistant_page_clone)) },
+                headlineContent = { Text(stringResource(Res.string.assistant_page_clone)) },
                 leadingContent = {
                     Icon(
                         imageVector = HugeIcons.Copy01,
@@ -537,7 +537,7 @@ private fun AssistantActionSheet(
                 ListItem(
                     headlineContent = {
                         Text(
-                            stringResource(R.string.assistant_page_delete),
+                            stringResource(Res.string.assistant_page_delete),
                             color = MaterialTheme.colorScheme.error
                         )
                     },
@@ -558,20 +558,20 @@ private fun AssistantActionSheet(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text(stringResource(R.string.assistant_page_delete)) },
-            text = { Text(stringResource(R.string.assistant_page_delete_dialog_text)) },
+            title = { Text(stringResource(Res.string.assistant_page_delete)) },
+            text = { Text(stringResource(Res.string.assistant_page_delete_dialog_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
                         onDelete()
                     }) {
-                    Text(stringResource(R.string.confirm))
+                    Text(stringResource(Res.string.confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
         )

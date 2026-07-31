@@ -56,7 +56,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringResource as androidStringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,11 +71,12 @@ import me.rerere.hugeicons.stroke.Edit02
 import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.hugeicons.stroke.PlusSign
 import me.rerere.hugeicons.stroke.Tick01
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.setting.components.PresetThemeButtonGroup
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.CustomTheme
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
@@ -97,8 +98,8 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
     val clipboardManager = LocalClipboard.current
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
-    val exportSuccessMsg = stringResource(R.string.setting_theme_page_export_success)
-    val importSuccessMsg = stringResource(R.string.setting_theme_page_import_success)
+    val exportSuccessMsg = stringResource(Res.string.setting_theme_page_export_success)
+    val importSuccessMsg = stringResource(Res.string.setting_theme_page_import_success)
 
     var showEditSheet by remember { mutableStateOf(false) }
     var editingTheme by remember { mutableStateOf<CustomTheme?>(null) }
@@ -108,7 +109,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.setting_page_theme_setting)) },
+                title = { Text(stringResource(Res.string.setting_page_theme_setting)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors
@@ -131,7 +132,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.setting_theme_page_dynamic_color_hint),
+                            text = stringResource(Res.string.setting_theme_page_dynamic_color_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -145,7 +146,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         Text(
-                            text = stringResource(R.string.setting_theme_page_preset_themes),
+                            text = stringResource(Res.string.setting_theme_page_preset_themes),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp)
@@ -176,7 +177,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
-                            text = stringResource(R.string.setting_theme_page_custom_themes),
+                            text = stringResource(Res.string.setting_theme_page_custom_themes),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -186,7 +187,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                             ) {
                                 Icon(HugeIcons.FileImport, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.setting_theme_page_import_theme))
+                                Text(stringResource(Res.string.setting_theme_page_import_theme))
                             }
                             FilledTonalButton(
                                 onClick = {
@@ -196,7 +197,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                             ) {
                                 Icon(HugeIcons.PlusSign, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.setting_theme_page_add_theme))
+                                Text(stringResource(Res.string.setting_theme_page_add_theme))
                             }
                         }
                     }
@@ -211,7 +212,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.setting_theme_page_no_custom_themes),
+                                text = stringResource(Res.string.setting_theme_page_no_custom_themes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -288,9 +289,9 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
 
     RikkaConfirmDialog(
         show = deletingTheme != null,
-        title = stringResource(R.string.setting_theme_page_delete_theme_title),
-        confirmText = stringResource(android.R.string.ok),
-        dismissText = stringResource(android.R.string.cancel),
+        title = stringResource(Res.string.setting_theme_page_delete_theme_title),
+        confirmText = androidStringResource(android.R.string.ok),
+        dismissText = androidStringResource(android.R.string.cancel),
         onConfirm = {
             deletingTheme?.let { theme ->
                 val newThemes = settings.customThemes.filter { it.id != theme.id }
@@ -301,7 +302,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
         },
         onDismiss = { deletingTheme = null },
         text = {
-            Text(stringResource(R.string.setting_theme_page_delete_theme_message))
+            Text(stringResource(Res.string.setting_theme_page_delete_theme_message))
         }
     )
 }
@@ -402,8 +403,8 @@ private fun CustomThemeEditSheet(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = if (theme == null) stringResource(R.string.setting_theme_page_create_theme)
-                else stringResource(R.string.setting_theme_page_edit_theme),
+                text = if (theme == null) stringResource(Res.string.setting_theme_page_create_theme)
+                else stringResource(Res.string.setting_theme_page_edit_theme),
                 style = MaterialTheme.typography.titleLarge,
             )
 
@@ -418,13 +419,13 @@ private fun CustomThemeEditSheet(
                 OutlinedTextField(
                     value = currentTheme.name,
                     onValueChange = { currentTheme = currentTheme.copy(name = it) },
-                    label = { Text(stringResource(R.string.setting_theme_page_theme_name)) },
+                    label = { Text(stringResource(Res.string.setting_theme_page_theme_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
 
                 Text(
-                    text = stringResource(R.string.setting_theme_page_primary_color),
+                    text = stringResource(Res.string.setting_theme_page_primary_color),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 ColorPickerRow(
@@ -435,7 +436,7 @@ private fun CustomThemeEditSheet(
                 )
 
                 Text(
-                    text = stringResource(R.string.setting_theme_page_secondary_color),
+                    text = stringResource(Res.string.setting_theme_page_secondary_color),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 ColorPickerRow(
@@ -450,7 +451,7 @@ private fun CustomThemeEditSheet(
                 )
 
                 Text(
-                    text = stringResource(R.string.setting_theme_page_tertiary_color),
+                    text = stringResource(Res.string.setting_theme_page_tertiary_color),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 ColorPickerRow(
@@ -475,14 +476,14 @@ private fun CustomThemeEditSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(android.R.string.cancel))
+                    Text(androidStringResource(android.R.string.cancel))
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = { onSave(currentTheme) },
                     enabled = currentTheme.name.isNotBlank()
                 ) {
-                    Text(stringResource(R.string.setting_theme_page_save))
+                    Text(stringResource(Res.string.setting_theme_page_save))
                 }
             }
         }
@@ -499,7 +500,7 @@ private fun ImportThemeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.setting_theme_page_import_theme)) },
+        title = { Text(stringResource(Res.string.setting_theme_page_import_theme)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -529,12 +530,12 @@ private fun ImportThemeDialog(
                 },
                 enabled = jsonText.isNotBlank()
             ) {
-                Text(stringResource(R.string.setting_theme_page_import_theme))
+                Text(stringResource(Res.string.setting_theme_page_import_theme))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
+                Text(androidStringResource(android.R.string.cancel))
             }
         }
     )
@@ -682,7 +683,7 @@ private fun ThemePreview(theme: CustomTheme) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.setting_theme_page_preview),
+            text = stringResource(Res.string.setting_theme_page_preview),
             style = MaterialTheme.typography.titleSmall,
         )
         Row(

@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,10 +25,11 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Tools
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.richtext.HighlightCodeBlock
 import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
 import me.rerere.rikkahub.ui.components.ui.FormItem
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
@@ -63,7 +63,7 @@ interface ToolUIRenderer {
     /** 折叠步骤的标题 */
     @Composable
     fun title(context: ToolUIContext): String =
-        stringResource(R.string.chat_message_tool_call_generic, context.tool.toolName)
+        stringResource(Res.string.chat_message_tool_call_generic, context.tool.toolName)
 
     /** 步骤展开时是否显示内联摘要 */
     fun hasSummary(context: ToolUIContext): Boolean = false
@@ -138,7 +138,7 @@ fun DefaultToolPreview(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.chat_message_tool_call_title),
+                text = stringResource(Res.string.chat_message_tool_call_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
@@ -146,7 +146,7 @@ fun DefaultToolPreview(
         }
         FormItem(
             label = {
-                Text(stringResource(R.string.chat_message_tool_call_label, context.tool.toolName))
+                Text(stringResource(Res.string.chat_message_tool_call_label, context.tool.toolName))
             }
         ) {
             HighlightCodeBlock(
@@ -158,7 +158,7 @@ fun DefaultToolPreview(
         if (context.tool.output.isNotEmpty()) {
             FormItem(
                 label = {
-                    Text(stringResource(R.string.chat_message_tool_call_result))
+                    Text(stringResource(Res.string.chat_message_tool_call_result))
                 }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

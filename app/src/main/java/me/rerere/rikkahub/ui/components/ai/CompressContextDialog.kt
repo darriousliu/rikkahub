@@ -24,12 +24,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun CompressContextDialog(
@@ -59,7 +59,7 @@ fun CompressContextDialog(
             }
         },
         title = {
-            Text(stringResource(R.string.chat_page_compress_context_title))
+            Text(stringResource(Res.string.chat_page_compress_context_title))
         },
         text = {
             Column(
@@ -76,14 +76,14 @@ fun CompressContextDialog(
                             modifier = Modifier.size(32.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(stringResource(R.string.chat_page_compressing))
+                        Text(stringResource(Res.string.chat_page_compressing))
                     }
                 } else {
-                    Text(stringResource(R.string.chat_page_compress_context_desc))
+                    Text(stringResource(Res.string.chat_page_compress_context_desc))
 
                     // Token size selector
                     Text(
-                        text = stringResource(R.string.chat_page_compress_target_tokens),
+                        text = stringResource(Res.string.chat_page_compress_target_tokens),
                         style = MaterialTheme.typography.labelMedium
                     )
                     SingleChoiceSegmentedButtonRow(
@@ -107,7 +107,7 @@ fun CompressContextDialog(
                     OutlinedNumberInput(
                         value = keepRecentMessages,
                         onValueChange = { keepRecentMessages = it },
-                        label = stringResource(R.string.chat_page_compress_keep_recent),
+                        label = stringResource(Res.string.chat_page_compress_keep_recent),
                         modifier = Modifier.fillMaxWidth(),
                     )
 
@@ -116,10 +116,10 @@ fun CompressContextDialog(
                         value = additionalPrompt,
                         onValueChange = { additionalPrompt = it },
                         label = {
-                            Text(stringResource(R.string.chat_page_compress_additional_prompt))
+                            Text(stringResource(Res.string.chat_page_compress_additional_prompt))
                         },
                         placeholder = {
-                            Text(stringResource(R.string.chat_page_compress_additional_prompt_hint))
+                            Text(stringResource(Res.string.chat_page_compress_additional_prompt_hint))
                         },
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 4,
@@ -127,7 +127,7 @@ fun CompressContextDialog(
 
                     // Warning text
                     Text(
-                        text = stringResource(R.string.chat_page_compress_warning),
+                        text = stringResource(Res.string.chat_page_compress_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -140,20 +140,20 @@ fun CompressContextDialog(
                     currentJob?.cancel()
                     currentJob = null
                 }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             } else {
                 TextButton(onClick = {
                     currentJob = onConfirm(additionalPrompt, selectedTokens, keepRecentMessages)
                 }) {
-                    Text(stringResource(R.string.confirm))
+                    Text(stringResource(Res.string.confirm))
                 }
             }
         },
         dismissButton = {
             if (!isLoading) {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             }
         }

@@ -20,17 +20,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.ExternalLink
 import com.composables.icons.lucide.Lucide
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Link01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
 import me.rerere.rikkahub.data.model.QuickMessage
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun ModeInjectionsContent(
@@ -47,7 +47,7 @@ fun ModeInjectionsContent(
         items(modeInjections) { injection ->
             ListItem(
                 headlineContent = {
-                    Text(injection.name.ifBlank { stringResource(R.string.extension_content_unnamed) })
+                    Text(injection.name.ifBlank { stringResource(Res.string.extension_content_unnamed) })
                 },
                 trailingContent = {
                     Switch(
@@ -81,7 +81,7 @@ fun LorebooksContent(
         items(lorebooks) { lorebook ->
             ListItem(
                 headlineContent = {
-                    Text(lorebook.name.ifBlank { stringResource(R.string.extension_content_unnamed_lorebook) })
+                    Text(lorebook.name.ifBlank { stringResource(Res.string.extension_content_unnamed_lorebook) })
                 },
                 supportingContent = if (lorebook.description.isNotBlank()) {
                     {
@@ -165,7 +165,7 @@ fun QuickMessagesContent(
         items(quickMessages, key = { it.id }) { quickMessage ->
             ListItem(
                 headlineContent = {
-                    Text(quickMessage.title.ifBlank { stringResource(R.string.extension_content_unnamed) })
+                    Text(quickMessage.title.ifBlank { stringResource(Res.string.extension_content_unnamed) })
                 },
                 supportingContent = if (quickMessage.content.isNotBlank()) {
                     {
@@ -200,7 +200,7 @@ private fun ManageButton(onClick: () -> Unit) {
         TextButton(onClick = onClick) {
             Icon(Lucide.ExternalLink, contentDescription = null, modifier = Modifier.size(16.dp))
             Text(
-                text = stringResource(R.string.extension_content_manage),
+                text = stringResource(Res.string.extension_content_manage),
                 modifier = Modifier.padding(start = 4.dp),
                 style = MaterialTheme.typography.labelMedium,
             )

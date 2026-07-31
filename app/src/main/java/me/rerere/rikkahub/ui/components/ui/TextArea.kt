@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.dokar.sonner.ToastType
@@ -47,8 +46,10 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.hugeicons.stroke.FullScreen
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.modifier.onClick
+import me.rerere.rikkahub.ui.resources.stringResource
 
 /**
  * A multi-line text input component with a header and file import functionality.
@@ -134,7 +135,7 @@ fun TextArea(
                     if (enableFullscreen) {
                         Icon(
                             imageVector = HugeIcons.FullScreen,
-                            contentDescription = stringResource(R.string.text_area_fullscreen_edit),
+                            contentDescription = stringResource(Res.string.text_area_fullscreen_edit),
                             modifier = Modifier
                                 .onClick(onClick = {
                                     isFullScreen = true
@@ -145,7 +146,7 @@ fun TextArea(
 
                     Icon(
                         imageVector = HugeIcons.FileImport,
-                        contentDescription = stringResource(R.string.text_area_import_from_file),
+                        contentDescription = stringResource(Res.string.text_area_import_from_file),
                         modifier = Modifier
                             .onClick(onClick = {
                                 filePickerLauncher.launch(supportedFileTypes)
@@ -225,7 +226,7 @@ private fun FullScreenTextEditor(
                                 onDismiss()
                             }
                         ) {
-                            Text(stringResource(R.string.text_area_save))
+                            Text(stringResource(Res.string.text_area_save))
                         }
                     }
                     TextField(

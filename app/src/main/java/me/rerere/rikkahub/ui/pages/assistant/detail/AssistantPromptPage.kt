@@ -54,7 +54,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,7 +67,6 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.transformers.DefaultPlaceholderProvider
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.ai.transformers.TransformerContext
@@ -78,12 +76,14 @@ import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.AssistantRegex
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.message.ChatMessage
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.Select
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TextArea
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.ChatFontProvider
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
@@ -111,7 +111,7 @@ fun AssistantPromptPage(id: String) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_prompt))
+                    Text(stringResource(Res.string.assistant_page_tab_prompt))
                 },
                 navigationIcon = {
                     BackButton()
@@ -173,14 +173,14 @@ private fun AssistantPromptContent(
 
                 TextArea(
                     state = systemPromptValue,
-                    label = stringResource(R.string.assistant_page_system_prompt),
+                    label = stringResource(Res.string.assistant_page_system_prompt),
                     minLines = 5,
                     maxLines = 10
                 )
 
                 Column {
                     Text(
-                        text = stringResource(R.string.assistant_page_available_variables),
+                        text = stringResource(Res.string.assistant_page_available_variables),
                         style = MaterialTheme.typography.labelSmall
                     )
                     FlowRow(
@@ -208,10 +208,10 @@ private fun AssistantPromptContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_allow_conversation_system_prompt))
+                    Text(stringResource(Res.string.assistant_page_allow_conversation_system_prompt))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_allow_conversation_system_prompt_desc))
+                    Text(stringResource(Res.string.assistant_page_allow_conversation_system_prompt_desc))
                 },
                 tail = {
                     Switch(
@@ -234,10 +234,10 @@ private fun AssistantPromptContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_allow_conversation_prompt_injection))
+                    Text(stringResource(Res.string.assistant_page_allow_conversation_prompt_injection))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_allow_conversation_prompt_injection_desc))
+                    Text(stringResource(Res.string.assistant_page_allow_conversation_prompt_injection_desc))
                 },
                 tail = {
                     Switch(
@@ -263,7 +263,7 @@ private fun AssistantPromptContent(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.assistant_page_message_template))
+                        Text(stringResource(Res.string.assistant_page_message_template))
                         Spacer(Modifier.weight(1f))
                         IconButton(
                             onClick = {
@@ -294,7 +294,7 @@ private fun AssistantPromptContent(
                         maxLines = 15,
                         isError = missingMessage,
                         supportingText = if (missingMessage) {
-                            { Text(stringResource(R.string.assistant_page_message_template_missing_message)) }
+                            { Text(stringResource(Res.string.assistant_page_message_template_missing_message)) }
                         } else null,
                         textStyle = LocalTextStyle.current.copy(
                             fontSize = 12.sp,
@@ -304,29 +304,29 @@ private fun AssistantPromptContent(
                     )
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_message_template_desc))
+                    Text(stringResource(Res.string.assistant_page_message_template_desc))
                     Text(buildAnnotatedString {
-                        append(stringResource(R.string.assistant_page_template_variables_label))
+                        append(stringResource(Res.string.assistant_page_template_variables_label))
                         append(" ")
-                        append(stringResource(R.string.assistant_page_template_variable_role))
+                        append(stringResource(Res.string.assistant_page_template_variable_role))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ role }}")
                         }
                         append(", ")
-                        append(stringResource(R.string.assistant_page_template_variable_message))
+                        append(stringResource(Res.string.assistant_page_template_variable_message))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ message }}")
                         }
                         append(", ")
-                        append(stringResource(R.string.assistant_page_template_variable_time))
+                        append(stringResource(Res.string.assistant_page_template_variable_time))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ time }}")
                         }
                         append(", ")
-                        append(stringResource(R.string.assistant_page_template_variable_date))
+                        append(stringResource(Res.string.assistant_page_template_variable_date))
                         append(": ")
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                             append("{{ date }}")
@@ -343,7 +343,7 @@ private fun AssistantPromptContent(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = stringResource(R.string.assistant_page_template_preview),
+                    text = stringResource(Res.string.assistant_page_template_preview),
                     style = MaterialTheme.typography.titleSmall
                 )
                 val rawMessages = listOf(
@@ -401,10 +401,10 @@ private fun AssistantPromptContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_preset_messages))
+                    Text(stringResource(Res.string.assistant_page_preset_messages))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_preset_messages_desc))
+                    Text(stringResource(Res.string.assistant_page_preset_messages_desc))
                 }
             )
             Column(
@@ -503,10 +503,10 @@ private fun AssistantPromptContent(
             FormItem(
                 modifier = Modifier.padding(8.dp),
                 label = {
-                    Text(stringResource(R.string.assistant_page_regex_title))
+                    Text(stringResource(Res.string.assistant_page_regex_title))
                 },
                 description = {
-                    Text(stringResource(R.string.assistant_page_regex_desc))
+                    Text(stringResource(Res.string.assistant_page_regex_desc))
                 }
             )
             Column(
@@ -617,7 +617,7 @@ private fun AssistantRegexCard(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_regex_name)) }
+                    label = { Text(stringResource(Res.string.assistant_page_regex_name)) }
                 )
 
                 OutlinedTextField(
@@ -636,7 +636,7 @@ private fun AssistantRegexCard(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_regex_find_regex)) },
+                    label = { Text(stringResource(Res.string.assistant_page_regex_find_regex)) },
                     placeholder = { Text("e.g., \\b\\w+@\\w+\\.\\w+\\b") },
                 )
 
@@ -656,13 +656,13 @@ private fun AssistantRegexCard(
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.assistant_page_regex_replace_string)) },
+                    label = { Text(stringResource(Res.string.assistant_page_regex_replace_string)) },
                     placeholder = { Text("e.g., [EMAIL]") }
                 )
 
                 Column {
                     Text(
-                        text = stringResource(R.string.assistant_page_regex_affecting_scopes),
+                        text = stringResource(Res.string.assistant_page_regex_affecting_scopes),
                         style = MaterialTheme.typography.labelMedium
                     )
                     Row(
@@ -724,7 +724,7 @@ private fun AssistantRegexCard(
                         }
                     )
                     Text(
-                        text = stringResource(R.string.assistant_page_regex_visual_only),
+                        text = stringResource(Res.string.assistant_page_regex_visual_only),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -745,7 +745,7 @@ private fun AssistantRegexCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Icon(HugeIcons.Delete01, null)
-                        Text(stringResource(R.string.delete))
+                        Text(stringResource(Res.string.delete))
                     }
                 }
             }

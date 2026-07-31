@@ -41,12 +41,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import me.rerere.rikkahub.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.composables.icons.lucide.ChevronDown
 import com.composables.icons.lucide.ChevronRight
@@ -57,9 +55,11 @@ import com.composables.icons.lucide.FolderOpen
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Plus
 import com.composables.icons.lucide.Trash2
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -76,7 +76,7 @@ fun SkillDetailPage(skillName: String) {
     var editingFile by remember { mutableStateOf<SkillFile?>(null) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<SkillFile?>(null) }
-    val deleteFailedMsg = stringResource(R.string.skill_detail_page_delete_failed)
+    val deleteFailedMsg = stringResource(Res.string.skill_detail_page_delete_failed)
 
     val scrollState = rememberScrollState()
     var previousScrollOffset by remember { mutableIntStateOf(0) }
@@ -154,9 +154,9 @@ fun SkillDetailPage(skillName: String) {
 
     RikkaConfirmDialog(
         show = deleteTarget != null,
-        title = stringResource(R.string.skill_detail_page_delete_file),
-        confirmText = stringResource(R.string.delete),
-        dismissText = stringResource(R.string.cancel),
+        title = stringResource(Res.string.skill_detail_page_delete_file),
+        confirmText = stringResource(Res.string.delete),
+        dismissText = stringResource(Res.string.cancel),
         onConfirm = {
             deleteTarget?.let { skillFile ->
                 vm.deleteFile(skillFile) { success ->
@@ -167,7 +167,7 @@ fun SkillDetailPage(skillName: String) {
         },
         onDismiss = { deleteTarget = null },
     ) {
-        Text(stringResource(R.string.skill_detail_page_delete_confirm, deleteTarget?.relativePath ?: ""))
+        Text(stringResource(Res.string.skill_detail_page_delete_confirm, deleteTarget?.relativePath ?: ""))
     }
 }
 
@@ -236,7 +236,7 @@ private fun FileItem(
             IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Lucide.FilePen,
-                    contentDescription = stringResource(R.string.edit),
+                    contentDescription = stringResource(Res.string.edit),
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -244,7 +244,7 @@ private fun FileItem(
                 IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                     Icon(
                         imageVector = Lucide.Trash2,
-                        contentDescription = stringResource(R.string.delete),
+                        contentDescription = stringResource(Res.string.delete),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.error,
                     )
@@ -326,7 +326,7 @@ private fun EditFileDialog(
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
-                label = { Text(stringResource(R.string.skill_detail_page_content)) },
+                label = { Text(stringResource(Res.string.skill_detail_page_content)) },
                 minLines = 10,
                 maxLines = 20,
                 textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
@@ -334,10 +334,10 @@ private fun EditFileDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(content) }) { Text(stringResource(R.string.skill_detail_page_save)) }
+            TextButton(onClick = { onConfirm(content) }) { Text(stringResource(Res.string.skill_detail_page_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }
@@ -353,17 +353,17 @@ private fun AddFileDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.skill_detail_page_new_file)) },
+        title = { Text(stringResource(Res.string.skill_detail_page_new_file)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = fileName,
                     onValueChange = { fileName = it },
-                    label = { Text(stringResource(R.string.skill_detail_page_file_name)) },
+                    label = { Text(stringResource(Res.string.skill_detail_page_file_name)) },
                     placeholder = { Text("examples/basic.md", fontFamily = FontFamily.Monospace) },
                     supportingText = {
                         if (fileNameError) Text(
-                            stringResource(R.string.skill_detail_page_file_name_invalid),
+                            stringResource(Res.string.skill_detail_page_file_name_invalid),
                             color = MaterialTheme.colorScheme.error,
                         )
                     },
@@ -376,7 +376,7 @@ private fun AddFileDialog(
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
-                    label = { Text(stringResource(R.string.skill_detail_page_content)) },
+                    label = { Text(stringResource(Res.string.skill_detail_page_content)) },
                     minLines = 6,
                     maxLines = 14,
                     textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
@@ -389,11 +389,11 @@ private fun AddFileDialog(
                 onClick = { onConfirm(fileName.trim(), content) },
                 enabled = fileName.isNotBlank() && !fileNameError,
             ) {
-                Text(stringResource(R.string.skill_detail_page_create))
+                Text(stringResource(Res.string.skill_detail_page_create))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }

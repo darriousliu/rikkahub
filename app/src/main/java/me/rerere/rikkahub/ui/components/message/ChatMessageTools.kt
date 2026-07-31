@@ -33,7 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringResource as androidStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.JsonObject
@@ -49,13 +49,14 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.BubbleChatQuestion
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Tick01
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.message.tools.ToolUIContext
 import me.rerere.rikkahub.ui.components.message.tools.ToolUIRegistry
 import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
 import me.rerere.rikkahub.ui.components.ui.ChainOfThoughtScope
 import me.rerere.rikkahub.ui.components.ui.DotLoading
 import me.rerere.rikkahub.ui.modifier.shimmer
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.JsonInstant
 
 private const val ASK_USER_TOOL_NAME = "ask_user"
@@ -139,7 +140,7 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
                     ) {
                         Icon(
                             imageVector = HugeIcons.Cancel01,
-                            contentDescription = stringResource(R.string.chat_message_tool_deny),
+                            contentDescription = stringResource(Res.string.chat_message_tool_deny),
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -149,7 +150,7 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
                     ) {
                         Icon(
                             imageVector = HugeIcons.Tick01,
-                            contentDescription = stringResource(R.string.chat_message_tool_approve),
+                            contentDescription = stringResource(Res.string.chat_message_tool_approve),
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -186,7 +187,7 @@ fun ChainOfThoughtScope.ChatMessageToolStep(
                     if (isDenied) {
                         val reason = (tool.approvalState as ToolApprovalState.Denied).reason
                         Text(
-                            text = stringResource(R.string.chat_message_tool_denied) +
+                            text = stringResource(Res.string.chat_message_tool_denied) +
                                 if (reason.isNotBlank()) ": $reason" else "",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
@@ -279,7 +280,7 @@ private fun ChainOfThoughtScope.AskUserToolStep(
         label = {
             Text(
                 text = if (questions.size <= 1) firstQuestion else stringResource(
-                    R.string.chat_message_tool_ask_questions,
+                    Res.string.chat_message_tool_ask_questions,
                     questions.size
                 ),
                 style = MaterialTheme.typography.titleSmall,
@@ -436,7 +437,7 @@ private fun ChainOfThoughtScope.AskUserToolStep(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = stringResource(R.string.chat_message_tool_submit),
+                            text = stringResource(Res.string.chat_message_tool_submit),
                             modifier = Modifier.padding(start = 4.dp),
                         )
                     }
@@ -463,13 +464,13 @@ private fun ToolDenyReasonDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(stringResource(R.string.chat_message_tool_deny_dialog_title))
+            Text(stringResource(Res.string.chat_message_tool_deny_dialog_title))
         },
         text = {
             OutlinedTextField(
                 value = reason,
                 onValueChange = { reason = it },
-                label = { Text(stringResource(R.string.chat_message_tool_deny_dialog_hint)) },
+                label = { Text(stringResource(Res.string.chat_message_tool_deny_dialog_hint)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
                 minLines = 2,
@@ -478,12 +479,12 @@ private fun ToolDenyReasonDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(reason) }) {
-                Text(stringResource(R.string.chat_message_tool_deny))
+                Text(stringResource(Res.string.chat_message_tool_deny))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
+                Text(androidStringResource(android.R.string.cancel))
             }
         }
     )

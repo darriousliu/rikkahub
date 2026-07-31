@@ -18,20 +18,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ExtensionEmptyState
 import me.rerere.rikkahub.ui.components.ai.LorebooksContent
 import me.rerere.rikkahub.ui.components.ai.ModeInjectionsContent
 import me.rerere.rikkahub.ui.components.ai.QuickMessagesContent
 import me.rerere.rikkahub.ui.components.ai.SkillsContent
+import me.rerere.rikkahub.ui.resources.stringResource
 import org.koin.compose.koinInject
 
 
@@ -86,28 +86,28 @@ fun ExtensionSelector(
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(0) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_quick_messages)) }
+                text = { Text(stringResource(Res.string.extension_selector_tab_quick_messages)) }
             )
             Tab(
                 selected = pagerState.currentPage == 1,
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(1) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_mode_injections)) }
+                text = { Text(stringResource(Res.string.extension_selector_tab_mode_injections)) }
             )
             Tab(
                 selected = pagerState.currentPage == 2,
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(2) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_lorebooks)) }
+                text = { Text(stringResource(Res.string.extension_selector_tab_lorebooks)) }
             )
             Tab(
                 selected = pagerState.currentPage == 3,
                 onClick = {
                     scope.launch { pagerState.animateScrollToPage(3) }
                 },
-                text = { Text(stringResource(R.string.extension_selector_tab_skills)) }
+                text = { Text(stringResource(Res.string.extension_selector_tab_skills)) }
             )
         }
 
@@ -135,8 +135,8 @@ fun ExtensionSelector(
                         )
                     } else {
                         ExtensionEmptyState(
-                            message = stringResource(R.string.extension_selector_quick_messages_empty),
-                            buttonText = stringResource(R.string.extension_selector_go_to_extensions),
+                            message = stringResource(Res.string.extension_selector_quick_messages_empty),
+                            buttonText = stringResource(Res.string.extension_selector_go_to_extensions),
                             onAction = onNavigateToQuickMessages,
                         )
                     }
@@ -163,8 +163,8 @@ fun ExtensionSelector(
                         )
                     } else {
                         ExtensionEmptyState(
-                            message = stringResource(R.string.extension_selector_mode_injections_empty),
-                            buttonText = stringResource(R.string.extension_selector_go_to_extensions),
+                            message = stringResource(Res.string.extension_selector_mode_injections_empty),
+                            buttonText = stringResource(Res.string.extension_selector_go_to_extensions),
                             onAction = onNavigateToPrompts,
                         )
                     }
@@ -191,8 +191,8 @@ fun ExtensionSelector(
                         )
                     } else {
                         ExtensionEmptyState(
-                            message = stringResource(R.string.extension_selector_lorebooks_empty),
-                            buttonText = stringResource(R.string.extension_selector_go_to_extensions),
+                            message = stringResource(Res.string.extension_selector_lorebooks_empty),
+                            buttonText = stringResource(Res.string.extension_selector_go_to_extensions),
                             onAction = onNavigateToPrompts,
                         )
                     }
@@ -215,8 +215,8 @@ fun ExtensionSelector(
                         )
                     } else {
                         ExtensionEmptyState(
-                            message = stringResource(R.string.extension_selector_skills_empty),
-                            buttonText = stringResource(R.string.extension_selector_go_to_skills),
+                            message = stringResource(Res.string.extension_selector_skills_empty),
+                            buttonText = stringResource(Res.string.extension_selector_go_to_skills),
                             onAction = onNavigateToSkills,
                         )
                     }

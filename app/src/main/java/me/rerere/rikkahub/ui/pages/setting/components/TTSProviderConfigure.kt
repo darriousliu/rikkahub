@@ -10,12 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.components.ui.SelectTextField
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.tts.provider.TTSProviderSetting
 
 @Composable
@@ -32,8 +32,8 @@ fun TTSProviderConfigure(
         val providers = remember { TTSProviderSetting.Types }
 
         FormItem(
-            label = { Text(stringResource(R.string.setting_tts_page_provider_type)) },
-            description = { Text(stringResource(R.string.setting_tts_page_provider_type_description)) },
+            label = { Text(stringResource(Res.string.setting_tts_page_provider_type)) },
+            description = { Text(stringResource(Res.string.setting_tts_page_provider_type_description)) },
         ) {
             SelectTextField(
                 value = when (setting) {
@@ -134,8 +134,8 @@ fun TTSProviderConfigure(
 
         // Name
         FormItem(
-            label = { Text(stringResource(R.string.setting_tts_page_name)) },
-            description = { Text(stringResource(R.string.setting_tts_page_name_description)) }
+            label = { Text(stringResource(Res.string.setting_tts_page_name)) },
+            description = { Text(stringResource(Res.string.setting_tts_page_name_description)) }
         ) {
             OutlinedTextField(
                 value = setting.name,
@@ -143,7 +143,7 @@ fun TTSProviderConfigure(
                     onValueChange(setting.copyProvider(name = newName))
                 },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.setting_tts_page_name_placeholder)) }
+                placeholder = { Text(stringResource(Res.string.setting_tts_page_name_placeholder)) }
             )
         }
 
@@ -171,8 +171,8 @@ private fun OpenAITTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -180,14 +180,14 @@ private fun OpenAITTSConfiguration(
                 onValueChange(setting.copy(apiKey = newApiKey))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_api_key_placeholder_openai)) },
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_api_key_placeholder_openai)) },
         )
     }
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -195,14 +195,14 @@ private fun OpenAITTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -210,7 +210,7 @@ private fun OpenAITTSConfiguration(
                 onValueChange(setting.copy(model = newModel))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_model_placeholder_openai)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_model_placeholder_openai)) }
         )
     }
 
@@ -218,8 +218,8 @@ private fun OpenAITTSConfiguration(
     val voices = listOf("alloy", "echo", "fable", "onyx", "nova", "shimmer")
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         SelectTextField(
             value = setting.voice,
@@ -243,8 +243,8 @@ private fun MiMoTTSConfiguration(
     // MiMo 配置均为自由输入 默认值只是占位
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -258,8 +258,8 @@ private fun MiMoTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -273,8 +273,8 @@ private fun MiMoTTSConfiguration(
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -288,8 +288,8 @@ private fun MiMoTTSConfiguration(
 
     // Voice
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         OutlinedTextField(
             value = setting.voice,
@@ -309,8 +309,8 @@ private fun MiniMaxTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -323,8 +323,8 @@ private fun MiniMaxTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -332,14 +332,14 @@ private fun MiniMaxTTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -367,8 +367,8 @@ private fun MiniMaxTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice_id)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_id_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice_id)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_id_description)) }
     ) {
         SelectTextField(
             value = setting.voiceId,
@@ -385,8 +385,8 @@ private fun MiniMaxTTSConfiguration(
 
     // Speed
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_speed)) },
-        description = { Text(stringResource(R.string.setting_tts_page_speed_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_speed)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_speed_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.speed,
@@ -396,7 +396,7 @@ private fun MiniMaxTTSConfiguration(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = stringResource(R.string.setting_tts_page_speed)
+            label = stringResource(Res.string.setting_tts_page_speed)
         )
     }
 }
@@ -408,8 +408,8 @@ private fun GeminiTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -417,14 +417,14 @@ private fun GeminiTTSConfiguration(
                 onValueChange(setting.copy(apiKey = newApiKey))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_api_key_placeholder_gemini)) },
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_api_key_placeholder_gemini)) },
         )
     }
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -432,14 +432,14 @@ private fun GeminiTTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -447,14 +447,14 @@ private fun GeminiTTSConfiguration(
                 onValueChange(setting.copy(model = newModel))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_model_placeholder_gemini)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_model_placeholder_gemini)) }
         )
     }
 
     // Voice Name
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice_name)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_name_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice_name)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_name_description)) }
     ) {
         OutlinedTextField(
             value = setting.voiceName,
@@ -462,7 +462,7 @@ private fun GeminiTTSConfiguration(
                 onValueChange(setting.copy(voiceName = newVoiceName))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_voice_name_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_voice_name_placeholder)) }
         )
     }
 }
@@ -474,8 +474,8 @@ private fun SystemTTSConfiguration(
 ) {
     // Speech Rate
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_speech_rate)) },
-        description = { Text(stringResource(R.string.setting_tts_page_speech_rate_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_speech_rate)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_speech_rate_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.speechRate,
@@ -485,14 +485,14 @@ private fun SystemTTSConfiguration(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = stringResource(R.string.setting_tts_page_speech_rate)
+            label = stringResource(Res.string.setting_tts_page_speech_rate)
         )
     }
 
     // Pitch
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_pitch)) },
-        description = { Text(stringResource(R.string.setting_tts_page_pitch_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_pitch)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_pitch_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.pitch,
@@ -502,7 +502,7 @@ private fun SystemTTSConfiguration(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = stringResource(R.string.setting_tts_page_pitch)
+            label = stringResource(Res.string.setting_tts_page_pitch)
         )
     }
 }
@@ -514,8 +514,8 @@ private fun QwenTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -529,8 +529,8 @@ private fun QwenTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -538,14 +538,14 @@ private fun QwenTTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -568,8 +568,8 @@ private fun QwenTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         SelectTextField(
             value = setting.voice,
@@ -612,8 +612,8 @@ private fun GroqTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -627,8 +627,8 @@ private fun GroqTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -636,14 +636,14 @@ private fun GroqTTSConfiguration(
                 onValueChange(setting.copy(baseUrl = newBaseUrl))
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.setting_tts_page_base_url_placeholder)) }
+            placeholder = { Text(stringResource(Res.string.setting_tts_page_base_url_placeholder)) }
         )
     }
 
     // Model
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         OutlinedTextField(
             value = setting.model,
@@ -659,8 +659,8 @@ private fun GroqTTSConfiguration(
     val voices = listOf("austin", "natalie", "kailin")
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         SelectTextField(
             value = setting.voice,
@@ -683,8 +683,8 @@ private fun XAITTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -698,8 +698,8 @@ private fun XAITTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -721,8 +721,8 @@ private fun XAITTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         SelectTextField(
             value = setting.voiceId,
@@ -786,8 +786,8 @@ private fun ElevenLabsTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -801,8 +801,8 @@ private fun ElevenLabsTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -822,8 +822,8 @@ private fun ElevenLabsTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         SelectTextField(
             value = setting.model,
@@ -841,8 +841,8 @@ private fun ElevenLabsTTSConfiguration(
 
     // Voice ID
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         OutlinedTextField(
             value = setting.voiceId,
@@ -856,8 +856,8 @@ private fun ElevenLabsTTSConfiguration(
 
     // Stability
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_stability)) },
-        description = { Text(stringResource(R.string.setting_tts_page_stability_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_stability)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_stability_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.stability,
@@ -871,8 +871,8 @@ private fun ElevenLabsTTSConfiguration(
 
     // Similarity Boost
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_similarity_boost)) },
-        description = { Text(stringResource(R.string.setting_tts_page_similarity_boost_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_similarity_boost)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_similarity_boost_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.similarityBoost,
@@ -892,8 +892,8 @@ private fun FishAudioTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
-        description = { Text(stringResource(R.string.setting_tts_page_api_key_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_api_key_description)) }
     ) {
         OutlinedTextField(
             value = setting.apiKey,
@@ -907,8 +907,8 @@ private fun FishAudioTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -929,8 +929,8 @@ private fun FishAudioTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         SelectTextField(
             value = setting.model,
@@ -948,8 +948,8 @@ private fun FishAudioTTSConfiguration(
 
     // Voice ID (reference_id)
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice_id)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_id_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice_id)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_id_description)) }
     ) {
         OutlinedTextField(
             value = setting.referenceId,
@@ -963,8 +963,8 @@ private fun FishAudioTTSConfiguration(
 
     // Temperature
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_temperature)) },
-        description = { Text(stringResource(R.string.setting_tts_page_temperature_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_temperature)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_temperature_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.temperature,
@@ -978,8 +978,8 @@ private fun FishAudioTTSConfiguration(
 
     // Speed
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_speed)) },
-        description = { Text(stringResource(R.string.setting_tts_page_fish_audio_speed_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_speed)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_fish_audio_speed_description)) }
     ) {
         OutlinedNumberInput(
             value = setting.speed,
@@ -999,7 +999,7 @@ private fun StepTTSConfiguration(
 ) {
     // API Key
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_api_key)) },
+        label = { Text(stringResource(Res.string.setting_tts_page_api_key)) },
         description = { Text("从阶跃星辰官网获取密钥: platform.stepfun.com/interface-key") }
     ) {
         OutlinedTextField(
@@ -1014,8 +1014,8 @@ private fun StepTTSConfiguration(
 
     // Base URL
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_base_url)) },
-        description = { Text(stringResource(R.string.setting_tts_page_base_url_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_base_url)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_base_url_description)) }
     ) {
         OutlinedTextField(
             value = setting.baseUrl,
@@ -1036,8 +1036,8 @@ private fun StepTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_model)) },
-        description = { Text(stringResource(R.string.setting_tts_page_model_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_model)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_model_description)) }
     ) {
         SelectTextField(
             value = setting.model,
@@ -1091,8 +1091,8 @@ private fun StepTTSConfiguration(
     )
 
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_voice)) },
-        description = { Text(stringResource(R.string.setting_tts_page_voice_description)) }
+        label = { Text(stringResource(Res.string.setting_tts_page_voice)) },
+        description = { Text(stringResource(Res.string.setting_tts_page_voice_description)) }
     ) {
         SelectTextField(
             value = setting.voice,
@@ -1130,7 +1130,7 @@ private fun StepTTSConfiguration(
 
     // Speed
     FormItem(
-        label = { Text(stringResource(R.string.setting_tts_page_speed)) },
+        label = { Text(stringResource(Res.string.setting_tts_page_speed)) },
         description = { Text("语速 (0.5 - 2.0, 1.0 为正常)") }
     ) {
         OutlinedNumberInput(
@@ -1141,7 +1141,7 @@ private fun StepTTSConfiguration(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            label = stringResource(R.string.setting_tts_page_speed)
+            label = stringResource(Res.string.setting_tts_page_speed)
         )
     }
 

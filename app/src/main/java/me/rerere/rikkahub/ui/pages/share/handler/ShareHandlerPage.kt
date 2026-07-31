@@ -20,15 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.base64Encode
 import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
@@ -45,7 +45,7 @@ fun ShareHandlerPage(text: String, image: String?) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.share_handler_page_title))
+                    Text(stringResource(Res.string.share_handler_page_title))
                 }
             )
         }
@@ -99,7 +99,7 @@ fun ShareHandlerPage(text: String, image: String?) {
                         headlineContent = {
                             Text(
                                 text = assistant.name.ifEmpty {
-                                    stringResource(R.string.assistant_page_default_assistant)
+                                    stringResource(Res.string.assistant_page_default_assistant)
                                 },
                                 maxLines = 1
                             )

@@ -30,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -43,9 +42,10 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.File02
 import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.hugeicons.stroke.Share08
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.workspace.WorkspaceStorageArea
 import org.koin.compose.koinInject
 import java.io.File
@@ -183,7 +183,7 @@ internal fun EditedFilesList(
                             modifier = Modifier.padding(4.dp),
                         )
                         Text(
-                            text = stringResource(R.string.common_export),
+                            text = stringResource(Res.string.common_export),
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
@@ -229,7 +229,7 @@ internal fun EditedFilesList(
                             modifier = Modifier.padding(4.dp),
                         )
                         Text(
-                            text = stringResource(R.string.common_share),
+                            text = stringResource(Res.string.common_share),
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }

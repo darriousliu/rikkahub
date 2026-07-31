@@ -46,16 +46,16 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.fileSizeToString
 import org.koin.compose.koinInject
@@ -72,10 +72,10 @@ fun SettingFilesPage(
     val folders = remember { listOf(FileFolders.UPLOAD) }
 
     // 预先获取字符串资源
-    val deletedToast = stringResource(R.string.setting_files_page_deleted_toast)
-    val deleteFailedToast = stringResource(R.string.setting_files_page_delete_failed_toast)
-    val cleanedToast = stringResource(R.string.setting_files_page_cleaned_toast)
-    val cleanFailedToast = stringResource(R.string.setting_files_page_clean_failed_toast)
+    val deletedToast = stringResource(Res.string.setting_files_page_deleted_toast)
+    val deleteFailedToast = stringResource(Res.string.setting_files_page_delete_failed_toast)
+    val cleanedToast = stringResource(Res.string.setting_files_page_cleaned_toast)
+    val cleanFailedToast = stringResource(Res.string.setting_files_page_clean_failed_toast)
 
     var selectedFolder by remember { mutableStateOf(FileFolders.UPLOAD) }
     var pendingDelete by remember { mutableStateOf<ManagedFileEntity?>(null) }
@@ -86,7 +86,7 @@ fun SettingFilesPage(
         val target = pendingDelete!!
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text(stringResource(R.string.setting_files_page_delete_file_title)) },
+            title = { Text(stringResource(Res.string.setting_files_page_delete_file_title)) },
             text = { Text(target.displayName) },
             confirmButton = {
                 TextButton(
@@ -102,12 +102,12 @@ fun SettingFilesPage(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.setting_files_page_delete_action))
+                    Text(stringResource(Res.string.setting_files_page_delete_action))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDelete = null }) {
-                    Text(stringResource(R.string.setting_files_page_cancel_action))
+                    Text(stringResource(Res.string.setting_files_page_cancel_action))
                 }
             }
         )
@@ -116,8 +116,8 @@ fun SettingFilesPage(
     if (showCleanDialog) {
         AlertDialog(
             onDismissRequest = { showCleanDialog = false },
-            title = { Text(stringResource(R.string.setting_files_page_clean_title)) },
-            text = { Text(stringResource(R.string.setting_files_page_clean_confirmation)) },
+            title = { Text(stringResource(Res.string.setting_files_page_clean_title)) },
+            text = { Text(stringResource(Res.string.setting_files_page_clean_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -128,12 +128,12 @@ fun SettingFilesPage(
                         }
                     }
                 ) {
-                    Text(stringResource(R.string.setting_files_page_clean_action))
+                    Text(stringResource(Res.string.setting_files_page_clean_action))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCleanDialog = false }) {
-                    Text(stringResource(R.string.setting_files_page_cancel_action))
+                    Text(stringResource(Res.string.setting_files_page_cancel_action))
                 }
             }
         )
@@ -142,7 +142,7 @@ fun SettingFilesPage(
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.setting_files_page_title)) },
+                title = { Text(stringResource(Res.string.setting_files_page_title)) },
                 navigationIcon = { BackButton() },
                 actions = {
                     IconButton(
@@ -151,7 +151,7 @@ fun SettingFilesPage(
                     ) {
                         Icon(
                             imageVector = HugeIcons.Clean,
-                            contentDescription = stringResource(R.string.setting_files_page_clean_content_description),
+                            contentDescription = stringResource(Res.string.setting_files_page_clean_content_description),
                         )
                     }
                 },
@@ -184,7 +184,7 @@ fun SettingFilesPage(
                         .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(stringResource(R.string.setting_files_page_no_files))
+                    Text(stringResource(Res.string.setting_files_page_no_files))
                 }
             } else {
                 LazyVerticalStaggeredGrid(
@@ -238,7 +238,7 @@ private fun FolderRow(
 
 @Composable
 private fun folderDisplayName(folder: String): String = when (folder) {
-    FileFolders.UPLOAD -> stringResource(R.string.setting_files_page_folder_upload)
+    FileFolders.UPLOAD -> stringResource(Res.string.setting_files_page_folder_upload)
     else -> folder
 }
 
@@ -286,7 +286,7 @@ private fun FileItem(
                 ) {
                     Icon(
                         HugeIcons.Delete01,
-                        contentDescription = stringResource(R.string.setting_files_page_delete_content_description)
+                        contentDescription = stringResource(Res.string.setting_files_page_delete_content_description)
                     )
                 }
             }

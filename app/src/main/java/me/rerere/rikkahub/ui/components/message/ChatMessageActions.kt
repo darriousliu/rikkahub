@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.datetime.toJavaLocalDateTime
@@ -54,11 +53,12 @@ import me.rerere.hugeicons.stroke.TextSelection
 import me.rerere.hugeicons.stroke.Translate
 import me.rerere.hugeicons.stroke.VolumeHigh
 import me.rerere.hugeicons.stroke.WebDesign01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.MessageNode
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalTTSState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.copyMessageToClipboard
 import me.rerere.rikkahub.utils.extractQuotedContentAsText
 import me.rerere.rikkahub.utils.removeBracketedContent
@@ -97,7 +97,7 @@ fun ColumnScope.ChatMessageActionButtons(
 
         Icon(
             imageVector = HugeIcons.Copy01,
-            contentDescription = stringResource(R.string.copy),
+            contentDescription = stringResource(Res.string.copy),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable { context.copyMessageToClipboard(message) }
@@ -108,7 +108,7 @@ fun ColumnScope.ChatMessageActionButtons(
 
         Icon(
             imageVector = HugeIcons.Refresh03,
-            contentDescription = stringResource(R.string.regenerate),
+            contentDescription = stringResource(Res.string.regenerate),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable {
@@ -129,7 +129,7 @@ fun ColumnScope.ChatMessageActionButtons(
             val isAvailable by tts.isAvailable.collectAsState()
             Icon(
                 imageVector = if (isSpeaking) HugeIcons.StopCircle else HugeIcons.VolumeHigh,
-                contentDescription = stringResource(R.string.tts),
+                contentDescription = stringResource(Res.string.tts),
                 modifier = Modifier
                     .clip(CircleShape)
                     .clickable(
@@ -161,7 +161,7 @@ fun ColumnScope.ChatMessageActionButtons(
             if (onTranslate != null) {
                 Icon(
                     imageVector = HugeIcons.Translate,
-                    contentDescription = stringResource(R.string.translate),
+                    contentDescription = stringResource(Res.string.translate),
                     modifier = Modifier
                         .clip(CircleShape)
                         .clickable(
@@ -180,7 +180,7 @@ fun ColumnScope.ChatMessageActionButtons(
 
         Icon(
             imageVector = HugeIcons.MoreVertical,
-            contentDescription = stringResource(R.string.more_options),
+            contentDescription = stringResource(Res.string.more_options),
             modifier = Modifier
                 .clip(CircleShape)
                 .clickable(
@@ -230,15 +230,15 @@ fun ColumnScope.ChatMessageActionButtons(
     // Regenerate confirmation dialog
     RikkaConfirmDialog(
         show = showRegenerateConfirm,
-        title = stringResource(R.string.regenerate),
-        confirmText = stringResource(R.string.confirm),
-        dismissText = stringResource(R.string.cancel),
+        title = stringResource(Res.string.regenerate),
+        confirmText = stringResource(Res.string.confirm),
+        dismissText = stringResource(Res.string.cancel),
         onConfirm = {
             showRegenerateConfirm = false
             onRegenerate()
         },
         onDismiss = { showRegenerateConfirm = false },
-        text = { Text(stringResource(R.string.regenerate_confirm_message)) }
+        text = { Text(stringResource(Res.string.regenerate_confirm_message)) }
     )
 }
 
@@ -288,7 +288,7 @@ fun ChatMessageActionsSheet(
                         modifier = Modifier.padding(4.dp)
                     )
                     Text(
-                        text = stringResource(R.string.select_and_copy),
+                        text = stringResource(Res.string.select_and_copy),
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
@@ -319,7 +319,7 @@ fun ChatMessageActionsSheet(
                             modifier = Modifier.padding(4.dp)
                         )
                         Text(
-                            text = stringResource(R.string.render_with_webview),
+                            text = stringResource(Res.string.render_with_webview),
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
@@ -347,7 +347,7 @@ fun ChatMessageActionsSheet(
                         modifier = Modifier.padding(4.dp)
                     )
                     Text(
-                        text = stringResource(R.string.edit),
+                        text = stringResource(Res.string.edit),
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
@@ -374,7 +374,7 @@ fun ChatMessageActionsSheet(
                         modifier = Modifier.padding(4.dp)
                     )
                     Text(
-                        text = stringResource(R.string.share),
+                        text = stringResource(Res.string.share),
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
@@ -401,7 +401,7 @@ fun ChatMessageActionsSheet(
                         modifier = Modifier.padding(4.dp)
                     )
                     Text(
-                        text = stringResource(R.string.create_fork),
+                        text = stringResource(Res.string.create_fork),
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
@@ -429,8 +429,8 @@ fun ChatMessageActionsSheet(
                         )
                         Text(
                             text = stringResource(
-                                if (isFavorite) R.string.chat_message_remove_favorite
-                                else R.string.chat_message_add_favorite
+                                if (isFavorite) Res.string.chat_message_remove_favorite
+                                else Res.string.chat_message_add_favorite
                             ),
                             style = MaterialTheme.typography.titleMedium,
                         )
@@ -462,7 +462,7 @@ fun ChatMessageActionsSheet(
                         modifier = Modifier.padding(4.dp)
                     )
                     Text(
-                        text = stringResource(R.string.delete),
+                        text = stringResource(Res.string.delete),
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }

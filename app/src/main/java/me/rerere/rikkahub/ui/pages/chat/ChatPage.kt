@@ -43,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,6 +70,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
@@ -85,6 +85,7 @@ import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.base64Decode
 import me.rerere.rikkahub.utils.isAllowedFileType
@@ -737,7 +738,7 @@ private fun TopBar(
             }
         },
         title = {
-            val editTitleWarning = stringResource(R.string.chat_page_edit_title_warning)
+            val editTitleWarning = stringResource(Res.string.chat_page_edit_title_warning)
             Surface(
                 onClick = {
                     if (conversation.messageNodes.isNotEmpty()) {
@@ -753,14 +754,14 @@ private fun TopBar(
                     val model = settings.getCurrentChatModel()
                     val provider = model?.findProvider(providers = settings.providers, checkOverwrite = false)
                     Text(
-                        text = conversation.title.ifBlank { stringResource(R.string.chat_page_new_chat) },
+                        text = conversation.title.ifBlank { stringResource(Res.string.chat_page_new_chat) },
                         maxLines = 1,
                         style = MaterialTheme.typography.bodyMedium,
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (model != null && provider != null) {
                         Text(
-                            text = "${assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) }} / ${model.displayName} (${provider.name})",
+                            text = "${assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) }} / ${model.displayName} (${provider.name})",
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                             color = LocalContentColor.current.copy(0.65f),
@@ -796,7 +797,7 @@ private fun TopBar(
                 titleState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.chat_page_edit_title))
+                Text(stringResource(Res.string.chat_page_edit_title))
             },
             text = {
                 OutlinedTextField(
@@ -812,7 +813,7 @@ private fun TopBar(
                         titleState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.chat_page_save))
+                    Text(stringResource(Res.string.chat_page_save))
                 }
             },
             dismissButton = {
@@ -821,7 +822,7 @@ private fun TopBar(
                         titleState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.chat_page_cancel))
+                    Text(stringResource(Res.string.chat_page_cancel))
                 }
             }
         )

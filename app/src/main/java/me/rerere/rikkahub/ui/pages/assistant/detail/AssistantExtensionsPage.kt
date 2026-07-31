@@ -19,11 +19,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ExtensionEmptyState
 import me.rerere.rikkahub.ui.components.ai.LorebooksContent
 import me.rerere.rikkahub.ui.components.ai.ModeInjectionsContent
@@ -31,6 +30,7 @@ import me.rerere.rikkahub.ui.components.ai.QuickMessagesContent
 import me.rerere.rikkahub.ui.components.ai.SkillsContent
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -49,7 +49,7 @@ fun AssistantExtensionsPage(id: String) {
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.assistant_extensions_page_title)) },
+                title = { Text(stringResource(Res.string.assistant_extensions_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -70,22 +70,22 @@ fun AssistantExtensionsPage(id: String) {
                 Tab(
                     selected = pagerState.currentPage == 0,
                     onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_quick_messages)) }
+                    text = { Text(stringResource(Res.string.assistant_extensions_page_tab_quick_messages)) }
                 )
                 Tab(
                     selected = pagerState.currentPage == 1,
                     onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_mode_injections)) }
+                    text = { Text(stringResource(Res.string.assistant_extensions_page_tab_mode_injections)) }
                 )
                 Tab(
                     selected = pagerState.currentPage == 2,
                     onClick = { scope.launch { pagerState.animateScrollToPage(2) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_lorebooks)) }
+                    text = { Text(stringResource(Res.string.assistant_extensions_page_tab_lorebooks)) }
                 )
                 Tab(
                     selected = pagerState.currentPage == 3,
                     onClick = { scope.launch { pagerState.animateScrollToPage(3) } },
-                    text = { Text(stringResource(R.string.assistant_extensions_page_tab_skills)) }
+                    text = { Text(stringResource(Res.string.assistant_extensions_page_tab_skills)) }
                 )
             }
 
@@ -99,8 +99,8 @@ fun AssistantExtensionsPage(id: String) {
                     0 -> {
                         if (settings.quickMessages.isEmpty()) {
                             ExtensionEmptyState(
-                                message = stringResource(R.string.assistant_extensions_page_empty_quick_messages),
-                                buttonText = stringResource(R.string.assistant_extensions_page_goto_extensions),
+                                message = stringResource(Res.string.assistant_extensions_page_empty_quick_messages),
+                                buttonText = stringResource(Res.string.assistant_extensions_page_goto_extensions),
                                 onAction = { navController.navigate(Screen.QuickMessages) },
                             )
                         } else {
@@ -119,7 +119,7 @@ fun AssistantExtensionsPage(id: String) {
                                     onClick = { navController.navigate(Screen.QuickMessages) },
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    Text(stringResource(R.string.assistant_extensions_page_goto_extensions))
+                                    Text(stringResource(Res.string.assistant_extensions_page_goto_extensions))
                                 }
                             }
                         }
@@ -128,8 +128,8 @@ fun AssistantExtensionsPage(id: String) {
                     1 -> {
                         if (settings.modeInjections.isEmpty()) {
                             ExtensionEmptyState(
-                                message = stringResource(R.string.assistant_extensions_page_empty_mode_injections),
-                                buttonText = stringResource(R.string.assistant_extensions_page_goto_prompts),
+                                message = stringResource(Res.string.assistant_extensions_page_empty_mode_injections),
+                                buttonText = stringResource(Res.string.assistant_extensions_page_goto_prompts),
                                 onAction = { navController.navigate(Screen.Prompts) },
                             )
                         } else {
@@ -148,7 +148,7 @@ fun AssistantExtensionsPage(id: String) {
                                     onClick = { navController.navigate(Screen.Prompts) },
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    Text(stringResource(R.string.assistant_extensions_page_goto_prompts))
+                                    Text(stringResource(Res.string.assistant_extensions_page_goto_prompts))
                                 }
                             }
                         }
@@ -157,8 +157,8 @@ fun AssistantExtensionsPage(id: String) {
                     2 -> {
                         if (settings.lorebooks.isEmpty()) {
                             ExtensionEmptyState(
-                                message = stringResource(R.string.assistant_extensions_page_empty_lorebooks),
-                                buttonText = stringResource(R.string.assistant_extensions_page_goto_prompts),
+                                message = stringResource(Res.string.assistant_extensions_page_empty_lorebooks),
+                                buttonText = stringResource(Res.string.assistant_extensions_page_goto_prompts),
                                 onAction = { navController.navigate(Screen.Prompts) },
                             )
                         } else {
@@ -177,7 +177,7 @@ fun AssistantExtensionsPage(id: String) {
                                     onClick = { navController.navigate(Screen.Prompts) },
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    Text(stringResource(R.string.assistant_extensions_page_goto_prompts))
+                                    Text(stringResource(Res.string.assistant_extensions_page_goto_prompts))
                                 }
                             }
                         }
@@ -186,8 +186,8 @@ fun AssistantExtensionsPage(id: String) {
                     3 -> {
                         if (skills.isEmpty()) {
                             ExtensionEmptyState(
-                                message = stringResource(R.string.assistant_extensions_page_empty_skills),
-                                buttonText = stringResource(R.string.assistant_extensions_page_goto_extensions),
+                                message = stringResource(Res.string.assistant_extensions_page_empty_skills),
+                                buttonText = stringResource(Res.string.assistant_extensions_page_goto_extensions),
                                 onAction = { navController.navigate(Screen.Skills) },
                             )
                         } else {
@@ -206,7 +206,7 @@ fun AssistantExtensionsPage(id: String) {
                                     onClick = { navController.navigate(Screen.Skills) },
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    Text(stringResource(R.string.assistant_extensions_page_goto_extensions))
+                                    Text(stringResource(Res.string.assistant_extensions_page_goto_extensions))
                                 }
                             }
                         }

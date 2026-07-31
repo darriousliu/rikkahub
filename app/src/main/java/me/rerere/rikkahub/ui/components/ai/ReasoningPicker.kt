@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,12 +38,13 @@ import me.rerere.ai.core.ReasoningLevel
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Idea
 import me.rerere.hugeicons.stroke.Idea01
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.ToggleSurface
 import me.rerere.rikkahub.ui.components.ui.icons.ReasoningHigh
 import me.rerere.rikkahub.ui.components.ui.icons.ReasoningLow
 import me.rerere.rikkahub.ui.components.ui.icons.ReasoningMedium
 import kotlin.math.roundToInt
+import me.rerere.rikkahub.ui.resources.stringResource
 
 private val levels = ReasoningLevel.entries
 private val levelCount = levels.size
@@ -82,7 +82,7 @@ fun ReasoningButton(
             ) {
                 ReasoningIcon(reasoningLevel)
             }
-            if (!onlyIcon) Text(stringResource(R.string.setting_provider_page_reasoning))
+            if (!onlyIcon) Text(stringResource(Res.string.setting_provider_page_reasoning))
         }
     }
 }
@@ -118,11 +118,11 @@ fun ReasoningPicker(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.reasoning_picker_title),
+                    text = stringResource(Res.string.reasoning_picker_title),
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
-                    text = stringResource(R.string.reasoning_picker_hint),
+                    text = stringResource(Res.string.reasoning_picker_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -280,12 +280,12 @@ private fun ReasoningIcon(level: ReasoningLevel) {
 
 @Composable
 private fun ReasoningLevel.label(): String = when (this) {
-    ReasoningLevel.OFF -> stringResource(R.string.reasoning_off)
-    ReasoningLevel.AUTO -> stringResource(R.string.reasoning_auto)
-    ReasoningLevel.LOW -> stringResource(R.string.reasoning_light)
-    ReasoningLevel.MEDIUM -> stringResource(R.string.reasoning_medium)
-    ReasoningLevel.HIGH -> stringResource(R.string.reasoning_heavy)
-    ReasoningLevel.XHIGH -> stringResource(R.string.reasoning_xhigh)
+    ReasoningLevel.OFF -> stringResource(Res.string.reasoning_off)
+    ReasoningLevel.AUTO -> stringResource(Res.string.reasoning_auto)
+    ReasoningLevel.LOW -> stringResource(Res.string.reasoning_light)
+    ReasoningLevel.MEDIUM -> stringResource(Res.string.reasoning_medium)
+    ReasoningLevel.HIGH -> stringResource(Res.string.reasoning_heavy)
+    ReasoningLevel.XHIGH -> stringResource(Res.string.reasoning_xhigh)
 }
 
 @Composable

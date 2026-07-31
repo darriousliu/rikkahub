@@ -44,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,6 +73,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.Folder
 import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.AssistantPicker
 import me.rerere.rikkahub.ui.components.ui.BackupReminderCard
 import me.rerere.rikkahub.ui.components.ui.Greeting
@@ -89,6 +89,7 @@ import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.modifier.onClick
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.toDp
 import org.koin.compose.viewmodel.koinViewModel
@@ -186,7 +187,7 @@ fun ChatDrawerContent(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 UIAvatar(
-                    name = settings.displaySetting.userNickname.ifBlank { stringResource(R.string.user_default_name) },
+                    name = settings.displaySetting.userNickname.ifBlank { stringResource(Res.string.user_default_name) },
                     value = settings.displaySetting.userAvatar,
                     onUpdate = { newAvatar ->
                         vm.updateSettings(
@@ -209,7 +210,7 @@ fun ChatDrawerContent(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = settings.displaySetting.userNickname.ifBlank { stringResource(R.string.user_default_name) },
+                            text = settings.displaySetting.userNickname.ifBlank { stringResource(Res.string.user_default_name) },
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -317,11 +318,11 @@ fun ChatDrawerContent(
                     icon = {
                         Icon(
                             imageVector = HugeIcons.LookTop,
-                            contentDescription = stringResource(R.string.assistant_page_title)
+                            contentDescription = stringResource(Res.string.assistant_page_title)
                         )
                     },
                     label = {
-                        Text(stringResource(R.string.assistant_page_title))
+                        Text(stringResource(Res.string.assistant_page_title))
                     },
                     onClick = {
                         navController.navigate(Screen.Assistant)
@@ -334,7 +335,7 @@ fun ChatDrawerContent(
                             Icon(HugeIcons.Sparkles, "Menu")
                         },
                         label = {
-                            Text(stringResource(R.string.menu))
+                            Text(stringResource(Res.string.menu))
                         },
                         onClick = {
                             showMenuPopup = true
@@ -345,7 +346,7 @@ fun ChatDrawerContent(
                         onDismissRequest = { showMenuPopup = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.chat_page_menu_ai_translator)) },
+                            text = { Text(stringResource(Res.string.chat_page_menu_ai_translator)) },
                             leadingIcon = { Icon(HugeIcons.LanguageCircle, null) },
                             onClick = {
                                 showMenuPopup = false
@@ -353,7 +354,7 @@ fun ChatDrawerContent(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.chat_page_menu_image_generation)) },
+                            text = { Text(stringResource(Res.string.chat_page_menu_image_generation)) },
                             leadingIcon = { Icon(HugeIcons.Image02, null) },
                             onClick = {
                                 showMenuPopup = false
@@ -365,10 +366,10 @@ fun ChatDrawerContent(
 
                 DrawerAction(
                     icon = {
-                        Icon(HugeIcons.InLove, stringResource(R.string.favorite_page_title))
+                        Icon(HugeIcons.InLove, stringResource(Res.string.favorite_page_title))
                     },
                     label = {
-                        Text(stringResource(R.string.favorite_page_title))
+                        Text(stringResource(Res.string.favorite_page_title))
                     },
                     onClick = {
                         navController.navigate(Screen.Favorite)
@@ -393,7 +394,7 @@ fun ChatDrawerContent(
                     icon = {
                         Icon(HugeIcons.Settings03, null)
                     },
-                    label = { Text(stringResource(R.string.settings)) },
+                    label = { Text(stringResource(Res.string.settings)) },
                     onClick = {
                         navController.navigate(Screen.Setting)
                     },
@@ -409,7 +410,7 @@ fun ChatDrawerContent(
                 nicknameEditState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.chat_page_edit_nickname))
+                Text(stringResource(Res.string.chat_page_edit_nickname))
             },
             text = {
                 OutlinedTextField(
@@ -417,7 +418,7 @@ fun ChatDrawerContent(
                     onValueChange = onUpdate,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text(stringResource(R.string.chat_page_nickname_placeholder)) }
+                    placeholder = { Text(stringResource(Res.string.chat_page_nickname_placeholder)) }
                 )
             },
             confirmButton = {
@@ -426,7 +427,7 @@ fun ChatDrawerContent(
                         nicknameEditState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.chat_page_save))
+                    Text(stringResource(Res.string.chat_page_save))
                 }
             },
             dismissButton = {
@@ -435,7 +436,7 @@ fun ChatDrawerContent(
                         nicknameEditState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.chat_page_cancel))
+                    Text(stringResource(Res.string.chat_page_cancel))
                 }
             }
         )
@@ -469,7 +470,7 @@ fun ChatDrawerContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.chat_page_move_to_folder),
+                    text = stringResource(Res.string.chat_page_move_to_folder),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -494,7 +495,7 @@ fun ChatDrawerContent(
                     ) {
                         Icon(HugeIcons.Folder01, null)
                         Text(
-                            text = stringResource(R.string.chat_page_remove_from_folder),
+                            text = stringResource(Res.string.chat_page_remove_from_folder),
                             style = MaterialTheme.typography.titleMedium,
                         )
                     }
@@ -543,14 +544,14 @@ fun ChatDrawerContent(
         var name by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showCreateFolderDialog = false },
-            title = { Text(stringResource(R.string.chat_page_create_folder)) },
+            title = { Text(stringResource(Res.string.chat_page_create_folder)) },
             text = {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text(stringResource(R.string.chat_page_folder_name)) }
+                    placeholder = { Text(stringResource(Res.string.chat_page_folder_name)) }
                 )
             },
             confirmButton = {
@@ -560,11 +561,11 @@ fun ChatDrawerContent(
                         showCreateFolderDialog = false
                     },
                     enabled = name.isNotBlank()
-                ) { Text(stringResource(R.string.chat_page_save)) }
+                ) { Text(stringResource(Res.string.chat_page_save)) }
             },
             dismissButton = {
                 TextButton(onClick = { showCreateFolderDialog = false }) {
-                    Text(stringResource(R.string.chat_page_cancel))
+                    Text(stringResource(Res.string.chat_page_cancel))
                 }
             }
         )
@@ -575,7 +576,7 @@ fun ChatDrawerContent(
         var name by remember(folder.id) { mutableStateOf(folder.name) }
         AlertDialog(
             onDismissRequest = { folderToRename = null },
-            title = { Text(stringResource(R.string.chat_page_rename_folder)) },
+            title = { Text(stringResource(Res.string.chat_page_rename_folder)) },
             text = {
                 OutlinedTextField(
                     value = name,
@@ -591,11 +592,11 @@ fun ChatDrawerContent(
                         folderToRename = null
                     },
                     enabled = name.isNotBlank()
-                ) { Text(stringResource(R.string.chat_page_save)) }
+                ) { Text(stringResource(Res.string.chat_page_save)) }
             },
             dismissButton = {
                 TextButton(onClick = { folderToRename = null }) {
-                    Text(stringResource(R.string.chat_page_cancel))
+                    Text(stringResource(Res.string.chat_page_cancel))
                 }
             }
         )
@@ -605,8 +606,8 @@ fun ChatDrawerContent(
     folderToDelete?.let { folder ->
         AlertDialog(
             onDismissRequest = { folderToDelete = null },
-            title = { Text(stringResource(R.string.chat_page_delete_folder)) },
-            text = { Text(stringResource(R.string.chat_page_delete_folder_confirm, folder.name)) },
+            title = { Text(stringResource(Res.string.chat_page_delete_folder)) },
+            text = { Text(stringResource(Res.string.chat_page_delete_folder_confirm, folder.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -617,11 +618,11 @@ fun ChatDrawerContent(
                             toaster.show(context.getString(R.string.chat_page_delete_folder_generating), type = ToastType.Warning)
                         }
                     }
-                ) { Text(stringResource(R.string.chat_page_delete)) }
+                ) { Text(stringResource(Res.string.chat_page_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = { folderToDelete = null }) {
-                    Text(stringResource(R.string.chat_page_cancel))
+                    Text(stringResource(Res.string.chat_page_cancel))
                 }
             }
         )
@@ -644,7 +645,7 @@ fun ChatDrawerContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.chat_page_move_to_assistant),
+                    text = stringResource(Res.string.chat_page_move_to_assistant),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -700,7 +701,7 @@ private fun DrawerActions(navController: Navigator) {
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = stringResource(R.string.chat_page_search_chats),
+                    text = stringResource(Res.string.chat_page_search_chats),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -730,7 +731,7 @@ private fun DrawerActions(navController: Navigator) {
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = stringResource(R.string.chat_page_history),
+                    text = stringResource(Res.string.chat_page_history),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -787,7 +788,7 @@ private fun FolderBar(
     ) {
         item {
             FolderChip(
-                label = stringResource(R.string.chat_page_folder_default),
+                label = stringResource(Res.string.chat_page_folder_default),
                 selected = selectedFolderId == null,
                 onClick = { onSelect(null) },
                 onLongClick = {},
@@ -808,7 +809,7 @@ private fun FolderBar(
                     onDismissRequest = { menuExpanded = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.chat_page_rename)) },
+                        text = { Text(stringResource(Res.string.chat_page_rename)) },
                         leadingIcon = { Icon(HugeIcons.PencilEdit01, null) },
                         onClick = {
                             onRename(folder)
@@ -816,7 +817,7 @@ private fun FolderBar(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.chat_page_delete)) },
+                        text = { Text(stringResource(Res.string.chat_page_delete)) },
                         leadingIcon = { Icon(HugeIcons.Delete01, null) },
                         onClick = {
                             onDelete(folder)
@@ -828,7 +829,7 @@ private fun FolderBar(
         }
         item {
             FolderChip(
-                label = stringResource(R.string.chat_page_folder_add),
+                label = stringResource(Res.string.chat_page_folder_add),
                 icon = HugeIcons.FolderAdd,
                 selected = false,
                 onClick = onCreate,
@@ -912,14 +913,14 @@ private fun AssistantItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+                    text = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (isCurrentAssistant) {
                     Text(
-                        text = stringResource(R.string.assistant_page_current_assistant),
+                        text = stringResource(Res.string.assistant_page_current_assistant),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

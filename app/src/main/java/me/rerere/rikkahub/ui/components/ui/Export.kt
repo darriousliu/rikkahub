@@ -13,13 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.File01
 import me.rerere.hugeicons.stroke.Share01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.export.ExporterState
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun <T> ExportDialog(
@@ -29,7 +29,7 @@ fun <T> ExportDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title ?: stringResource(R.string.export_title)) },
+        title = { Text(title ?: stringResource(Res.string.export_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedCard(
@@ -49,11 +49,11 @@ fun <T> ExportDialog(
                         Icon(HugeIcons.File01, null)
                         Column {
                             Text(
-                                text = stringResource(R.string.export_to_file),
+                                text = stringResource(Res.string.export_to_file),
                                 style = MaterialTheme.typography.titleSmall
                             )
                             Text(
-                                text = stringResource(R.string.export_to_file_desc),
+                                text = stringResource(Res.string.export_to_file_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -77,11 +77,11 @@ fun <T> ExportDialog(
                         Icon(HugeIcons.Share01, null)
                         Column {
                             Text(
-                                text = stringResource(R.string.export_share),
+                                text = stringResource(Res.string.export_share),
                                 style = MaterialTheme.typography.titleSmall
                             )
                             Text(
-                                text = stringResource(R.string.export_share_desc),
+                                text = stringResource(Res.string.export_share_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -92,7 +92,7 @@ fun <T> ExportDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.export_cancel))
+                Text(stringResource(Res.string.export_cancel))
             }
         }
     )

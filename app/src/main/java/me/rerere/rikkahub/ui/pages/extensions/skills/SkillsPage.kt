@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -61,10 +60,12 @@ import me.rerere.hugeicons.stroke.Puzzle
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
 import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -97,7 +98,7 @@ fun SkillsPage() {
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.skills_page_title)) },
+                title = { Text(stringResource(Res.string.skills_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -137,12 +138,12 @@ fun SkillsPage() {
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = stringResource(R.string.skills_page_empty_title),
+                            text = stringResource(Res.string.skills_page_empty_title),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = stringResource(R.string.skills_page_empty_hint),
+                            text = stringResource(Res.string.skills_page_empty_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -217,16 +218,16 @@ fun SkillsPage() {
 
     RikkaConfirmDialog(
         show = deleteTarget != null,
-        title = stringResource(R.string.skills_page_delete_title),
-        confirmText = stringResource(R.string.delete),
-        dismissText = stringResource(R.string.cancel),
+        title = stringResource(Res.string.skills_page_delete_title),
+        confirmText = stringResource(Res.string.delete),
+        dismissText = stringResource(Res.string.cancel),
         onConfirm = {
             deleteTarget?.let { vm.deleteSkill(it.name) }
             deleteTarget = null
         },
         onDismiss = { deleteTarget = null },
     ) {
-        Text(stringResource(R.string.skills_page_delete_message, deleteTarget?.name ?: ""))
+        Text(stringResource(Res.string.skills_page_delete_message, deleteTarget?.name ?: ""))
     }
 }
 
@@ -283,7 +284,7 @@ private fun SkillCard(
                 IconButton(onClick = { menuExpanded = true }) {
                     Icon(
                         imageVector = HugeIcons.MoreVertical,
-                        contentDescription = stringResource(R.string.skills_page_more_actions),
+                        contentDescription = stringResource(Res.string.skills_page_more_actions),
                     )
                 }
                 DropdownMenu(
@@ -291,7 +292,7 @@ private fun SkillCard(
                     onDismissRequest = { menuExpanded = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(Res.string.delete), color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Delete01,
@@ -328,23 +329,23 @@ private fun SkillImportSheet(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = stringResource(R.string.skills_page_add_title),
+                text = stringResource(Res.string.skills_page_add_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
             SkillImportSheetItem(
                 icon = { Icon(HugeIcons.Add01, contentDescription = null) },
-                text = stringResource(R.string.skills_page_add_manually),
+                text = stringResource(Res.string.skills_page_add_manually),
                 onClick = onAddManually,
             )
             SkillImportSheetItem(
                 icon = { Icon(HugeIcons.FileImport, contentDescription = null) },
-                text = stringResource(R.string.skills_page_import_from_file),
+                text = stringResource(Res.string.skills_page_import_from_file),
                 onClick = onImportFromFile,
             )
             SkillImportSheetItem(
                 icon = { Icon(HugeIcons.Download01, contentDescription = null) },
-                text = stringResource(R.string.skills_page_import_from_github),
+                text = stringResource(Res.string.skills_page_import_from_github),
                 onClick = onImportFromGitHub,
             )
         }
@@ -380,12 +381,12 @@ private fun AddSkillDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.skills_page_add_title)) },
+        title = { Text(stringResource(Res.string.skills_page_add_title)) },
         text = {
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
-                label = { Text(stringResource(R.string.skills_page_skill_content_label)) },
+                label = { Text(stringResource(Res.string.skills_page_skill_content_label)) },
                 placeholder = {
                     Text(
                         "---\nname: my-skill\ndescription: \"...\"\n---\n\n指令内容...",
@@ -394,11 +395,11 @@ private fun AddSkillDialog(
                 },
                 supportingText = {
                     if (nameError) Text(
-                        stringResource(R.string.skills_page_name_error),
+                        stringResource(Res.string.skills_page_name_error),
                         color = MaterialTheme.colorScheme.error
                     )
-                    else if (name.isNotBlank()) Text(stringResource(R.string.skills_page_skill_name, name))
-                    else Text(stringResource(R.string.skills_page_paste_hint))
+                    else if (name.isNotBlank()) Text(stringResource(Res.string.skills_page_skill_name, name))
+                    else Text(stringResource(Res.string.skills_page_paste_hint))
                 },
                 isError = nameError,
                 minLines = 8,
@@ -412,11 +413,11 @@ private fun AddSkillDialog(
                 onClick = { onConfirm(name, content) },
                 enabled = name.isNotBlank() && !nameError,
             ) {
-                Text(stringResource(R.string.skills_page_save))
+                Text(stringResource(Res.string.skills_page_save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }
@@ -431,20 +432,20 @@ private fun ImportSkillDialog(
 
     AlertDialog(
         onDismissRequest = { if (!loading) onDismiss() },
-        title = { Text(stringResource(R.string.skills_page_import_from_github)) },
+        title = { Text(stringResource(Res.string.skills_page_import_from_github)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = stringResource(R.string.skills_page_import_description),
+                    text = stringResource(Res.string.skills_page_import_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text(stringResource(R.string.skills_page_repo_url_label)) },
+                    label = { Text(stringResource(Res.string.skills_page_repo_url_label)) },
                     placeholder = { Text("https://github.com/owner/repo", fontFamily = FontFamily.Monospace) },
-                    supportingText = { Text(stringResource(R.string.skills_page_repo_url_hint)) },
+                    supportingText = { Text(stringResource(Res.string.skills_page_repo_url_hint)) },
                     singleLine = true,
                     enabled = !loading,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -457,7 +458,7 @@ private fun ImportSkillDialog(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                         Text(
-                            stringResource(R.string.skills_page_downloading),
+                            stringResource(Res.string.skills_page_downloading),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -472,11 +473,11 @@ private fun ImportSkillDialog(
                 },
                 enabled = url.isNotBlank() && !loading,
             ) {
-                Text(stringResource(R.string.skills_page_import_confirm))
+                Text(stringResource(Res.string.skills_page_import_confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !loading) { Text(stringResource(R.string.cancel)) }
+            TextButton(onClick = onDismiss, enabled = !loading) { Text(stringResource(Res.string.cancel)) }
         },
     )
 }

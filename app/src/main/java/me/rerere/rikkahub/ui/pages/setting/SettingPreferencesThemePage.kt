@@ -22,17 +22,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowRight01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.hooks.rememberAmoledDarkMode
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -48,7 +48,7 @@ fun SettingPreferencesThemePage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_page_preferences_theme))
+                    Text(stringResource(Res.string.setting_page_preferences_theme))
                 },
                 navigationIcon = {
                     BackButton()
@@ -70,8 +70,8 @@ fun SettingPreferencesThemePage(vm: SettingVM = koinViewModel()) {
                     modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_page_dynamic_color)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_dynamic_color_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_page_dynamic_color)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_page_dynamic_color_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = settings.dynamicColor,
@@ -81,13 +81,13 @@ fun SettingPreferencesThemePage(vm: SettingVM = koinViewModel()) {
                     )
                     item(
                         onClick = { navController.navigate(Screen.SettingTheme) },
-                        headlineContent = { Text(stringResource(R.string.setting_page_theme_setting)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_theme_setting_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_page_theme_setting)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_page_theme_setting_desc)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, contentDescription = null) },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_amoled_dark_mode_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_amoled_dark_mode_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_amoled_dark_mode_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_amoled_dark_mode_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = amoledDarkMode,

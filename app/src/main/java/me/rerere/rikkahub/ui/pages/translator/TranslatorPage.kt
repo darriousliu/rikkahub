@@ -48,16 +48,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ModelType
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.getText
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale
@@ -84,7 +84,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(stringResource(R.string.translator_page_title))
+                    Text(stringResource(Res.string.translator_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -132,7 +132,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
                     value = inputText,
                     onValueChange = { vm.updateInputText(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.translator_page_input_placeholder)) },
+                    placeholder = { Text(stringResource(Res.string.translator_page_input_placeholder)) },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
@@ -173,7 +173,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
             SelectionContainer {
                 Text(
                     text = translatedText.ifEmpty {
-                        stringResource(R.string.translator_page_result_placeholder)
+                        stringResource(Res.string.translator_page_result_placeholder)
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier
@@ -228,15 +228,15 @@ private fun LanguageSelector(
     @Composable
     fun getLanguageDisplayName(locale: Locale): String {
         return when (locale) {
-            Locale.SIMPLIFIED_CHINESE -> stringResource(R.string.language_simplified_chinese)
-            Locale.ENGLISH -> stringResource(R.string.language_english)
-            Locale.TRADITIONAL_CHINESE -> stringResource(R.string.language_traditional_chinese)
-            Locale.JAPANESE -> stringResource(R.string.language_japanese)
-            Locale.KOREAN -> stringResource(R.string.language_korean)
-            Locale.FRENCH -> stringResource(R.string.language_french)
-            Locale.GERMAN -> stringResource(R.string.language_german)
-            Locale.ITALIAN -> stringResource(R.string.language_italian)
-            Locale("es", "ES") -> stringResource(R.string.language_spanish)
+            Locale.SIMPLIFIED_CHINESE -> stringResource(Res.string.language_simplified_chinese)
+            Locale.ENGLISH -> stringResource(Res.string.language_english)
+            Locale.TRADITIONAL_CHINESE -> stringResource(Res.string.language_traditional_chinese)
+            Locale.JAPANESE -> stringResource(Res.string.language_japanese)
+            Locale.KOREAN -> stringResource(Res.string.language_korean)
+            Locale.FRENCH -> stringResource(Res.string.language_french)
+            Locale.GERMAN -> stringResource(Res.string.language_german)
+            Locale.ITALIAN -> stringResource(Res.string.language_italian)
+            Locale("es", "ES") -> stringResource(Res.string.language_spanish)
             else -> locale.getDisplayLanguage(Locale.getDefault())
         }
     }
@@ -321,12 +321,12 @@ private fun BottomBar(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            stringResource(R.string.translator_page_translate),
+                            stringResource(Res.string.translator_page_translate),
                             modifier = Modifier.padding(start = 4.dp)
                         )
                     }
                 } else {
-                    Text(stringResource(R.string.translator_page_cancel))
+                    Text(stringResource(Res.string.translator_page_cancel))
                 }
             }
         }

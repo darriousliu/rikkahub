@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,16 +42,17 @@ import kotlinx.coroutines.withContext
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Delete02
 import me.rerere.hugeicons.stroke.FileImport
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.ChatFontFamily
 import me.rerere.rikkahub.data.datastore.DisplaySetting
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FileUtils
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.Select
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.rememberChatFontFamily
 import me.rerere.rikkahub.utils.plus
@@ -73,8 +73,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
         vm.updateSettings(settings.copy(displaySetting = setting))
     }
 
-    val importSuccessMsg = stringResource(R.string.setting_display_page_custom_font_import_success)
-    val importFailedMsg = stringResource(R.string.setting_display_page_custom_font_import_failed)
+    val importSuccessMsg = stringResource(Res.string.setting_display_page_custom_font_import_success)
+    val importFailedMsg = stringResource(Res.string.setting_display_page_custom_font_import_failed)
     val fontPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -105,7 +105,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_page_preferences_ui))
+                    Text(stringResource(Res.string.setting_page_preferences_ui))
                 },
                 navigationIcon = {
                     BackButton()
@@ -125,11 +125,11 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
             item {
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),
-                    title = { Text(stringResource(R.string.setting_page_message_display_settings)) },
+                    title = { Text(stringResource(Res.string.setting_page_message_display_settings)) },
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_user_avatar_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_user_avatar_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_user_avatar_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_user_avatar_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showUserAvatar,
@@ -140,8 +140,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_assistant_bubble_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_assistant_bubble_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_assistant_bubble_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_assistant_bubble_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showAssistantBubble,
@@ -152,7 +152,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_bubble_opacity_title)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_bubble_opacity_title)) },
                         supportingContent = {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -173,8 +173,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         }
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_chat_list_model_icon_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_chat_list_model_icon_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_chat_list_model_icon_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_chat_list_model_icon_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showModelIcon,
@@ -185,8 +185,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_model_name_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_model_name_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_model_name_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_model_name_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showModelName,
@@ -197,8 +197,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_datetime_in_message_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_datetime_in_message_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_datetime_in_message_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_datetime_in_message_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showDateTimeInMessage,
@@ -209,8 +209,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_token_usage_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_token_usage_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_token_usage_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_token_usage_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showTokenUsage,
@@ -221,8 +221,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_thinking_content_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_thinking_content_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_thinking_content_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_thinking_content_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showThinkingContent,
@@ -233,8 +233,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_auto_collapse_thinking_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_auto_collapse_thinking_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_auto_collapse_thinking_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_auto_collapse_thinking_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.autoCloseThinking,
@@ -245,8 +245,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_enable_latex_rendering_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_enable_latex_rendering_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_enable_latex_rendering_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_enable_latex_rendering_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableLatexRendering,
@@ -257,7 +257,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_chat_font_family_title)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_chat_font_family_title)) },
                         supportingContent = {
                             Select(
                                 options = ChatFontFamily.entries,
@@ -283,13 +283,13 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         }
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_custom_font_title)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_custom_font_title)) },
                         supportingContent = {
                             Text(
                                 if (displaySetting.chatCustomFontName.isNotBlank()) {
                                     displaySetting.chatCustomFontName
                                 } else {
-                                    stringResource(R.string.setting_display_page_custom_font_not_imported)
+                                    stringResource(Res.string.setting_display_page_custom_font_not_imported)
                                 }
                             )
                         },
@@ -301,7 +301,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                     Icon(
                                         HugeIcons.FileImport,
                                         contentDescription = stringResource(
-                                            R.string.setting_display_page_custom_font_import
+                                            Res.string.setting_display_page_custom_font_import
                                         )
                                     )
                                 }
@@ -321,7 +321,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                         Icon(
                                             HugeIcons.Delete02,
                                             contentDescription = stringResource(
-                                                R.string.setting_display_page_custom_font_remove
+                                                Res.string.setting_display_page_custom_font_remove
                                             )
                                         )
                                     }
@@ -330,7 +330,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         }
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_font_size_title)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_font_size_title)) },
                         supportingContent = {
                             Column {
                                 Row(
@@ -350,7 +350,7 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                                     Text(text = "${(displaySetting.fontSizeRatio * 100).toInt()}%")
                                 }
                                 MarkdownBlock(
-                                    content = stringResource(R.string.setting_display_page_font_size_preview),
+                                    content = stringResource(Res.string.setting_display_page_font_size_preview),
                                     style = LocalTextStyle.current.copy(
                                         fontSize = LocalTextStyle.current.fontSize * displaySetting.fontSizeRatio,
                                         lineHeight = LocalTextStyle.current.lineHeight * displaySetting.fontSizeRatio,
@@ -366,11 +366,11 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
             item {
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),
-                    title = { Text(stringResource(R.string.setting_page_code_display_settings)) },
+                    title = { Text(stringResource(Res.string.setting_page_code_display_settings)) },
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_wrap_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_wrap_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_code_block_auto_wrap_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_code_block_auto_wrap_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.codeBlockAutoWrap,
@@ -381,8 +381,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_collapse_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_code_block_auto_collapse_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_code_block_auto_collapse_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_code_block_auto_collapse_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.codeBlockAutoCollapse,
@@ -393,8 +393,8 @@ fun SettingPreferencesUIPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_display_page_show_line_numbers_title)) },
-                        supportingContent = { Text(stringResource(R.string.setting_display_page_show_line_numbers_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_display_page_show_line_numbers_title)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_display_page_show_line_numbers_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.showLineNumbers,
@@ -428,10 +428,10 @@ private data class ImportedChatFontUI(
 
 @Composable
 private fun ChatFontFamily.labelUI(): String = when (this) {
-    ChatFontFamily.DEFAULT -> stringResource(R.string.setting_display_page_chat_font_family_default)
-    ChatFontFamily.SERIF -> stringResource(R.string.setting_display_page_chat_font_family_serif)
-    ChatFontFamily.MONOSPACE -> stringResource(R.string.setting_display_page_chat_font_family_monospace)
-    ChatFontFamily.CUSTOM -> stringResource(R.string.setting_display_page_chat_font_family_custom)
+    ChatFontFamily.DEFAULT -> stringResource(Res.string.setting_display_page_chat_font_family_default)
+    ChatFontFamily.SERIF -> stringResource(Res.string.setting_display_page_chat_font_family_serif)
+    ChatFontFamily.MONOSPACE -> stringResource(Res.string.setting_display_page_chat_font_family_monospace)
+    ChatFontFamily.CUSTOM -> stringResource(Res.string.setting_display_page_chat_font_family_custom)
 }
 
 private fun ChatFontFamily.toFontFamilyUI(customFontFamily: FontFamily): FontFamily = when (this) {

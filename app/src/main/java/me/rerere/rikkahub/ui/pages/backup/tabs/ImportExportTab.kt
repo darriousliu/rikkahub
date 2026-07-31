@@ -21,11 +21,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.StickyHeader
 import me.rerere.rikkahub.ui.context.LocalToaster
@@ -35,6 +35,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun ImportExportTab(
@@ -175,7 +176,7 @@ fun ImportExportTab(
     ) {
         stickyHeader {
             StickyHeader {
-                Text(stringResource(R.string.backup_page_local_backup_export))
+                Text(stringResource(Res.string.backup_page_local_backup_export))
             }
         }
 
@@ -189,13 +190,13 @@ fun ImportExportTab(
                             createDocumentLauncher.launch("rikkahub_backup_$timestamp.zip")
                         }
                     } else null,
-                    headlineContent = { Text(stringResource(R.string.backup_page_local_backup_export)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_local_backup_export)) },
                     supportingContent = {
                         Text(
                             if (isExporting) {
-                                stringResource(R.string.backup_page_exporting)
+                                stringResource(Res.string.backup_page_exporting)
                             } else {
-                                stringResource(R.string.backup_page_export_desc)
+                                stringResource(Res.string.backup_page_export_desc)
                             }
                         )
                     },
@@ -215,13 +216,13 @@ fun ImportExportTab(
                             openDocumentLauncher.launch(arrayOf("application/zip"))
                         }
                     } else null,
-                    headlineContent = { Text(stringResource(R.string.backup_page_local_backup_import)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_local_backup_import)) },
                     supportingContent = {
                         Text(
                             if (isRestoring) {
-                                stringResource(R.string.backup_page_importing)
+                                stringResource(Res.string.backup_page_importing)
                             } else {
-                                stringResource(R.string.backup_page_import_desc)
+                                stringResource(Res.string.backup_page_import_desc)
                             }
                         )
                     },
@@ -238,7 +239,7 @@ fun ImportExportTab(
 
         stickyHeader {
             StickyHeader {
-                Text(stringResource(R.string.backup_page_import_from_other_app))
+                Text(stringResource(Res.string.backup_page_import_from_other_app))
             }
         }
 
@@ -251,8 +252,8 @@ fun ImportExportTab(
                             openDocumentLauncher.launch(arrayOf("application/json"))
                         }
                     } else null,
-                    headlineContent = { Text(stringResource(R.string.backup_page_import_from_chatbox)) },
-                    supportingContent = { Text(stringResource(R.string.backup_page_import_chatbox_desc)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_import_from_chatbox)) },
+                    supportingContent = { Text(stringResource(Res.string.backup_page_import_chatbox_desc)) },
                     leadingContent = {
                         if (isRestoring && importType == "chatbox") {
                             CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
@@ -269,8 +270,8 @@ fun ImportExportTab(
                             openDocumentLauncher.launch(arrayOf("application/zip"))
                         }
                     } else null,
-                    headlineContent = { Text(stringResource(R.string.backup_page_import_from_cherry_studio)) },
-                    supportingContent = { Text(stringResource(R.string.backup_page_import_cherry_studio_desc)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_import_from_cherry_studio)) },
+                    supportingContent = { Text(stringResource(Res.string.backup_page_import_cherry_studio_desc)) },
                     leadingContent = {
                         if (isRestoring && importType == "cherry") {
                             CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))

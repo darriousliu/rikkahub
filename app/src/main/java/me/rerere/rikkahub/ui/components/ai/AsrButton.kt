@@ -40,13 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import me.rerere.asr.ASRState
-import me.rerere.rikkahub.R
 import me.rerere.asr.ASRStatus
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Voice
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 private enum class AsrDisplayState {
     Idle, Connecting, Active
@@ -115,7 +115,7 @@ internal fun AsrButton(
                     ) {
                         Icon(
                             imageVector = HugeIcons.Voice,
-                            contentDescription = stringResource(R.string.asr_button_content_description),
+                            contentDescription = stringResource(Res.string.asr_button_content_description),
                             tint = contentColor
                         )
                     }
@@ -159,7 +159,7 @@ internal fun AsrButton(
                             color = contentColor,
                         )
                         Text(
-                            text = stringResource(R.string.asr_button_stop),
+                            text = stringResource(Res.string.asr_button_stop),
                             color = contentColor,
                             style = MaterialTheme.typography.labelLarge,
                             maxLines = 1

@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -40,12 +39,13 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.Delete01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatErrorSolution
 import me.rerere.rikkahub.ui.context.LocalNavController
 import kotlin.uuid.Uuid
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun ErrorCardsDisplay(
@@ -83,7 +83,7 @@ fun ErrorCardsDisplay(
                             tint = MaterialTheme.colorScheme.onErrorContainer,
                         )
                         Text(
-                            text = stringResource(R.string.chat_page_clear_all_errors),
+                            text = stringResource(Res.string.chat_page_clear_all_errors),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                         )
@@ -111,7 +111,7 @@ fun ErrorCard(
     val clipboard = LocalClipboard.current
     val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
-    val checkTitleModelSettings = stringResource(R.string.chat_page_check_title_model_settings)
+    val checkTitleModelSettings = stringResource(Res.string.chat_page_check_title_model_settings)
     val linkColor = MaterialTheme.colorScheme.primary
 
     // 5 秒后自动消失
@@ -203,7 +203,7 @@ fun ErrorCard(
             ) {
                 Icon(
                     imageVector = HugeIcons.Cancel01,
-                    contentDescription = stringResource(R.string.chat_page_dismiss_error),
+                    contentDescription = stringResource(Res.string.chat_page_dismiss_error),
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.size(18.dp),
                 )

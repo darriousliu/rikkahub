@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -32,8 +31,10 @@ import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.CustomHeader
 import me.rerere.highlight.LocalCodeHighlighter
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.richtext.HighlightCodeVisualTransformation
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 
@@ -49,7 +50,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
         modifier = Modifier.padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(stringResource(R.string.assistant_page_custom_headers))
+        Text(stringResource(Res.string.assistant_page_custom_headers))
         Spacer(Modifier.height(8.dp))
 
         headers.forEachIndexed { index, header ->
@@ -71,7 +72,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                                     updatedHeaders[index] = updatedHeaders[index].copy(name = it.trim())
                                     onUpdate(updatedHeaders)
                                 },
-                                label = { Text(stringResource(R.string.assistant_page_header_name)) },
+                                label = { Text(stringResource(Res.string.assistant_page_header_name)) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             OutlinedTextField(
@@ -83,7 +84,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                                         updatedHeaders[index].copy(value = it.trim())
                                     onUpdate(updatedHeaders)
                                 },
-                                label = { Text(stringResource(R.string.assistant_page_header_value)) },
+                                label = { Text(stringResource(Res.string.assistant_page_header_value)) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -96,7 +97,7 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
                         }) {
                             Icon(
                                 HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.assistant_page_delete_header)
+                                contentDescription = stringResource(Res.string.assistant_page_delete_header)
                             )
                         }
                     },
@@ -113,9 +114,9 @@ fun CustomHeaders(headers: List<CustomHeader>, onUpdate: (List<CustomHeader>) ->
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(HugeIcons.Add01, contentDescription = stringResource(R.string.assistant_page_add_header))
+            Icon(HugeIcons.Add01, contentDescription = stringResource(Res.string.assistant_page_add_header))
             Spacer(Modifier.width(4.dp))
-            Text(stringResource(R.string.assistant_page_add_header))
+            Text(stringResource(Res.string.assistant_page_add_header))
         }
     }
 }
@@ -127,7 +128,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
         modifier = Modifier.padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(stringResource(R.string.assistant_page_custom_bodies))
+        Text(stringResource(Res.string.assistant_page_custom_bodies))
         Spacer(Modifier.height(8.dp))
 
         customBodies.forEachIndexed { index, body ->
@@ -152,7 +153,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                     updatedBodies[index] = updatedBodies[index].copy(key = it.trim())
                                     onUpdate(updatedBodies)
                                 },
-                                label = { Text(stringResource(R.string.assistant_page_body_key)) },
+                                label = { Text(stringResource(Res.string.assistant_page_body_key)) },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             OutlinedTextField(
@@ -174,7 +175,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                                             )
                                     }
                                 },
-                                label = { Text(stringResource(R.string.assistant_page_body_value)) },
+                                label = { Text(stringResource(Res.string.assistant_page_body_value)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 isError = jsonParseError != null,
                                 supportingText = {
@@ -201,7 +202,7 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
                         }) {
                             Icon(
                                 HugeIcons.Delete01,
-                                contentDescription = stringResource(R.string.assistant_page_delete_body)
+                                contentDescription = stringResource(Res.string.assistant_page_delete_body)
                             )
                         }
                     },
@@ -218,9 +219,9 @@ fun CustomBodies(customBodies: List<CustomBody>, onUpdate: (List<CustomBody>) ->
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(HugeIcons.Add01, contentDescription = stringResource(R.string.assistant_page_add_body))
+            Icon(HugeIcons.Add01, contentDescription = stringResource(Res.string.assistant_page_add_body))
             Spacer(Modifier.width(4.dp))
-            Text(stringResource(R.string.assistant_page_add_body))
+            Text(stringResource(Res.string.assistant_page_add_body))
         }
     }
 }

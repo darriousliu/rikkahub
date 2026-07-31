@@ -47,7 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -57,9 +56,11 @@ import kotlinx.coroutines.launch
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.fileSizeToString
 import me.rerere.rikkahub.utils.onError
@@ -88,18 +89,18 @@ fun WebDavTab(
     }
 
     val lastBackupText = if (settings.backupReminderConfig.lastBackupTime == 0L) {
-        stringResource(R.string.backup_page_reminder_no_record)
+        stringResource(Res.string.backup_page_reminder_no_record)
     } else {
         stringResource(
-            R.string.backup_page_reminder_last_time,
+            Res.string.backup_page_reminder_last_time,
             Instant.ofEpochMilli(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
         )
     }
     val backupFileSummary = when (val state = backupItemsState) {
-        is UiState.Success -> "${stringResource(R.string.backup_page_files)}: ${state.data.size}"
-        UiState.Loading -> "${stringResource(R.string.backup_page_files)}: ..."
-        UiState.Idle -> "${stringResource(R.string.backup_page_files)}: -"
-        is UiState.Error -> "${stringResource(R.string.backup_page_files)}: -"
+        is UiState.Success -> "${stringResource(Res.string.backup_page_files)}: ${state.data.size}"
+        UiState.Loading -> "${stringResource(Res.string.backup_page_files)}: ..."
+        UiState.Idle -> "${stringResource(Res.string.backup_page_files)}: -"
+        is UiState.Error -> "${stringResource(Res.string.backup_page_files)}: -"
     }
 
     Column(
@@ -115,14 +116,14 @@ fun WebDavTab(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             BackupStatusCard(
-                title = stringResource(R.string.backup_page_webdav_backup),
+                title = stringResource(Res.string.backup_page_webdav_backup),
                 lastBackupText = lastBackupText,
                 fileSummaryText = backupFileSummary
             )
 
             CardGroup {
                 item(
-                    headlineContent = { Text(stringResource(R.string.backup_page_webdav_server_address)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_webdav_server_address)) },
                     supportingContent = {
                         OutlinedTextField(
                             modifier = Modifier.fillMaxWidth(),
@@ -134,7 +135,7 @@ fun WebDavTab(
                     },
                 )
                 item(
-                    headlineContent = { Text(stringResource(R.string.backup_page_username)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_username)) },
                     supportingContent = {
                         OutlinedTextField(
                             modifier = Modifier.fillMaxWidth(),
@@ -151,7 +152,7 @@ fun WebDavTab(
                     },
                 )
                 item(
-                    headlineContent = { Text(stringResource(R.string.backup_page_password)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_password)) },
                     supportingContent = {
                         var passwordVisible by remember { mutableStateOf(false) }
                         OutlinedTextField(
@@ -174,7 +175,7 @@ fun WebDavTab(
                     },
                 )
                 item(
-                    headlineContent = { Text(stringResource(R.string.backup_page_path)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_path)) },
                     supportingContent = {
                         OutlinedTextField(
                             modifier = Modifier.fillMaxWidth(),
@@ -188,7 +189,7 @@ fun WebDavTab(
 
             CardGroup {
                 item(
-                    headlineContent = { Text(stringResource(R.string.backup_page_backup_items)) },
+                    headlineContent = { Text(stringResource(Res.string.backup_page_backup_items)) },
                     supportingContent = {
                     MultiChoiceSegmentedButtonRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -211,8 +212,8 @@ fun WebDavTab(
                             ) {
                                 Text(
                                     when (item) {
-                                        WebDavConfig.BackupItem.DATABASE -> stringResource(R.string.backup_page_chat_records)
-                                        WebDavConfig.BackupItem.FILES -> stringResource(R.string.backup_page_files)
+                                        WebDavConfig.BackupItem.DATABASE -> stringResource(Res.string.backup_page_chat_records)
+                                        WebDavConfig.BackupItem.FILES -> stringResource(Res.string.backup_page_files)
                                     }
                                 )
                             }
@@ -252,7 +253,7 @@ fun WebDavTab(
                     }
                 }
             ) {
-                Text(stringResource(R.string.backup_page_test_connection))
+                Text(stringResource(Res.string.backup_page_test_connection))
             }
             OutlinedButton(
                 onClick = {
@@ -260,7 +261,7 @@ fun WebDavTab(
                     showBackupFiles = true
                 }
             ) {
-                Text(stringResource(R.string.backup_page_restore))
+                Text(stringResource(Res.string.backup_page_restore))
             }
             Button(
                 onClick = {
@@ -295,9 +296,9 @@ fun WebDavTab(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     if (isBackingUp) {
-                        stringResource(R.string.backup_page_backing_up)
+                        stringResource(Res.string.backup_page_backing_up)
                     } else {
-                        stringResource(R.string.backup_page_backup_now)
+                        stringResource(Res.string.backup_page_backup_now)
                     }
                 )
             }
@@ -320,7 +321,7 @@ fun WebDavTab(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    stringResource(R.string.backup_page_webdav_backup_files),
+                    stringResource(Res.string.backup_page_webdav_backup_files),
                     modifier = Modifier.fillMaxWidth()
                 )
                 backupItemsState.onSuccess {
@@ -387,7 +388,7 @@ fun WebDavTab(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.backup_page_loading_failed, it.message ?: ""),
+                            text = stringResource(Res.string.backup_page_loading_failed, it.message ?: ""),
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -483,7 +484,7 @@ private fun WebDavBackupItemCard(
                             },
                             enabled = !isRestoring
                         ) {
-                            Text(stringResource(R.string.backup_page_delete))
+                            Text(stringResource(Res.string.backup_page_delete))
                         }
                         Button(
                             onClick = {
@@ -499,9 +500,9 @@ private fun WebDavBackupItemCard(
                             }
                             Text(
                                 if (isRestoring) {
-                                    stringResource(R.string.backup_page_restoring)
+                                    stringResource(Res.string.backup_page_restoring)
                                 } else {
-                                    stringResource(R.string.backup_page_restore_now)
+                                    stringResource(Res.string.backup_page_restore_now)
                                 }
                             )
                         }

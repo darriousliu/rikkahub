@@ -23,14 +23,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.AlertCircle
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 
 /**
  * 权限请求说明对话框
@@ -75,7 +75,7 @@ internal fun PermissionRationaleDialog(
                 // 标题
                 val hasPermanentlyDenied = permanentlyDeniedPermissions.isNotEmpty()
                 Text(
-                    text = stringResource(R.string.permission_diaog_title),
+                    text = stringResource(Res.string.permission_diaog_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -86,9 +86,9 @@ internal fun PermissionRationaleDialog(
                 // 说明文字
                 Text(
                     text = if (hasPermanentlyDenied) {
-                        stringResource(R.string.permission_desc_goto_setting)
+                        stringResource(Res.string.permission_desc_goto_setting)
                     } else {
-                        stringResource(R.string.permission_desc_require_permission)
+                        stringResource(Res.string.permission_desc_require_permission)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -124,14 +124,14 @@ internal fun PermissionRationaleDialog(
                             onClick = onCancel,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
 
                         Button(
                             onClick = onProceed, // 这里会跳转到设置
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(stringResource(R.string.permission_go_to_settings))
+                            Text(stringResource(Res.string.permission_go_to_settings))
                         }
                     }
                 } else {
@@ -144,14 +144,14 @@ internal fun PermissionRationaleDialog(
                             onClick = onCancel,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
 
                         Button(
                             onClick = onProceed,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(stringResource(R.string.confirm))
+                            Text(stringResource(Res.string.confirm))
                         }
                     }
                 }
@@ -202,7 +202,7 @@ private fun PermissionItem(
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.permission_required),
+                                text = stringResource(Res.string.permission_required),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -218,7 +218,7 @@ private fun PermissionItem(
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = stringResource(R.string.permission_permanently_denied),
+                                text = stringResource(Res.string.permission_permanently_denied),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onError,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

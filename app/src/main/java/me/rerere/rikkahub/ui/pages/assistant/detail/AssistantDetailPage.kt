@@ -28,18 +28,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.hooks.heroAnimation
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -62,7 +62,7 @@ fun AssistantDetailPage(id: String) {
                 title = {
                     Text(
                         text = assistant.name.ifBlank {
-                            stringResource(R.string.assistant_page_default_assistant)
+                            stringResource(Res.string.assistant_page_default_assistant)
                         },
                         maxLines = 1,
                     )
@@ -96,50 +96,50 @@ fun AssistantDetailPage(id: String) {
                     item(
                         onClick = { navController.navigate(Screen.AssistantBasic(id)) },
                         leadingContent = { Icon(HugeIcons.Settings03, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_basic_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_basic)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_basic_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_basic)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.AssistantPrompt(id)) },
                         leadingContent = { Icon(HugeIcons.Message02, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_prompt_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_prompt)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_prompt_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_prompt)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.AssistantInjections(id)) },
                         leadingContent = { Icon(HugeIcons.Puzzle, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_extensions_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_extensions)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_extensions_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_extensions)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.AssistantMemory(id)) },
                         leadingContent = { Icon(HugeIcons.Brain02, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_memory_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_memory)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_memory_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_memory)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.AssistantRequest(id)) },
                         leadingContent = { Icon(HugeIcons.Code, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_request_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_request)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_request_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_request)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.AssistantMcp(id)) },
                         leadingContent = { Icon(HugeIcons.Wrench01, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_mcp_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_mcp)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_mcp_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_mcp)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.AssistantLocalTool(id)) },
                         leadingContent = { Icon(HugeIcons.BookOpen01, null) },
-                        supportingContent = { Text(stringResource(R.string.assistant_detail_local_tools_desc)) },
-                        headlineContent = { Text(stringResource(R.string.assistant_page_tab_local_tools)) },
+                        supportingContent = { Text(stringResource(Res.string.assistant_detail_local_tools_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.assistant_page_tab_local_tools)) },
                         trailingContent = { Icon(HugeIcons.ArrowRight01, null) },
                     )
                 }
@@ -160,7 +160,7 @@ private fun AssistantHeader(
     ) {
         UIAvatar(
             value = assistant.avatar,
-            name = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+            name = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
             onUpdate = null,
             modifier = Modifier
                 .size(100.dp)
@@ -168,7 +168,7 @@ private fun AssistantHeader(
         )
 
         Text(
-            text = assistant.name.ifBlank { stringResource(R.string.assistant_page_default_assistant) },
+            text = assistant.name.ifBlank { stringResource(Res.string.assistant_page_default_assistant) },
             style = MaterialTheme.typography.headlineSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

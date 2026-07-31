@@ -82,7 +82,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,6 +101,7 @@ import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelAbilityTag
 import me.rerere.rikkahub.ui.components.ai.ModelModalityTag
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
@@ -124,6 +124,7 @@ import me.rerere.rikkahub.ui.pages.setting.components.ProviderConnectionTester
 import me.rerere.rikkahub.ui.pages.setting.components.SettingProviderBalanceOption
 import me.rerere.rikkahub.ui.pages.setting.components.isUsingDefaultBaseUrl
 import me.rerere.rikkahub.ui.pages.setting.components.resetBaseUrlToDefault
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.UiState
@@ -200,7 +201,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
             ) {
                 NavigationBarItem(
                     selected = pager.currentPage == 0,
-                    label = { Text(stringResource(id = R.string.setting_provider_page_configuration)) },
+                    label = { Text(stringResource(id = Res.string.setting_provider_page_configuration)) },
                     icon = { Icon(HugeIcons.Tools, null) },
                     onClick = {
                         scope.launch {
@@ -210,7 +211,7 @@ fun SettingProviderDetailPage(id: Uuid, vm: SettingVM = koinViewModel()) {
                 )
                 NavigationBarItem(
                     selected = pager.currentPage == 1,
-                    label = { Text(stringResource(id = R.string.setting_provider_page_models)) },
+                    label = { Text(stringResource(id = Res.string.setting_provider_page_models)) },
                     icon = { Icon(HugeIcons.Package01, null) },
                     onClick = {
                         scope.launch {
@@ -317,7 +318,7 @@ private fun SettingProviderConfigPage(
             ) {
                 Icon(
                     imageVector = HugeIcons.Refresh03,
-                    contentDescription = stringResource(R.string.setting_model_page_reset_to_default)
+                    contentDescription = stringResource(Res.string.setting_model_page_reset_to_default)
                 )
             }
 
@@ -326,7 +327,7 @@ private fun SettingProviderConfigPage(
                     onEdit(internalProvider)
                 }
             ) {
-                Text(stringResource(R.string.setting_provider_page_save))
+                Text(stringResource(Res.string.setting_provider_page_save))
             }
         }
 
@@ -345,14 +346,14 @@ private fun SettingProviderConfigPage(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = {
-                Text(stringResource(R.string.confirm_delete))
+                Text(stringResource(Res.string.confirm_delete))
             },
             text = {
-                Text(stringResource(R.string.setting_provider_page_delete_dialog_text))
+                Text(stringResource(Res.string.setting_provider_page_delete_dialog_text))
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
             confirmButton = {
@@ -362,7 +363,7 @@ private fun SettingProviderConfigPage(
                         onDelete()
                     }
                 ) {
-                    Text(stringResource(R.string.delete))
+                    Text(stringResource(Res.string.delete))
                 }
             }
         )
@@ -428,12 +429,12 @@ private fun ModelList(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.setting_provider_page_no_models),
+                            text = stringResource(Res.string.setting_provider_page_no_models),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = stringResource(R.string.setting_provider_page_add_models_hint),
+                            text = stringResource(Res.string.setting_provider_page_add_models_hint),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -530,7 +531,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(0)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_provider_page_basic_settings)) }
+                text = { Text(stringResource(Res.string.setting_provider_page_basic_settings)) }
             )
             Tab(
                 selected = pagerState.currentPage == 1,
@@ -539,7 +540,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(1)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_provider_page_advanced_settings)) }
+                text = { Text(stringResource(Res.string.setting_provider_page_advanced_settings)) }
             )
             Tab(
                 selected = pagerState.currentPage == 2,
@@ -548,7 +549,7 @@ private fun ModelSettingsForm(
                         pagerState.animateScrollToPage(2)
                     }
                 },
-                text = { Text(stringResource(R.string.setting_page_built_in_tools)) }
+                text = { Text(stringResource(Res.string.setting_page_built_in_tools)) }
             )
         }
 
@@ -573,11 +574,11 @@ private fun ModelSettingsForm(
                                     setModelId(it.trim())
                                 }
                             },
-                            label = { Text(stringResource(R.string.setting_provider_page_model_id)) },
+                            label = { Text(stringResource(Res.string.setting_provider_page_model_id)) },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 if (!isEdit) {
-                                    Text(stringResource(R.string.setting_provider_page_model_id_placeholder))
+                                    Text(stringResource(Res.string.setting_provider_page_model_id_placeholder))
                                 }
                             },
                             enabled = !isEdit
@@ -588,11 +589,11 @@ private fun ModelSettingsForm(
                             onValueChange = {
                                 onModelChange(model.copy(displayName = it.trim()))
                             },
-                            label = { Text(stringResource(if (isEdit) R.string.setting_provider_page_model_name else R.string.setting_provider_page_model_display_name)) },
+                            label = { Text(stringResource(if (isEdit) Res.string.setting_provider_page_model_name else Res.string.setting_provider_page_model_display_name)) },
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 if (!isEdit) {
-                                    Text(stringResource(R.string.setting_provider_page_model_display_name_placeholder))
+                                    Text(stringResource(Res.string.setting_provider_page_model_display_name_placeholder))
                                 }
                             }
                         )
@@ -747,12 +748,12 @@ private fun AddModelButton(
             ) {
                 Icon(
                     HugeIcons.Add01,
-                    contentDescription = stringResource(R.string.setting_provider_page_add_model)
+                    contentDescription = stringResource(Res.string.setting_provider_page_add_model)
                 )
                 AnimatedVisibility(expanded) {
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
-                        stringResource(R.string.setting_provider_page_add_new_model),
+                        stringResource(Res.string.setting_provider_page_add_new_model),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -791,7 +792,7 @@ private fun AddModelButton(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_add_model),
+                        text = stringResource(Res.string.setting_provider_page_add_model),
                         style = MaterialTheme.typography.titleLarge
                     )
                     Column(
@@ -817,7 +818,7 @@ private fun AddModelButton(
                                 dialogState.dismiss()
                             },
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
                         TextButton(
                             onClick = {
@@ -826,7 +827,7 @@ private fun AddModelButton(
                                 }
                             },
                         ) {
-                            Text(stringResource(R.string.setting_provider_page_add))
+                            Text(stringResource(Res.string.setting_provider_page_add))
                         }
                     }
                 }
@@ -879,7 +880,7 @@ private fun ModelPicker(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_avaliable_models),
+                        text = stringResource(Res.string.setting_provider_page_avaliable_models),
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -898,9 +899,9 @@ private fun ModelPicker(
                     ) {
                         Text(
                             if (unselectedCount > 0) stringResource(
-                                R.string.setting_provider_page_select_all,
+                                Res.string.setting_provider_page_select_all,
                                 unselectedCount
-                            ) else stringResource(R.string.setting_provider_page_deselect_models)
+                            ) else stringResource(Res.string.setting_provider_page_deselect_models)
                         )
                     }
                 }
@@ -983,10 +984,10 @@ private fun ModelPicker(
                     onValueChange = {
                         filterText = it
                     },
-                    label = { Text(stringResource(R.string.setting_provider_page_filter_placeholder)) },
+                    label = { Text(stringResource(Res.string.setting_provider_page_filter_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
-                        Text(stringResource(R.string.setting_provider_page_filter_example))
+                        Text(stringResource(Res.string.setting_provider_page_filter_example))
                     },
                 )
             }
@@ -1017,7 +1018,7 @@ private fun ModelTypeSelector(
     onTypeSelected: (ModelType) -> Unit
 ) {
     Text(
-        stringResource(R.string.setting_provider_page_model_type),
+        stringResource(Res.string.setting_provider_page_model_type),
         style = MaterialTheme.typography.titleSmall
     )
     SingleChoiceSegmentedButtonRow(
@@ -1030,9 +1031,9 @@ private fun ModelTypeSelector(
                     Text(
                         text = stringResource(
                             when (type) {
-                                ModelType.CHAT -> R.string.setting_provider_page_chat_model
-                                ModelType.EMBEDDING -> R.string.setting_provider_page_embedding_model
-                                ModelType.IMAGE -> R.string.setting_provider_page_image_model
+                                ModelType.CHAT -> Res.string.setting_provider_page_chat_model
+                                ModelType.EMBEDDING -> Res.string.setting_provider_page_embedding_model
+                                ModelType.IMAGE -> Res.string.setting_provider_page_image_model
                             }
                         )
                     )
@@ -1054,7 +1055,7 @@ private fun ModelModalitySelector(
 ) {
     if (model.type == ModelType.CHAT) {
         Text(
-            stringResource(R.string.setting_provider_page_input_modality),
+            stringResource(Res.string.setting_provider_page_input_modality),
             style = MaterialTheme.typography.titleSmall
         )
         MultiChoiceSegmentedButtonRow(
@@ -1075,8 +1076,8 @@ private fun ModelModalitySelector(
                     Text(
                         text = stringResource(
                             when (modality) {
-                                Modality.TEXT -> R.string.setting_provider_page_text
-                                Modality.IMAGE -> R.string.setting_provider_page_image
+                                Modality.TEXT -> Res.string.setting_provider_page_text
+                                Modality.IMAGE -> Res.string.setting_provider_page_image
                             }
                         )
                     )
@@ -1085,7 +1086,7 @@ private fun ModelModalitySelector(
         }
 
         Text(
-            stringResource(R.string.setting_provider_page_output_modality),
+            stringResource(Res.string.setting_provider_page_output_modality),
             style = MaterialTheme.typography.titleSmall
         )
         MultiChoiceSegmentedButtonRow(
@@ -1106,8 +1107,8 @@ private fun ModelModalitySelector(
                     Text(
                         text = stringResource(
                             when (modality) {
-                                Modality.TEXT -> R.string.setting_provider_page_text
-                                Modality.IMAGE -> R.string.setting_provider_page_image
+                                Modality.TEXT -> Res.string.setting_provider_page_text
+                                Modality.IMAGE -> Res.string.setting_provider_page_image
                             }
                         )
                     )
@@ -1123,7 +1124,7 @@ fun ModalAbilitySelector(
     onUpdateAbilities: (List<ModelAbility>) -> Unit
 ) {
     Text(
-        stringResource(R.string.setting_provider_page_abilities),
+        stringResource(Res.string.setting_provider_page_abilities),
         style = MaterialTheme.typography.titleSmall
     )
     MultiChoiceSegmentedButtonRow(
@@ -1144,8 +1145,8 @@ fun ModalAbilitySelector(
                     Text(
                         text = stringResource(
                             when (ability) {
-                                ModelAbility.TOOL -> R.string.setting_provider_page_tool
-                                ModelAbility.REASONING -> R.string.setting_provider_page_reasoning
+                                ModelAbility.TOOL -> Res.string.setting_provider_page_tool
+                                ModelAbility.REASONING -> Res.string.setting_provider_page_reasoning
                             }
                         )
                     )
@@ -1204,7 +1205,7 @@ private fun ModelCard(
                             Icon(HugeIcons.Cancel01, null)
                         }
                         Text(
-                            text = stringResource(R.string.setting_provider_page_edit_model),
+                            text = stringResource(Res.string.setting_provider_page_edit_model),
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.align(Alignment.Center),
                         )
@@ -1232,7 +1233,7 @@ private fun ModelCard(
                                 dialogState.dismiss()
                             },
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
                         TextButton(
                             onClick = {
@@ -1241,7 +1242,7 @@ private fun ModelCard(
                                 }
                             },
                         ) {
-                            Text(stringResource(R.string.confirm))
+                            Text(stringResource(Res.string.confirm))
                         }
                     }
                 }
@@ -1278,7 +1279,7 @@ private fun ModelCard(
                 ) {
                     Icon(
                         HugeIcons.Delete01,
-                        contentDescription = stringResource(R.string.chat_page_delete)
+                        contentDescription = stringResource(Res.string.chat_page_delete)
                     )
                 }
             }
@@ -1358,28 +1359,28 @@ private fun BuiltInToolsSettings(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = stringResource(R.string.setting_page_built_in_tools),
+            text = stringResource(Res.string.setting_page_built_in_tools),
             style = MaterialTheme.typography.titleMedium
         )
 
         Text(
-            text = stringResource(R.string.setting_page_built_in_tools_desc),
+            text = stringResource(Res.string.setting_page_built_in_tools_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         val availableTools = listOf(
             BuiltInTools.Search to Pair(
-                stringResource(R.string.setting_page_built_in_tools_search),
-                stringResource(R.string.setting_page_built_in_tools_search_desc)
+                stringResource(Res.string.setting_page_built_in_tools_search),
+                stringResource(Res.string.setting_page_built_in_tools_search_desc)
             ),
             BuiltInTools.UrlContext to Pair(
-                stringResource(R.string.setting_page_built_in_tools_url_context),
-                stringResource(R.string.setting_page_built_in_tools_url_context_desc)
+                stringResource(Res.string.setting_page_built_in_tools_url_context),
+                stringResource(Res.string.setting_page_built_in_tools_url_context_desc)
             ),
             BuiltInTools.ImageGeneration to Pair(
-                stringResource(R.string.setting_page_built_in_tools_image_generation),
-                stringResource(R.string.setting_page_built_in_tools_image_generation_desc)
+                stringResource(Res.string.setting_page_built_in_tools_image_generation),
+                stringResource(Res.string.setting_page_built_in_tools_image_generation_desc)
             )
         )
 
@@ -1438,12 +1439,12 @@ private fun ProviderOverrideSettings(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = stringResource(R.string.setting_provider_page_provider_override),
+            text = stringResource(Res.string.setting_provider_page_provider_override),
             style = MaterialTheme.typography.titleSmall
         )
 
         Text(
-            text = stringResource(R.string.setting_provider_page_provider_override_desc),
+            text = stringResource(Res.string.setting_provider_page_provider_override_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1504,7 +1505,7 @@ private fun ProviderOverrideSettings(
             ) {
                 Icon(HugeIcons.Add01, contentDescription = null)
                 Spacer(modifier = Modifier.size(8.dp))
-                Text(stringResource(R.string.setting_provider_page_add_provider_override))
+                Text(stringResource(Res.string.setting_provider_page_add_provider_override))
             }
         }
 
@@ -1527,7 +1528,7 @@ private fun ProviderOverrideSettings(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_configure_provider_override),
+                        text = stringResource(Res.string.setting_provider_page_configure_provider_override),
                         style = MaterialTheme.typography.titleLarge,
                     )
 
@@ -1553,7 +1554,7 @@ private fun ProviderOverrideSettings(
                                 editingProvider = null
                             },
                         ) {
-                            Text(stringResource(R.string.cancel))
+                            Text(stringResource(Res.string.cancel))
                         }
                         TextButton(
                             onClick = {
@@ -1562,7 +1563,7 @@ private fun ProviderOverrideSettings(
                                 editingProvider = null
                             },
                         ) {
-                            Text(stringResource(R.string.setting_provider_page_save))
+                            Text(stringResource(Res.string.setting_provider_page_save))
                         }
                     }
                 }

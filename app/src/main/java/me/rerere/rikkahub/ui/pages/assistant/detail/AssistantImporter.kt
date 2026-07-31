@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
 import kotlinx.coroutines.Dispatchers
@@ -38,8 +37,10 @@ import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.R
@@ -131,7 +132,7 @@ private fun SillyTavernImporter(
             enabled = !isLoading
         ) {
             AutoAIIcon(name = "tavern", modifier = Modifier.padding(end = 8.dp))
-            Text(text = if (isLoading) stringResource(R.string.assistant_importer_importing) else stringResource(R.string.assistant_importer_import_tavern_png))
+            Text(text = if (isLoading) stringResource(Res.string.assistant_importer_importing) else stringResource(Res.string.assistant_importer_import_tavern_png))
         }
 
         OutlinedButton(
@@ -141,7 +142,7 @@ private fun SillyTavernImporter(
             enabled = !isLoading
         ) {
             AutoAIIcon(name = "tavern", modifier = Modifier.padding(end = 8.dp))
-            Text(text = if (isLoading) stringResource(R.string.assistant_importer_importing) else stringResource(R.string.assistant_importer_import_tavern_json))
+            Text(text = if (isLoading) stringResource(Res.string.assistant_importer_importing) else stringResource(Res.string.assistant_importer_import_tavern_json))
         }
     }
 }

@@ -26,7 +26,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,12 +38,13 @@ import me.rerere.hugeicons.stroke.AiBrain01
 import me.rerere.hugeicons.stroke.AiEditing
 import me.rerere.hugeicons.stroke.ArrowRight01
 import me.rerere.hugeicons.stroke.Cancel01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelListSheet
 import me.rerere.rikkahub.ui.components.ai.rememberModelListState
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
@@ -61,7 +61,7 @@ fun SettingModelPage(vm: SettingVM = koinViewModel()) {
         containerColor = CustomColors.topBarColors.containerColor,
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.setting_model_page_title)) },
+                title = { Text(stringResource(Res.string.setting_model_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -75,13 +75,13 @@ fun SettingModelPage(vm: SettingVM = koinViewModel()) {
                     selected = pagerState.currentPage == 0,
                     onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
                     icon = { Icon(HugeIcons.AiBrain01, null) },
-                    label = { Text(stringResource(R.string.setting_model_page_tab_model)) }
+                    label = { Text(stringResource(Res.string.setting_model_page_tab_model)) }
                 )
                 NavigationBarItem(
                     selected = pagerState.currentPage == 1,
                     onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
                     icon = { Icon(HugeIcons.AiEditing, null) },
-                    label = { Text(stringResource(R.string.setting_model_page_tab_prompt)) }
+                    label = { Text(stringResource(Res.string.setting_model_page_tab_prompt)) }
                 )
             }
         },
@@ -108,8 +108,8 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
     ) {
         item {
             ModelSettingItem(
-                title = stringResource(R.string.setting_model_page_chat_model),
-                description = stringResource(R.string.setting_model_page_chat_model_desc),
+                title = stringResource(Res.string.setting_model_page_chat_model),
+                description = stringResource(Res.string.setting_model_page_chat_model_desc),
                 modelId = settings.chatModelId,
                 providers = settings.providers,
                 onSelect = { vm.updateSettings(settings.copy(chatModelId = it.id)) },
@@ -117,8 +117,8 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
         }
         item {
             ModelSettingItem(
-                title = stringResource(R.string.setting_model_page_fast_model),
-                description = stringResource(R.string.setting_model_page_fast_model_desc),
+                title = stringResource(Res.string.setting_model_page_fast_model),
+                description = stringResource(Res.string.setting_model_page_fast_model_desc),
                 modelId = settings.fastModelId,
                 providers = settings.providers,
                 onSelect = { vm.updateSettings(settings.copy(fastModelId = it.id)) },
@@ -126,8 +126,8 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
         }
         item {
             ModelSettingItem(
-                title = stringResource(R.string.setting_model_page_title_model),
-                description = stringResource(R.string.setting_model_page_title_model_desc),
+                title = stringResource(Res.string.setting_model_page_title_model),
+                description = stringResource(Res.string.setting_model_page_title_model_desc),
                 modelId = settings.titleModelId,
                 providers = settings.providers,
                 onSelect = { vm.updateSettings(settings.copy(titleModelId = it.id)) },
@@ -142,8 +142,8 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
         }
         item {
             ModelSettingItem(
-                title = stringResource(R.string.setting_model_page_translate_model),
-                description = stringResource(R.string.setting_model_page_translate_model_desc),
+                title = stringResource(Res.string.setting_model_page_translate_model),
+                description = stringResource(Res.string.setting_model_page_translate_model_desc),
                 modelId = settings.translateModeId,
                 providers = settings.providers,
                 onSelect = { vm.updateSettings(settings.copy(translateModeId = it.id)) },
@@ -151,8 +151,8 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
         }
         item {
             ModelSettingItem(
-                title = stringResource(R.string.setting_model_page_ocr_model),
-                description = stringResource(R.string.setting_model_page_ocr_model_desc),
+                title = stringResource(Res.string.setting_model_page_ocr_model),
+                description = stringResource(Res.string.setting_model_page_ocr_model_desc),
                 modelId = settings.ocrModelId,
                 providers = settings.providers,
                 onSelect = { vm.updateSettings(settings.copy(ocrModelId = it.id)) },
@@ -160,8 +160,8 @@ private fun ModelSettingsPage(settings: Settings, vm: SettingVM, contentPadding:
         }
         item {
             ModelSettingItem(
-                title = stringResource(R.string.setting_model_page_compress_model),
-                description = stringResource(R.string.setting_model_page_compress_model_desc),
+                title = stringResource(Res.string.setting_model_page_compress_model),
+                description = stringResource(Res.string.setting_model_page_compress_model_desc),
                 modelId = settings.compressModelId,
                 providers = settings.providers,
                 onSelect = { vm.updateSettings(settings.copy(compressModelId = it.id)) },
@@ -175,7 +175,7 @@ private fun SuggestionModelSettingItem(
     settings: Settings,
     vm: SettingVM,
 ) {
-    val title = stringResource(R.string.setting_model_page_suggestion_model)
+    val title = stringResource(Res.string.setting_model_page_suggestion_model)
     val state = rememberModelListState(
         modelId = settings.suggestionModelId,
         providers = settings.providers,
@@ -185,7 +185,7 @@ private fun SuggestionModelSettingItem(
     Column {
         CardGroup(title = { Text(title) }) {
             item(
-                headlineContent = { Text(stringResource(R.string.setting_model_page_enable_suggestion)) },
+                headlineContent = { Text(stringResource(Res.string.setting_model_page_enable_suggestion)) },
                 trailingContent = {
                     Switch(
                         checked = settings.enableSuggestion,
@@ -206,7 +206,7 @@ private fun SuggestionModelSettingItem(
                         ) {
                             Text(
                                 text = state.currentModel?.displayName
-                                    ?: stringResource(R.string.model_list_select_model),
+                                    ?: stringResource(Res.string.model_list_select_model),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -232,7 +232,7 @@ private fun SuggestionModelSettingItem(
             }
         }
         Text(
-            text = stringResource(R.string.setting_model_page_suggestion_model_desc),
+            text = stringResource(Res.string.setting_model_page_suggestion_model_desc),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
@@ -269,7 +269,7 @@ private fun ModelSettingItem(
                     ) {
                         Text(
                             text = state.currentModel?.displayName
-                                ?: stringResource(R.string.model_list_select_model),
+                                ?: stringResource(Res.string.model_list_select_model),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

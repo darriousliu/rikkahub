@@ -19,19 +19,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.tools.local.LocalToolOption
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionInfo
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.hasUsageStatsPermission
 import me.rerere.rikkahub.utils.openUsageAccessSettings
@@ -52,7 +52,7 @@ fun AssistantLocalToolPage(id: String) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.assistant_page_tab_local_tools))
+                    Text(stringResource(Res.string.assistant_page_tab_local_tools))
                 },
                 navigationIcon = {
                     BackButton()
@@ -81,20 +81,20 @@ private fun AssistantLocalToolContent(
     val context = LocalContext.current
     val toaster = LocalToaster.current
     val permissionRequiredText =
-        stringResource(R.string.assistant_page_local_tools_screen_time_permission_required)
+        stringResource(Res.string.assistant_page_local_tools_screen_time_permission_required)
 
     val calendarPermissionState = rememberPermissionState(
         permissions = setOf(
             PermissionInfo(
                 permission = Manifest.permission.READ_CALENDAR,
-                displayName = { Text(stringResource(R.string.permission_calendar_read)) },
-                usage = { Text(stringResource(R.string.permission_calendar_read_desc)) },
+                displayName = { Text(stringResource(Res.string.permission_calendar_read)) },
+                usage = { Text(stringResource(Res.string.permission_calendar_read_desc)) },
                 required = true
             ),
             PermissionInfo(
                 permission = Manifest.permission.WRITE_CALENDAR,
-                displayName = { Text(stringResource(R.string.permission_calendar_write)) },
-                usage = { Text(stringResource(R.string.permission_calendar_write_desc)) },
+                displayName = { Text(stringResource(Res.string.permission_calendar_write)) },
+                usage = { Text(stringResource(Res.string.permission_calendar_write_desc)) },
                 required = true
             ),
         )
@@ -130,10 +130,10 @@ private fun AssistantLocalToolContent(
         CardGroup {
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_javascript_engine_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_javascript_engine_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_javascript_engine_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_javascript_engine_desc))
                 },
                 trailingContent = {
                     Switch(
@@ -144,10 +144,10 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_time_info_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_time_info_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_time_info_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_time_info_desc))
                 },
                 trailingContent = {
                     Switch(
@@ -158,10 +158,10 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_clipboard_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_clipboard_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_clipboard_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_clipboard_desc))
                 },
                 trailingContent = {
                     Switch(
@@ -172,10 +172,10 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_tts_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_tts_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_tts_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_tts_desc))
                 },
                 trailingContent = {
                     Switch(
@@ -186,10 +186,10 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_ask_user_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_ask_user_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_ask_user_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_ask_user_desc))
                 },
                 trailingContent = {
                     Switch(
@@ -200,10 +200,10 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_screen_time_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_screen_time_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_screen_time_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_screen_time_desc))
                 },
                 trailingContent = {
                     Switch(
@@ -214,10 +214,10 @@ private fun AssistantLocalToolContent(
             )
             item(
                 headlineContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_calendar_title))
+                    Text(stringResource(Res.string.assistant_page_local_tools_calendar_title))
                 },
                 supportingContent = {
-                    Text(stringResource(R.string.assistant_page_local_tools_calendar_desc))
+                    Text(stringResource(Res.string.assistant_page_local_tools_calendar_desc))
                 },
                 trailingContent = {
                     Switch(

@@ -36,21 +36,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Edit03
 import me.rerere.hugeicons.stroke.LookTop
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.hooks.rememberAssistantState
 import kotlin.uuid.Uuid
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun AssistantPicker(
@@ -60,7 +60,7 @@ fun AssistantPicker(
     onClickSetting: () -> Unit,
 ) {
     val state = rememberAssistantState(settings, onUpdateSettings)
-    val defaultAssistantName = stringResource(R.string.assistant_page_default_assistant)
+    val defaultAssistantName = stringResource(Res.string.assistant_page_default_assistant)
     var showPicker by remember { mutableStateOf(false) }
 
     NavigationDrawerItem(
@@ -117,7 +117,7 @@ private fun AssistantPickerSheet(
 ) {
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val scope = rememberCoroutineScope()
-    val defaultAssistantName = stringResource(R.string.assistant_page_default_assistant)
+    val defaultAssistantName = stringResource(Res.string.assistant_page_default_assistant)
 
     // 标签过滤状态
     var selectedTagIds by remember { mutableStateOf(emptySet<Uuid>()) }
@@ -145,7 +145,7 @@ private fun AssistantPickerSheet(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = stringResource(R.string.assistant_page_title),
+                text = stringResource(Res.string.assistant_page_title),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )

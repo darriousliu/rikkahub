@@ -33,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -45,15 +44,16 @@ import me.rerere.hugeicons.stroke.GlobalSearch
 import me.rerere.hugeicons.stroke.AiSearch02
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Settings03
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.ToggleSurface
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.pages.setting.SearchAbilityTagLine
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.search.SearchServiceOptions
 import org.koin.compose.koinInject
 
@@ -89,7 +89,7 @@ fun SearchPickerButton(
                 if (model?.tools?.contains(BuiltInTools.Search) == true) {
                     Icon(
                         imageVector = HugeIcons.AiSearch02,
-                        contentDescription = stringResource(R.string.use_web_search),
+                        contentDescription = stringResource(Res.string.use_web_search),
                     )
                 } else if (enableSearch && currentService != null) {
                     AutoAIIcon(
@@ -99,7 +99,7 @@ fun SearchPickerButton(
                 } else {
                     Icon(
                         imageVector = HugeIcons.Search01,
-                        contentDescription = stringResource(R.string.use_web_search),
+                        contentDescription = stringResource(Res.string.use_web_search),
                     )
                 }
             }
@@ -120,7 +120,7 @@ fun SearchPickerButton(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.search_picker_title),
+                    text = stringResource(Res.string.search_picker_title),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
@@ -207,14 +207,14 @@ private fun AppSearchSettings(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.use_web_search),
+                    text = stringResource(Res.string.use_web_search),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
                     text = if (enableSearch) {
-                        stringResource(R.string.web_search_enabled)
+                        stringResource(Res.string.web_search_enabled)
                     } else {
-                        stringResource(R.string.web_search_disabled)
+                        stringResource(Res.string.web_search_disabled)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = LocalContentColor.current.copy(alpha = 0.8f)
@@ -313,11 +313,11 @@ private fun BuiltInSearchSetting(model: Model) {
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.built_in_search_title),
+                    text = stringResource(Res.string.built_in_search_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = stringResource(R.string.built_in_search_description),
+                    text = stringResource(Res.string.built_in_search_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = LocalContentColor.current.copy(alpha = 0.8f)
                 )

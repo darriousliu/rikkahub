@@ -44,12 +44,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.FormItem
@@ -57,6 +56,7 @@ import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import me.rerere.search.SearchCommonOptions
@@ -80,7 +80,7 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(stringResource(R.string.setting_page_search_title))
+                    Text(stringResource(Res.string.setting_page_search_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -91,7 +91,7 @@ fun SettingSearchPage(vm: SettingVM = koinViewModel()) {
                     ) {
                         Icon(
                             imageVector = HugeIcons.Add01,
-                            contentDescription = stringResource(R.string.setting_page_search_add_provider)
+                            contentDescription = stringResource(Res.string.setting_page_search_add_provider)
                         )
                     }
                 },
@@ -204,7 +204,7 @@ private fun AddProviderDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(stringResource(R.string.setting_page_search_add_provider))
+            Text(stringResource(Res.string.setting_page_search_add_provider))
         },
         text = {
             LazyColumn(
@@ -255,12 +255,12 @@ private fun AddProviderDialog(
                     onConfirm(instance)
                 }
             ) {
-                Text(stringResource(R.string.confirm))
+                Text(stringResource(Res.string.confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(Res.string.cancel))
             }
         }
     )
@@ -315,7 +315,7 @@ private fun SearchProviderCard(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.edit)) },
+                        text = { Text(stringResource(Res.string.edit)) },
                         onClick = {
                             showMenu = false
                             onEdit()
@@ -325,7 +325,7 @@ private fun SearchProviderCard(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.delete)) },
+                        text = { Text(stringResource(Res.string.delete)) },
                         onClick = {
                             showMenu = false
                             onDelete()
@@ -355,13 +355,13 @@ fun SearchAbilityTagLine(
         Tag(
             type = TagType.DEFAULT,
         ) {
-            Text(stringResource(R.string.search_ability_search))
+            Text(stringResource(Res.string.search_ability_search))
         }
         if (SearchService.getService(options).scrapingParameters(options) != null) {
             Tag(
                 type = TagType.DEFAULT,
             ) {
-                Text(stringResource(R.string.search_ability_scrape))
+                Text(stringResource(Res.string.search_ability_scrape))
             }
         }
     }
@@ -387,13 +387,13 @@ private fun CommonOptions(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.setting_page_search_common_options),
+                text = stringResource(Res.string.setting_page_search_common_options),
                 style = MaterialTheme.typography.titleMedium
             )
 
             FormItem(
                 label = {
-                    Text(stringResource(R.string.setting_page_search_result_size))
+                    Text(stringResource(Res.string.setting_page_search_result_size))
                 }
             ) {
                 OutlinedNumberInput(

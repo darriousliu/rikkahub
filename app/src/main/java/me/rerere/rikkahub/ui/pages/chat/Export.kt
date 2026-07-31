@@ -52,7 +52,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
@@ -97,6 +96,7 @@ import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import com.dokar.sonner.rememberToasterState
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.getActivity
@@ -135,10 +135,10 @@ fun ChatExportSheet(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(text = stringResource(id = R.string.chat_page_export_format))
+                Text(text = stringResource(id = Res.string.chat_page_export_format))
 
                 val markdownSuccessMessage =
-                    stringResource(id = R.string.chat_page_export_success, "Markdown")
+                    stringResource(id = Res.string.chat_page_export_success, "Markdown")
                 OutlinedCard(
                     onClick = {
                         exportToMarkdown(context, conversation, selectedMessages)
@@ -152,10 +152,10 @@ fun ChatExportSheet(
                 ) {
                     ListItem(
                         headlineContent = {
-                            Text(stringResource(id = R.string.chat_page_export_markdown))
+                            Text(stringResource(id = Res.string.chat_page_export_markdown))
                         },
                         supportingContent = {
-                            Text(stringResource(id = R.string.chat_page_export_markdown_desc))
+                            Text(stringResource(id = Res.string.chat_page_export_markdown_desc))
                         },
                         leadingContent = {
                             Icon(HugeIcons.File02, contentDescription = null)
@@ -164,17 +164,17 @@ fun ChatExportSheet(
                 }
 
                 val imageSuccessMessage =
-                    stringResource(id = R.string.chat_page_export_success, "Image")
+                    stringResource(id = Res.string.chat_page_export_success, "Image")
                 OutlinedCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column {
                         ListItem(
                             headlineContent = {
-                                Text(stringResource(id = R.string.chat_page_export_image))
+                                Text(stringResource(id = Res.string.chat_page_export_image))
                             },
                             supportingContent = {
-                                Text(stringResource(id = R.string.chat_page_export_image_desc))
+                                Text(stringResource(id = Res.string.chat_page_export_image_desc))
                             },
                             leadingContent = {
                                 Icon(HugeIcons.Image02, contentDescription = null)
@@ -184,7 +184,7 @@ fun ChatExportSheet(
                         HorizontalDivider()
 
                         ListItem(
-                            headlineContent = { Text(stringResource(R.string.chat_page_export_image_expand_reasoning)) },
+                            headlineContent = { Text(stringResource(Res.string.chat_page_export_image_expand_reasoning)) },
                             trailingContent = {
                                 Switch(
                                     checked = imageExportOptions.expandReasoning,
@@ -229,7 +229,7 @@ fun ChatExportSheet(
                                     onDismissRequest()
                                 }
                             ) {
-                                Text(stringResource(R.string.mermaid_export))
+                                Text(stringResource(Res.string.mermaid_export))
                             }
                         }
                     }
@@ -510,7 +510,7 @@ private fun ExportedChatImage(
                     // Watermark
                     Column {
                         Text(
-                            text = stringResource(R.string.export_image_warning),
+                            text = stringResource(Res.string.export_image_warning),
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                         )
@@ -680,7 +680,7 @@ private fun ChainOfThoughtScope.ExportedReasoningStep(
         },
         label = {
             Text(
-                text = stringResource(R.string.deep_thinking),
+                text = stringResource(Res.string.deep_thinking),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -716,21 +716,21 @@ private fun ChainOfThoughtScope.ExportedToolStep(
     }.getOrNull()
     val title = when (tool.toolName) {
         "memory_tool" -> when (memoryAction) {
-            "create" -> stringResource(R.string.chat_message_tool_create_memory)
-            "edit" -> stringResource(R.string.chat_message_tool_edit_memory)
-            "delete" -> stringResource(R.string.chat_message_tool_delete_memory)
-            else -> stringResource(R.string.chat_message_tool_call_generic, tool.toolName)
+            "create" -> stringResource(Res.string.chat_message_tool_create_memory)
+            "edit" -> stringResource(Res.string.chat_message_tool_edit_memory)
+            "delete" -> stringResource(Res.string.chat_message_tool_delete_memory)
+            else -> stringResource(Res.string.chat_message_tool_call_generic, tool.toolName)
         }
 
         "search_web" -> {
             val query = runCatching {
                 tool.inputAsJson().jsonObject["query"]?.jsonPrimitiveOrNull?.contentOrNull ?: ""
             }.getOrDefault("")
-            stringResource(R.string.chat_message_tool_search_web, query)
+            stringResource(Res.string.chat_message_tool_search_web, query)
         }
 
-        "scrape_web" -> stringResource(R.string.chat_message_tool_scrape_web)
-        else -> stringResource(R.string.chat_message_tool_call_generic, tool.toolName)
+        "scrape_web" -> stringResource(Res.string.chat_message_tool_scrape_web)
+        else -> stringResource(Res.string.chat_message_tool_call_generic, tool.toolName)
     }
     ControlledChainOfThoughtStep(
         expanded = true,

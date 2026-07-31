@@ -43,7 +43,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -51,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.stroke.Stop
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
@@ -62,6 +61,7 @@ import me.rerere.rikkahub.ui.components.ui.permission.PermissionNotification
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import me.rerere.rikkahub.web.WebServerManager
@@ -78,7 +78,7 @@ fun SettingWebPage() {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
-    val copiedText = stringResource(R.string.copied)
+    val copiedText = stringResource(Res.string.copied)
     var portText by remember(settings.webServerPort) {
         mutableStateOf(settings.webServerPort.toString())
     }
@@ -130,7 +130,7 @@ fun SettingWebPage() {
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.setting_page_web_server)) },
+                title = { Text(stringResource(Res.string.setting_page_web_server)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors,
@@ -173,9 +173,9 @@ fun SettingWebPage() {
                 text = {
                     Text(
                         if (serverState.isRunning) {
-                            stringResource(R.string.setting_page_web_server_stop)
+                            stringResource(Res.string.setting_page_web_server_stop)
                         } else {
-                            stringResource(R.string.setting_page_web_server_start)
+                            stringResource(Res.string.setting_page_web_server_start)
                         }
                     )
                 },
@@ -201,8 +201,8 @@ fun SettingWebPage() {
                         .padding(horizontal = 8.dp),
                 ) {
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_page_web_server_port)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_web_server_port_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_page_web_server_port)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_page_web_server_port_desc)) },
                         trailingContent = {
                             TextField(
                                 value = portText,
@@ -231,8 +231,8 @@ fun SettingWebPage() {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_page_web_server_localhost_only)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_web_server_localhost_only_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_page_web_server_localhost_only)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_page_web_server_localhost_only_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = settings.webServerLocalhostOnly,
@@ -249,8 +249,8 @@ fun SettingWebPage() {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_page_web_server_jwt_enable)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_web_server_jwt_enable_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_page_web_server_jwt_enable)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_page_web_server_jwt_enable_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = settings.webServerJwtEnabled,
@@ -266,8 +266,8 @@ fun SettingWebPage() {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(R.string.setting_page_web_server_password)) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_web_server_password_desc)) },
+                        headlineContent = { Text(stringResource(Res.string.setting_page_web_server_password)) },
+                        supportingContent = { Text(stringResource(Res.string.setting_page_web_server_password_desc)) },
                         trailingContent = {
                             TextField(
                                 value = accessPasswordText,
@@ -315,7 +315,7 @@ fun SettingWebPage() {
                             val lanUrl = "http://${serverState.address ?: "localhost"}:$port"
                             item(
                                 onClick = { copyUrl(lanUrl) },
-                                headlineContent = { Text(stringResource(R.string.setting_page_web_server_lan_address)) },
+                                headlineContent = { Text(stringResource(Res.string.setting_page_web_server_lan_address)) },
                                 supportingContent = { Text(lanUrl) },
                             )
 
@@ -323,7 +323,7 @@ fun SettingWebPage() {
                                 val mdnsUrl = "http://${serverState.hostname}:$port"
                                 item(
                                     onClick = { copyUrl(mdnsUrl) },
-                                    headlineContent = { Text(stringResource(R.string.setting_page_web_server_mdns_address)) },
+                                    headlineContent = { Text(stringResource(Res.string.setting_page_web_server_mdns_address)) },
                                     supportingContent = { Text(mdnsUrl) },
                                 )
                             }
@@ -332,21 +332,21 @@ fun SettingWebPage() {
                         val localUrl = "http://localhost:$port"
                         item(
                             onClick = { copyUrl(localUrl) },
-                            headlineContent = { Text(stringResource(R.string.setting_page_web_server_local_address)) },
+                            headlineContent = { Text(stringResource(Res.string.setting_page_web_server_local_address)) },
                             supportingContent = { Text(localUrl) },
                         )
                     }
                     item(
                         headlineContent = {
                             Text(
-                                text = stringResource(R.string.setting_page_web_server_address_note),
+                                text = stringResource(Res.string.setting_page_web_server_address_note),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         },
                         supportingContent = {
                             Text(
-                                text = stringResource(R.string.setting_page_web_server_address_note_desc),
+                                text = stringResource(Res.string.setting_page_web_server_address_note_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -356,7 +356,7 @@ fun SettingWebPage() {
                         item(
                             headlineContent = {
                                 Text(
-                                    text = stringResource(R.string.setting_page_web_server_error),
+                                    text = stringResource(Res.string.setting_page_web_server_error),
                                     color = MaterialTheme.colorScheme.error
                                 )
                             },

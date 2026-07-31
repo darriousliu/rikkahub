@@ -39,7 +39,6 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -65,8 +64,8 @@ import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.Download04
 import me.rerere.hugeicons.stroke.Eye
 import me.rerere.hugeicons.stroke.View
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
 import me.rerere.rikkahub.ui.components.webview.rememberWebViewState
@@ -74,6 +73,7 @@ import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.modifier.onClick
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.AtomOneDarkPalette
 import me.rerere.rikkahub.ui.theme.AtomOneLightPalette
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
@@ -233,9 +233,9 @@ fun HighlightCodeBlock(
                                 )
                                 Text(
                                     text = if (isExpanded) {
-                                        stringResource(id = R.string.code_block_collapse)
+                                        stringResource(id = Res.string.code_block_collapse)
                                     } else {
-                                        stringResource(id = R.string.code_block_expand)
+                                        stringResource(id = Res.string.code_block_expand)
                                     },
                                     fontSize = textStyle.fontSize,
                                     lineHeight = textStyle.lineHeight,
@@ -385,7 +385,7 @@ private fun HighlightCodeActions(
 
             Icon(
                 imageVector = HugeIcons.Download04,
-                contentDescription = stringResource(id = R.string.chat_page_save),
+                contentDescription = stringResource(id = Res.string.chat_page_save),
                 tint = iconTint,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
@@ -421,7 +421,7 @@ private fun HighlightCodeActions(
 
             Icon(
                 imageVector = HugeIcons.Copy01,
-                contentDescription = stringResource(id = R.string.code_block_copy),
+                contentDescription = stringResource(id = Res.string.code_block_copy),
                 tint = iconTint,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
@@ -438,7 +438,7 @@ private fun HighlightCodeActions(
             if (canInlinePreview) {
                 Icon(
                     imageVector = if (previewMode) HugeIcons.Code else HugeIcons.View,
-                    contentDescription = if (previewMode) "Code" else stringResource(id = R.string.code_block_preview),
+                    contentDescription = if (previewMode) "Code" else stringResource(id = Res.string.code_block_preview),
                     tint = iconTint,
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
@@ -453,7 +453,7 @@ private fun HighlightCodeActions(
             if (completeCodeBlock && normalizedLanguage in PREVIEWABLE_LANGUAGES) {
                 Icon(
                     imageVector = HugeIcons.Eye,
-                    contentDescription = stringResource(id = R.string.code_block_preview),
+                    contentDescription = stringResource(id = Res.string.code_block_preview),
                     tint = iconTint,
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))

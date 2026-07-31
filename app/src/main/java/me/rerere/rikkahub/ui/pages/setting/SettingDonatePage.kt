@@ -28,15 +28,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.model.Sponsor
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.onError
@@ -54,7 +53,7 @@ fun SettingDonatePage() {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.donate_page_title))
+                    Text(text = stringResource(Res.string.donate_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -76,7 +75,7 @@ fun SettingDonatePage() {
             DonateMethodsCardGroup()
 
             Text(
-                text = stringResource(R.string.donate_page_sponsor_list),
+                text = stringResource(Res.string.donate_page_sponsor_list),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -95,7 +94,7 @@ private fun DonateMethodsCardGroup() {
     val context = LocalContext.current
     CardGroup(
         modifier = Modifier.fillMaxWidth(),
-        title = { Text(stringResource(R.string.donate_page_donation_methods)) },
+        title = { Text(stringResource(Res.string.donate_page_donation_methods)) },
     ) {
         item(
             onClick = { context.openUrl("https://ko-fi.com/reovodev") },
@@ -106,7 +105,7 @@ private fun DonateMethodsCardGroup() {
                     modifier = Modifier.size(28.dp),
                 )
             },
-            supportingContent = { Text(stringResource(R.string.donate_page_kofi_desc)) },
+            supportingContent = { Text(stringResource(Res.string.donate_page_kofi_desc)) },
             headlineContent = { Text("Kofi") },
         )
         item(
@@ -117,7 +116,7 @@ private fun DonateMethodsCardGroup() {
                     contentDescription = null,
                 )
             },
-            supportingContent = { Text(stringResource(R.string.donate_page_afdian_desc)) },
+            supportingContent = { Text(stringResource(Res.string.donate_page_afdian_desc)) },
             headlineContent = { Text("爱发电") },
         )
     }

@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -33,7 +32,8 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.copyMessageToClipboard
 
 @Composable
@@ -69,7 +69,7 @@ fun ChatMessageCopySheet(
                 }
 
                 Text(
-                    text = stringResource(R.string.select_and_copy),
+                    text = stringResource(Res.string.select_and_copy),
                     style = MaterialTheme.typography.headlineSmall,
                 )
 
@@ -85,7 +85,7 @@ fun ChatMessageCopySheet(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.copy_all))
+                    Text(stringResource(Res.string.copy_all))
                 }
             }
 
@@ -103,7 +103,7 @@ fun ChatMessageCopySheet(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.no_text_content_to_copy),
+                        text = stringResource(Res.string.no_text_content_to_copy),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.Center

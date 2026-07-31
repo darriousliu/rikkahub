@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import java.security.MessageDigest
 import kotlin.math.abs
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,11 +52,12 @@ import coil3.compose.AsyncImage
 import me.rerere.common.android.appTempFolder
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Edit03
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Avatar
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
 import me.rerere.rikkahub.ui.hooks.rememberAvatarShape
+import me.rerere.rikkahub.ui.resources.stringResource
 import org.koin.compose.koinInject
 import java.io.File
 
@@ -221,7 +221,7 @@ fun UIAvatar(
                 showPickOption = false
             },
             title = {
-                Text(text = stringResource(id = R.string.avatar_change_avatar))
+                Text(text = stringResource(id = Res.string.avatar_change_avatar))
             },
             text = {
                 Column(
@@ -234,7 +234,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_pick_image))
+                        Text(text = stringResource(id = Res.string.avatar_pick_image))
                     }
                     Button(
                         onClick = {
@@ -243,7 +243,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_pick_emoji))
+                        Text(text = stringResource(id = Res.string.avatar_pick_emoji))
                     }
                     Button(
                         onClick = {
@@ -253,7 +253,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_input_url))
+                        Text(text = stringResource(id = Res.string.avatar_input_url))
                     }
                     Button(
                         onClick = {
@@ -262,7 +262,7 @@ fun UIAvatar(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = stringResource(id = R.string.avatar_reset))
+                        Text(text = stringResource(id = Res.string.avatar_reset))
                     }
                 }
             },
@@ -272,7 +272,7 @@ fun UIAvatar(
                         showPickOption = false
                     }
                 ) {
-                    Text(stringResource(id = R.string.avatar_cancel))
+                    Text(stringResource(id = Res.string.avatar_cancel))
                 }
             }
         )
@@ -304,13 +304,13 @@ fun UIAvatar(
                 showUrlInput = false
             },
             title = {
-                Text(text = stringResource(id = R.string.avatar_url_dialog_title))
+                Text(text = stringResource(id = Res.string.avatar_url_dialog_title))
             },
             text = {
                 OutlinedTextField(
                     value = urlInput,
                     onValueChange = { urlInput = it },
-                    label = { Text(stringResource(id = R.string.avatar_url_hint)) },
+                    label = { Text(stringResource(id = Res.string.avatar_url_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -324,7 +324,7 @@ fun UIAvatar(
                         }
                     }
                 ) {
-                    Text(stringResource(id = R.string.avatar_url_confirm))
+                    Text(stringResource(id = Res.string.avatar_url_confirm))
                 }
             },
             dismissButton = {
@@ -333,7 +333,7 @@ fun UIAvatar(
                         showUrlInput = false
                     }
                 ) {
-                    Text(stringResource(id = R.string.avatar_cancel))
+                    Text(stringResource(id = Res.string.avatar_cancel))
                 }
             }
         )

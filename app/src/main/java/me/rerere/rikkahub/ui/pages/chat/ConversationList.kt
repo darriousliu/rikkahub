@@ -41,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -49,8 +48,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.toLocalString
 import java.time.LocalDate
@@ -116,7 +116,7 @@ fun ColumnScope.ConversationList(
                     color = MaterialTheme.colorScheme.surfaceContainerLow
                 ) {
                     Text(
-                        text = stringResource(id = R.string.chat_page_no_conversations),
+                        text = stringResource(id = Res.string.chat_page_no_conversations),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(16.dp)
@@ -212,7 +212,7 @@ private fun PinnedHeader(
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = stringResource(R.string.pinned_chats),
+            text = stringResource(Res.string.pinned_chats),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -262,7 +262,7 @@ private fun ConversationItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = conversation.title.ifBlank { stringResource(id = R.string.chat_page_new_message) },
+                text = conversation.title.ifBlank { stringResource(id = Res.string.chat_page_new_message) },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -295,7 +295,7 @@ private fun ConversationItem(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            if (conversation.isPinned) stringResource(R.string.unpin_chat) else stringResource(R.string.pin_chat)
+                            if (conversation.isPinned) stringResource(Res.string.unpin_chat) else stringResource(Res.string.pin_chat)
                         )
                     },
                     onClick = {
@@ -312,7 +312,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(id = R.string.chat_page_regenerate_title))
+                        Text(stringResource(id = Res.string.chat_page_regenerate_title))
                     },
                     onClick = {
                         onRegenerateTitle(conversation)
@@ -325,7 +325,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(R.string.chat_page_move_to_assistant))
+                        Text(stringResource(Res.string.chat_page_move_to_assistant))
                     },
                     onClick = {
                         onMoveToAssistant(conversation)
@@ -338,7 +338,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(R.string.chat_page_move_to_folder))
+                        Text(stringResource(Res.string.chat_page_move_to_folder))
                     },
                     onClick = {
                         onMoveToFolder(conversation)
@@ -351,7 +351,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(id = R.string.chat_page_delete))
+                        Text(stringResource(id = Res.string.chat_page_delete))
                     },
                     onClick = {
                         onDelete(conversation)

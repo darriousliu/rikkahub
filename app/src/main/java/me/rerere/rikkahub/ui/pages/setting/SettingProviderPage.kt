@@ -61,7 +61,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,6 +71,7 @@ import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.RECOMMENDED_PROVIDERS
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.Tag
@@ -81,6 +81,7 @@ import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.plus
@@ -117,7 +118,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
         topBar = {
             LargeFlexibleTopAppBar(
                 title = {
-                    Text(text = stringResource(R.string.setting_provider_page_title))
+                    Text(text = stringResource(Res.string.setting_provider_page_title))
                 },
                 navigationIcon = {
                     BackButton()
@@ -164,7 +165,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(stringResource(R.string.setting_provider_page_search_providers)) },
+                placeholder = { Text(stringResource(Res.string.setting_provider_page_search_providers)) },
                 leadingIcon = {
                     Icon(HugeIcons.Search01, contentDescription = null)
                 },
@@ -237,12 +238,12 @@ private fun RecommendProviderButton(
 ) {
     val toaster = LocalToaster.current
     var showSheet by remember { mutableStateOf(false) }
-    val importSuccessMessage = stringResource(R.string.setting_provider_page_import_success)
+    val importSuccessMessage = stringResource(Res.string.setting_provider_page_import_success)
 
     IconButton(
         onClick = { showSheet = true }
     ) {
-        Icon(HugeIcons.Sparkles, contentDescription = stringResource(R.string.setting_provider_page_recommend))
+        Icon(HugeIcons.Sparkles, contentDescription = stringResource(Res.string.setting_provider_page_recommend))
     }
 
     if (showSheet) {
@@ -261,7 +262,7 @@ private fun RecommendProviderButton(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.setting_provider_page_recommend),
+                    text = stringResource(Res.string.setting_provider_page_recommend),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -320,7 +321,7 @@ private fun RecommendProviderItem(
                 }
             }
             IconButton(onClick = onAdd) {
-                Icon(HugeIcons.Add01, contentDescription = stringResource(R.string.setting_provider_page_add))
+                Icon(HugeIcons.Add01, contentDescription = stringResource(Res.string.setting_provider_page_add))
             }
         }
     }
@@ -359,7 +360,7 @@ private fun ImportProviderButton(
             onDismissRequest = { showImportDialog = false },
             title = {
                 Text(
-                    text = stringResource(R.string.setting_provider_page_import_dialog_title),
+                    text = stringResource(Res.string.setting_provider_page_import_dialog_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
             },
@@ -368,7 +369,7 @@ private fun ImportProviderButton(
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.setting_provider_page_import_dialog_message),
+                        text = stringResource(Res.string.setting_provider_page_import_dialog_message),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -400,7 +401,7 @@ private fun ImportProviderButton(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = stringResource(R.string.setting_provider_page_scan_qr_code),
+                                    text = stringResource(Res.string.setting_provider_page_scan_qr_code),
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -433,7 +434,7 @@ private fun ImportProviderButton(
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = stringResource(R.string.setting_provider_page_select_from_gallery),
+                                    text = stringResource(Res.string.setting_provider_page_select_from_gallery),
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -448,7 +449,7 @@ private fun ImportProviderButton(
                     shape = MaterialTheme.shapes.large
                 ) {
                     Text(
-                        text = stringResource(R.string.cancel),
+                        text = stringResource(Res.string.cancel),
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
@@ -553,7 +554,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                 dialogState.dismiss()
             },
             title = {
-                Text(stringResource(R.string.setting_provider_page_add_provider))
+                Text(stringResource(Res.string.setting_provider_page_add_provider))
             },
             text = {
                 dialogState.currentState?.let {
@@ -568,7 +569,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                         dialogState.confirm()
                     }
                 ) {
-                    Text(stringResource(R.string.setting_provider_page_add))
+                    Text(stringResource(Res.string.setting_provider_page_add))
                 }
             },
             dismissButton = {
@@ -577,7 +578,7 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
                         dialogState.dismiss()
                     }
                 ) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
         )
@@ -631,12 +632,12 @@ private fun ProviderItem(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Tag(type = if (provider.enabled) TagType.SUCCESS else TagType.WARNING) {
-                        Text(stringResource(if (provider.enabled) R.string.setting_provider_page_enabled else R.string.setting_provider_page_disabled))
+                        Text(stringResource(if (provider.enabled) Res.string.setting_provider_page_enabled else Res.string.setting_provider_page_disabled))
                     }
                     Tag(type = TagType.INFO) {
                         Text(
                             stringResource(
-                                R.string.setting_provider_page_model_count,
+                                Res.string.setting_provider_page_model_count,
                                 provider.models.size
                             )
                         )

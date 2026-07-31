@@ -70,12 +70,12 @@ import me.rerere.hugeicons.stroke.Share08
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.ai.tools.resolveWorkspaceToolApproval
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
-import androidx.compose.ui.res.stringResource
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.fileSizeToString
 import me.rerere.rikkahub.utils.plus
@@ -132,7 +132,7 @@ fun WorkspaceDetailPage(id: String) {
             TopAppBar(
                 title = {
                     Text(
-                        text = state.workspace?.name ?: stringResource(R.string.workspace_detail_title),
+                        text = state.workspace?.name ?: stringResource(Res.string.workspace_detail_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -143,7 +143,7 @@ fun WorkspaceDetailPage(id: String) {
                         IconButton(onClick = { filePicker.launch(arrayOf("*/*")) }) {
                             Icon(
                                 HugeIcons.FileImport,
-                                contentDescription = stringResource(R.string.workspace_detail_import_file),
+                                contentDescription = stringResource(Res.string.workspace_detail_import_file),
                             )
                         }
                     }
@@ -163,13 +163,13 @@ fun WorkspaceDetailPage(id: String) {
             NavigationBar {
                 NavigationBarItem(
                     selected = pagerState.currentPage == 0,
-                    label = { Text(stringResource(R.string.workspace_detail_tab_basic)) },
+                    label = { Text(stringResource(Res.string.workspace_detail_tab_basic)) },
                     icon = { Icon(HugeIcons.Settings03, contentDescription = null) },
                     onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
                 )
                 NavigationBarItem(
                     selected = pagerState.currentPage == 1,
-                    label = { Text(stringResource(R.string.workspace_detail_tab_files)) },
+                    label = { Text(stringResource(Res.string.workspace_detail_tab_files)) },
                     icon = { Icon(HugeIcons.File02, contentDescription = null) },
                     onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
                 )
@@ -272,11 +272,11 @@ fun WorkspaceDetailPage(id: String) {
     installError?.let { message ->
         AlertDialog(
             onDismissRequest = vm::dismissInstallError,
-            title = { Text(stringResource(R.string.workspace_detail_rootfs_install_failed)) },
+            title = { Text(stringResource(Res.string.workspace_detail_rootfs_install_failed)) },
             text = { Text(message) },
             confirmButton = {
                 TextButton(onClick = vm::dismissInstallError) {
-                    Text(stringResource(R.string.common_confirm))
+                    Text(stringResource(Res.string.common_confirm))
                 }
             },
         )
@@ -292,16 +292,16 @@ fun WorkspaceDetailPage(id: String) {
     deleteTarget?.let { entry ->
         RikkaConfirmDialog(
             show = true,
-            title = if (entry.isDirectory) stringResource(R.string.workspace_detail_delete_directory) else stringResource(R.string.workspace_detail_delete_file),
-            confirmText = stringResource(R.string.common_delete),
-            dismissText = stringResource(R.string.common_cancel),
+            title = if (entry.isDirectory) stringResource(Res.string.workspace_detail_delete_directory) else stringResource(Res.string.workspace_detail_delete_file),
+            confirmText = stringResource(Res.string.common_delete),
+            dismissText = stringResource(Res.string.common_cancel),
             onConfirm = {
                 vm.delete(entry)
                 deleteTarget = null
             },
             onDismiss = { deleteTarget = null },
         ) {
-            Text(stringResource(R.string.workspace_detail_will_delete, entry.path))
+            Text(stringResource(Res.string.workspace_detail_will_delete, entry.path))
         }
     }
 }
@@ -317,9 +317,9 @@ private fun WorkspaceBasicPage(
     val installing = installProgress != null || shellStatus == WorkspaceShellStatus.INSTALLING.name
     val rootfsReady = shellStatus == WorkspaceShellStatus.READY.name
     val installButtonText = when {
-        installing -> stringResource(R.string.workspace_detail_installing)
-        rootfsReady -> stringResource(R.string.workspace_detail_reinstall_rootfs)
-        else -> stringResource(R.string.workspace_detail_install_rootfs)
+        installing -> stringResource(Res.string.workspace_detail_installing)
+        rootfsReady -> stringResource(Res.string.workspace_detail_reinstall_rootfs)
+        else -> stringResource(Res.string.workspace_detail_install_rootfs)
     }
 
     LazyColumn(
@@ -339,11 +339,11 @@ private fun WorkspaceBasicPage(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.workspace_detail_workspace_info),
+                        text = stringResource(Res.string.workspace_detail_workspace_info),
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    WorkspaceInfoRow(stringResource(R.string.workspace_detail_name), workspace?.name ?: stringResource(R.string.workspace_detail_loading))
-                    WorkspaceInfoRow(stringResource(R.string.workspace_detail_shell_status), workspace?.shellStatus?.toShellStatusLabel() ?: "-")
+                    WorkspaceInfoRow(stringResource(Res.string.workspace_detail_name), workspace?.name ?: stringResource(Res.string.workspace_detail_loading))
+                    WorkspaceInfoRow(stringResource(Res.string.workspace_detail_shell_status), workspace?.shellStatus?.toShellStatusLabel() ?: "-")
                 }
             }
         }
@@ -360,11 +360,11 @@ private fun WorkspaceBasicPage(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        text = stringResource(R.string.workspace_detail_enable_shell),
+                        text = stringResource(Res.string.workspace_detail_enable_shell),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = stringResource(R.string.workspace_detail_enable_shell_desc),
+                        text = stringResource(Res.string.workspace_detail_enable_shell_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -416,11 +416,11 @@ private fun WorkspaceToolApprovalCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = stringResource(R.string.workspace_detail_tool_approval),
+                    text = stringResource(Res.string.workspace_detail_tool_approval),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = stringResource(R.string.workspace_detail_tool_approval_desc),
+                    text = stringResource(Res.string.workspace_detail_tool_approval_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -461,10 +461,10 @@ private fun WorkspaceToolApprovalCard(
 
 @Composable
 private fun workspaceToolApprovalItems() = listOf(
-    "workspace_read_file" to stringResource(R.string.workspace_detail_tool_read_file),
-    "workspace_write_file" to stringResource(R.string.workspace_detail_tool_write_file),
-    "workspace_edit_file" to stringResource(R.string.workspace_detail_tool_edit_file),
-    "workspace_shell" to stringResource(R.string.workspace_detail_tool_shell),
+    "workspace_read_file" to stringResource(Res.string.workspace_detail_tool_read_file),
+    "workspace_write_file" to stringResource(Res.string.workspace_detail_tool_write_file),
+    "workspace_edit_file" to stringResource(Res.string.workspace_detail_tool_edit_file),
+    "workspace_shell" to stringResource(Res.string.workspace_detail_tool_shell),
 )
 
 @Composable
@@ -516,15 +516,15 @@ private fun RootfsProgress(progress: RootfsInstallProgress) {
             text = when (progress.stage) {
                 RootfsInstallStage.DOWNLOADING -> {
                     val total = progress.totalBytes?.let { " / ${it.fileSizeToString()}" }.orEmpty()
-                    stringResource(R.string.workspace_detail_downloading, progress.bytesRead.fileSizeToString(), total)
+                    stringResource(Res.string.workspace_detail_downloading, progress.bytesRead.fileSizeToString(), total)
                 }
 
                 RootfsInstallStage.EXTRACTING -> {
                     val entry = progress.currentEntry?.let { " · $it" }.orEmpty()
-                    stringResource(R.string.workspace_detail_extracting, progress.entriesExtracted, entry)
+                    stringResource(Res.string.workspace_detail_extracting, progress.entriesExtracted, entry)
                 }
 
-                RootfsInstallStage.INSTALLED -> stringResource(R.string.workspace_detail_install_complete)
+                RootfsInstallStage.INSTALLED -> stringResource(Res.string.workspace_detail_install_complete)
             },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -544,11 +544,11 @@ private fun InstallRootfsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.workspace_detail_install_rootfs)) },
+        title = { Text(stringResource(Res.string.workspace_detail_install_rootfs)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = stringResource(R.string.workspace_detail_install_rootfs_desc, workspace.name),
+                    text = stringResource(Res.string.workspace_detail_install_rootfs_desc, workspace.name),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -556,7 +556,7 @@ private fun InstallRootfsDialog(
                     value = url,
                     onValueChange = { url = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.workspace_detail_download_url)) },
+                    label = { Text(stringResource(Res.string.workspace_detail_download_url)) },
                     maxLines = 5,
                 )
             }
@@ -566,12 +566,12 @@ private fun InstallRootfsDialog(
                 onClick = { onConfirm(url.trim()) },
                 enabled = url.isNotBlank(),
             ) {
-                Text(stringResource(R.string.common_install))
+                Text(stringResource(Res.string.common_install))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.common_cancel))
+                Text(stringResource(Res.string.common_cancel))
             }
         },
     )
@@ -638,8 +638,8 @@ private fun WorkspaceAreaSelector(
     onSelected: (WorkspaceStorageArea) -> Unit,
 ) {
     val areas = listOf(
-        WorkspaceStorageArea.FILES to stringResource(R.string.workspace_detail_area_files),
-        WorkspaceStorageArea.LINUX to stringResource(R.string.workspace_detail_area_rootfs),
+        WorkspaceStorageArea.FILES to stringResource(Res.string.workspace_detail_area_files),
+        WorkspaceStorageArea.LINUX to stringResource(Res.string.workspace_detail_area_rootfs),
     )
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         areas.forEachIndexed { index, (area, label) ->
@@ -744,7 +744,7 @@ private fun WorkspaceFileCard(
                 ) {
                     if (!entry.isDirectory) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_export)) },
+                            text = { Text(stringResource(Res.string.common_export)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = HugeIcons.FileImport,
@@ -757,7 +757,7 @@ private fun WorkspaceFileCard(
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.common_share)) },
+                            text = { Text(stringResource(Res.string.common_share)) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = HugeIcons.Share08,
@@ -771,7 +771,7 @@ private fun WorkspaceFileCard(
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(Res.string.common_delete), color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
                             Icon(
                                 imageVector = HugeIcons.Delete01,
@@ -806,7 +806,7 @@ private fun EmptyDirectoryState() {
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = stringResource(R.string.workspace_detail_empty_directory),
+            text = stringResource(Res.string.workspace_detail_empty_directory),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -830,10 +830,10 @@ private fun ErrorCard(message: String) {
 
 @Composable
 internal fun String.toShellStatusLabel(): String = when (this) {
-    WorkspaceShellStatus.DISABLED.name -> stringResource(R.string.workspace_detail_shell_disabled)
-    WorkspaceShellStatus.INSTALLING.name -> stringResource(R.string.workspace_detail_shell_installing)
-    WorkspaceShellStatus.READY.name -> stringResource(R.string.workspace_detail_shell_ready)
-    WorkspaceShellStatus.BROKEN.name -> stringResource(R.string.workspace_detail_shell_broken)
+    WorkspaceShellStatus.DISABLED.name -> stringResource(Res.string.workspace_detail_shell_disabled)
+    WorkspaceShellStatus.INSTALLING.name -> stringResource(Res.string.workspace_detail_shell_installing)
+    WorkspaceShellStatus.READY.name -> stringResource(Res.string.workspace_detail_shell_ready)
+    WorkspaceShellStatus.BROKEN.name -> stringResource(Res.string.workspace_detail_shell_broken)
     else -> lowercase()
 }
 

@@ -8,19 +8,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.isEmptyUIMessage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.context.LocalSettings
+import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun ChatMessageUserAvatar(
@@ -37,7 +37,7 @@ fun ChatMessageUserAvatar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = nickname.ifEmpty { stringResource(R.string.user_default_name) },
+                text = nickname.ifEmpty { stringResource(Res.string.user_default_name) },
                 style = MaterialTheme.typography.labelLargeEmphasized,
                 maxLines = 1,
             )
@@ -84,7 +84,7 @@ fun ChatMessageAssistantAvatar(
                 ) {
                     if (settings.displaySetting.showModelName) {
                         Text(
-                            text = assistant.name.ifEmpty { stringResource(R.string.assistant_page_default_assistant) },
+                            text = assistant.name.ifEmpty { stringResource(Res.string.assistant_page_default_assistant) },
                             style = MaterialTheme.typography.labelLargeEmphasized,
                             maxLines = 1,
                         )
