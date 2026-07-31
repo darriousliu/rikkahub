@@ -1,43 +1,48 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.compose)
 }
 
-android {
-    namespace = "me.rerere.highlight"
-    compileSdk = 37
-
-    defaultConfig {
+kotlin {
+    android {
+        namespace = "me.rerere.highlight"
+        compileSdk = 37
         minSdk = 24
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
+        withHostTest {}
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+    jvm {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    }
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.androidx.ui)
+            implementation(libs.androidx.ui.graphics)
+            implementation(libs.androidx.ui.tooling.preview)
+            implementation(libs.androidx.material3)
         }
-    }
-    buildFeatures {
-        compose = true
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        named("androidHostTest") {
+            dependencies {
+                implementation(libs.junit)
+            }
+        }
     }
 }
 
 dependencies {
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    debugImplementation(libs.androidx.ui.tooling)
-    testImplementation(libs.junit)
+    // Android-KMP libraries have no debugImplementation bucket.
+    "androidRuntimeClasspath"(libs.androidx.ui.tooling)
 }

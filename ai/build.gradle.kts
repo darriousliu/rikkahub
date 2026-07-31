@@ -1,76 +1,59 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
 }
 
-android {
-    namespace = "me.rerere.ai"
-    compileSdk = 37
-
-    defaultConfig {
+kotlin {
+    android {
+        namespace = "me.rerere.ai"
+        compileSdk = 37
         minSdk = 26
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-//        externalNativeBuild {
-//            cmake {
-//                cppFlags += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
-//                abiFilters += listOf("arm64-v8a", "x86_64")
-//            }
-//        }
-    }
+        withHostTest {}
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            optIn.add("kotlin.uuid.ExperimentalUuidApi")
+            optIn.add("kotlin.time.ExperimentalTime")
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+
+    jvm {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
     }
-    buildFeatures {
-        compose = true
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(project(":common"))
+            implementation(libs.androidx.core.ktx)
+            implementation(project.dependencies.platform(libs.androidx.compose.bom))
+            implementation(libs.androidx.material3)
+            api(libs.okhttp)
+            api(libs.okhttp.sse)
+            api(libs.okhttp.logging)
+            api(libs.kotlinx.serialization.json)
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.datetime)
+        }
+        named("androidHostTest") {
+            dependencies {
+                implementation(libs.junit)
+            }
+        }
+        named("androidDeviceTest") {
+            dependencies {
+                implementation(libs.androidx.junit)
+                implementation(libs.androidx.espresso.core)
+            }
+        }
     }
-//    externalNativeBuild {
-//        cmake {
-//            path = file("src/main/cpp/CMakeLists.txt")
-//            version = "3.22.1"
-//        }
-//    }
-    tasks.withType<KotlinCompile>().configureEach {
-        compilerOptions.optIn.add("kotlin.uuid.ExperimentalUuidApi")
-        compilerOptions.optIn.add("kotlin.time.ExperimentalTime")
-    }
-}
-
-dependencies {
-    implementation(project(":common"))
-
-    // Compose
-    implementation(libs.androidx.core.ktx)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.material3)
-
-    // okhttp
-    api(libs.okhttp)
-    api(libs.okhttp.sse)
-    api(libs.okhttp.logging)
-
-    // kotlinx
-    api(libs.kotlinx.serialization.json)
-    api(libs.kotlinx.coroutines.core)
-    api(libs.kotlinx.datetime)
-
-    // tests
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

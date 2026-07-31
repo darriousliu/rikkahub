@@ -1,68 +1,61 @@
-import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
 }
 
-android {
-    namespace = "me.rerere.common"
-    compileSdk = 37
-
-    defaultConfig {
+kotlin {
+    android {
+        namespace = "me.rerere.common"
+        compileSdk = 37
         minSdk = 26
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
+        withHostTest {}
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            optIn.add("kotlin.uuid.ExperimentalUuidApi")
+            optIn.add("kotlin.time.ExperimentalTime")
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+
+    jvm {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
     }
-    tasks.withType<KotlinCompile>().configureEach {
-        compilerOptions.optIn.add("kotlin.uuid.ExperimentalUuidApi")
-        compilerOptions.optIn.add("kotlin.time.ExperimentalTime")
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        androidMain.dependencies {
+            api(libs.okhttp)
+            api(libs.okhttp.sse)
+            api(libs.okhttp.logging)
+            api(libs.kotlinx.serialization.json)
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.datetime)
+            api(libs.commons.text)
+            api(libs.floatingx)
+            api(libs.floatingx.compose)
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.appcompat)
+            implementation(libs.material)
+            api(libs.quickjs)
+        }
+        named("androidHostTest") {
+            dependencies {
+                implementation(libs.junit)
+            }
+        }
+        named("androidDeviceTest") {
+            dependencies {
+                implementation(libs.androidx.junit)
+                implementation(libs.androidx.espresso.core)
+            }
+        }
     }
-}
-
-dependencies {
-    // okhttp
-    api(libs.okhttp)
-    api(libs.okhttp.sse)
-    api(libs.okhttp.logging)
-
-    // kotlinx
-    api(libs.kotlinx.serialization.json)
-    api(libs.kotlinx.coroutines.core)
-    api(libs.kotlinx.datetime)
-
-    // apache commons
-    api(libs.commons.text)
-
-    // floating
-    // https://github.com/Petterpx/FloatingX
-    api(libs.floatingx)
-    api(libs.floatingx.compose)
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-
-    // quickjs
-    api(libs.quickjs)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

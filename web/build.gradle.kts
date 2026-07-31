@@ -1,11 +1,13 @@
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kmp.library)
 }
 
 val webUiDir = rootProject.layout.projectDirectory.dir("web-ui")
-val webStaticResourcesDir = layout.projectDirectory.dir("src/main/resources/static")
+val webStaticResourcesDir = layout.projectDirectory.dir("src/androidMain/resources/static")
 
 val buildWebUi = tasks.register<Exec>("buildWebUi") {
     group = "build"
@@ -33,58 +35,63 @@ val buildWebUi = tasks.register<Exec>("buildWebUi") {
     outputs.dir(webStaticResourcesDir)
 }
 
-android {
-    namespace = "me.rerere.rikkahub.web"
-    compileSdk {
-        version = release(37)
-    }
-
-    defaultConfig {
+kotlin {
+    android {
+        namespace = "me.rerere.rikkahub.web"
+        compileSdk = 37
         minSdk = 24
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
+        withHostTest {}
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+    jvm {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    }
+    iosArm64()
+    iosSimulatorArm64()
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
+            implementation(libs.androidx.appcompat)
+            implementation(libs.material)
+            implementation(libs.ktor.server.default.headers)
+            implementation(libs.ktor.server.conditional.headers)
+            implementation(libs.ktor.server.compression)
+            implementation(libs.ktor.server.cors)
+            api(libs.ktor.server.auth)
+            api(libs.ktor.server.auth.jwt)
+            api(libs.ktor.server.core)
+            implementation(libs.ktor.server.host.common)
+            api(libs.ktor.server.content.negotiation)
+            api(libs.ktor.server.status.pages)
+            api(libs.ktor.server.sse)
+            api(libs.ktor.server.cio)
+        }
+        named("androidHostTest") {
+            dependencies {
+                implementation(libs.junit)
+            }
+        }
+        named("androidDeviceTest") {
+            dependencies {
+                implementation(libs.androidx.junit)
+                implementation(libs.androidx.espresso.core)
+            }
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
 }
 
-tasks.named("preBuild") {
+tasks.matching {
+    it.name == "androidPreBuild" ||
+        it.name == "preBuild" ||
+        it.name == "compileAndroidMain" ||
+        it.name == "processAndroidMainJavaRes"
+}.configureEach {
     dependsOn(buildWebUi)
-}
-
-dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-
-    // ktor server
-    implementation(libs.ktor.server.default.headers)
-    implementation(libs.ktor.server.conditional.headers)
-    implementation(libs.ktor.server.compression)
-    implementation(libs.ktor.server.cors)
-    api(libs.ktor.server.auth)
-    api(libs.ktor.server.auth.jwt)
-    api(libs.ktor.server.core)
-    implementation(libs.ktor.server.host.common)
-    api(libs.ktor.server.content.negotiation)
-    api(libs.ktor.server.status.pages)
-    api(libs.ktor.server.sse)
-    api(libs.ktor.server.cio)
-
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 }

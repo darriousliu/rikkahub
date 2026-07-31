@@ -144,6 +144,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":composeApp"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.process)
