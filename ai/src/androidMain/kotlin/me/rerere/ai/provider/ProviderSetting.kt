@@ -22,6 +22,12 @@ enum class ClaudePromptCacheTtl(val apiValue: String?) {
     ONE_HOUR("1h")
 }
 
+/** Keeps provider composables behind a stable cross-module ABI boundary. */
+fun interface ProviderDescription {
+    @Composable
+    operator fun invoke()
+}
+
 @Serializable
 sealed class ProviderSetting {
     abstract val id: Uuid
@@ -31,8 +37,8 @@ sealed class ProviderSetting {
     abstract val balanceOption: BalanceOption
 
     abstract val builtIn: Boolean
-    abstract val description: @Composable() () -> Unit
-    abstract val shortDescription: @Composable() () -> Unit
+    abstract val description: ProviderDescription
+    abstract val shortDescription: ProviderDescription
 
     abstract fun addModel(model: Model): ProviderSetting
     abstract fun editModel(model: Model): ProviderSetting
@@ -45,8 +51,8 @@ sealed class ProviderSetting {
         models: List<Model> = this.models,
         balanceOption: BalanceOption = this.balanceOption,
         builtIn: Boolean = this.builtIn,
-        description: @Composable (() -> Unit) = this.description,
-        shortDescription: @Composable (() -> Unit) = this.shortDescription,
+        description: ProviderDescription = this.description,
+        shortDescription: ProviderDescription = this.shortDescription,
     ): ProviderSetting
 
     @Serializable
@@ -58,8 +64,8 @@ sealed class ProviderSetting {
         override var models: List<Model> = emptyList(),
         override val balanceOption: BalanceOption = BalanceOption(),
         @Transient override val builtIn: Boolean = false,
-        @Transient override val description: @Composable (() -> Unit) = {},
-        @Transient override val shortDescription: @Composable (() -> Unit) = {},
+        @Transient override val description: ProviderDescription = ProviderDescription {},
+        @Transient override val shortDescription: ProviderDescription = ProviderDescription {},
         var apiKey: String = "",
         var baseUrl: String = "https://api.openai.com/v1",
         var chatCompletionsPath: String = "/chat/completions",
@@ -95,8 +101,8 @@ sealed class ProviderSetting {
             models: List<Model>,
             balanceOption: BalanceOption,
             builtIn: Boolean,
-            description: @Composable (() -> Unit),
-            shortDescription: @Composable (() -> Unit),
+            description: ProviderDescription,
+            shortDescription: ProviderDescription,
         ): ProviderSetting {
             return this.copy(
                 id = id,
@@ -120,8 +126,8 @@ sealed class ProviderSetting {
         override var models: List<Model> = emptyList(),
         override val balanceOption: BalanceOption = BalanceOption(),
         @Transient override val builtIn: Boolean = false,
-        @Transient override val description: @Composable (() -> Unit) = {},
-        @Transient override val shortDescription: @Composable (() -> Unit) = {},
+        @Transient override val description: ProviderDescription = ProviderDescription {},
+        @Transient override val shortDescription: ProviderDescription = ProviderDescription {},
         var apiKey: String = "",
         var baseUrl: String = "https://generativelanguage.googleapis.com/v1beta",
         var vertexAI: Boolean = false,
@@ -160,8 +166,8 @@ sealed class ProviderSetting {
             models: List<Model>,
             balanceOption: BalanceOption,
             builtIn: Boolean,
-            description: @Composable (() -> Unit),
-            shortDescription: @Composable (() -> Unit),
+            description: ProviderDescription,
+            shortDescription: ProviderDescription,
         ): ProviderSetting {
             return this.copy(
                 id = id,
@@ -185,8 +191,8 @@ sealed class ProviderSetting {
         override var models: List<Model> = emptyList(),
         override val balanceOption: BalanceOption = BalanceOption(),
         @Transient override val builtIn: Boolean = false,
-        @Transient override val description: @Composable (() -> Unit) = {},
-        @Transient override val shortDescription: @Composable (() -> Unit) = {},
+        @Transient override val description: ProviderDescription = ProviderDescription {},
+        @Transient override val shortDescription: ProviderDescription = ProviderDescription {},
         var apiKey: String = "",
         var baseUrl: String = "https://api.anthropic.com/v1",
         var promptCaching: Boolean = false,
@@ -221,8 +227,8 @@ sealed class ProviderSetting {
             models: List<Model>,
             balanceOption: BalanceOption,
             builtIn: Boolean,
-            description: @Composable (() -> Unit),
-            shortDescription: @Composable (() -> Unit),
+            description: ProviderDescription,
+            shortDescription: ProviderDescription,
         ): ProviderSetting {
             return this.copy(
                 id = id,

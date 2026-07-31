@@ -36,7 +36,7 @@ private const val TAG = "McpOAuthClient"
  * - RFC 8707 Resource Indicators
  * - 令牌刷新
  *
- * SDK (kotlin-sdk 0.13.0) 本身不提供 OAuth 支持，因此该逻辑完全独立实现，
+ * MCP Kotlin SDK 本身不提供 OAuth 支持，因此该逻辑完全独立实现，
  * 最终仅通过 transport 的 requestBuilder 注入 `Authorization: Bearer` 请求头。
  */
 class McpOAuthClient(

@@ -258,7 +258,7 @@ dependencies {
 
     // lucide icons
     implementation(libs.lucide.icons)
-    implementation(libs.huge.icons)
+    implementation(project(":hugeicons"))
 
     // image viewer
     implementation(libs.image.viewer)
@@ -270,7 +270,8 @@ dependencies {
     implementation(libs.jlatexmath.font.cyrillic)
 
     // mcp
-    implementation(libs.modelcontextprotocol.kotlin.sdk)
+    implementation(libs.modelcontextprotocol.kotlin.sdk.client)
+    implementation(libs.modelcontextprotocol.kotlin.sdk.core)
 
     // jmDNS (mDNS/Bonjour for .local hostname)
     implementation(libs.jmdns)
