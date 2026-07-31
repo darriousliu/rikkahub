@@ -1,20 +1,16 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import io.pebbletemplates.pebble.PebbleEngine
-import io.pebbletemplates.pebble.loader.Loader
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.shared.template.KorteMessageTemplateRenderer
 import me.rerere.rikkahub.shared.template.MessageTemplate
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
 import me.rerere.rikkahub.shared.template.MessageTemplateSource
 import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.rikkahub.utils.toLocalDate
 import me.rerere.rikkahub.utils.toLocalTime
-import java.io.Reader
-import java.io.StringReader
-import java.io.StringWriter
 import java.time.ZoneId
 import java.util.Locale
 import kotlin.time.toJavaInstant
@@ -69,51 +65,15 @@ class DefaultMessageTemplateRenderer(
     templateSource: MessageTemplateSource,
     locale: Locale = Locale.getDefault(),
 ) : MessageTemplateRenderer, TemplateCacheInvalidator {
-    private val engine = PebbleEngine.Builder()
-        .loader(MessageTemplateLoader(templateSource))
-        .defaultLocale(locale)
-        .autoEscaping(false)
-        .build()
+    private val delegate = KorteMessageTemplateRenderer(
+        templateSource = templateSource,
+        uppercase = { it.uppercase(locale) },
+        lowercase = { it.lowercase(locale) },
+    )
 
-    override suspend fun get(templateName: String): MessageTemplate {
-        val template = engine.getTemplate(templateName)
-        return MessageTemplate { context ->
-            val result = StringWriter()
-            template.evaluate(result, context)
-            result.toString()
-        }
-    }
+    override suspend fun get(templateName: String): MessageTemplate = delegate.get(templateName)
 
     override fun invalidateCache() {
-        engine.templateCache.invalidateAll()
-    }
-}
-
-private class MessageTemplateLoader(
-    private val templateSource: MessageTemplateSource,
-) : Loader<String> {
-    override fun getReader(cacheKey: String?): Reader? = cacheKey
-        ?.let(templateSource::get)
-        ?.let(::StringReader)
-
-    override fun setCharset(charset: String?) {}
-
-    override fun setPrefix(prefix: String?) {}
-
-    override fun setSuffix(suffix: String?) {}
-
-    override fun resolveRelativePath(
-        relativePath: String?,
-        anchorPath: String?
-    ): String? {
-        return relativePath
-    }
-
-    override fun createCacheKey(templateName: String?): String? {
-        return templateName
-    }
-
-    override fun resourceExists(templateName: String?): Boolean {
-        return templateName?.let(templateSource::get) != null
+        delegate.invalidateCache()
     }
 }

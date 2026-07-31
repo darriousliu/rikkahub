@@ -213,9 +213,6 @@ dependencies {
     // ucrop
     implementation(libs.ucrop)
 
-    // pebble (template engine)
-    implementation(libs.pebble)
-
     // coil
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)

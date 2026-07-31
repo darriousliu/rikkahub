@@ -47,7 +47,6 @@ leakcanary = "2.14"
 workmanager = "2.11.2"
 reorderable = "3.1.0"
 mcp = "0.15.0"
-pebble = "4.1.1"
 browser = "1.10.0"
 appcompat = "1.7.1"
 material = "1.14.0"
@@ -159,7 +158,6 @@ leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", ve
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 modelcontextprotocol-kotlin-sdk-client = { module = "io.modelcontextprotocol:kotlin-sdk-client", version.ref = "mcp" }
 modelcontextprotocol-kotlin-sdk-core = { module = "io.modelcontextprotocol:kotlin-sdk-core", version.ref = "mcp" }
-pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
