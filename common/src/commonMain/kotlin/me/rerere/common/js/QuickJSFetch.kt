@@ -1,23 +1,23 @@
 package me.rerere.common.js
 
-import com.whl.quickjs.wrapper.JSCallFunction
-import com.whl.quickjs.wrapper.QuickJSContext
+import com.dokar.quickjs.QuickJs
+import com.dokar.quickjs.binding.function
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-internal fun QuickJSContext.injectFetch(
+internal suspend fun QuickJs.installFetch(
     transport: JavaScriptHttpTransport,
     executionState: JavaScriptExecutionState,
     fetchDispatcher: CoroutineDispatcher,
 ) {
-    globalObject.setProperty("__httpRequest", JSCallFunction { args ->
-        val url = args[0] as? String ?: error("url is required")
-        val method = (args[1] as? String ?: "GET").uppercase()
-        val headersJson = args[2] as? String
-        val body = args[3] as? String
+    function<String>("__httpRequest") { args ->
+        val url = args.getOrNull(0) as? String ?: error("url is required")
+        val method = (args.getOrNull(1) as? String ?: "GET").uppercase()
+        val headersJson = args.getOrNull(2) as? String
+        val body = args.getOrNull(3) as? String
         val headers = if (!headersJson.isNullOrBlank() && headersJson != "null") {
             javaScriptJson.parseToJsonElement(headersJson).jsonObject
                 .mapValues { (_, value) -> value.jsonPrimitive.content }
@@ -48,7 +48,7 @@ internal fun QuickJSContext.injectFetch(
             executionState.clear(call)
             call.close()
         }
-    })
+    }
 
-    evaluate(SYNCHRONOUS_FETCH_POLYFILL)
+    evaluate<Any?>(SYNCHRONOUS_FETCH_POLYFILL + "\n;void 0;", "fetch-polyfill.js")
 }

@@ -25,7 +25,6 @@ markdown = "0.7.8"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
 coil = "3.5.0"
-quickjs = "3.2.3"
 room = "2.8.4"
 koin-bom = "4.2.2"
 datastore = "1.2.1"
@@ -134,7 +133,6 @@ coil-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", versio
 coil-ktor3 = { group = "io.coil-kt.coil3", name = "coil-network-ktor3", version.ref = "coil" }
 coil-svg = { group = "io.coil-kt.coil3", name = "coil-svg", version.ref = "coil" }
 coil-cache-control = { group = "io.coil-kt.coil3", name = "coil-network-cache-control", version.ref = "coil" }
-quickjs = { group = "wang.harlon.quickjs", name = "wrapper-android", version.ref = "quickjs" }
 koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin-bom" }
 koin-android = { group = "io.insert-koin", name = "koin-android" }
 koin-compose = { module = "io.insert-koin:koin-compose" }
