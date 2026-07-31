@@ -117,77 +117,114 @@ class _Call:
 
 
 def _kotlin_code_mask(source: str) -> list[bool]:
-    """Mark source characters that are outside comments and literals."""
+    """Mark executable Kotlin, including braced string-template expressions.
+
+    Ordinary string contents, ``$identifier`` templates and regular-string
+    escaped dollars stay masked.  A ``${...}`` expression is scanned using the
+    same lexical rules as top-level Kotlin so nested strings, comments and
+    brace pairs do not terminate the expression early.
+    """
     mask = [False] * len(source)
-    index = 0
-    state = "code"
-    block_depth = 0
 
-    while index < len(source):
-        if state == "code":
-            if source.startswith("//", index):
-                index += 2
-                state = "line-comment"
-                continue
-            if source.startswith("/*", index):
-                index += 2
-                block_depth = 1
-                state = "block-comment"
-                continue
-            if source.startswith('\"\"\"', index):
-                index += 3
-                state = "triple-string"
-                continue
-            if source[index] == '"':
-                index += 1
-                state = "string"
-                continue
-            if source[index] == "'":
-                index += 1
-                state = "char"
-                continue
-            mask[index] = True
+    def skip_line_comment(index: int) -> int:
+        index += 2
+        while index < len(source) and source[index] not in "\r\n":
             index += 1
-            continue
+        return index
 
-        if state == "line-comment":
-            if source[index] in "\r\n":
-                mask[index] = True
-                state = "code"
-            index += 1
-            continue
-
-        if state == "block-comment":
+    def skip_block_comment(index: int) -> int:
+        index += 2
+        depth = 1
+        while index < len(source) and depth:
             if source.startswith("/*", index):
-                block_depth += 1
+                depth += 1
                 index += 2
             elif source.startswith("*/", index):
-                block_depth -= 1
+                depth -= 1
                 index += 2
-                if block_depth == 0:
-                    state = "code"
             else:
                 index += 1
-            continue
+        return index
 
-        if state == "triple-string":
-            if source.startswith('\"\"\"', index):
-                index += 3
-                state = "code"
-            else:
-                index += 1
-            continue
-
-        if state in {"string", "char"}:
+    def skip_character(index: int) -> int:
+        index += 1
+        while index < len(source):
             if source[index] == "\\":
                 index = min(index + 2, len(source))
-            elif (state == "string" and source[index] == '"') or (
-                state == "char" and source[index] == "'"
-            ):
-                index += 1
-                state = "code"
+            elif source[index] == "'":
+                return index + 1
             else:
                 index += 1
+        return index
+
+    def scan_string(index: int, *, triple: bool) -> int:
+        delimiter_length = 3 if triple else 1
+        index += delimiter_length
+        while index < len(source):
+            if triple and source.startswith('\"\"\"', index):
+                return index + delimiter_length
+            if not triple and source[index] == '"':
+                return index + delimiter_length
+            if not triple and source[index] == "\\":
+                # In a regular string, an escaped dollar is literal text. A
+                # doubled backslash only escapes that backslash, allowing the
+                # following dollar to start a real template expression.
+                index = min(index + 2, len(source))
+                continue
+            if source.startswith("${", index):
+                index = scan_template_expression(index + 2)
+                continue
+            index += 1
+        return index
+
+    def scan_template_expression(index: int) -> int:
+        brace_depth = 1
+        while index < len(source):
+            if source.startswith("//", index):
+                index = skip_line_comment(index)
+                continue
+            if source.startswith("/*", index):
+                index = skip_block_comment(index)
+                continue
+            if source.startswith('\"\"\"', index):
+                index = scan_string(index, triple=True)
+                continue
+            if source[index] == '"':
+                index = scan_string(index, triple=False)
+                continue
+            if source[index] == "'":
+                index = skip_character(index)
+                continue
+
+            if source[index] == "{":
+                brace_depth += 1
+            elif source[index] == "}":
+                brace_depth -= 1
+                if brace_depth == 0:
+                    return index + 1
+            mask[index] = True
+            index += 1
+        return index
+
+    index = 0
+    while index < len(source):
+        if source.startswith("//", index):
+            index = skip_line_comment(index)
+            continue
+        if source.startswith("/*", index):
+            index = skip_block_comment(index)
+            continue
+        if source.startswith('\"\"\"', index):
+            index = scan_string(index, triple=True)
+            continue
+        if source[index] == '"':
+            index = scan_string(index, triple=False)
+            continue
+        if source[index] == "'":
+            index = skip_character(index)
+            continue
+        mask[index] = True
+        index += 1
 
     return mask
 
