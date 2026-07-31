@@ -35,8 +35,11 @@ sealed class LogEntry {
     ) : LogEntry()
 }
 
-object Logging {
+internal class RecentLogStore(
+    private val capacity: Int = MAX_RECENT_LOGS
+) {
     private val recentLogs = arrayListOf<LogEntry>()
+
     @Volatile
     private var requestLoggingEnabled = false
 
@@ -58,7 +61,7 @@ object Logging {
     private fun addLog(entry: LogEntry) {
         synchronized(recentLogs) {
             recentLogs.add(0, entry)
-            if (recentLogs.size > MAX_RECENT_LOGS) {
+            if (recentLogs.size > capacity) {
                 recentLogs.removeLastOrNull()
             }
         }
@@ -87,4 +90,24 @@ object Logging {
             recentLogs.clear()
         }
     }
+}
+
+object Logging {
+    private val store = RecentLogStore()
+
+    fun log(tag: String, message: String) = store.log(tag, message)
+
+    fun logRequest(entry: LogEntry.RequestLog) = store.logRequest(entry)
+
+    fun isRequestLoggingEnabled(): Boolean = store.isRequestLoggingEnabled()
+
+    fun setRequestLoggingEnabled(enabled: Boolean) = store.setRequestLoggingEnabled(enabled)
+
+    fun getRecentLogs(): List<LogEntry> = store.getRecentLogs()
+
+    fun getTextLogs(): List<LogEntry.TextLog> = store.getTextLogs()
+
+    fun getRequestLogs(): List<LogEntry.RequestLog> = store.getRequestLogs()
+
+    fun clear() = store.clear()
 }
