@@ -45,7 +45,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.FileProvider
@@ -132,9 +131,12 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
         }
     }
 
-    val windowAdaptiveInfo = currentWindowDpSize()
-    val isBigScreen =
-        windowAdaptiveInfo.width > windowAdaptiveInfo.height && windowAdaptiveInfo.width >= 1100.dp
+    val windowDpSize = currentWindowDpSize()
+    val drawerPresentation = selectChatDrawerPresentation(
+        widthDp = windowDpSize.width.value,
+        heightDp = windowDpSize.height.value,
+    )
+    val isBigScreen = drawerPresentation == ChatDrawerPresentation.Permanent
 
     // 进入大屏（永久抽屉）模式时重置抽屉状态为关闭，
     // 避免从横屏旋转回竖屏后，模态抽屉残留为打开状态且无法关闭（#1304）
@@ -189,8 +191,8 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
         }
     }
 
-    when {
-        isBigScreen -> {
+    when (drawerPresentation) {
+        ChatDrawerPresentation.Permanent -> {
             PermanentNavigationDrawer(
                 drawerContent = {
                     ChatDrawerContent(
@@ -221,7 +223,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
             }
         }
 
-        else -> {
+        ChatDrawerPresentation.Modal -> {
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 drawerContent = {
