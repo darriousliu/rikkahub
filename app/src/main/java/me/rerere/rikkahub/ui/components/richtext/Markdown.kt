@@ -1176,7 +1176,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                         assumeLatexSize(
                             latex = formula, fontSize = fontSizePx
                         ).let {
-                            it.width().toSp() to it.height().toSp()
+                            it.width.toSp() to it.height.toSp()
                         }
                     }
                     inlineContents.putIfAbsent(/* key = */ formula,/* value = */ InlineTextContent(
@@ -1191,13 +1191,13 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                         })
                     )
                 } else {
-                    drawables.forEachIndexed { index, drawable ->
+                    drawables.forEachIndexed { index, segment ->
                         // 段间插入零宽空格，提供换行点
                         if (index > 0) append('\u200B')
                         val key = "latex:${formula.hashCode()}:$index"
                         appendInlineContent(key, "[Latex]")
                         val (width, height) = with(density) {
-                            drawable.bounds.width().toSp() to drawable.bounds.height().toSp()
+                            segment.size.width.toSp() to segment.size.height.toSp()
                         }
                         inlineContents.putIfAbsent(
                             key, InlineTextContent(
@@ -1206,7 +1206,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                                     height = height,
                                     placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter
                                 ), children = {
-                                    LatexDrawable(drawable = drawable)
+                                    LatexDrawable(segment = segment)
                                 })
                         )
                     }

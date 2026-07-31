@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import android.graphics.Rect
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalTextStyle
@@ -15,16 +14,20 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
 import ru.noties.jlatexmath.JLatexMathDrawable
-import ru.noties.jlatexmath.JLatexMathSplitter
 
-fun assumeLatexSize(latex: String, fontSize: Float): Rect {
+fun assumeLatexSize(
+    latex: String,
+    fontSize: Float,
+    displayMode: LatexDisplayMode = LatexDisplayMode.Inline,
+): LatexSize {
     return runCatching {
-        JLatexMathDrawable.builder(latex)
+        JLatexMathDrawable.builder(parseLatexFormula(latex, displayMode).source)
             .textSize(fontSize)
             .padding(0)
             .build()
             .bounds
-    }.getOrElse { Rect(0, 0, 0, 0) }
+            .let { LatexSize(width = it.width().toFloat(), height = it.height().toFloat()) }
+    }.getOrElse { LatexSize(width = 0f, height = 0f) }
 }
 
 @Composable
@@ -33,7 +36,8 @@ fun LatexText(
     modifier: Modifier = Modifier,
     fontSize: TextUnit = TextUnit.Unspecified,
     color: Color = Color.Unspecified,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
+    displayMode: LatexDisplayMode = LatexDisplayMode.Inline,
 ) {
     val style = style.merge(
         fontSize = fontSize,
@@ -41,11 +45,12 @@ fun LatexText(
     )
     val density = LocalDensity.current
 
-    val drawable = remember(latex, fontSize, style) {
+    val formula = remember(latex, displayMode) { parseLatexFormula(latex, displayMode) }
+    val drawable = remember(formula, fontSize, style) {
         runCatching {
             with(density) {
                 getLatexDrawable(
-                    latex = processLatex(latex),
+                    latex = formula.source,
                     fontSize = fontSize.toPx(),
                     color = style.color.toArgb(),
                     background = style.background.toArgb()
@@ -77,14 +82,14 @@ fun LatexText(
     }
 }
 
-fun getLatexDrawable(
+private fun getLatexDrawable(
     latex: String,
     fontSize: Float,
     color: Int,
     background: Int
 ): JLatexMathDrawable? {
     return runCatching {
-        JLatexMathDrawable.builder(processLatex(latex))
+        JLatexMathDrawable.builder(latex)
             .textSize(fontSize)
             .color(color)
             .background(background)
@@ -96,9 +101,19 @@ fun getLatexDrawable(
     }.getOrNull()
 }
 
+class LatexRenderSegment internal constructor(
+    val source: String,
+    internal val drawable: JLatexMathDrawable,
+) {
+    val size = LatexSize(
+        width = drawable.bounds.width().toFloat(),
+        height = drawable.bounds.height().toFloat(),
+    )
+}
+
 /**
- * 将一条行内公式按顶层运算符水平拆分为多段 Drawable，
- * 以便在文本流中换行，避免单体公式过长被挤出屏幕。
+ * 将一条行内公式按顶层运算符水平拆分为多段，
+ * 以便在文本流中换行，避免单体公式超出可用宽度。
  * 拆分失败时返回空列表，调用方需自行回退。
  */
 fun splitLatex(
@@ -106,9 +121,37 @@ fun splitLatex(
     maxWidthPx: Float,
     fontSize: Float,
     color: Int
-): List<JLatexMathDrawable> {
+): List<LatexRenderSegment> {
     return runCatching {
-        JLatexMathSplitter.split(processLatex(latex), maxWidthPx, fontSize, color)
+        val source = parseLatexFormula(latex).source
+        when (
+            val result = splitLatexFormula(
+                source = source,
+                maxWidthPx = maxWidthPx,
+                measureWidth = { segment ->
+                    try {
+                        JLatexMathDrawable.builder(segment)
+                            .textSize(fontSize)
+                            .build()
+                            .intrinsicWidth
+                            .toFloat()
+                    } catch (_: Exception) {
+                        Float.MAX_VALUE
+                    }
+                },
+            )
+        ) {
+            is LatexSplitResult.Fallback -> emptyList()
+            is LatexSplitResult.Segments -> result.values.map { segment ->
+                LatexRenderSegment(
+                    source = segment,
+                    drawable = JLatexMathDrawable.builder(segment)
+                        .textSize(fontSize)
+                        .color(color)
+                        .build(),
+                )
+            }
+        }
     }.onFailure {
         it.printStackTrace()
     }.getOrElse { emptyList() }
@@ -116,10 +159,11 @@ fun splitLatex(
 
 @Composable
 fun LatexDrawable(
-    drawable: JLatexMathDrawable,
+    segment: LatexRenderSegment,
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
+    val drawable = segment.drawable
     with(density) {
         Canvas(
             modifier = modifier.size(
@@ -129,29 +173,5 @@ fun LatexDrawable(
         ) {
             drawable.draw(drawContext.canvas.nativeCanvas)
         }
-    }
-}
-
-private val inlineDollarRegex = Regex("""^\$(.*?)\$""", RegexOption.DOT_MATCHES_ALL)
-private val displayDollarRegex = Regex("""^\$\$(.*?)\$\$""", RegexOption.DOT_MATCHES_ALL)
-private val inlineParenRegex = Regex("""^\\\((.*?)\\\)""", RegexOption.DOT_MATCHES_ALL)
-private val displayBracketRegex = Regex("""^\\\[(.*?)\\\]""", RegexOption.DOT_MATCHES_ALL)
-
-private fun processLatex(latex: String): String {
-    val trimmed = latex.trim()
-    return when {
-        displayDollarRegex.matches(trimmed) ->
-            displayDollarRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
-
-        inlineDollarRegex.matches(trimmed) ->
-            inlineDollarRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
-
-        displayBracketRegex.matches(trimmed) ->
-            displayBracketRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
-
-        inlineParenRegex.matches(trimmed) ->
-            inlineParenRegex.find(trimmed)?.groupValues?.get(1)?.trim() ?: trimmed
-
-        else -> trimmed
     }
 }

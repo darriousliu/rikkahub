@@ -959,7 +959,7 @@ internal fun AnnotatedString.Builder.appendHtmlInlineElement(
                     appendInlineContent(formula, "[Latex]")
                     val (width, height) = with(density) {
                         assumeLatexSize(latex = formula, fontSize = style.fontSize.toPx()).let {
-                            it.width().toSp() to it.height().toSp()
+                            it.width.toSp() to it.height.toSp()
                         }
                     }
                     inlineContents.putIfAbsent(

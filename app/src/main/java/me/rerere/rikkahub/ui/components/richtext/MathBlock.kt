@@ -26,6 +26,7 @@ fun MathInline(
         color = LocalContentColor.current,
         fontSize = fontSize.takeOrElse { LocalTextStyle.current.fontSize },
         modifier = modifier,
+        displayMode = LatexDisplayMode.Inline,
     )
 }
 
@@ -48,6 +49,7 @@ fun MathBlock(
                 .horizontalScroll(
                     rememberScrollState()
                 ),
+            displayMode = LatexDisplayMode.Display,
         )
     }
 }
