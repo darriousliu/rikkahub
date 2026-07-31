@@ -6,10 +6,14 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource as composeStringResource
 import java.util.Locale
 
-private const val AVAILABLE_VARIABLES_KEY = "assistant_page_available_variables"
-private const val MESSAGE_JUMPER_POSITION_DESCRIPTION_KEY =
-    "setting_display_page_message_jumper_position_desc"
-private val CONSECUTIVE_ASCII_SPACES = Regex(" +")
+private const val WEB_SERVER_ADDRESS_NOTE_DESCRIPTION_KEY =
+    "setting_page_web_server_address_note_desc"
+private val PHYSICAL_NEWLINE_PREFIXES = listOf(
+    "LANアドレス:",
+    "LAN 주소:",
+    "LAN-адрес:",
+    "局域网地址：",
+)
 
 /**
  * Reads a Compose Multiplatform string while preserving Android's AAPT string semantics.
@@ -38,25 +42,55 @@ fun stringResource(id: StringResource, vararg formatArgs: Any): String {
 /**
  * Reproduces the AAPT transformations needed by the current app string catalog.
  *
- * This intentionally does not collapse whitespace globally: doing so would corrupt explicit line breaks and
- * intentional spacing in unrelated resources.
+ * Unquoted ASCII spaces follow AAPT collapsing rules. Escape-derived line breaks remain intact; the one catalog
+ * entry whose XML contains physical newlines is identified narrowly because Compose loses that source distinction.
  */
 internal fun decodeAndroidResourceText(key: String, template: String): String {
-    val isQuoted = template.length >= 2 && template.first() == '"' && template.last() == '"'
-    var decoded = if (isQuoted) template.substring(1, template.lastIndex) else template
+    val collapsePhysicalNewlines = key == WEB_SERVER_ADDRESS_NOTE_DESCRIPTION_KEY &&
+        PHYSICAL_NEWLINE_PREFIXES.any(template::startsWith)
+    val result = StringBuilder(template.length)
+    var quoted = false
+    var pendingWhitespace = false
+    var index = 0
 
-    decoded = decoded
-        .replace("\\'", "'")
-        .replace("\\\"", "\"")
-
-    if (!isQuoted && key == AVAILABLE_VARIABLES_KEY) {
-        decoded = decoded.trim()
+    fun flushWhitespace() {
+        if (pendingWhitespace && result.isNotEmpty()) {
+            result.append(' ')
+        }
+        pendingWhitespace = false
     }
-    if (!isQuoted && key == MESSAGE_JUMPER_POSITION_DESCRIPTION_KEY) {
-        decoded = decoded.replace(CONSECUTIVE_ASCII_SPACES, " ")
+
+    while (index < template.length) {
+        val character = template[index]
+        val escapedCharacter = template.getOrNull(index + 1)
+        if (character == '\\' && (escapedCharacter == '\'' || escapedCharacter == '"')) {
+            flushWhitespace()
+            result.append(escapedCharacter)
+            index += 2
+            continue
+        }
+
+        when {
+            character == '"' -> {
+                if (!quoted) {
+                    flushWhitespace()
+                }
+                quoted = !quoted
+            }
+
+            !quoted && (character == ' ' || collapsePhysicalNewlines && character == '\n') -> {
+                pendingWhitespace = true
+            }
+
+            else -> {
+                flushWhitespace()
+                result.append(character)
+            }
+        }
+        index++
     }
 
-    return decoded
+    return result.toString()
 }
 
 internal fun formatAndroidResourceText(
