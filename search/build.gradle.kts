@@ -54,7 +54,6 @@ kotlin {
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.material3)
             implementation(libs.fleeksoft.ksoup)
-            implementation(libs.quickjs)
         }
         named("androidHostTest") {
             dependencies {

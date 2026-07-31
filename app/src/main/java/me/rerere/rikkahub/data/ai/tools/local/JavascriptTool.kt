@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.data.ai.tools.local
 
-import com.whl.quickjs.wrapper.QuickJSContext
-import com.whl.quickjs.wrapper.QuickJSObject
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -12,8 +10,15 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.js.DefaultJavaScriptExecutor
+import me.rerere.common.js.JavaScriptConsoleLevel
+import me.rerere.common.js.JavaScriptExecutionRequest
+import me.rerere.common.js.JavaScriptExecutor
+import me.rerere.common.js.JavaScriptValue
 
-internal fun buildJavascriptTool(): Tool = Tool(
+internal fun buildJavascriptTool(
+    javaScriptExecutor: JavaScriptExecutor = DefaultJavaScriptExecutor(),
+): Tool = Tool(
     name = "eval_javascript",
     description = """
         Execute JavaScript code using QuickJS engine (ES2020).
@@ -35,40 +40,36 @@ internal fun buildJavascriptTool(): Tool = Tool(
         )
     },
     execute = {
-        val logs = arrayListOf<String>()
-        val context = QuickJSContext.create()
-        context.setConsole(object : QuickJSContext.Console {
-            override fun log(info: String?) {
-                logs.add("[LOG] $info")
-            }
-
-            override fun info(info: String?) {
-                logs.add("[INFO] $info")
-            }
-
-            override fun warn(info: String?) {
-                logs.add("[WARN] $info")
-            }
-
-            override fun error(info: String?) {
-                logs.add("[ERROR] $info")
-            }
-        })
         val code = it.jsonObject["code"]?.jsonPrimitive?.contentOrNull
-        val result = context.evaluate(code)
+            ?: error("code is required")
+        val execution = javaScriptExecutor.execute(JavaScriptExecutionRequest(code = code))
         val payload = buildJsonObject {
-            if (logs.isNotEmpty()) {
-                put("logs", JsonPrimitive(logs.joinToString("\n")))
+            if (execution.console.isNotEmpty()) {
+                put(
+                    "logs",
+                    JsonPrimitive(
+                        execution.console.joinToString("\n") { message ->
+                            "[${message.level.toolLabel()}] ${message.message}"
+                        },
+                    ),
+                )
             }
             put(
                 key = "result",
-                element = when (result) {
-                    null -> JsonNull
-                    is QuickJSObject -> JsonPrimitive(result.stringify())
-                    else -> JsonPrimitive(result.toString())
+                element = when (val value = execution.value) {
+                    JavaScriptValue.Null -> JsonNull
+                    is JavaScriptValue.Scalar -> JsonPrimitive(value.value)
+                    is JavaScriptValue.Json -> JsonPrimitive(value.value)
                 }
             )
         }
         listOf(UIMessagePart.Text(payload.toString()))
     }
 )
+
+private fun JavaScriptConsoleLevel.toolLabel(): String = when (this) {
+    JavaScriptConsoleLevel.LOG -> "LOG"
+    JavaScriptConsoleLevel.INFO -> "INFO"
+    JavaScriptConsoleLevel.WARN -> "WARN"
+    JavaScriptConsoleLevel.ERROR -> "ERROR"
+}
