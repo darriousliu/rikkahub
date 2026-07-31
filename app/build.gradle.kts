@@ -162,14 +162,14 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.material3.adaptive)
-    implementation(libs.androidx.material3.adaptive.layout)
+    implementation(libs.jetbrains.material3.adaptive)
+    implementation(libs.jetbrains.material3.adaptive.layout)
 
     // Navigation 3
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.jetbrains.navigation3.ui)
     implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
-    implementation(libs.androidx.material3.adaptive.navigation3)
+    implementation(libs.jetbrains.material3.adaptive.navigation3)
 
     // Firebase
     implementation(platform(libs.firebase.bom))
