@@ -65,7 +65,6 @@ jmdns = "3.6.3"
 slf4j = "2.0.18"
 sqlite-android = "-SNAPSHOT"
 termux = "0.118.0"
-diffutils = "4.17"
 room3 = "3.0.1"
 sqlite = "2.7.0"
 kscan = "0.9.2"
@@ -163,7 +162,6 @@ commons-text = { module = "org.apache.commons:commons-text", version.ref = "comm
 modelcontextprotocol-kotlin-sdk-client = { module = "io.modelcontextprotocol:kotlin-sdk-client", version.ref = "mcp" }
 modelcontextprotocol-kotlin-sdk-core = { module = "io.modelcontextprotocol:kotlin-sdk-core", version.ref = "mcp" }
 pebble = { module = "io.pebbletemplates:pebble", version.ref = "pebble" }
-diffutils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "diffutils" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }

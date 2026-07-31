@@ -36,6 +36,7 @@ import me.rerere.hugeicons.stroke.FileAdd
 import me.rerere.hugeicons.stroke.FileEdit
 import me.rerere.hugeicons.stroke.FileView
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.diff.generateUnifiedDiff
 import me.rerere.rikkahub.ui.components.richtext.DiffAddedColor
 import me.rerere.rikkahub.ui.components.richtext.DiffRemovedColor
 import me.rerere.rikkahub.ui.components.richtext.DiffView
@@ -43,7 +44,6 @@ import me.rerere.rikkahub.ui.components.richtext.HighlightCodeBlock
 import me.rerere.rikkahub.ui.components.richtext.parseDiffStats
 import me.rerere.rikkahub.ui.modifier.shimmer
 import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.generateUnifiedDiff
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 
 /**
