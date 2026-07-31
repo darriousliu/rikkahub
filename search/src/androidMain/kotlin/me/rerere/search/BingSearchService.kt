@@ -2,6 +2,8 @@ package me.rerere.search
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.bing_desc
 import org.jetbrains.compose.resources.stringResource
@@ -13,10 +15,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import me.rerere.search.SearchService.Companion.httpClient
+import okhttp3.Request
 import java.net.URLEncoder
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> {
     override val name: String = "Bing"
@@ -49,22 +52,33 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
             val url = "https://www.bing.com/search?q=" + URLEncoder.encode(query, "UTF-8")
             val locale = Locale.getDefault()
             val acceptLanguage = "${locale.language}-${locale.country},${locale.language}"
-            val doc = Jsoup.connect(url)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+            val request = Request.Builder()
+                .url(url)
+                .header(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                )
                 .header(
                     "Accept",
-                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 )
                 .header("Accept-Language", acceptLanguage)
-                .header("Accept-Encoding", "gzip, deflate, sdch")
                 .header("Accept-Charset", "utf-8")
                 .header("Connection", "keep-alive")
-                .referrer("https://www.bing.com/")
-                .cookie("SRCHHPGUSR", "ULSR=1")
-                .timeout(5000)
-                .get()
+                .header("Referer", "https://www.bing.com/")
+                .header("Cookie", "SRCHHPGUSR=ULSR=1")
+                .build()
 
-            val results = parseBingSearchResults(doc)
+            val call = httpClient.newCall(request)
+            call.timeout().timeout(5, TimeUnit.SECONDS)
+            val html = call.await().use { response ->
+                check(response.code in 200..399) {
+                    "Bing search failed with code ${response.code}: ${response.message}"
+                }
+                response.body.string()
+            }
+
+            val results = parseBingSearchResults(html)
 
             require(results.isNotEmpty()) {
                 "Search failed: no results found"
@@ -93,4 +107,4 @@ private fun parseBingSearchResults(document: Document): List<SearchResultItem> =
     }
 
 internal fun parseBingSearchResults(html: String): List<SearchResultItem> =
-    parseBingSearchResults(Jsoup.parse(html))
+    parseBingSearchResults(Ksoup.parse(html))

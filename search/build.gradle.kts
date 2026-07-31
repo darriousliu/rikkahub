@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.material3)
+            implementation(libs.fleeksoft.ksoup)
             api(libs.jsoup)
             implementation(libs.quickjs)
         }
