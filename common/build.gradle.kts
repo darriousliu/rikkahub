@@ -31,11 +31,13 @@ kotlin {
     iosSimulatorArm64()
 
     sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.serialization.json)
+        }
         androidMain.dependencies {
             api(libs.okhttp)
             api(libs.okhttp.sse)
             api(libs.okhttp.logging)
-            api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
             api(libs.commons.text)
