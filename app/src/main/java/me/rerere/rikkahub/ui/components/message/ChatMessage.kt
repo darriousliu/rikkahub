@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
@@ -79,6 +78,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.data.model.replaceRegexes
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
 import me.rerere.rikkahub.ui.components.richtext.buildMarkdownPreviewHtml
@@ -94,6 +94,7 @@ import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.urlDecode
+import org.jetbrains.compose.resources.painterResource
 import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -528,7 +529,7 @@ private fun MessagePartsBlock(
                                     when (part.mime) {
                                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> {
                                             Icon(
-                                                painter = painterResource(R.drawable.docx),
+                                                painter = painterResource(Res.drawable.docx),
                                                 contentDescription = null,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -536,7 +537,7 @@ private fun MessagePartsBlock(
 
                                         "application/pdf" -> {
                                             Icon(
-                                                painter = painterResource(R.drawable.pdf),
+                                                painter = painterResource(Res.drawable.pdf),
                                                 contentDescription = null,
                                                 modifier = Modifier.size(20.dp)
                                             )

@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.components.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,11 +17,12 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.svg.css
-import me.rerere.rikkahub.R
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.hooks.rememberAvatarShape
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.computeAIIconByName
 import me.rerere.rikkahub.utils.toCssHex
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 private fun AIIcon(
@@ -88,9 +90,11 @@ private fun PreviewAutoAIIcon() {
 @Composable
 fun SiliconFlowPowerByIcon(modifier: Modifier = Modifier) {
     val darkMode = LocalDarkMode.current
-    if (!darkMode) {
-        AsyncImage(model = R.drawable.siliconflow_light, contentDescription = null, modifier = modifier)
-    } else {
-        AsyncImage(model = R.drawable.siliconflow_dark, contentDescription = null, modifier = modifier)
-    }
+    Image(
+        painter = painterResource(
+            if (darkMode) Res.drawable.siliconflow_dark else Res.drawable.siliconflow_light,
+        ),
+        contentDescription = null,
+        modifier = modifier,
+    )
 }

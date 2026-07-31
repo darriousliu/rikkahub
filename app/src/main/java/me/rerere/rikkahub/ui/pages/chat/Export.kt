@@ -84,6 +84,7 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.message.MessagePartBlock
 import me.rerere.rikkahub.ui.components.message.ThinkingStep
 import me.rerere.rikkahub.ui.components.message.groupMessageParts
@@ -102,6 +103,7 @@ import me.rerere.rikkahub.utils.getActivity
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.toLocalString
+import org.jetbrains.compose.resources.painterResource as sharedPainterResource
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import kotlin.time.Duration.Companion.seconds
@@ -670,7 +672,7 @@ private fun ChainOfThoughtScope.ExportedReasoningStep(
         onExpandedChange = {},
         icon = {
             Icon(
-                painter = painterResource(R.drawable.deepthink),
+                painter = sharedPainterResource(Res.drawable.deepthink),
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.secondary
