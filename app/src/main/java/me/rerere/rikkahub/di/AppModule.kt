@@ -1,11 +1,12 @@
 package me.rerere.rikkahub.di
 
+import android.content.Context
+import android.content.pm.ApplicationInfo
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
 import kotlinx.serialization.json.Json
 import me.rerere.rikkahub.AppScope
-import me.rerere.rikkahub.BuildConfig
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.service.ChatNotificationManager
@@ -23,11 +24,10 @@ import org.koin.dsl.module
 
 val appModule = module {
     single<PlatformBuildInfo> {
+        val context = get<Context>()
         createPlatformBuildInfo(
-            debug = BuildConfig.DEBUG,
-            applicationId = BuildConfig.APPLICATION_ID,
-            versionName = BuildConfig.VERSION_NAME,
-            versionCode = BuildConfig.VERSION_CODE,
+            debug = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0,
+            applicationId = context.packageName,
         )
     }
 

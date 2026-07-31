@@ -78,13 +78,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
-            buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
         }
         debug {
             applicationIdSuffix = ".debug"
-            buildConfigField("String", "VERSION_NAME", "\"${android.defaultConfig.versionName}\"")
-            buildConfigField("String", "VERSION_CODE", "\"${android.defaultConfig.versionCode}\"")
         }
     }
     compileOptions {
@@ -93,7 +89,6 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
     sourceSets {
         getByName("androidTest").assets.srcDirs("$projectDir/schemas")

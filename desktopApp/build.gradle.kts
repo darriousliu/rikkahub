@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.JavaExec
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
@@ -63,5 +64,11 @@ compose.desktop {
                 bundleID = "me.rerere.rikkahub.desktop"
             }
         }
+    }
+}
+
+tasks.withType<JavaExec>().configureEach {
+    if (name == "run" || name == "jvmRun") {
+        jvmArgs("-Drikkahub.debug=true")
     }
 }
