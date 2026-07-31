@@ -1,6 +1,6 @@
 package me.rerere.common.logging
 
-import android.util.Log
+import co.touchlab.kermit.Logger
 
 internal enum class RikkaLogLevel {
     VERBOSE,
@@ -47,23 +47,24 @@ internal class RikkaLogger(
     ): Int = sink.write(RikkaLogRecord(level, tag, message, throwable))
 }
 
-private object AndroidRikkaLogSink : RikkaLogSink {
-    override fun write(record: RikkaLogRecord): Int = with(record) {
-        when (level) {
-            RikkaLogLevel.VERBOSE -> if (throwable == null) Log.v(tag, message) else Log.v(tag, message, throwable)
-            RikkaLogLevel.DEBUG -> if (throwable == null) Log.d(tag, message) else Log.d(tag, message, throwable)
-            RikkaLogLevel.INFO -> if (throwable == null) Log.i(tag, message) else Log.i(tag, message, throwable)
-            RikkaLogLevel.WARN -> if (throwable == null) Log.w(tag, message) else Log.w(tag, message, throwable)
-            RikkaLogLevel.ERROR -> if (throwable == null) Log.e(tag, message) else Log.e(tag, message, throwable)
+private object KermitRikkaLogSink : RikkaLogSink {
+    override fun write(record: RikkaLogRecord): Int {
+        with(record) {
+            when (level) {
+                RikkaLogLevel.VERBOSE -> Logger.v(messageString = message, throwable = throwable, tag = tag)
+                RikkaLogLevel.DEBUG -> Logger.d(messageString = message, throwable = throwable, tag = tag)
+                RikkaLogLevel.INFO -> Logger.i(messageString = message, throwable = throwable, tag = tag)
+                RikkaLogLevel.WARN -> Logger.w(messageString = message, throwable = throwable, tag = tag)
+                RikkaLogLevel.ERROR -> Logger.e(messageString = message, throwable = throwable, tag = tag)
+            }
         }
+        return 0
     }
 }
 
-/**
- * Android Log-compatible facade used while logging call sites move into shared source sets.
- */
+/** Android Log-compatible facade backed by Kermit on every supported platform. */
 object RikkaLog {
-    private val logger = RikkaLogger(AndroidRikkaLogSink)
+    private val logger = RikkaLogger(KermitRikkaLogSink)
 
     fun v(tag: String, message: String, throwable: Throwable? = null): Int = logger.v(tag, message, throwable)
 
