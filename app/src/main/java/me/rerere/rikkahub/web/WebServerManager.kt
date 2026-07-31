@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.web
 
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import kotlinx.coroutines.CoroutineScope
