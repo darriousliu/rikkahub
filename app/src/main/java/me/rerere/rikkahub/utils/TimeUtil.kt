@@ -11,12 +11,14 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoField
 import java.util.Locale
 
-fun Instant.toLocalDate(): String {
-    val zoneId = ZoneId.systemDefault()
+fun Instant.toLocalDate(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String {
     val localDateTime = this.atZone(zoneId).toLocalDateTime()
 
     return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        .withLocale(Locale.getDefault())
+        .withLocale(locale)
         .format(localDateTime)
 }
 
@@ -29,12 +31,14 @@ fun Instant.toLocalDateTime(): String {
         .format(localDateTime)
 }
 
-fun Instant.toLocalTime(): String {
-    val zoneId = ZoneId.systemDefault()
+fun Instant.toLocalTime(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String {
     val localDateTime = this.atZone(zoneId).toLocalDateTime()
 
     return DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)
-        .withLocale(Locale.getDefault())
+        .withLocale(locale)
         .format(localDateTime)
 }
 
