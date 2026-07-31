@@ -68,6 +68,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.ui)
             api(compose.components.resources)
             implementation(libs.androidx.room3.runtime)
             implementation(libs.androidx.room3.paging)
