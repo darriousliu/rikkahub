@@ -1,2 +1,6 @@
 # Baseline Profile 生成文件：标记为文本，统一使用 LF 换行，避免 CRLF 抖动
 app/src/release/generated/baselineProfiles/*.txt text eol=lf
+
+# Locale source files are mirrored byte-for-byte so the migration verifier can
+# prove that no translation content changed, including their existing EOF bytes.
+composeApp/src/commonMain/composeResources/values*/strings.xml whitespace=-blank-at-eof
