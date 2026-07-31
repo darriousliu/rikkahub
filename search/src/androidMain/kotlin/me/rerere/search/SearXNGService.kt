@@ -3,7 +3,10 @@ package me.rerere.search
 import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
+import me.rerere.search.generated.resources.Res
+import me.rerere.search.generated.resources.searxng_desc_1
+import me.rerere.search.generated.resources.searxng_desc_2
+import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -28,8 +31,8 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
 
     @Composable
     override fun Description() {
-        Text(stringResource(R.string.searxng_desc_1))
-        Text(stringResource(R.string.searxng_desc_2))
+        Text(stringResource(Res.string.searxng_desc_1))
+        Text(stringResource(Res.string.searxng_desc_2))
     }
 
     override fun parameters(options: SearchServiceOptions.SearXNGOptions): InputSchema? =

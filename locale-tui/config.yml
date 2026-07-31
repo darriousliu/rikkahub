@@ -24,8 +24,9 @@ modules:
       - "highlight/src/main/java/**/*.java"
       - "highlight/src/main/AndroidManifest.xml"
   - name: "search"
-    res_path: "search/src/androidMain/res"
+    res_path: "search/src/commonMain/composeResources"
     source_patterns:
+      - "search/src/commonMain/kotlin/**/*.kt"
       - "search/src/androidMain/kotlin/**/*.kt"
       - "search/src/androidMain/AndroidManifest.xml"
   - name: "rag"

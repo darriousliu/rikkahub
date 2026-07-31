@@ -2,7 +2,9 @@ package me.rerere.search
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
+import me.rerere.search.generated.resources.Res
+import me.rerere.search.generated.resources.bing_desc
+import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -20,7 +22,7 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
 
     @Composable
     override fun Description() {
-        Text(stringResource(R.string.bing_desc))
+        Text(stringResource(Res.string.bing_desc))
     }
 
     override fun parameters(options: SearchServiceOptions.BingLocalOptions): InputSchema? =

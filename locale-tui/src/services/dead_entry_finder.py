@@ -12,9 +12,10 @@ if TYPE_CHECKING:
 class DeadEntryFinder:
     """Detect unreferenced translation entries in code."""
 
-    # Patterns to match R.string.xxx, stringResource(R.string.xxx), etc.
+    # Patterns to match Android R.string.xxx, Compose Res.string.xxx, etc.
     PATTERNS = [
         r"R\.string\.(\w+)",
+        r"Res\.string\.(\w+)",
         r"getString\s*\(\s*R\.string\.(\w+)",
         r"stringResource\s*\(\s*R\.string\.(\w+)",
         r"@string/(\w+)",

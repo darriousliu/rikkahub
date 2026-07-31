@@ -4,7 +4,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
+import me.rerere.search.generated.resources.Res
+import me.rerere.search.generated.resources.click_to_get_api_key
+import org.jetbrains.compose.resources.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -32,7 +34,7 @@ object TinyfishSearchService : SearchService<SearchServiceOptions.TinyfishOption
                 urlHandler.openUri("https://agent.tinyfish.ai/api-keys")
             }
         ) {
-            Text(stringResource(R.string.click_to_get_api_key))
+            Text(stringResource(Res.string.click_to_get_api_key))
         }
     }
 
