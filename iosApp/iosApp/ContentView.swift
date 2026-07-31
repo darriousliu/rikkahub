@@ -1,15 +1,18 @@
 import RikkaHubShared
 import SwiftUI
 
+private struct ComposeView: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.MainViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
 struct ContentView: View {
     var body: some View {
-        VStack(spacing: 12) {
-            Text("RikkaHub")
-                .font(.title)
-            Text("Compose Multiplatform iOS shell")
-                .foregroundStyle(.secondary)
-        }
-        .padding()
+        ComposeView()
+            .ignoresSafeArea(.keyboard)
     }
 }
 
