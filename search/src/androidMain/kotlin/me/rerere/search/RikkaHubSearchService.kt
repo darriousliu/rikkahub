@@ -1,6 +1,6 @@
 package me.rerere.search
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -1,6 +1,6 @@
 package me.rerere.search
 
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
