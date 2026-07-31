@@ -24,11 +24,10 @@ modules:
       - "highlight/src/main/java/**/*.java"
       - "highlight/src/main/AndroidManifest.xml"
   - name: "search"
-    res_path: "search/src/main/res"
+    res_path: "search/src/androidMain/res"
     source_patterns:
-      - "search/src/main/java/**/*.kt"
-      - "search/src/main/java/**/*.java"
-      - "search/src/main/AndroidManifest.xml"
+      - "search/src/androidMain/kotlin/**/*.kt"
+      - "search/src/androidMain/AndroidManifest.xml"
   - name: "rag"
     res_path: "rag/src/main/res"
     source_patterns:

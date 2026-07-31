@@ -1,0 +1,79 @@
+schema_version: 1
+
+string_modules:
+  - name: app
+    disposition: mirror
+    android_source_policy: full-mirror
+    source_root: app/src/main/res
+    destination_root: composeApp/src/commonMain/composeResources
+    android_key_allowlist: []
+  - name: search
+    disposition: move
+    android_source_policy: none
+    source_root: search/src/androidMain/res
+    destination_root: search/src/commonMain/composeResources
+    android_key_allowlist: []
+
+binary_resources:
+  - logical_id: app.drawable.afdian
+    source_path: app/src/main/res/drawable/afdian.xml
+    destination_path: composeApp/src/commonMain/composeResources/drawable/afdian.xml
+    disposition: move
+  - logical_id: app.drawable.deepthink
+    source_path: app/src/main/res/drawable/deepthink.xml
+    destination_path: composeApp/src/commonMain/composeResources/drawable/deepthink.xml
+    disposition: move
+  - logical_id: app.drawable.docx
+    source_path: app/src/main/res/drawable/docx.xml
+    destination_path: composeApp/src/commonMain/composeResources/drawable/docx.xml
+    disposition: move
+  - logical_id: app.drawable.kofi
+    source_path: app/src/main/res/drawable/kofi.webp
+    destination_path: composeApp/src/commonMain/composeResources/drawable/kofi.webp
+    disposition: move
+  - logical_id: app.drawable.patreon
+    source_path: app/src/main/res/drawable/patreon.xml
+    destination_path: composeApp/src/commonMain/composeResources/drawable/patreon.xml
+    disposition: move
+  - logical_id: app.drawable.pdf
+    source_path: app/src/main/res/drawable/pdf.xml
+    destination_path: composeApp/src/commonMain/composeResources/drawable/pdf.xml
+    disposition: move
+  - logical_id: app.drawable.placeholder
+    source_path: app/src/main/res/drawable/placeholder.png
+    destination_path: composeApp/src/commonMain/composeResources/drawable/placeholder.png
+    disposition: move
+  - logical_id: app.drawable.placeholder_dark
+    source_path: app/src/main/res/drawable/placeholder_dark.png
+    destination_path: composeApp/src/commonMain/composeResources/drawable/placeholder_dark.png
+    disposition: move
+  - logical_id: app.drawable.siliconflow_dark
+    source_path: app/src/main/res/drawable/siliconflow_dark.png
+    destination_path: composeApp/src/commonMain/composeResources/drawable/siliconflow_dark.png
+    disposition: move
+  - logical_id: app.drawable.siliconflow_light
+    source_path: app/src/main/res/drawable/siliconflow_light.png
+    destination_path: composeApp/src/commonMain/composeResources/drawable/siliconflow_light.png
+    disposition: move
+  - logical_id: app.font.google_sans_flex
+    source_path: app/src/main/res/font/google_sans_flex.ttf
+    destination_path: composeApp/src/commonMain/composeResources/font/google_sans_flex.ttf
+    disposition: mirror
+  - logical_id: app.font.jetbrains_mono
+    source_path: app/src/main/res/font/jetbrains_mono.ttf
+    destination_path: composeApp/src/commonMain/composeResources/font/jetbrains_mono.ttf
+    disposition: mirror
+
+android_only_paths:
+  - app/src/main/AndroidManifest.xml
+  - search/src/androidMain/AndroidManifest.xml
+  - app/src/main/res/drawable/ic_lucide_camera.xml
+  - app/src/main/res/drawable/rabbit.xml
+  - app/src/main/res/drawable/small_icon.xml
+  - app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+  - app/src/main/res/mipmap-*/ic_launcher*.png
+  - app/src/main/res/raw/*.mp3
+  - app/src/main/res/resources.properties
+  - app/src/main/res/values/colors.xml
+  - app/src/main/res/values/themes.xml
+  - app/src/main/res/xml/*.xml

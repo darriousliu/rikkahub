@@ -13,10 +13,15 @@ from config import Config
 from app import LocaleTuiApp
 from services.xml_parser import StringsXmlParser
 from services.translator import AITranslator
+from services.resource_inventory import ResourceInventoryError, ResourceInventoryService
 from models.entry import TranslationEntry
 
+TOOL_ROOT = Path(__file__).parent.parent
+DEFAULT_MIGRATION_MAP = TOOL_ROOT / "resource-migration.yml"
+DEFAULT_RESOURCE_BASELINE = TOOL_ROOT / "baselines" / "compose-resources-v1.json"
 
-def load_config() -> Config:
+
+def load_config(*, warn_missing_api_key: bool = True) -> Config:
     """Load configuration from file."""
     config_path = Path(__file__).parent.parent / "config.yml"
 
@@ -32,7 +37,7 @@ def load_config() -> Config:
         sys.exit(1)
 
     # Validate configuration
-    if not config.openai_api_key:
+    if warn_missing_api_key and not config.openai_api_key:
         click.echo("警告：未设置 OPENAI_API_KEY。AI 翻译功能将无法使用。", err=True)
 
     return config
@@ -311,6 +316,66 @@ def list_keys(module: str):
         if len(value) > 60:
             value = value[:57] + "..."
         click.echo(f"  {key:40} {value}")
+
+
+@cli.command("resource-snapshot")
+@click.option(
+    "--migration-map",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=DEFAULT_MIGRATION_MAP,
+    show_default=True,
+)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=DEFAULT_RESOURCE_BASELINE,
+    show_default=True,
+)
+def resource_snapshot(migration_map: Path, output: Path):
+    """生成确定性的 Compose Resources 迁移前清单。"""
+    config = load_config(warn_missing_api_key=False)
+    try:
+        service = ResourceInventoryService.from_config(config, migration_map)
+        snapshot = service.snapshot()
+        service.write_snapshot(snapshot, output)
+    except ResourceInventoryError as error:
+        raise click.ClickException(str(error)) from error
+
+    summary = snapshot["summary"]
+    click.echo(
+        f"✓ 已生成 {output}: {summary['locale_file_count']} 个 locale 文件, "
+        f"{sum(summary['resource_counts'].values())} 个值资源, "
+        f"{summary['binary_resource_count']} 个文件资源"
+    )
+
+
+@cli.command("resource-verify")
+@click.option(
+    "--migration-map",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=DEFAULT_MIGRATION_MAP,
+    show_default=True,
+)
+@click.option(
+    "--baseline",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=DEFAULT_RESOURCE_BASELINE,
+    show_default=True,
+)
+def resource_verify(migration_map: Path, baseline: Path):
+    """验证当前资源与已提交的迁移前清单完全一致。"""
+    config = load_config(warn_missing_api_key=False)
+    try:
+        service = ResourceInventoryService.from_config(config, migration_map)
+        summary = service.verify(baseline)
+    except ResourceInventoryError as error:
+        raise click.ClickException(str(error)) from error
+
+    click.echo(
+        f"✓ 资源清单验证通过: {summary['locale_file_count']} 个 locale 文件, "
+        f"{sum(summary['resource_counts'].values())} 个值资源, "
+        f"{summary['binary_resource_count']} 个文件资源"
+    )
 
 
 def main():
