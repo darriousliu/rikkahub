@@ -49,6 +49,7 @@ import me.rerere.ai.ui.metadataAs
 import me.rerere.ai.ui.toMetadata
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.configureReferHeaders
+import me.rerere.ai.util.decodeJsonEscapedString
 import me.rerere.ai.util.encodeBase64
 import me.rerere.ai.util.json
 import me.rerere.ai.util.mergeCustomBody
@@ -67,7 +68,6 @@ import okhttp3.Response
 import okhttp3.sse.EventSource
 import okhttp3.sse.EventSourceListener
 import okhttp3.sse.EventSources
-import org.apache.commons.text.StringEscapeUtils
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -96,7 +96,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
         return if (providerSetting.vertexAI && providerSetting.useServiceAccount) {
             val accessToken = serviceAccountTokenProvider.fetchAccessToken(
                 serviceAccountEmail = providerSetting.serviceAccountEmail.trim(),
-                privateKeyPem = StringEscapeUtils.unescapeJson(providerSetting.privateKey.trim()),
+                privateKeyPem = decodeJsonEscapedString(providerSetting.privateKey.trim()),
             )
             request.newBuilder()
                 .addHeader("Authorization", "Bearer $accessToken")
