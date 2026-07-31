@@ -36,6 +36,9 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             implementation(libs.dokar.quickjs)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
         androidMain.dependencies {
             api(libs.okhttp)
             api(libs.okhttp.sse)
