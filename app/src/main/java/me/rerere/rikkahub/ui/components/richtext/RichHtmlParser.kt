@@ -1,10 +1,10 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import org.jsoup.Jsoup
+import com.fleeksoft.ksoup.Ksoup
 
-internal typealias RichHtmlDocument = org.jsoup.nodes.Document
-internal typealias RichHtmlElement = org.jsoup.nodes.Element
-internal typealias RichHtmlNode = org.jsoup.nodes.Node
-internal typealias RichHtmlTextNode = org.jsoup.nodes.TextNode
+internal typealias RichHtmlDocument = com.fleeksoft.ksoup.nodes.Document
+internal typealias RichHtmlElement = com.fleeksoft.ksoup.nodes.Element
+internal typealias RichHtmlNode = com.fleeksoft.ksoup.nodes.Node
+internal typealias RichHtmlTextNode = com.fleeksoft.ksoup.nodes.TextNode
 
-internal fun parseRichHtml(html: String): RichHtmlDocument = Jsoup.parse(html)
+internal fun parseRichHtml(html: String): RichHtmlDocument = Ksoup.parse(html)

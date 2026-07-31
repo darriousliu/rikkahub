@@ -197,7 +197,7 @@ dependencies {
 
     // jetbrains markdown parser
     implementation(libs.jetbrains.markdown)
-    implementation(libs.jsoup)
+    implementation(libs.fleeksoft.ksoup)
 
     // okhttp
     implementation(libs.okhttp)
