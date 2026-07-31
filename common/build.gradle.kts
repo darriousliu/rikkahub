@@ -40,7 +40,6 @@ kotlin {
             api(libs.okhttp.logging)
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
-            api(libs.commons.text)
             api(libs.floatingx)
             api(libs.floatingx.compose)
             implementation(libs.androidx.core.ktx)

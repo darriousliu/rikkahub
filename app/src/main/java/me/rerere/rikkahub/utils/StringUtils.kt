@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.utils
 
-import org.apache.commons.text.StringEscapeUtils
 import java.net.URLDecoder
 import java.net.URLEncoder
 import kotlin.io.encoding.Base64
@@ -22,14 +21,6 @@ fun String.base64Encode(): String {
 @OptIn(ExperimentalEncodingApi::class)
 fun String.base64Decode(): String {
     return String(Base64.decode(this))
-}
-
-fun String.escapeHtml(): String {
-    return StringEscapeUtils.escapeHtml4(this)
-}
-
-fun String.unescapeHtml(): String {
-    return StringEscapeUtils.unescapeHtml4(this)
 }
 
 fun Number.toFixed(digits: Int = 0) = "%.${digits}f".format(this)
