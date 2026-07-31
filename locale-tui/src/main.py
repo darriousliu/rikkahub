@@ -14,6 +14,7 @@ from app import LocaleTuiApp
 from services.xml_parser import StringsXmlParser
 from services.translator import AITranslator
 from services.resource_inventory import ResourceInventoryError, ResourceInventoryService
+from services.kotlin_resource_migrator import KotlinResourceCallMigrator
 from models.entry import TranslationEntry
 
 TOOL_ROOT = Path(__file__).parent.parent
@@ -375,6 +376,66 @@ def resource_verify(migration_map: Path, baseline: Path):
         f"✓ 资源清单验证通过: {summary['locale_file_count']} 个 locale 文件, "
         f"{sum(summary['resource_counts'].values())} 个值资源, "
         f"{summary['binary_resource_count']} 个文件资源"
+    )
+
+
+@cli.command("migrate-kotlin-resource-calls")
+@click.option(
+    "--source-root",
+    type=click.Path(path_type=Path, file_okay=False),
+    default=None,
+    help="Kotlin 源码根目录（默认 app/src/main/java）。",
+)
+@click.option(
+    "--mode",
+    type=click.Choice(["dry-run", "check", "apply"], case_sensitive=True),
+    default="dry-run",
+    show_default=True,
+    help="预览差异、CI 检查或写入迁移结果。",
+)
+@click.pass_context
+def migrate_kotlin_resource_calls(
+    ctx: click.Context,
+    source_root: Path | None,
+    mode: str,
+):
+    """迁移 app 中 Compose stringResource 的 Android R 调用。"""
+    if source_root is None:
+        config = load_config(warn_missing_api_key=False)
+        source_root = config.project_root / "app/src/main/java"
+    elif not source_root.is_absolute():
+        source_root = Path.cwd() / source_root
+
+    migrator = KotlinResourceCallMigrator()
+    try:
+        report = migrator.migrate_tree(source_root, mode=mode)
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+
+    if mode == "dry-run":
+        if report.files_changed:
+            click.echo(report.unified_diff(source_root), nl=False)
+        click.echo(
+            f"预览完成：扫描 {report.files_scanned} 个 Kotlin 文件，"
+            f"需要迁移 {report.files_changed} 个。"
+        )
+        return
+
+    if mode == "check":
+        if report.files_changed:
+            click.echo(
+                f"需要迁移 {report.files_changed} 个 Kotlin 文件；"
+                "请使用 --mode apply 写入结果。",
+                err=True,
+            )
+            ctx.exit(1)
+        click.echo(f"✓ {report.files_scanned} 个 Kotlin 文件无需迁移。")
+        return
+
+    click.echo(
+        f"✓ 已迁移 {report.files_changed} 个 Kotlin 文件："
+        f"{report.app_reference_count} 个 app 字符串引用，"
+        f"{report.android_call_count} 个 Android 系统字符串调用。"
     )
 
 
