@@ -14,6 +14,7 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import java.net.URLEncoder
 import java.util.Locale
 
@@ -63,17 +64,7 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
                 .timeout(5000)
                 .get()
 
-            // 解析搜索结果
-            val results = doc.select("li.b_algo").map { element ->
-                val title = element.select("h2").text()
-                val link = element.select("h2 > a").attr("href")
-                val snippet = element.select(".b_caption p").text()
-                SearchResultItem(
-                    title = title,
-                    url = link,
-                    text = snippet
-                )
-            }
+            val results = parseBingSearchResults(doc)
 
             require(results.isNotEmpty()) {
                 "Search failed: no results found"
@@ -91,3 +82,15 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
         return Result.failure(Exception("Scraping is not supported for Bing"))
     }
 }
+
+private fun parseBingSearchResults(document: Document): List<SearchResultItem> =
+    document.select("li.b_algo").map { element ->
+        SearchResultItem(
+            title = element.select("h2").text(),
+            url = element.select("h2 > a").attr("href"),
+            text = element.select(".b_caption p").text(),
+        )
+    }
+
+internal fun parseBingSearchResults(html: String): List<SearchResultItem> =
+    parseBingSearchResults(Jsoup.parse(html))
