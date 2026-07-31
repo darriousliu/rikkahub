@@ -1,7 +1,7 @@
 package me.rerere.ai.provider.providers
 
 import android.content.Context
-import android.util.Log
+import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
