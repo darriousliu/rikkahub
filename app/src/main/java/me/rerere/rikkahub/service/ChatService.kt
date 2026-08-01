@@ -971,7 +971,7 @@ class ChatService(
             newFiles.none { it == file }
         }
         if (deletedFiles.isNotEmpty()) {
-            filesManager.deleteChatFiles(deletedFiles)
+            filesManager.deleteChatFiles(deletedFiles.map { it.toUri() })
             Log.w(TAG, "checkFilesDelete: $deletedFiles")
         }
     }
