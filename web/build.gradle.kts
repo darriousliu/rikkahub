@@ -59,6 +59,10 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     sourceSets {
+        commonMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
+        }
+
         val androidJvmMain by creating {
             dependsOn(commonMain.get())
             dependencies {
