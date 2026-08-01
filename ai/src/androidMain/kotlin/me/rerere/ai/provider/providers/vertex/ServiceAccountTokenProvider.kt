@@ -5,13 +5,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import me.rerere.common.crypto.RsaSha256Signer
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.security.KeyFactory
-import java.security.PrivateKey
-import java.security.Signature
-import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
@@ -28,6 +25,7 @@ private val TOKEN_REFRESH_BUFFER_SECONDS = 5.minutes.inWholeSeconds
 class ServiceAccountTokenProvider internal constructor(
     private val http: OkHttpClient,
     private val clock: Clock,
+    private val rsaSha256Signer: RsaSha256Signer = JdkVertexRsaSha256Signer,
 ) {
     constructor(http: OkHttpClient) : this(
         http = http,
@@ -95,8 +93,10 @@ class ServiceAccountTokenProvider internal constructor(
         val claimB64 = base64UrlNoPad(claimJson.toByteArray(Charsets.UTF_8))
         val signingInput = "$headerB64.$claimB64"
 
-        val privateKey = parsePkcs8PrivateKey(privateKeyPem)
-        val signature = signRs256(signingInput.toByteArray(Charsets.UTF_8), privateKey)
+        val signature = rsaSha256Signer.signPkcs8Pem(
+            privateKeyPem,
+            signingInput.toByteArray(Charsets.UTF_8),
+        )
         val assertion = "$signingInput.${base64UrlNoPad(signature)}"
 
         val form = FormBody.Builder()
@@ -141,20 +141,4 @@ class ServiceAccountTokenProvider internal constructor(
     private fun base64UrlNoPad(bytes: ByteArray): String =
         Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
 
-    private fun parsePkcs8PrivateKey(pem: String): PrivateKey {
-        val normalized = pem
-            .replace("-----BEGIN PRIVATE KEY-----", "")
-            .replace("-----END PRIVATE KEY-----", "")
-            .replace("\\s".toRegex(), "")
-        val der = Base64.getDecoder().decode(normalized)
-        val keySpec = PKCS8EncodedKeySpec(der)
-        return KeyFactory.getInstance("RSA").generatePrivate(keySpec)
-    }
-
-    private fun signRs256(data: ByteArray, privateKey: PrivateKey): ByteArray {
-        val sig = Signature.getInstance("SHA256withRSA")
-        sig.initSign(privateKey)
-        sig.update(data)
-        return sig.sign()
-    }
 }
