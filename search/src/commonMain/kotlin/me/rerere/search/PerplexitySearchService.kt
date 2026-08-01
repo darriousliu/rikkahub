@@ -8,8 +8,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -57,8 +55,7 @@ object PerplexitySearchService : SearchService<SearchServiceOptions.PerplexityOp
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.PerplexityOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             if (serviceOptions.apiKey.isBlank()) {
                 error("Perplexity API key is required")
             }
@@ -107,16 +104,13 @@ object PerplexitySearchService : SearchService<SearchServiceOptions.PerplexityOp
                         )
                     }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = responseBody.answer,
-                        items = items
-                    )
+                SearchResult(
+                    answer = responseBody.answer,
+                    items = items
                 )
             } else {
                 error("response failed #${response.code}: ${response.body}")
             }
-        }
     }
 
     override suspend fun scrape(

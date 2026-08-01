@@ -13,5 +13,6 @@ internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options:
         is SearchServiceOptions.BraveOptions -> BraveSearchService as SearchService<T>
         is SearchServiceOptions.MetasoOptions -> MetasoSearchService as SearchService<T>
         is SearchServiceOptions.OllamaOptions -> OllamaSearchService as SearchService<T>
+        is SearchServiceOptions.PerplexityOptions -> PerplexitySearchService as SearchService<T>
         else -> error("Search provider is not available on iOS yet: ${options.displayName}")
     }
