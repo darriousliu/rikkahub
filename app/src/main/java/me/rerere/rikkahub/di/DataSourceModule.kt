@@ -32,6 +32,7 @@ import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.SimpleDictManager
 import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
 import me.rerere.rikkahub.shared.template.MessageTemplateSource
@@ -125,6 +126,7 @@ val dataSourceModule = module {
             callbackSessionFactory = get(),
         )
     }
+    single<McpRuntime> { get<McpManager>() }
 
     single {
         GenerationHandler(

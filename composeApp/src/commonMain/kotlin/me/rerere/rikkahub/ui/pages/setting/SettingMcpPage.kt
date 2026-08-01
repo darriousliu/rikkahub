@@ -36,7 +36,7 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -44,7 +44,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Tab
@@ -53,7 +52,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,9 +65,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -89,7 +89,7 @@ import me.rerere.hugeicons.stroke.McpServer
 import me.rerere.hugeicons.stroke.MessageBlocked
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.rikkahub.data.ai.mcp.McpCommonOptions
-import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
 import me.rerere.rikkahub.data.ai.mcp.McpTool
@@ -103,10 +103,9 @@ import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.hooks.EditState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.extendColors
-import me.rerere.rikkahub.utils.writeClipboardText
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
 
@@ -137,7 +136,7 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            TopAppBar(
                 title = {
                     Text(stringResource(Res.string.setting_mcp_page_title))
                 },
@@ -167,7 +166,7 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CustomColors.topBarColors.containerColor
     ) { innerPadding ->
-        val mcpManager = koinInject<McpManager>()
+        val mcpManager = koinInject<McpRuntime>()
         val status by mcpManager.syncingStatus.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         val state = rememberPullToRefreshState()
@@ -249,14 +248,14 @@ private fun McpServerItem(
     onDelete: () -> Unit,
     onEdit: (McpServerConfig) -> Unit,
 ) {
-    val mcpManager = koinInject<McpManager>()
+    val mcpManager = koinInject<McpRuntime>()
     val status by mcpManager.getStatus(item).collectAsStateWithLifecycle(McpStatus.Idle)
     val dismissBoxState = rememberSwipeToDismissBoxState()
     val scope = rememberCoroutineScope()
     var errorDetail by remember { mutableStateOf<McpStatus.Error?>(null) }
 
     errorDetail?.let { error ->
-        val context = LocalContext.current
+        val clipboard = LocalClipboardManager.current
         val fullText = error.detail ?: error.message
         AlertDialog(
             onDismissRequest = { errorDetail = null },
@@ -275,7 +274,7 @@ private fun McpServerItem(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        context.writeClipboardText(fullText)
+                        clipboard.setText(AnnotatedString(fullText))
                         errorDetail = null
                     }
                 ) {
@@ -442,7 +441,7 @@ private fun McpServerConfigModal(state: EditState<McpServerConfig>) {
             onDismissRequest = {
                 state.dismiss()
             },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(
                 modifier = Modifier
@@ -836,13 +835,13 @@ private fun McpToolsConfigure(
     config: McpServerConfig,
     update: (McpServerConfig) -> Unit,
 ) {
-    val mcpManager = koinInject<McpManager>()
+    val mcpManager = koinInject<McpRuntime>()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (mcpManager.getClient(config) == null) {
+        if (!mcpManager.hasClient(config)) {
             item {
                 Text(stringResource(Res.string.setting_mcp_page_tools_unavailable_message))
             }
@@ -1025,11 +1024,11 @@ private fun McpImportModal(
     var jsonText by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val noValidConfigMsg = stringResource(Res.string.setting_mcp_page_import_no_valid_config)
-    val parseErrorMsg = stringResource(Res.string.setting_mcp_page_import_parse_error)
+    val parseErrorPrefix = stringResource(Res.string.setting_mcp_page_import_parse_error, "")
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
             modifier = Modifier
@@ -1075,7 +1074,7 @@ private fun McpImportModal(
                                 onImport(configs)
                             }
                         } catch (e: Exception) {
-                            errorMessage = parseErrorMsg.format(e.message ?: "")
+                            errorMessage = parseErrorPrefix + (e.message ?: "")
                         }
                     }
                 ) {

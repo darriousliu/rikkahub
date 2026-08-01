@@ -20,7 +20,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
@@ -28,8 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,7 +44,7 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Alert01
 import me.rerere.hugeicons.stroke.Icon1stBracket
 import me.rerere.hugeicons.stroke.McpServer
-import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
 import me.rerere.rikkahub.data.model.Assistant
@@ -53,14 +52,14 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.components.ui.ToggleSurface
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
 fun McpPickerButton(
     assistant: Assistant,
     servers: List<McpServerConfig>,
-    mcpManager: McpManager,
+    mcpManager: McpRuntime,
     modifier: Modifier = Modifier,
     onUpdateAssistant: (Assistant) -> Unit
 ) {
@@ -116,7 +115,7 @@ fun McpPickerButton(
     if (showMcpPicker) {
         ModalBottomSheet(
             onDismissRequest = { showMcpPicker = false },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(
                 modifier = Modifier.Companion
@@ -127,7 +126,7 @@ fun McpPickerButton(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = stringResource(id = Res.string.mcp_picker_title),
+                    text = stringResource(Res.string.mcp_picker_title),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
@@ -138,9 +137,9 @@ fun McpPickerButton(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.padding(vertical = 4.dp)
                     ) {
-                        LinearWavyProgressIndicator()
+                        LinearProgressIndicator()
                         Text(
-                            text = stringResource(id = Res.string.mcp_picker_syncing),
+                            text = stringResource(Res.string.mcp_picker_syncing),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -164,7 +163,7 @@ fun McpPickerButton(
 fun McpPickerListItem(
     assistant: Assistant,
     servers: List<McpServerConfig>,
-    mcpManager: McpManager,
+    mcpManager: McpRuntime,
     modifier: Modifier = Modifier,
     onUpdateAssistant: (Assistant) -> Unit
 ) {
@@ -229,7 +228,7 @@ private fun McpPickerSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
         Column(
             modifier = Modifier
@@ -240,7 +239,7 @@ private fun McpPickerSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = stringResource(id = Res.string.mcp_picker_title),
+                text = stringResource(Res.string.mcp_picker_title),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold
                 )
@@ -251,9 +250,9 @@ private fun McpPickerSheet(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
-                    LinearWavyProgressIndicator()
+                    LinearProgressIndicator()
                     Text(
-                        text = stringResource(id = Res.string.mcp_picker_syncing),
+                        text = stringResource(Res.string.mcp_picker_syncing),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -280,7 +279,7 @@ fun McpPicker(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     onUpdateAssistant: (Assistant) -> Unit
 ) {
-    val mcpManager = koinInject<McpManager>()
+    val mcpManager = koinInject<McpRuntime>()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,
@@ -352,7 +351,7 @@ fun McpPicker(
                             if (it) {
                                 val newServers = assistant.mcpServers.toMutableSet()
                                 newServers.add(server.id)
-                                newServers.removeIf { servers.none { s -> s.id == server.id } } // remove invalid servers
+                                newServers.removeAll { selectedId -> servers.none { it.id == selectedId } }
                                 onUpdateAssistant(
                                     assistant.copy(
                                         mcpServers = newServers.toSet()
@@ -361,7 +360,7 @@ fun McpPicker(
                             } else {
                                 val newServers = assistant.mcpServers.toMutableSet()
                                 newServers.remove(server.id)
-                                newServers.removeIf { servers.none { s -> s.id == server.id } } //  remove invalid servers
+                                newServers.removeAll { selectedId -> servers.none { it.id == selectedId } }
                                 onUpdateAssistant(
                                     assistant.copy(
                                         mcpServers = newServers.toSet()

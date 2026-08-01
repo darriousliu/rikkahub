@@ -41,7 +41,7 @@ class McpManager(
     private val appScope: AppScope,
     private val filesManager: FilesManager,
     callbackSessionFactory: OAuthCallbackSessionFactory,
-) {
+) : McpRuntime {
     private val httpClient = HttpClient(OkHttp) {
         engine {
             config {
@@ -91,12 +91,14 @@ class McpManager(
         }
     }
 
-    val syncingStatus: StateFlow<Map<Uuid, McpStatus>>
+    override val syncingStatus: StateFlow<Map<Uuid, McpStatus>>
         get() = statusStore.status
 
     fun getClient(config: McpServerConfig): Client? = sessionRegistry.getClient(config.id)
 
-    fun getStatus(config: McpServerConfig): Flow<McpStatus> = sessionRegistry.getStatus(config.id)
+    override fun getStatus(config: McpServerConfig): Flow<McpStatus> = sessionRegistry.getStatus(config.id)
+
+    override fun hasClient(config: McpServerConfig): Boolean = getClient(config) != null
 
     fun getAllAvailableTools(): List<Triple<Uuid, String, McpTool>> {
         val settings = settingsStore.settingsFlow.value
@@ -131,13 +133,13 @@ class McpManager(
 
     suspend fun removeClient(config: McpServerConfig) = sessionRegistry.removeClient(config)
 
-    suspend fun syncAll() = sessionRegistry.syncAll()
+    override suspend fun syncAll() = sessionRegistry.syncAll()
 
-    fun startAuthorization(config: McpServerConfig) {
+    override fun startAuthorization(config: McpServerConfig) {
         oauthCoordinator.startAuthorization(config)
     }
 
-    fun cancelAuthorization(config: McpServerConfig) {
+    override fun cancelAuthorization(config: McpServerConfig) {
         oauthCoordinator.cancelAuthorization(config.id)
     }
 
