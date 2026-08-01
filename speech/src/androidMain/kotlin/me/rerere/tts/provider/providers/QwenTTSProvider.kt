@@ -1,7 +1,6 @@
 package me.rerere.tts.provider.providers
 
 import android.content.Context
-import android.util.Base64
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -106,7 +105,7 @@ class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
             val finishReason = output.optString("finish_reason", "")
 
             if (audioBase64.isNotEmpty()) {
-                val audioData = Base64.decode(audioBase64, Base64.DEFAULT)
+                val audioData = decodeAudioBase64(audioBase64)
                 val isLast = finishReason == "stop"
                 Pair(audioData, isLast)
             } else {

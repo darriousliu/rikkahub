@@ -1,7 +1,6 @@
 package me.rerere.tts.provider.providers
 
 import android.content.Context
-import android.util.Base64
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -109,7 +108,7 @@ class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
         }
 
         val audioBase64 = geminiResponse.candidates[0].content.parts[0].inlineData.data
-        val audioData = Base64.decode(audioBase64, Base64.DEFAULT)
+        val audioData = decodeAudioBase64(audioBase64)
 
         emit(
             AudioChunk(
