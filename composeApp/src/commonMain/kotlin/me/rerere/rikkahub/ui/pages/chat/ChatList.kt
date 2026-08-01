@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -71,6 +72,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -98,6 +100,8 @@ import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.message.ChatMessageBranchSelector
+import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
+import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
 import me.rerere.rikkahub.ui.components.ui.ListSelectableItem
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.hooks.ImeLazyListAutoScroller
@@ -150,25 +154,41 @@ private fun BasicChatMessage(presentation: ChatMessagePresentation) {
         horizontalAlignment = if (message.role == MessageRole.USER) Alignment.End else Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        val text = message.toText()
-        if (text.isNotBlank()) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = if (message.role == MessageRole.USER) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-            ) {
-                Text(
-                    text = text,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
+        message.parts.forEach { part ->
+            when (part) {
+                is UIMessagePart.Text -> if (part.text.isNotBlank()) {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (message.role == MessageRole.USER) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                    ) {
+                        MarkdownBlock(
+                            content = part.text,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+
+                is UIMessagePart.Image -> ZoomableAsyncImage(
+                    model = part.url,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 320.dp)
+                        .clip(MaterialTheme.shapes.medium),
                 )
+
+                is UIMessagePart.Video -> BasicAttachmentLabel("Video", part.url)
+                is UIMessagePart.Audio -> BasicAttachmentLabel("Audio", part.url)
+                is UIMessagePart.Document -> BasicAttachmentLabel(part.fileName, part.url)
+                is UIMessagePart.Tool -> BasicToolCall(tool = part, presentation = presentation)
+                else -> Unit
             }
-        }
-        message.parts.filterIsInstance<UIMessagePart.Tool>().forEach { tool ->
-            BasicToolCall(tool = tool, presentation = presentation)
         }
         if (presentation.loading && presentation.lastMessage) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp))
@@ -176,6 +196,22 @@ private fun BasicChatMessage(presentation: ChatMessagePresentation) {
         ChatMessageBranchSelector(
             node = presentation.node,
             onUpdate = presentation.onUpdate,
+        )
+    }
+}
+
+@Composable
+private fun BasicAttachmentLabel(label: String, url: String) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Text(
+            text = "$label · ${url.substringBefore('?').substringAfterLast('/')}",
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }

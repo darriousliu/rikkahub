@@ -34,7 +34,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import me.rerere.rikkahub.ui.components.table.DataTable
 
 @Composable
@@ -478,13 +477,13 @@ private fun parseColor(colorString: String): Color? {
                 // Hex color
                 val hex = colorString.removePrefix("#")
                 when (hex.length) {
-                    6 -> Color("#$hex".toColorInt())
+                    6 -> Color(0xFF000000L or hex.toLong(16))
                     3 -> {
                         // Convert 3-digit hex to 6-digit
                         val r = hex[0].toString().repeat(2)
                         val g = hex[1].toString().repeat(2)
                         val b = hex[2].toString().repeat(2)
-                        Color("#$r$g$b".toColorInt())
+                        Color(0xFF000000L or "$r$g$b".toLong(16))
                     }
 
                     else -> null

@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,13 +22,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
-import me.rerere.rikkahub.ui.context.LocalSettings
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
 
 /**
@@ -243,8 +239,7 @@ private fun CellBox(
 @Preview(showBackground = true)
 @Composable
 private fun DataTablePreview() {
-    CompositionLocalProvider(LocalSettings provides Settings()) {
-        Surface {
+    Surface {
             val headers = listOf<@Composable () -> Unit>(
                 { Text("Semester", style = MaterialTheme.typography.labelLarge) },
                 { Text("Attendance", style = MaterialTheme.typography.labelLarge) },
@@ -265,7 +260,7 @@ private fun DataTablePreview() {
                 listOf(
                     { Text("Fall 2024") },
                     { Text("Fair", style = MaterialTheme.typography.bodyMedium) },
-                    { MarkdownBlock("这行更高会把整行拉齐! 这是一个很长的文本用来测试换行功能!  \n>haha") },
+                    { Text("这行更高会把整行拉齐! 这是一个很长的文本用来测试换行功能!") },
                 ),
             )
 
@@ -276,6 +271,5 @@ private fun DataTablePreview() {
                 columnMaxWidths = listOf(120.dp, 100.dp, 200.dp),
                 zebraStriping = false,
             )
-        }
     }
 }

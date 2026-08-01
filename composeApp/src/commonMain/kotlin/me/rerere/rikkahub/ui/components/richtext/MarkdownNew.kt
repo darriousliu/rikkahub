@@ -64,7 +64,6 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
-import androidx.core.graphics.toColorInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -74,7 +73,6 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Tick01
 import me.rerere.rikkahub.ui.components.table.DataTable
 import me.rerere.rikkahub.ui.context.LocalSettings
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.utils.toDp
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
@@ -83,8 +81,8 @@ import org.intellij.markdown.parser.MarkdownParser
 // ---- Preprocessing (mirrors Markdown.kt logic) ----
 
 private val INLINE_LATEX_REGEX = Regex("\\\\\\((.+?)\\\\\\)")
-private val BLOCK_LATEX_REGEX = Regex("\\\\\\[(.+?)\\\\\\]", RegexOption.DOT_MATCHES_ALL)
-private val CODE_BLOCK_REGEX = Regex("```[\\s\\S]*?```|`[^`\n]*`", RegexOption.DOT_MATCHES_ALL)
+private val BLOCK_LATEX_REGEX = Regex("\\\\\\[([\\s\\S]+?)\\\\\\]")
+private val CODE_BLOCK_REGEX = Regex("```[\\s\\S]*?```|`[^`\n]*`")
 
 private fun preProcess(content: String): String {
     val codeBlocks = mutableListOf<IntRange>()
@@ -881,7 +879,7 @@ internal fun AnnotatedString.Builder.appendHtmlInlineElement(
 
         "code" -> withStyle(
             SpanStyle(
-                fontFamily = JetbrainsMono,
+                fontFamily = FontFamily.Monospace,
                 fontSize = 0.9.em,
                 color = colorScheme.primary,
             ).merge(cssStyle ?: SpanStyle())
@@ -900,9 +898,8 @@ internal fun AnnotatedString.Builder.appendHtmlInlineElement(
                     val domain = text.substringAfter("citation,")
                     val id = href
                     if (id.length == 6) {
-                        inlineContents.putIfAbsent(
-                            "citation:$id",
-                            InlineTextContent(
+                        if ("citation:$id" !in inlineContents) {
+                            inlineContents["citation:$id"] = InlineTextContent(
                                 placeholder = Placeholder(
                                     width = (domain.length * 7).sp,
                                     height = 1.em,
@@ -923,15 +920,15 @@ internal fun AnnotatedString.Builder.appendHtmlInlineElement(
                                             style = TextStyle(
                                                 fontSize = 10.sp,
                                                 lineHeight = 10.sp,
-                                                fontFamily = JetbrainsMono,
+                                                fontFamily = FontFamily.Monospace,
                                                 color = colorScheme.onTertiaryContainer,
                                                 fontWeight = FontWeight.Thin,
                                             ),
                                         )
                                     }
                                 },
-                            ),
-                        )
+                            )
+                        }
                         appendInlineContent("citation:$id")
                     }
                 }
@@ -962,9 +959,8 @@ internal fun AnnotatedString.Builder.appendHtmlInlineElement(
                             it.width.toSp() to it.height.toSp()
                         }
                     }
-                    inlineContents.putIfAbsent(
-                        formula,
-                        InlineTextContent(
+                    if (formula !in inlineContents) {
+                        inlineContents[formula] = InlineTextContent(
                             placeholder = Placeholder(
                                 width = width,
                                 height = height,
@@ -973,8 +969,8 @@ internal fun AnnotatedString.Builder.appendHtmlInlineElement(
                             children = {
                                 MathInline(latex = formula, modifier = Modifier, fontSize = style.fontSize)
                             },
-                        ),
-                    )
+                        )
+                    }
                 } else {
                     withStyle(SpanStyle(fontFamily = FontFamily.Monospace, fontSize = 0.95.em)) {
                         append(formula)
@@ -1371,12 +1367,12 @@ private fun parseColor(colorString: String): Color? {
             colorString.startsWith("#") -> {
                 val hex = colorString.removePrefix("#")
                 when (hex.length) {
-                    6 -> Color("#$hex".toColorInt())
+                    6 -> Color(0xFF000000L or hex.toLong(16))
                     3 -> {
                         val r = hex[0].toString().repeat(2)
                         val g = hex[1].toString().repeat(2)
                         val b = hex[2].toString().repeat(2)
-                        Color("#$r$g$b".toColorInt())
+                        Color(0xFF000000L or "$r$g$b".toLong(16))
                     }
 
                     else -> null

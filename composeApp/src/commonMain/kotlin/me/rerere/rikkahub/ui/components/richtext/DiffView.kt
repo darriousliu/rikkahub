@@ -21,13 +21,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
 
-internal val DiffAddedColor = Color(0xFF4CAF50)
-internal val DiffRemovedColor = Color(0xFFEF5350)
+val DiffAddedColor = Color(0xFF4CAF50)
+val DiffRemovedColor = Color(0xFFEF5350)
 
 /** unified diff 的增删行数统计 */
-internal data class DiffStats(val additions: Int, val deletions: Int)
+data class DiffStats(val additions: Int, val deletions: Int)
 
-internal fun parseDiffStats(diff: String): DiffStats {
+fun parseDiffStats(diff: String): DiffStats {
     var additions = 0
     var deletions = 0
     diff.lineSequence().forEach { line ->

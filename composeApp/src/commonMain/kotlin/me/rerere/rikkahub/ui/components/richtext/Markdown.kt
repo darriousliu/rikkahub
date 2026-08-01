@@ -1,9 +1,5 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import android.content.ClipData
-import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,7 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -55,10 +50,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.Placeholder
@@ -73,20 +67,17 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
-import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import me.rerere.hugeicons.HugeIcons
@@ -97,7 +88,6 @@ import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.ui.components.table.DataTable
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.modifier.onClick
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.utils.toDp
 import org.intellij.markdown.IElementType
 import org.intellij.markdown.MarkdownElementTypes
@@ -108,6 +98,7 @@ import org.intellij.markdown.flavours.gfm.GFMElementTypes
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.flavours.gfm.GFMTokenTypes
 import org.intellij.markdown.parser.MarkdownParser
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.time.Clock
 
 private val flavour by lazy {
@@ -121,9 +112,9 @@ private val parser by lazy {
 }
 
 private val INLINE_LATEX_REGEX = Regex("\\\\\\((.+?)\\\\\\)")
-private val BLOCK_LATEX_REGEX = Regex("\\\\\\[(.+?)\\\\\\]", RegexOption.DOT_MATCHES_ALL)
-val THINKING_REGEX = Regex("<think>([\\s\\S]*?)(?:</think>|$)", RegexOption.DOT_MATCHES_ALL)
-private val CODE_BLOCK_REGEX = Regex("```[\\s\\S]*?```|`[^`\n]*`", RegexOption.DOT_MATCHES_ALL)
+private val BLOCK_LATEX_REGEX = Regex("\\\\\\[([\\s\\S]+?)\\\\\\]")
+val THINKING_REGEX = Regex("<think>([\\s\\S]*?)(?:</think>|$)")
+private val CODE_BLOCK_REGEX = Regex("```[\\s\\S]*?```|`[^`\n]*`")
 private val BREAK_LINE_REGEX = Regex("(?i)<br\\s*/?>")
 private val LATEX_BLOCK_LINE_BREAK_REGEX = Regex("""[ \t]*\r?\n[ \t]*""")
 
@@ -275,65 +266,10 @@ fun MarkdownBlock(
 
 // for debug
 private fun dumpAst(node: ASTNode, text: String, indent: String = "") {
-    println("$indent${node.type} ${if (node.children.isEmpty()) node.getTextInNode(text) else ""} | ${node.javaClass.simpleName}")
+    println("$indent${node.type} ${if (node.children.isEmpty()) node.getTextInNode(text) else ""}")
     node.children.fastForEach {
         dumpAst(it, text, "$indent  ")
     }
-}
-
-object HeaderStyle {
-    private const val LINE_HEIGHT_RATIO = 1.25f
-
-    fun fromLevel(level: Int, fontSizeRatio: Float): TextStyle {
-        val fontSize = when (level) {
-            1 -> 24.sp
-            2 -> 22.sp
-            3 -> 20.sp
-            4 -> 18.sp
-            5 -> 16.sp
-            else -> 14.sp
-        } * fontSizeRatio
-
-        return TextStyle(
-            fontStyle = FontStyle.Normal,
-            fontWeight = FontWeight.Bold,
-            fontSize = fontSize,
-            lineHeight = fontSize * LINE_HEIGHT_RATIO,
-        )
-    }
-
-    fun verticalPadding(level: Int) = when (level) {
-        1 -> 16.dp
-        2 -> 14.dp
-        3 -> 12.dp
-        4 -> 10.dp
-        5 -> 8.dp
-        else -> 6.dp
-    }
-
-    fun fromMarkdownType(type: IElementType, fontSizeRatio: Float): TextStyle = fromLevel(
-        level = when (type) {
-            MarkdownElementTypes.ATX_1 -> 1
-            MarkdownElementTypes.ATX_2 -> 2
-            MarkdownElementTypes.ATX_3 -> 3
-            MarkdownElementTypes.ATX_4 -> 4
-            MarkdownElementTypes.ATX_5 -> 5
-            MarkdownElementTypes.ATX_6 -> 6
-            else -> 6
-        },
-        fontSizeRatio = fontSizeRatio,
-    )
-
-    fun verticalPadding(type: IElementType) = verticalPadding(
-        level = when (type) {
-            MarkdownElementTypes.ATX_1 -> 1
-            MarkdownElementTypes.ATX_2 -> 2
-            MarkdownElementTypes.ATX_3 -> 3
-            MarkdownElementTypes.ATX_4 -> 4
-            MarkdownElementTypes.ATX_5 -> 5
-            else -> 6
-        }
-    )
 }
 
 @Composable
@@ -464,14 +400,13 @@ private fun MarkdownNode(
                 ?: ""
             val linkDest =
                 node.findChildOfTypeRecursive(MarkdownElementTypes.LINK_DESTINATION)?.getTextInNode(content) ?: ""
-            val context = LocalContext.current
+            val uriHandler = LocalUriHandler.current
             Text(
                 text = linkText,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = modifier.clickable {
-                    val intent = Intent(Intent.ACTION_VIEW, linkDest.toUri())
-                    context.startActivity(intent)
+                    runCatching { uriHandler.openUri(linkDest) }
                 })
         }
 
@@ -576,7 +511,7 @@ private fun MarkdownNode(
         MarkdownElementTypes.CODE_SPAN -> {
             val code = node.getTextInNode(content).trim('`')
             Text(
-                text = code, fontFamily = JetbrainsMono, modifier = modifier
+                text = code, fontFamily = FontFamily.Monospace, modifier = modifier
             )
         }
 
@@ -870,29 +805,12 @@ private fun TableNode(node: ASTNode, content: String, modifier: Modifier = Modif
         }
     }
 
-    val clipboardManager = LocalClipboard.current
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    val platformActions = LocalRichTextPlatformActions.current
 
     // 表格原始markdown文本（用于复制）和CSV内容（用于下载）
     val tableMarkdown = remember(node, content) { node.getTextInNode(content).trim() }
     val tableCsv = remember(headerCells, rows) { buildTableCsv(headerCells, rows) }
-
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        uri?.let {
-            scope.launch {
-                try {
-                    context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                        outputStream.write(tableCsv.toByteArray())
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-    }
 
     // 渲染表格卡片（工具栏 + 表格）
     Column(
@@ -931,30 +849,31 @@ private fun TableNode(node: ASTNode, content: String, modifier: Modifier = Modif
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .onClick {
-                            scope.launch {
-                                clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText("table", tableMarkdown)))
-                            }
+                            clipboardManager.setText(AnnotatedString(tableMarkdown))
                         }
                         .padding(4.dp)
                         .size(iconSize)
                 )
 
-                Icon(
-                    imageVector = HugeIcons.Download04,
-                    contentDescription = "Download",
-                    tint = iconTint,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .onClick {
-                            createDocumentLauncher.launch(
+                if (platformActions.saveCode != null) {
+                    Icon(
+                        imageVector = HugeIcons.Download04,
+                        contentDescription = "Download",
+                        tint = iconTint,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .onClick {
+                                platformActions.saveCode.invoke(
                                 "table_${
                                     Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                                }.csv"
-                            )
-                        }
-                        .padding(4.dp)
-                        .size(iconSize)
-                )
+                                }.csv",
+                                tableCsv,
+                                )
+                            }
+                            .padding(4.dp)
+                            .size(iconSize)
+                    )
+                }
             }
         }
         DataTable(
@@ -1086,8 +1005,8 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                 val domain = linkText.substringAfter("citation,")
                 val id = linkDest
                 if (id.length == 6) {
-                    inlineContents.putIfAbsent(
-                        "citation:$linkDest", InlineTextContent(
+                    if ("citation:$linkDest" !in inlineContents) {
+                        inlineContents["citation:$linkDest"] = InlineTextContent(
                             placeholder = Placeholder(
                                 width = (domain.length * 7).sp,
                                 height = 1.em,
@@ -1108,14 +1027,14 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                                         style = TextStyle(
                                             fontSize = 10.sp,
                                             lineHeight = 10.sp,
-                                            fontFamily = JetbrainsMono,
+                                            fontFamily = FontFamily.Monospace,
                                             color = colorScheme.onTertiaryContainer,
                                             fontWeight = FontWeight.Thin
                                         ),
                                     )
                                 }
                             })
-                    )
+                    }
                     appendInlineContent("citation:$linkDest")
                 }
             } else {
@@ -1146,7 +1065,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
             val code = node.getTextInNode(content).trim('`')
             withStyle(
                 SpanStyle(
-                    fontFamily = JetbrainsMono,
+                    fontFamily = FontFamily.Monospace,
                     fontSize = 0.9.em,
                     color = colorScheme.primary,
                 )
@@ -1179,7 +1098,8 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                             it.width.toSp() to it.height.toSp()
                         }
                     }
-                    inlineContents.putIfAbsent(/* key = */ formula,/* value = */ InlineTextContent(
+                    if (formula !in inlineContents) {
+                        inlineContents[formula] = InlineTextContent(
                         placeholder = Placeholder(
                             width = width,
                             height = height,
@@ -1189,7 +1109,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                                 latex = formula, modifier = Modifier
                             )
                         })
-                    )
+                    }
                 } else {
                     drawables.forEachIndexed { index, segment ->
                         // 段间插入零宽空格，提供换行点
@@ -1199,8 +1119,8 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                         val (width, height) = with(density) {
                             segment.size.width.toSp() to segment.size.height.toSp()
                         }
-                        inlineContents.putIfAbsent(
-                            key, InlineTextContent(
+                        if (key !in inlineContents) {
+                            inlineContents[key] = InlineTextContent(
                                 placeholder = Placeholder(
                                     width = width,
                                     height = height,
@@ -1208,7 +1128,7 @@ private fun AnnotatedString.Builder.appendMarkdownNodeContent(
                                 ), children = {
                                     LatexDrawable(segment = segment)
                                 })
-                        )
+                        }
                     }
                 }
             } else {

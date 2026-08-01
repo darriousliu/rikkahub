@@ -54,6 +54,7 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
 import com.dokar.sonner.Toaster
+import com.dokar.sonner.ToastType
 import com.dokar.sonner.rememberToasterState
 import io.ktor.client.HttpClient
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -61,12 +62,16 @@ import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
 import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.platform.addPlatformGifDecoder
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.RikkaHubApp
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.ui.TTSController
+import me.rerere.rikkahub.ui.components.ui.LocalImageSaveHandler
+import me.rerere.rikkahub.ui.components.richtext.LocalRichTextPlatformActions
+import me.rerere.rikkahub.ui.components.richtext.rememberAndroidRichTextPlatformActions
 import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
@@ -243,6 +248,19 @@ class RouteActivity : ComponentActivity() {
         val asr = rememberCustomAsrState()
         val eventBus = koinInject<AppEventBus>()
         val buildInfo = koinInject<PlatformBuildInfo>()
+        val filesManager = koinInject<FilesManager>()
+        val imageSaveHandler: suspend (String) -> Unit = remember(filesManager, toastState) {
+            { imageUrl ->
+                toastState.show("正在保存")
+                runCatching {
+                    filesManager.saveMessageImage(this@RouteActivity, imageUrl)
+                }.onSuccess {
+                    toastState.show("已保存图片", type = ToastType.Success)
+                }.onFailure { error ->
+                    toastState.show(error.toString(), type = ToastType.Error)
+                }
+            }
+        }
         LaunchedEffect(tts) {
             eventBus.events.collect { event ->
                 when (event) {
@@ -269,17 +287,21 @@ class RouteActivity : ComponentActivity() {
 
         val backStack = rememberNavBackStack(startScreen)
         SideEffect { this@RouteActivity.navStack = backStack }
+        val navigator = remember(backStack) { Navigator(backStack) }
+        val richTextPlatformActions = rememberAndroidRichTextPlatformActions(navigator)
 
         ShareHandler(backStack)
 
         SharedTransitionLayout {
             CompositionLocalProvider(
-                LocalNavController provides Navigator(backStack),
+                LocalNavController provides navigator,
                 LocalSharedTransitionScope provides this,
                 LocalSettings provides settings,
                 LocalToaster provides toastState,
                 LocalTTSState provides tts,
                 LocalASRState provides asr,
+                LocalImageSaveHandler provides imageSaveHandler,
+                LocalRichTextPlatformActions provides richTextPlatformActions,
             ) {
                 Toaster(
                     state = toastState,

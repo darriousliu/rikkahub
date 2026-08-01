@@ -20,9 +20,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,7 +28,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.hugeicons.HugeIcons
@@ -39,27 +35,19 @@ import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Files02
 import me.rerere.hugeicons.stroke.MusicNote03
 import me.rerere.hugeicons.stroke.Video01
-import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.hooks.ChatInputState
-import org.koin.compose.koinInject
 
 @Composable
-internal fun MediaFileInputRow(
+fun AttachmentInputRow(
     state: ChatInputState,
+    displayNameByRelativePath: Map<String, String> = emptyMap(),
+    displayNameByFileName: Map<String, String> = emptyMap(),
+    onDeleteFile: (String) -> Unit = {},
 ) {
-    val filesManager: FilesManager = koinInject()
-    val managedFiles by filesManager.observe().collectAsState(initial = emptyList())
-    val displayNameByRelativePath = remember(managedFiles) {
-        managedFiles.associate { it.relativePath to it.displayName }
-    }
-    val displayNameByFileName = remember(managedFiles) {
-        managedFiles.associate { it.relativePath.substringAfterLast('/') to it.displayName }
-    }
-
     fun removePart(part: UIMessagePart, url: String) {
         state.messageContent = state.messageContent.filterNot { it == part }
         if (state.shouldDeleteFileOnRemove(part)) {
-            filesManager.deleteChatFiles(listOf(url.toUri()))
+            onDeleteFile(url)
         }
     }
 
@@ -217,13 +205,13 @@ private fun attachmentNameFromUrl(
     displayNameByRelativePath: Map<String, String>,
     displayNameByFileName: Map<String, String>,
 ): String {
-    val parsed = runCatching { url.toUri() }.getOrNull()
-    val relativePath = parsed?.path?.substringAfter("/files/", missingDelimiterValue = "")?.takeIf { it.isNotBlank() }
+    val path = url.substringBefore('?').substringBefore('#')
+    val relativePath = path.substringAfter("/files/", missingDelimiterValue = "").takeIf { it.isNotBlank() }
     if (relativePath != null) {
         displayNameByRelativePath[relativePath]?.let { return it }
     }
 
-    val storedFileName = parsed?.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
+    val storedFileName = path.substringAfterLast('/').takeIf { it.isNotBlank() }
     if (storedFileName != null) {
         displayNameByFileName[storedFileName]?.let { return it }
         return storedFileName
