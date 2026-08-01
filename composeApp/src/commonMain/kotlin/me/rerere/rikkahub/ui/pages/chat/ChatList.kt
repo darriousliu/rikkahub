@@ -45,13 +45,14 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,9 +71,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -86,28 +85,183 @@ import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.rerere.ai.core.MessageRole
+import me.rerere.ai.provider.Model
+import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.UIMessage
+import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getAssistantById
+import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
-import me.rerere.rikkahub.ui.components.message.ChatMessage
-import me.rerere.rikkahub.ui.components.ui.ErrorCardsDisplay
+import me.rerere.rikkahub.ui.components.message.ChatMessageBranchSelector
 import me.rerere.rikkahub.ui.components.ui.ListSelectableItem
-import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.hooks.ImeLazyListAutoScroller
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.ui.theme.ChatFontProvider
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatList"
 private const val LoadingIndicatorKey = "LoadingIndicator"
 private const val ScrollBottomKey = "ScrollBottomKey"
+private const val AskUserToolName = "ask_user"
+
+interface VolumeKeyEventSource {
+    fun addListener(listener: (isVolumeUp: Boolean) -> Boolean)
+    fun removeListener(listener: (isVolumeUp: Boolean) -> Boolean)
+}
+
+data class ChatMessagePresentation(
+    val node: MessageNode,
+    val model: Model?,
+    val assistant: Assistant?,
+    val loading: Boolean,
+    val lastMessage: Boolean,
+    val onRegenerate: () -> Unit,
+    val onEdit: () -> Unit,
+    val onFork: () -> Unit,
+    val onDelete: () -> Unit,
+    val onShare: () -> Unit,
+    val onUpdate: (MessageNode) -> Unit,
+    val onToggleFavorite: () -> Unit,
+    val onTranslate: ((UIMessage, String) -> Unit)?,
+    val onClearTranslation: (UIMessage) -> Unit,
+    val onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)?,
+    val onToolAnswer: ((toolCallId: String, answer: String) -> Unit)?,
+)
+
+data class ChatExportPresentation(
+    val visible: Boolean,
+    val onDismissRequest: () -> Unit,
+    val conversation: Conversation,
+    val selectedMessages: List<UIMessage>,
+)
+
+@Composable
+private fun BasicChatMessage(presentation: ChatMessagePresentation) {
+    val message = presentation.node.currentMessage
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (message.role == MessageRole.USER) Alignment.End else Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        val text = message.toText()
+        if (text.isNotBlank()) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = if (message.role == MessageRole.USER) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+            ) {
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+        message.parts.filterIsInstance<UIMessagePart.Tool>().forEach { tool ->
+            BasicToolCall(tool = tool, presentation = presentation)
+        }
+        if (presentation.loading && presentation.lastMessage) {
+            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+        }
+        ChatMessageBranchSelector(
+            node = presentation.node,
+            onUpdate = presentation.onUpdate,
+        )
+    }
+}
+
+@Composable
+private fun BasicToolCall(
+    tool: UIMessagePart.Tool,
+    presentation: ChatMessagePresentation,
+) {
+    var answer by remember(tool.toolCallId) { mutableStateOf("") }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        tonalElevation = 2.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(tool.toolName, style = MaterialTheme.typography.titleSmall)
+            tool.output.filterIsInstance<UIMessagePart.Text>().forEach { output ->
+                Text(output.text, style = MaterialTheme.typography.bodySmall)
+            }
+            if (tool.toolName != AskUserToolName &&
+                tool.approvalState is ToolApprovalState.Pending &&
+                presentation.onToolApproval != null
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = {
+                        presentation.onToolApproval.invoke(tool.toolCallId, false, "")
+                    }) {
+                        Text(stringResource(Res.string.chat_message_tool_deny))
+                    }
+                    TextButton(onClick = {
+                        presentation.onToolApproval.invoke(tool.toolCallId, true, "")
+                    }) {
+                        Text(stringResource(Res.string.chat_message_tool_approve))
+                    }
+                }
+            }
+            if (tool.toolName == AskUserToolName &&
+                tool.approvalState is ToolApprovalState.Pending &&
+                presentation.onToolAnswer != null
+            ) {
+                OutlinedTextField(
+                    value = answer,
+                    onValueChange = { answer = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                TextButton(
+                    onClick = {
+                        presentation.onToolAnswer.invoke(tool.toolCallId, answer)
+                        answer = ""
+                    },
+                    enabled = answer.isNotBlank(),
+                ) {
+                    Text(stringResource(Res.string.chat_message_tool_submit))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BasicErrorCards(
+    errors: List<ChatError>,
+    onDismissError: (Uuid) -> Unit,
+    modifier: Modifier,
+) {
+    val error = errors.lastOrNull() ?: return
+    Surface(
+        onClick = { onDismissError(error.id) },
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.errorContainer,
+    ) {
+        Text(
+            text = error.title ?: error.error.message ?: error.error::class.simpleName.orEmpty(),
+            modifier = Modifier.padding(12.dp),
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
 
 @Composable
 fun ChatList(
@@ -128,13 +282,21 @@ fun ChatList(
     onDelete: (UIMessage) -> Unit = {},
     onUpdateMessage: (MessageNode) -> Unit = {},
     onClickSuggestion: (String) -> Unit = {},
-    onTranslate: ((UIMessage, java.util.Locale) -> Unit)? = null,
+    onTranslate: ((UIMessage, String) -> Unit)? = null,
     onClearTranslation: (UIMessage) -> Unit = {},
     onJumpToMessage: (Int) -> Unit = {},
     onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
     onToolAnswer: ((toolCallId: String, answer: String) -> Unit)? = null,
     onToggleFavorite: ((MessageNode) -> Unit)? = null,
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
+    volumeKeyEventSource: VolumeKeyEventSource? = null,
+    scrollCaptureInProgress: Boolean = false,
+    messageRenderer: @Composable (ChatMessagePresentation) -> Unit = { BasicChatMessage(it) },
+    exportRenderer: @Composable (ChatExportPresentation) -> Unit = {},
+    errorRenderer: @Composable (List<ChatError>, (Uuid) -> Unit, () -> Unit, Modifier) -> Unit =
+        { currentErrors, dismiss, _, modifier -> BasicErrorCards(currentErrors, dismiss, modifier) },
+    loadingRenderer: @Composable (Modifier) -> Unit = { CircularProgressIndicator(modifier = it) },
+    chatFontWrapper: @Composable (@Composable () -> Unit) -> Unit = { content -> content() },
 ) {
     AnimatedContent(
         targetState = previewMode,
@@ -177,6 +339,13 @@ fun ChatList(
                 onToolAnswer = onToolAnswer,
                 onToggleFavorite = onToggleFavorite,
                 onConversationSystemPromptChange = onConversationSystemPromptChange,
+                volumeKeyEventSource = volumeKeyEventSource,
+                scrollCaptureInProgress = scrollCaptureInProgress,
+                messageRenderer = messageRenderer,
+                exportRenderer = exportRenderer,
+                errorRenderer = errorRenderer,
+                loadingRenderer = loadingRenderer,
+                chatFontWrapper = chatFontWrapper,
             )
         }
     }
@@ -200,22 +369,33 @@ private fun ChatListNormal(
     onDelete: (UIMessage) -> Unit,
     onUpdateMessage: (MessageNode) -> Unit,
     onClickSuggestion: (String) -> Unit,
-    onTranslate: ((UIMessage, java.util.Locale) -> Unit)?,
+    onTranslate: ((UIMessage, String) -> Unit)?,
     onClearTranslation: (UIMessage) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
     onToolAnswer: ((toolCallId: String, answer: String) -> Unit)? = null,
     onToggleFavorite: ((MessageNode) -> Unit)? = null,
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
+    volumeKeyEventSource: VolumeKeyEventSource?,
+    scrollCaptureInProgress: Boolean,
+    messageRenderer: @Composable (ChatMessagePresentation) -> Unit,
+    exportRenderer: @Composable (ChatExportPresentation) -> Unit,
+    errorRenderer: @Composable (List<ChatError>, (Uuid) -> Unit, () -> Unit, Modifier) -> Unit,
+    loadingRenderer: @Composable (Modifier) -> Unit,
+    chatFontWrapper: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val loadingState by rememberUpdatedState(loading)
     var isRecentScroll by remember { mutableStateOf(false) }
     val conversationUpdated by rememberUpdatedState(conversation)
     val density = LocalDensity.current
-    val activity = LocalContext.current as? me.rerere.rikkahub.RouteActivity
 
-    DisposableEffect(Unit) {
+    DisposableEffect(
+        volumeKeyEventSource,
+        settings.displaySetting.enableVolumeKeyScroll,
+        settings.displaySetting.volumeKeyScrollRatio,
+        state,
+    ) {
         val listener: (Boolean) -> Boolean = { isVolumeUp ->
             if (settings.displaySetting.enableVolumeKeyScroll) {
                 val bottomPaddingPx = with(density) {
@@ -227,9 +407,9 @@ private fun ChatListNormal(
                 true
             } else false
         }
-        activity?.volumeKeyListeners?.add(listener)
+        volumeKeyEventSource?.addListener(listener)
         onDispose {
-            activity?.volumeKeyListeners?.remove(listener)
+            volumeKeyEventSource?.removeListener(listener)
         }
     }
 
@@ -301,7 +481,7 @@ private fun ChatListNormal(
             }
         }
 
-        ChatFontProvider(displaySetting = settings.displaySetting) {
+        chatFontWrapper {
             LazyColumn(
                 state = state,
                 contentPadding = PaddingValues(16.dp) + PaddingValues(bottom = 32.dp + innerPadding.calculateBottomPadding()),
@@ -329,41 +509,42 @@ private fun ChatListNormal(
                         selectedKeys = selectedItems,
                         enabled = selecting,
                     ) {
-                        ChatMessage(
-                            node = node,
-                            model = node.currentMessage.modelId?.let(modelById::get),
-                            assistant = assistant,
-                            loading = loading && index == lastMessageIndex,
-                            onRegenerate = {
+                        messageRenderer(
+                            ChatMessagePresentation(
+                                node = node,
+                                model = node.currentMessage.modelId?.let(modelById::get),
+                                assistant = assistant,
+                                loading = loading && index == lastMessageIndex,
+                                onRegenerate = {
                                 onRegenerate(node.currentMessage)
-                            },
-                            onEdit = {
+                                },
+                                onEdit = {
                                 onEdit(node.currentMessage)
-                            },
-                            onFork = {
+                                },
+                                onFork = {
                                 onForkMessage(node.currentMessage)
-                            },
-                            onDelete = {
+                                },
+                                onDelete = {
                                 onDelete(node.currentMessage)
-                            },
-                            onShare = {
+                                },
+                                onShare = {
                                 selecting = true  // 使用 CoroutineScope 延迟状态更新
                                 selectedItems.clear()
                                 selectedItems.addAll(conversation.messageNodes.map { it.id }
                                     .subList(0, conversation.messageNodes.indexOf(node) + 1))
-                            },
-                            onUpdate = {
+                                },
+                                onUpdate = {
                                 onUpdateMessage(it)
-                            },
-                            isFavorite = node.isFavorite,
-                            onToggleFavorite = {
+                                },
+                                onToggleFavorite = {
                                 onToggleFavorite?.invoke(node)
-                            },
-                            onTranslate = onTranslate,
-                            onClearTranslation = onClearTranslation,
-                            onToolApproval = onToolApproval,
-                            onToolAnswer = onToolAnswer,
-                            lastMessage = index == lastMessageIndex,
+                                },
+                                onTranslate = onTranslate,
+                                onClearTranslation = onClearTranslation,
+                                onToolApproval = onToolApproval,
+                                onToolAnswer = onToolAnswer,
+                                lastMessage = index == lastMessageIndex,
+                            )
                         )
                     }
                 }
@@ -385,9 +566,7 @@ private fun ChatListNormal(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        RabbitLoadingIndicator(
-                            modifier = Modifier.size(28.dp)
-                        )
+                        loadingRenderer(Modifier.size(28.dp))
                         AnimatedVisibility(
                             visible = processingStatus != null,
                         ) {
@@ -418,13 +597,13 @@ private fun ChatListNormal(
                 .padding(innerPadding),
         ) {
             // 错误消息卡片
-            ErrorCardsDisplay(
-                errors = errors,
-                onDismissError = onDismissError,
-                onClearAllErrors = onClearAllErrors,
-                modifier = Modifier
+            errorRenderer(
+                errors,
+                onDismissError,
+                onClearAllErrors,
+                Modifier
                     .align(Alignment.BottomCenter)
-                    .zIndex(5f)
+                    .zIndex(5f),
             )
 
             // 完成选择
@@ -440,84 +619,88 @@ private fun ChatListNormal(
                     targetOffsetY = { it * 2 },
                 ),
             ) {
-                HorizontalFloatingToolbar(
-                    expanded = true,
+                Surface(
+                    shape = CircleShape,
+                    tonalElevation = 4.dp,
                 ) {
-                    Tooltip(
-                        tooltip = {
-                            Text("Clear selection")
-                        }
-                    ) {
-                        IconButton(
-                            onClick = {
-                                selecting = false
-                                selectedItems.clear()
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Tooltip(
+                            tooltip = {
+                                Text("Clear selection")
                             }
                         ) {
-                            Icon(HugeIcons.Cancel01, null)
-                        }
-                    }
-                    Tooltip(
-                        tooltip = {
-                            Text("Select all")
-                        }
-                    ) {
-                        IconButton(
-                            onClick = {
-                                if (selectedItems.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    selecting = false
                                     selectedItems.clear()
-                                } else {
-                                    selectedItems.addAll(conversation.messageNodes.map { it.id })
                                 }
+                            ) {
+                                Icon(HugeIcons.Cancel01, null)
+                            }
+                        }
+                        Tooltip(
+                            tooltip = {
+                                Text("Select all")
                             }
                         ) {
-                            Icon(HugeIcons.CursorPointer01, null)
-                        }
-                    }
-                    Tooltip(
-                        tooltip = {
-                            Text("Confirm")
-                        }
-                    ) {
-                        FilledIconButton(
-                            onClick = {
-                                selecting = false
-                                val messages = conversation.messageNodes.filter { it.id in selectedItems }
-                                if (messages.isNotEmpty()) {
-                                    showExportSheet = true
+                            IconButton(
+                                onClick = {
+                                    if (selectedItems.isNotEmpty()) {
+                                        selectedItems.clear()
+                                    } else {
+                                        selectedItems.addAll(conversation.messageNodes.map { it.id })
+                                    }
                                 }
+                            ) {
+                                Icon(HugeIcons.CursorPointer01, null)
+                            }
+                        }
+                        Tooltip(
+                            tooltip = {
+                                Text("Confirm")
                             }
                         ) {
-                            Icon(HugeIcons.Tick01, null)
+                            FilledIconButton(
+                                onClick = {
+                                    selecting = false
+                                    val messages = conversation.messageNodes.filter { it.id in selectedItems }
+                                    if (messages.isNotEmpty()) {
+                                        showExportSheet = true
+                                    }
+                                }
+                            ) {
+                                Icon(HugeIcons.Tick01, null)
+                            }
                         }
                     }
                 }
             }
 
             // 导出对话框
-            ChatExportSheet(
-                visible = showExportSheet,
-                onDismissRequest = {
+            exportRenderer(
+                ChatExportPresentation(
+                    visible = showExportSheet,
+                    onDismissRequest = {
                     showExportSheet = false
                     selectedItems.clear()
-                },
-                conversation = conversation,
-                selectedMessages = conversation.messageNodes.filter { it.id in selectedItems }
-                    .map { it.currentMessage }
+                    },
+                    conversation = conversation,
+                    selectedMessages = conversation.messageNodes.filter { it.id in selectedItems }
+                        .map { it.currentMessage },
+                )
             )
-
-            val captureProgress = LocalScrollCaptureInProgress.current
 
             // 消息快速跳转
             MessageJumper(
-                show = isRecentScroll && !state.isScrollInProgress && settings.displaySetting.showMessageJumper && !captureProgress,
+                show = isRecentScroll && !state.isScrollInProgress &&
+                    settings.displaySetting.showMessageJumper && !scrollCaptureInProgress,
                 onLeft = settings.displaySetting.messageJumperOnLeft,
                 scope = scope,
                 state = state
             )
 
             // Suggestion
-            if (conversation.chatSuggestions.isNotEmpty() && !captureProgress) {
+            if (conversation.chatSuggestions.isNotEmpty() && !scrollCaptureInProgress) {
                 ChatSuggestionsRow(
                     conversation = conversation,
                     onClickSuggestion = onClickSuggestion,

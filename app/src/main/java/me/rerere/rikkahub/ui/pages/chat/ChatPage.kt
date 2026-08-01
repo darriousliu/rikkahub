@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -61,6 +62,7 @@ import me.rerere.hugeicons.stroke.LeftToRightListBullet
 import me.rerere.hugeicons.stroke.Menu03
 import me.rerere.hugeicons.stroke.MessageAdd01
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -77,6 +79,9 @@ import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
+import me.rerere.rikkahub.ui.components.message.ChatMessage
+import me.rerere.rikkahub.ui.components.ui.ErrorCardsDisplay
+import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
@@ -89,6 +94,7 @@ import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
 import me.rerere.rikkahub.ui.layout.currentWindowDpSize
 import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.ui.theme.ChatFontProvider
 import me.rerere.rikkahub.ui.components.ui.UpdateCard
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.base64Decode
@@ -292,6 +298,21 @@ private fun ChatPageContent(
     val hazeState = rememberHazeState()
     val assistant = setting.getCurrentAssistant()
     var showFilesSheet by remember { mutableStateOf(false) }
+    val routeActivity = LocalContext.current as? RouteActivity
+    val volumeKeyEventSource = remember(routeActivity) {
+        routeActivity?.let { activity ->
+            object : VolumeKeyEventSource {
+                override fun addListener(listener: (isVolumeUp: Boolean) -> Boolean) {
+                    activity.volumeKeyListeners.add(listener)
+                }
+
+                override fun removeListener(listener: (isVolumeUp: Boolean) -> Boolean) {
+                    activity.volumeKeyListeners.remove(listener)
+                }
+            }
+        }
+    }
+    val scrollCaptureInProgress = LocalScrollCaptureInProgress.current
 
     val completionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
         assistant.workspaceId?.let { workspaceId ->
@@ -467,8 +488,8 @@ private fun ChatPageContent(
                     inputState.editingMessage = null
                     inputState.setMessageText(suggestion)
                 },
-                onTranslate = { message, locale ->
-                    vm.translateMessage(message, locale.toLanguageTag())
+                onTranslate = { message, languageTag ->
+                    vm.translateMessage(message, languageTag)
                 },
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
@@ -491,6 +512,53 @@ private fun ChatPageContent(
                 onConversationSystemPromptChange = { newPrompt ->
                     vm.updateConversation(conversation.copy(customSystemPrompt = newPrompt))
                     vm.saveConversationAsync()
+                },
+                volumeKeyEventSource = volumeKeyEventSource,
+                scrollCaptureInProgress = scrollCaptureInProgress,
+                messageRenderer = { presentation ->
+                    ChatMessage(
+                        node = presentation.node,
+                        model = presentation.model,
+                        assistant = presentation.assistant,
+                        loading = presentation.loading,
+                        lastMessage = presentation.lastMessage,
+                        onRegenerate = presentation.onRegenerate,
+                        onEdit = presentation.onEdit,
+                        onFork = presentation.onFork,
+                        onDelete = presentation.onDelete,
+                        onShare = presentation.onShare,
+                        onUpdate = presentation.onUpdate,
+                        isFavorite = presentation.node.isFavorite,
+                        onToggleFavorite = presentation.onToggleFavorite,
+                        onTranslate = presentation.onTranslate?.let { translate ->
+                            { message, locale -> translate(message, locale.toLanguageTag()) }
+                        },
+                        onClearTranslation = presentation.onClearTranslation,
+                        onToolApproval = presentation.onToolApproval,
+                        onToolAnswer = presentation.onToolAnswer,
+                    )
+                },
+                exportRenderer = { presentation ->
+                    ChatExportSheet(
+                        visible = presentation.visible,
+                        onDismissRequest = presentation.onDismissRequest,
+                        conversation = presentation.conversation,
+                        selectedMessages = presentation.selectedMessages,
+                    )
+                },
+                errorRenderer = { currentErrors, dismiss, clearAll, modifier ->
+                    ErrorCardsDisplay(
+                        errors = currentErrors,
+                        onDismissError = dismiss,
+                        onClearAllErrors = clearAll,
+                        modifier = modifier,
+                    )
+                },
+                loadingRenderer = { modifier ->
+                    RabbitLoadingIndicator(modifier = modifier)
+                },
+                chatFontWrapper = { content ->
+                    ChatFontProvider(displaySetting = setting.displaySetting, content = content)
                 },
             )
         }
