@@ -21,22 +21,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import me.rerere.asr.ASRController
 import me.rerere.asr.ASRProviderSetting
 import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import kotlin.io.encoding.Base64
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.ByteArrayOutputStream
-import java.io.IOException
 
 private const val TAG = "MiMoASR"
 
@@ -220,53 +212,7 @@ class MiMoASRController(
             channels = 1,
             bitsPerSample = 16
         )
-        val b64 = Base64.Default.encode(wavBytes)
-
-        val message = JSONObject()
-            .put("role", "user")
-            .put(
-                "content",
-                JSONArray().put(
-                    JSONObject()
-                        .put("type", "input_audio")
-                        .put(
-                            "input_audio",
-                            JSONObject().put("data", "data:audio/wav;base64,$b64")
-                        )
-                )
-            )
-
-        val body = JSONObject()
-            .put("model", provider.model)
-            .put("messages", JSONArray().put(message))
-        if (provider.language.isNotBlank()) {
-            body.put("asr_options", JSONObject().put("language", provider.language))
-        }
-
-        val request = Request.Builder()
-            .url("${provider.baseUrl.trimEnd('/')}/chat/completions")
-            .addHeader("api-key", provider.apiKey)
-            .addHeader("Content-Type", "application/json")
-            .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-
-        val text = withContext(Dispatchers.IO) {
-            httpClient.newCall(request).execute().use { resp ->
-                val respBody = resp.body?.string().orEmpty()
-                if (!resp.isSuccessful) {
-                    throw IOException("MiMo ASR HTTP ${resp.code}: $respBody")
-                }
-                val json = runCatching { JSONObject(respBody) }.getOrElse {
-                    throw IOException("MiMo ASR response is not valid JSON: $respBody")
-                }
-                json.optJSONArray("choices")
-                    ?.optJSONObject(0)
-                    ?.optJSONObject("message")
-                    ?.optString("content", "")
-                    ?.trim()
-                    ?: ""
-            }
-        }
+        val text = transcribeMiMoAudio(httpClient, provider, wavBytes)
 
         if (text.isNotEmpty()) {
             completedTranscripts.update { it + text }
@@ -299,8 +245,6 @@ class MiMoASRController(
     }
 
     companion object {
-        private val JSON_MEDIA_TYPE = "application/json".toMediaType()
-
         /**
          * 把 raw PCM16 little-endian 数据封装成最小 WAV (RIFF/WAVE/fmt/data)。
          * MiMo 官方只接受 WAV/MP3, AudioRecord 输出的是 PCM, 必须自己包 WAV 头。
