@@ -16,11 +16,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import me.rerere.common.concurrent.AtomicSnapshotMap
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
@@ -40,8 +40,8 @@ internal class McpOAuthCoordinator(
     private val updateStatus: (Uuid, McpStatus) -> Unit,
     private val tokenPolicy: McpTokenPolicy = McpTokenPolicy(),
 ) {
-    private val authorizationJobs = ConcurrentHashMap<Uuid, Job>()
-    private val refreshLocks = ConcurrentHashMap<Uuid, Mutex>()
+    private val authorizationJobs = AtomicSnapshotMap<Uuid, Job>()
+    private val refreshLocks = AtomicSnapshotMap<Uuid, Mutex>()
 
     fun startAuthorization(config: McpServerConfig, context: Context) {
         authorizationJobs.remove(config.id)?.cancel()
@@ -56,7 +56,7 @@ internal class McpOAuthCoordinator(
                 updateStatus(config.id, McpStatus.Error.from(e, fallbackMessage = "OAuth authorization failed"))
             }
         }
-        authorizationJobs[config.id] = job
+        authorizationJobs.put(config.id, job)
         job.invokeOnCompletion { authorizationJobs.remove(config.id, job) }
     }
 
@@ -80,7 +80,7 @@ internal class McpOAuthCoordinator(
      * 按 serverId 串行刷新。获得锁后重新读取配置，避免并发工具调用重复使用同一个 refresh token。
      */
     suspend fun ensureFreshToken(configInput: McpServerConfig): McpServerConfig {
-        val lock = refreshLocks.computeIfAbsent(configInput.id) { Mutex() }
+        val lock = refreshLocks.getOrPut(configInput.id) { Mutex() }
         return lock.withLock {
             val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == configInput.id }
                 ?: configInput

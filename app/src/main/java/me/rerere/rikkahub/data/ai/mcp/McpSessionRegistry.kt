@@ -35,9 +35,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.InputSchema
+import me.rerere.common.concurrent.AtomicSnapshotMap
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
@@ -100,7 +100,7 @@ internal class McpSessionRegistry(
     private val oauthCoordinator: McpOAuthCoordinator,
     private val statusStore: McpStatusStore,
 ) {
-    private val sessions = ConcurrentHashMap<Uuid, McpSession>()
+    private val sessions = AtomicSnapshotMap<Uuid, McpSession>()
 
     fun getClient(configId: Uuid): Client? = sessions[configId]?.client
 
@@ -111,7 +111,7 @@ internal class McpSessionRegistry(
             .filter { it.commonOptions.enable && it.commonOptions.name.isNotBlank() }
             .associateBy { it.id }
 
-        (sessions.keys - activeConfigs.keys).forEach { configId ->
+        (sessions.keysSnapshot() - activeConfigs.keys).forEach { configId ->
             val detached = sessions.remove(configId) ?: return@forEach
             oauthCoordinator.forget(configId)
             statusStore.remove(configId)
@@ -178,7 +178,7 @@ internal class McpSessionRegistry(
             return
         }
 
-        val session = sessions.computeIfAbsent(desiredConfig.id) { McpSession(desiredConfig) }
+        val session = sessions.getOrPut(desiredConfig.id) { McpSession(desiredConfig) }
         session.config = desiredConfig
         connectSession(
             session = session,
@@ -196,7 +196,7 @@ internal class McpSessionRegistry(
     }
 
     suspend fun syncAll() {
-        sessions.values.toList().forEach { session -> syncSession(session) }
+        sessions.valuesSnapshot().forEach { session -> syncSession(session) }
     }
 
     private suspend fun connectSession(
