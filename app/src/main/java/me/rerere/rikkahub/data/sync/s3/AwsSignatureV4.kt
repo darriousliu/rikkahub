@@ -1,12 +1,10 @@
 package me.rerere.rikkahub.data.sync.s3
 
+import me.rerere.common.crypto.Sha256Crypto
 import java.net.URLEncoder
-import java.security.MessageDigest
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 internal object AwsSignatureV4 {
     private const val ALGORITHM = "AWS4-HMAC-SHA256"
@@ -32,11 +30,12 @@ internal object AwsSignatureV4 {
         contentLength: Long? = null,
         contentType: String? = null,
         now: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC),
+        crypto: Sha256Crypto = JdkSha256Crypto,
     ): SignedRequest {
         val dateStamp = now.format(dateFormatter)
         val amzDate = now.format(timestampFormatter)
 
-        val resolvedPayloadHash = payloadHash ?: payload?.sha256Hex() ?: UNSIGNED_PAYLOAD
+        val resolvedPayloadHash = payloadHash ?: payload?.sha256Hex(crypto) ?: UNSIGNED_PAYLOAD
 
         val host = config.host
         val canonicalUri = if (config.pathStyle) {
@@ -85,16 +84,17 @@ internal object AwsSignatureV4 {
             appendLine(ALGORITHM)
             appendLine(amzDate)
             appendLine(credentialScope)
-            append(canonicalRequest.sha256Hex())
+            append(canonicalRequest.sha256Hex(crypto))
         }
 
         val signingKey = getSignatureKey(
             config.secretAccessKey,
             dateStamp,
             config.region,
-            SERVICE
+            SERVICE,
+            crypto,
         )
-        val signature = hmacSha256(signingKey, stringToSign).toHexString()
+        val signature = crypto.hmac(signingKey, stringToSign.encodeToByteArray()).toHexString()
 
         val authorizationHeader = buildString {
             append("$ALGORITHM ")
@@ -131,27 +131,21 @@ internal object AwsSignatureV4 {
         key: String,
         dateStamp: String,
         region: String,
-        service: String
+        service: String,
+        crypto: Sha256Crypto,
     ): ByteArray {
-        val kDate = hmacSha256("AWS4$key".toByteArray(), dateStamp)
-        val kRegion = hmacSha256(kDate, region)
-        val kService = hmacSha256(kRegion, service)
-        return hmacSha256(kService, "aws4_request")
+        val kDate = crypto.hmac("AWS4$key".encodeToByteArray(), dateStamp.encodeToByteArray())
+        val kRegion = crypto.hmac(kDate, region.encodeToByteArray())
+        val kService = crypto.hmac(kRegion, service.encodeToByteArray())
+        return crypto.hmac(kService, "aws4_request".encodeToByteArray())
     }
 
-    private fun hmacSha256(key: ByteArray, data: String): ByteArray {
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(key, "HmacSHA256"))
-        return mac.doFinal(data.toByteArray(Charsets.UTF_8))
+    private fun ByteArray.sha256Hex(crypto: Sha256Crypto): String {
+        return crypto.digest(this).toHexString()
     }
 
-    private fun ByteArray.sha256Hex(): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        return digest.digest(this).toHexString()
-    }
-
-    private fun String.sha256Hex(): String {
-        return this.toByteArray(Charsets.UTF_8).sha256Hex()
+    private fun String.sha256Hex(crypto: Sha256Crypto): String {
+        return encodeToByteArray().sha256Hex(crypto)
     }
 
     private fun ByteArray.toHexString(): String {
