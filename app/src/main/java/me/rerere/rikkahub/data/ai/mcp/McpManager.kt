@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.data.ai.mcp
 
-import android.content.Context
 import androidx.core.net.toUri
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -22,9 +21,9 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
+import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.utils.JsonInstant
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
@@ -41,7 +40,7 @@ class McpManager(
     private val settingsStore: SettingsStore,
     private val appScope: AppScope,
     private val filesManager: FilesManager,
-    appEventBus: AppEventBus,
+    callbackSessionFactory: OAuthCallbackSessionFactory,
 ) {
     private val httpClient = HttpClient(OkHttp) {
         engine {
@@ -67,12 +66,12 @@ class McpManager(
     private val oauthCoordinator = McpOAuthCoordinator(
         settingsStore = settingsStore,
         appScope = appScope,
-        appEventBus = appEventBus,
         oauthClient = McpOAuthClient(
             httpClient = httpClient,
             sha256 = JdkMcpSha256Digest,
             randomBytes = { size -> ByteArray(size).also(secureRandom::nextBytes) },
         ),
+        callbackSessionFactory = callbackSessionFactory,
         updateStatus = statusStore::update,
     )
     private val sessionRegistry = McpSessionRegistry(
@@ -134,8 +133,8 @@ class McpManager(
 
     suspend fun syncAll() = sessionRegistry.syncAll()
 
-    fun startAuthorization(config: McpServerConfig, context: Context) {
-        oauthCoordinator.startAuthorization(config, context)
+    fun startAuthorization(config: McpServerConfig) {
+        oauthCoordinator.startAuthorization(config)
     }
 
     fun cancelAuthorization(config: McpServerConfig) {

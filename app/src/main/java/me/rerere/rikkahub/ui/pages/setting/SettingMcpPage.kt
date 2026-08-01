@@ -395,14 +395,13 @@ private fun McpServerItem(
                         )
                     }
                     if (status == McpStatus.NeedsAuthorization) {
-                        val context = LocalContext.current
                         Text(
                             text = "需要 OAuth 授权",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error,
                         )
                         Button(
-                            onClick = { mcpManager.startAuthorization(item, context) },
+                            onClick = { mcpManager.startAuthorization(item) },
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                         ) {
                             Text("OAuth 授权")

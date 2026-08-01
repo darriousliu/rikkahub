@@ -10,7 +10,9 @@ import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AndroidExternalUriOpener
+import me.rerere.rikkahub.platform.AndroidOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.shared.PlatformBuildInfo
@@ -37,6 +39,13 @@ val appModule = module {
     single<Json> { JsonInstant }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
+    single<OAuthCallbackSessionFactory> {
+        AndroidOAuthCallbackSessionFactory(
+            appScope = get(),
+            appEventBus = get(),
+            uriOpener = get(),
+        )
+    }
 
     single {
         AppEventBus()

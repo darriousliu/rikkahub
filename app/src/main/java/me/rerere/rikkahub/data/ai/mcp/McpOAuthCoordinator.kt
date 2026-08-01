@@ -1,26 +1,20 @@
 package me.rerere.rikkahub.data.ai.mcp
 
-import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withContext
 import me.rerere.common.concurrent.AtomicSnapshotMap
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.event.AppEvent
-import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.platform.OAuthCallbackSession
+import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
+import me.rerere.rikkahub.platform.requireAuthorizationCode
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
@@ -35,20 +29,20 @@ private val OAUTH_CALLBACK_TIMEOUT = 5.minutes
 internal class McpOAuthCoordinator(
     private val settingsStore: SettingsStore,
     private val appScope: AppScope,
-    private val appEventBus: AppEventBus,
     private val oauthClient: McpOAuthClient,
+    private val callbackSessionFactory: OAuthCallbackSessionFactory,
     private val updateStatus: (Uuid, McpStatus) -> Unit,
     private val tokenPolicy: McpTokenPolicy = McpTokenPolicy(),
 ) : McpAuthorizationCoordinator {
     private val authorizationJobs = AtomicSnapshotMap<Uuid, Job>()
     private val refreshLocks = AtomicSnapshotMap<Uuid, Mutex>()
 
-    fun startAuthorization(config: McpServerConfig, context: Context) {
+    fun startAuthorization(config: McpServerConfig) {
         authorizationJobs.remove(config.id)?.cancel()
         val job = appScope.launch {
             updateStatus(config.id, McpStatus.Authorizing)
             try {
-                authorize(config, context.applicationContext)
+                authorize(config)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -127,9 +121,24 @@ internal class McpOAuthCoordinator(
             .isSuccess
     }
 
-    private suspend fun authorize(config: McpServerConfig, context: Context) = withContext(Dispatchers.IO) {
+    private suspend fun authorize(config: McpServerConfig) {
+        val callbackSession = callbackSessionFactory.create()
+        try {
+            authorize(config, callbackSession)
+        } finally {
+            withContext(NonCancellable) {
+                callbackSession.close()
+            }
+        }
+    }
+
+    private suspend fun authorize(
+        config: McpServerConfig,
+        callbackSession: OAuthCallbackSession,
+    ) {
         val serverUrl = config.serverUrl
         require(serverUrl.isNotBlank()) { "Server URL 为空，无法授权" }
+        val redirectUri = callbackSession.redirectUri
 
         val protectedResource = oauthClient.discoverProtectedResource(serverUrl)
         val issuer = protectedResource.authorizationServers.firstOrNull()
@@ -152,7 +161,7 @@ internal class McpOAuthCoordinator(
             val registration = oauthClient.registerClient(
                 registrationEndpoint = registrationEndpoint,
                 clientName = config.commonOptions.name,
-                redirectUri = MCP_OAUTH_REDIRECT_URI,
+                redirectUri = redirectUri,
                 scope = scope,
             )
             clientId = registration.clientId
@@ -178,16 +187,17 @@ internal class McpOAuthCoordinator(
         val authorizationUrl = oauthClient.buildAuthorizationUrl(
             authorizationEndpoint = authorizationEndpoint,
             clientId = clientId,
-            redirectUri = MCP_OAUTH_REDIRECT_URI,
+            redirectUri = redirectUri,
             pkce = pkce,
             state = state,
             scope = scope,
             resource = resource,
         )
-        val callback = awaitCallbackAndLaunchBrowser(context, authorizationUrl, state)
+        val callback = withTimeoutOrNull(OAUTH_CALLBACK_TIMEOUT) {
+            callbackSession.authorize(authorizationUrl, state)
+        }
             ?: error("OAuth 授权超时")
-        callback.error?.let { error("授权失败: $it") }
-        val code = callback.code ?: error("授权失败: 未返回授权码")
+        val code = callback.requireAuthorizationCode(state)
 
         val token = oauthClient.exchangeCode(
             tokenEndpoint = tokenEndpoint,
@@ -195,7 +205,7 @@ internal class McpOAuthCoordinator(
             clientSecret = clientSecret,
             code = code,
             codeVerifier = pkce.verifier,
-            redirectUri = MCP_OAUTH_REDIRECT_URI,
+            redirectUri = redirectUri,
             resource = resource,
         )
         persistOAuthState(
@@ -213,28 +223,6 @@ internal class McpOAuthCoordinator(
                 expiresAt = tokenPolicy.computeExpiry(token.expiresIn),
             )
         )
-
-    }
-
-    private suspend fun awaitCallbackAndLaunchBrowser(
-        context: Context,
-        authorizationUrl: String,
-        state: String,
-    ): AppEvent.McpOAuthCallback? = coroutineScope {
-        val subscribed = CompletableDeferred<Unit>()
-        val callback = async {
-            withTimeoutOrNull(OAUTH_CALLBACK_TIMEOUT) {
-                appEventBus.events
-                    .onSubscription { subscribed.complete(Unit) }
-                    .filterIsInstance<AppEvent.McpOAuthCallback>()
-                    .first { it.state == state }
-            }
-        }
-        subscribed.await()
-        withContext(Dispatchers.Main) {
-            launchOAuthAuthorization(context, authorizationUrl)
-        }
-        callback.await()
     }
 
     private suspend fun persistOAuthState(configId: Uuid, oauth: McpOAuthState?) {

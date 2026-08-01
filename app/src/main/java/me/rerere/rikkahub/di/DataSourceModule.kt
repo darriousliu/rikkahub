@@ -117,7 +117,14 @@ val dataSourceModule = module {
 
     single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
 
-    single { McpManager(settingsStore = get(), appScope = get(), filesManager = get(), appEventBus = get()) }
+    single {
+        McpManager(
+            settingsStore = get(),
+            appScope = get(),
+            filesManager = get(),
+            callbackSessionFactory = get(),
+        )
+    }
 
     single {
         GenerationHandler(
