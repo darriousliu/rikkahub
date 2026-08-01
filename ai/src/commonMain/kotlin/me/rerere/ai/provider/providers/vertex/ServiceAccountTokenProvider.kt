@@ -41,7 +41,7 @@ internal data class ServiceAccountTokenHttpResponse(
 class ServiceAccountTokenProvider internal constructor(
     private val transport: ServiceAccountTokenTransport,
     private val clock: Clock,
-    private val rsaSha256Signer: RsaSha256Signer = JdkVertexRsaSha256Signer,
+    private val rsaSha256Signer: RsaSha256Signer = defaultVertexRsaSha256Signer(),
 ) {
     constructor(http: HttpClient) : this(
         transport = KtorServiceAccountTokenTransport(http),
@@ -84,7 +84,7 @@ class ServiceAccountTokenProvider internal constructor(
         serviceAccountEmail: String,
         privateKeyPem: String,
         scopes: List<String> = listOf("https://www.googleapis.com/auth/cloud-platform")
-    ): String = withContext(Dispatchers.IO) {
+    ): String = withContext(Dispatchers.Default) {
         val cacheKey = generateCacheKey(serviceAccountEmail, scopes)
 
         // Check cache first
@@ -105,13 +105,13 @@ class ServiceAccountTokenProvider internal constructor(
           "exp":$exp
         }""".trimIndent()
 
-        val headerB64 = base64UrlNoPad(headerJson.toByteArray(Charsets.UTF_8))
-        val claimB64 = base64UrlNoPad(claimJson.toByteArray(Charsets.UTF_8))
+        val headerB64 = base64UrlNoPad(headerJson.encodeToByteArray())
+        val claimB64 = base64UrlNoPad(claimJson.encodeToByteArray())
         val signingInput = "$headerB64.$claimB64"
 
         val signature = rsaSha256Signer.signPkcs8Pem(
             privateKeyPem,
-            signingInput.toByteArray(Charsets.UTF_8),
+            signingInput.encodeToByteArray(),
         )
         val assertion = "$signingInput.${base64UrlNoPad(signature)}"
 

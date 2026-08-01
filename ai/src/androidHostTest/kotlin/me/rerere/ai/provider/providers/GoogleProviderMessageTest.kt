@@ -7,7 +7,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -29,17 +28,11 @@ class GoogleProviderMessageTest {
 
     @Before
     fun setUp() {
-        provider = GoogleProvider(OkHttpClient())
+        provider = googleProviderForTest()
     }
 
-    // Helper to invoke private buildContents method via reflection
     private fun invokeBuildContents(messages: List<UIMessage>): JsonArray {
-        val method = GoogleProvider::class.java.getDeclaredMethod(
-            "buildContents",
-            List::class.java
-        )
-        method.isAccessible = true
-        return method.invoke(provider, messages) as JsonArray
+        return provider.buildContents(messages)
     }
 
     @Test

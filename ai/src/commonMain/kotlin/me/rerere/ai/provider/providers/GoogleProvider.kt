@@ -269,7 +269,7 @@ class GoogleProvider(
         }
     }
 
-    private fun buildCompletionRequestBody(
+    internal fun buildCompletionRequestBody(
         messages: List<UIMessage>,
         params: TextGenerationParams
     ): JsonObject = buildJsonObject {
@@ -523,7 +523,7 @@ class GoogleProvider(
         }
     }
 
-    private fun buildContents(messages: List<UIMessage>): JsonArray {
+    internal fun buildContents(messages: List<UIMessage>): JsonArray {
         return buildJsonArray {
             messages
                 .filter { it.role != MessageRole.SYSTEM && it.isValidToUpload() }
@@ -704,7 +704,7 @@ class GoogleProvider(
             })
         }
 
-    private fun parseUsageMeta(jsonObject: JsonObject?): TokenUsage? {
+    internal fun parseUsageMeta(jsonObject: JsonObject?): TokenUsage? {
         if (jsonObject == null) {
             return null
         }
