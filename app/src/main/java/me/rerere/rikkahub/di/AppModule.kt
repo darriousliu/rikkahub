@@ -10,7 +10,11 @@ import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AndroidExternalUriOpener
+import me.rerere.rikkahub.platform.AndroidFirebaseAnalyticsTracker
+import me.rerere.rikkahub.platform.AndroidFirebaseCrashReporter
 import me.rerere.rikkahub.platform.AndroidOAuthCallbackSessionFactory
+import me.rerere.rikkahub.platform.AnalyticsTracker
+import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.ChatNotificationManager
@@ -74,13 +78,8 @@ val appModule = module {
         )
     }
 
-    single {
-        Firebase.crashlytics
-    }
-
-    single {
-        Firebase.analytics
-    }
+    single<AnalyticsTracker> { AndroidFirebaseAnalyticsTracker(Firebase.analytics) }
+    single<CrashReporter> { AndroidFirebaseCrashReporter(Firebase.crashlytics) }
 
     single {
         SoundEffectPlayer(get())
