@@ -12,27 +12,26 @@ import java.security.KeyFactory
 import java.security.PrivateKey
 import java.security.Signature
 import java.security.spec.PKCS8EncodedKeySpec
-import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+
+private val JWT_LIFETIME_SECONDS = 1.hours.inWholeSeconds
+private val TOKEN_REFRESH_BUFFER_SECONDS = 5.minutes.inWholeSeconds
 
 /**
  * 使用服务账号（email + private key PEM）换取 Google OAuth2 Access Token。
  * 构造时传入 OkHttpClient；调用时传 email、私钥 PEM 与 scopes。
  */
-class ServiceAccountTokenProvider private constructor(
+class ServiceAccountTokenProvider internal constructor(
     private val http: OkHttpClient,
-    private val nowEpochSeconds: () -> Long,
+    private val clock: Clock,
 ) {
     constructor(http: OkHttpClient) : this(
         http = http,
-        nowEpochSeconds = { Instant.now().epochSecond },
-    )
-
-    internal constructor(http: OkHttpClient, clock: Clock) : this(
-        http = http,
-        nowEpochSeconds = { clock.now().epochSeconds },
+        clock = Clock.System,
     )
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -57,9 +56,8 @@ class ServiceAccountTokenProvider private constructor(
      * Check if cached token is still valid (not expired with 5 minutes buffer)
      */
     private fun isCachedTokenValid(cachedToken: CachedToken): Boolean {
-        val now = nowEpochSeconds()
-        val bufferSeconds = 300 // 5 minutes buffer before actual expiration
-        return cachedToken.expiresAt > (now + bufferSeconds)
+        val now = clock.now().epochSeconds
+        return cachedToken.expiresAt > (now + TOKEN_REFRESH_BUFFER_SECONDS)
     }
 
     /**
@@ -81,8 +79,8 @@ class ServiceAccountTokenProvider private constructor(
                 return@withContext cachedToken.token
             }
         }
-        val now = nowEpochSeconds()
-        val exp = now + 3600 // 最长 1h
+        val now = clock.now().epochSeconds
+        val exp = now + JWT_LIFETIME_SECONDS
 
         val headerJson = """{"alg":"RS256","typ":"JWT"}"""
         val claimJson = """{
@@ -122,7 +120,7 @@ class ServiceAccountTokenProvider private constructor(
             val accessToken = tokenResp.accessToken ?: error("No access_token in response")
 
             // Cache the token with expiration time
-            val expiresIn = tokenResp.expiresIn ?: 3600 // Default 1 hour if not provided
+            val expiresIn = tokenResp.expiresIn ?: JWT_LIFETIME_SECONDS
             val expiresAt = now + expiresIn
             tokenCache[cacheKey] = CachedToken(accessToken, expiresAt)
 
