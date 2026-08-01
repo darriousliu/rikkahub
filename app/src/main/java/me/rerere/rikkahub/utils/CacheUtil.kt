@@ -2,28 +2,41 @@ package me.rerere.rikkahub.utils
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.time.Clock
+import kotlin.time.Duration
 
 /**
  * A simple thread-safe cache implementation with expiration support.
  * This is a lightweight alternative to Guava Cache to avoid concurrency issues.
  */
-class SimpleCache<K, V>(
-    private val expireAfterWriteMillis: Long
+class SimpleCache<K, V> private constructor(
+    private val expireAfterWriteMillis: Long,
+    private val currentTimeMillis: () -> Long
 ) {
     private data class CacheEntry<V>(
         val value: V,
-        val timestamp: Long = System.currentTimeMillis()
+        val timestamp: Long
     ) {
-        fun isExpired(expireAfterWriteMillis: Long): Boolean {
-            return System.currentTimeMillis() - timestamp > expireAfterWriteMillis
+        fun isExpired(expireAfterWriteMillis: Long, nowMillis: Long): Boolean {
+            return nowMillis - timestamp > expireAfterWriteMillis
         }
     }
+
+    constructor(expireAfterWriteMillis: Long) : this(
+        expireAfterWriteMillis = expireAfterWriteMillis,
+        currentTimeMillis = System::currentTimeMillis
+    )
+
+    internal constructor(expireAfterWrite: Duration, clock: Clock) : this(
+        expireAfterWriteMillis = expireAfterWrite.inWholeMilliseconds,
+        currentTimeMillis = { clock.now().toEpochMilliseconds() }
+    )
 
     private val cache = ConcurrentHashMap<K, CacheEntry<V>>()
 
     fun getIfPresent(key: K): V? {
         val entry = cache[key] ?: return null
-        return if (entry.isExpired(expireAfterWriteMillis)) {
+        return if (entry.isExpired(expireAfterWriteMillis, currentTimeMillis())) {
             cache.remove(key)
             null
         } else {
@@ -32,7 +45,7 @@ class SimpleCache<K, V>(
     }
 
     fun put(key: K, value: V) {
-        cache[key] = CacheEntry(value)
+        cache[key] = CacheEntry(value, currentTimeMillis())
     }
 
     fun invalidate(key: K) {
@@ -44,7 +57,9 @@ class SimpleCache<K, V>(
     }
 
     fun cleanUp() {
-        cache.entries.removeIf { it.value.isExpired(expireAfterWriteMillis) }
+        cache.entries.removeIf {
+            it.value.isExpired(expireAfterWriteMillis, currentTimeMillis())
+        }
     }
 
     fun size(): Int = cache.size
