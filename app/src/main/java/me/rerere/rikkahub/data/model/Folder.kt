@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.model
 
-import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 /**
@@ -11,5 +12,5 @@ data class Folder(
     val assistantId: Uuid,
     val name: String,
     val sortIndex: Int = 0,
-    val createAt: Instant = Instant.now(),
+    val createAt: Instant = Clock.System.now(),
 )

@@ -6,8 +6,8 @@ import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.db.dao.FolderDAO
 import me.rerere.rikkahub.data.db.entity.FolderEntity
 import me.rerere.rikkahub.data.model.Folder
-import java.time.Instant
 import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class FolderRepository(
@@ -44,19 +44,13 @@ class FolderRepository(
     }
 }
 
-internal class FolderPersistenceMapper private constructor(
-    private val now: () -> Instant,
+internal class FolderPersistenceMapper(
+    private val clock: Clock = Clock.System,
 ) {
-    constructor() : this(Instant::now)
-
-    internal constructor(clock: Clock) : this(
-        now = { Instant.ofEpochMilli(clock.now().toEpochMilliseconds()) },
-    )
-
     fun create(assistantId: Uuid, name: String): Folder = Folder(
         assistantId = assistantId,
         name = name,
-        createAt = now(),
+        createAt = clock.now(),
     )
 
     fun fromEntity(entity: FolderEntity): Folder = Folder(
@@ -64,7 +58,7 @@ internal class FolderPersistenceMapper private constructor(
         assistantId = Uuid.parse(entity.assistantId),
         name = entity.name,
         sortIndex = entity.sortIndex,
-        createAt = Instant.ofEpochMilli(entity.createAt),
+        createAt = Instant.fromEpochMilliseconds(entity.createAt),
     )
 
     fun toEntity(folder: Folder): FolderEntity = FolderEntity(
@@ -72,6 +66,6 @@ internal class FolderPersistenceMapper private constructor(
         assistantId = folder.assistantId.toString(),
         name = folder.name,
         sortIndex = folder.sortIndex,
-        createAt = folder.createAt.toEpochMilli(),
+        createAt = folder.createAt.toEpochMilliseconds(),
     )
 }

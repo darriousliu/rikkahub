@@ -320,7 +320,7 @@ fun me.rerere.rikkahub.data.model.Folder.toDto() = FolderDto(
     assistantId = assistantId.toString(),
     name = name,
     sortIndex = sortIndex,
-    createAt = createAt.toEpochMilli(),
+    createAt = createAt.toEpochMilliseconds(),
 )
 
 fun Conversation.toDto(isGenerating: Boolean = false) = ConversationDto(
