@@ -9,15 +9,6 @@ plugins {
     alias(libs.plugins.buildkonfig)
 }
 
-val javafxPlatformClassifier = when {
-    System.getProperty("os.name").startsWith("Mac") -> {
-        if (System.getProperty("os.arch") in setOf("aarch64", "arm64")) "mac-aarch64" else "mac"
-    }
-    System.getProperty("os.name").startsWith("Windows") -> "win"
-    System.getProperty("os.arch") in setOf("aarch64", "arm64") -> "linux-aarch64"
-    else -> "linux"
-}
-
 kotlin {
     android {
         namespace = "me.rerere.rikkahub.shared"
@@ -119,7 +110,6 @@ kotlin {
         jvmMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sentry)
-            implementation("org.openjfx:javafx-media:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
             implementation(libs.jmdns)
         }
         commonTest.dependencies {

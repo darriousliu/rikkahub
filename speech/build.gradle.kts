@@ -1,5 +1,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val javafxPlatformClassifier = when {
+    System.getProperty("os.name").startsWith("Mac") -> {
+        if (System.getProperty("os.arch") in setOf("aarch64", "arm64")) "mac-aarch64" else "mac"
+    }
+    System.getProperty("os.name").startsWith("Windows") -> "win"
+    System.getProperty("os.arch") in setOf("aarch64", "arm64") -> "linux-aarch64"
+    else -> "linux"
+}
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
@@ -62,6 +71,11 @@ kotlin {
             implementation(libs.androidx.media3.common)
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.material3)
+        }
+        jvmMain.dependencies {
+            implementation("org.openjfx:javafx-base:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
+            implementation("org.openjfx:javafx-graphics:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
+            implementation("org.openjfx:javafx-media:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
         }
         named("androidHostTest") {
             dependencies {
