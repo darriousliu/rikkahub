@@ -5,6 +5,13 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -18,10 +25,8 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.utils.hasUsageStatsPermission
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 internal fun buildScreenTimeTool(context: Context, eventBus: AppEventBus): Tool = Tool(
     name = "get_screen_time",
@@ -29,7 +34,7 @@ internal fun buildScreenTimeTool(context: Context, eventBus: AppEventBus): Tool 
         Get the user's app screen usage (screen time) over a time range.
         Specify a custom interval with 'begin'/'end', or use the 'range' preset (today/week).
         Returns the total foreground time and a per-app breakdown sorted by usage time (descending).
-        The device timezone is '${ZoneId.systemDefault()}' (UTC offset ${OffsetDateTime.now().offset});
+        The device timezone is '${TimeZone.currentSystemDefault().id}' (UTC offset ${currentLocalToolUtcOffset()});
         times without an explicit offset are interpreted in this timezone.
         Requires the 'Usage access' special permission; if it is not granted, the device's usage
         access settings page is opened automatically and an error is returned.
@@ -91,21 +96,25 @@ internal fun buildScreenTimeTool(context: Context, eventBus: AppEventBus): Tool 
         val params = it.jsonObject
         val top = params["top"]?.jsonPrimitive?.contentOrNull?.toIntOrNull()?.coerceIn(1, 50) ?: 10
 
-        val now = ZonedDateTime.now()
-        val zone = now.zone
+        val now = Clock.System.now()
+        val zone = TimeZone.currentSystemDefault()
+        val nowLocal = now.toLocalDateTime(zone)
         val beginRaw = params["begin"]?.jsonPrimitive?.contentOrNull
         val endRaw = params["end"]?.jsonPrimitive?.contentOrNull
         val rangePreset = params["range"]?.jsonPrimitive?.contentOrNull ?: "today"
 
-        val startTime: ZonedDateTime
-        val endTime: ZonedDateTime
+        val startTime: Instant
+        val endTime: Instant
         try {
             endTime = endRaw?.let { raw -> parseUsageTime(raw, zone) } ?: now
             startTime = if (beginRaw != null) {
                 parseUsageTime(beginRaw, zone)
             } else when (rangePreset) {
-                "week" -> now.minusDays(7)
-                else -> now.toLocalDate().atStartOfDay(zone)
+                "week" -> LocalDateTime(
+                    nowLocal.date.minus(7, DateTimeUnit.DAY),
+                    nowLocal.time,
+                ).toInstant(zone)
+                else -> nowLocal.date.atStartOfDayIn(zone)
             }
         } catch (e: Exception) {
             val payload = buildJsonObject {
@@ -115,7 +124,7 @@ internal fun buildScreenTimeTool(context: Context, eventBus: AppEventBus): Tool 
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        if (!startTime.isBefore(endTime)) {
+        if (startTime >= endTime) {
             val payload = buildJsonObject {
                 put("error", "INVALID_RANGE")
                 put("message", "begin must be earlier than end.")
@@ -124,8 +133,8 @@ internal fun buildScreenTimeTool(context: Context, eventBus: AppEventBus): Tool 
         }
 
         val isCustom = beginRaw != null || endRaw != null
-        val endMs = endTime.toInstant().toEpochMilli()
-        val startMs = startTime.toInstant().toEpochMilli()
+        val endMs = endTime.toEpochMilliseconds()
+        val startMs = startTime.toEpochMilliseconds()
 
         val usageStatsManager =
             context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -145,8 +154,8 @@ internal fun buildScreenTimeTool(context: Context, eventBus: AppEventBus): Tool 
 
         val payload = buildJsonObject {
             put("range", if (isCustom) "custom" else rangePreset)
-            put("start", startTime.withNano(0).toString())
-            put("end", endTime.withNano(0).toString())
+            put("start", startTime.toLocalToolDateTimeString(zone))
+            put("end", endTime.toLocalToolDateTimeString(zone))
             put("total_ms", totalMs)
             put("total_minutes", totalMs / 60000)
             put("apps", buildJsonArray {
@@ -263,6 +272,5 @@ private fun resolveAppName(pm: PackageManager, packageName: String): String {
  * 解析 begin/end 时间参数, 依次尝试: epoch 毫秒 -> 带偏移日期时间 -> Instant ->
  * 本地日期时间 -> 本地日期(当天 0 点). 全部失败时抛出异常.
  */
-private fun parseUsageTime(raw: String, zone: ZoneId): ZonedDateTime {
-    return Instant.ofEpochMilli(parseLocalToolTimeEpochMillis(raw, zone.id)).atZone(zone)
-}
+private fun parseUsageTime(raw: String, timeZone: TimeZone): Instant =
+    Instant.fromEpochMilliseconds(parseLocalToolTimeEpochMillis(raw, timeZone.id))

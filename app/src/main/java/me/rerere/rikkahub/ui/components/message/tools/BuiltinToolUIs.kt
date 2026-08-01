@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.number
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -74,10 +76,6 @@ import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.openUrl
 import org.koin.compose.koinInject
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 /**
  * 记忆工具: 按 action 区分标题/图标, 摘要显示记忆内容, 详情附带删除按钮
@@ -637,21 +635,19 @@ private fun JsonElement.appMs(): Long =
 private fun JsonElement.appMinutes(): Long =
     jsonObjectOrNull?.get("total_minutes")?.jsonPrimitiveOrNull?.longOrNull ?: (appMs() / 60000)
 
-private val SCREEN_TIME_RANGE_FORMATTER: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("MM-dd HH:mm")
-
 /**
  * 将工具返回的 ISO 时间字符串格式化为 "MM-dd HH:mm", 解析失败时原样返回.
  *
- * 工具用 ZonedDateTime.toString() 输出, 区域 ID 时会带 "[Asia/Shanghai]" 后缀,
- * 故优先用 ZonedDateTime.parse, 再回退到 offset / 本地日期时间.
+ * 工具输出可能包含 offset 和 "[Asia/Shanghai]" 区域后缀；UI 只展示其本地日期时间部分.
  */
 internal fun formatRangeTime(iso: String): String = runCatching {
-    ZonedDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
-}.recoverCatching {
-    OffsetDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
-}.recoverCatching {
-    LocalDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
+    val offsetIndex = iso.indexOfAny(charArrayOf('Z', '+', '-'), startIndex = 10)
+    val local = LocalDateTime.parse(if (offsetIndex >= 0) iso.substring(0, offsetIndex) else iso)
+    val month = local.month.number.toString().padStart(2, '0')
+    val day = local.day.toString().padStart(2, '0')
+    val hour = local.hour.toString().padStart(2, '0')
+    val minute = local.minute.toString().padStart(2, '0')
+    "$month-$day $hour:$minute"
 }.getOrDefault(iso)
 
 /** 将分钟数格式化为 "Xh Ym" / "Xh" / "Ym" */

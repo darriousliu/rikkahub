@@ -7,6 +7,15 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -17,11 +26,9 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
-import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Instant
 
 internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
     name = "calendar_query",
@@ -29,7 +36,7 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
         Query calendar events on the user's device within a time range.
         Specify a custom interval with 'begin'/'end', or use the 'range' preset (today/week/month).
         Returns a list of events with title, description, location, start/end times, and calendar info.
-        The device timezone is '${ZoneId.systemDefault()}' (UTC offset ${OffsetDateTime.now().offset});
+        The device timezone is '${TimeZone.currentSystemDefault().id}' (UTC offset ${currentLocalToolUtcOffset()});
         times without an explicit offset are interpreted in this timezone.
         Requires the 'Calendar' permission; if it is not granted, an error is returned and the
         permission request is triggered automatically.
@@ -96,28 +103,29 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
         val limit = params["limit"]?.jsonPrimitive?.contentOrNull?.toIntOrNull()?.coerceIn(1, 100) ?: 20
         val query = params["query"]?.jsonPrimitive?.contentOrNull
 
-        val now = ZonedDateTime.now()
-        val zone = now.zone
+        val now = Clock.System.now()
+        val zone = TimeZone.currentSystemDefault()
+        val today = now.toLocalDateTime(zone).date
         val beginRaw = params["begin"]?.jsonPrimitive?.contentOrNull
         val endRaw = params["end"]?.jsonPrimitive?.contentOrNull
         val rangePreset = params["range"]?.jsonPrimitive?.contentOrNull ?: "today"
 
-        val startTime: ZonedDateTime
-        val endTime: ZonedDateTime
+        val startTime: Instant
+        val endTime: Instant
         try {
             startTime = if (beginRaw != null) {
                 parseCalendarTime(beginRaw, zone)
             } else when (rangePreset) {
-                "week" -> now.toLocalDate().atStartOfDay(zone).minusDays(now.dayOfWeek.value.toLong() - 1)
-                "month" -> now.toLocalDate().withDayOfMonth(1).atStartOfDay(zone)
-                else -> now.toLocalDate().atStartOfDay(zone)
+                "week" -> today.minus(today.dayOfWeek.ordinal, DateTimeUnit.DAY).atStartOfDayIn(zone)
+                "month" -> LocalDate(today.year, today.month, 1).atStartOfDayIn(zone)
+                else -> today.atStartOfDayIn(zone)
             }
             endTime = if (endRaw != null) {
                 parseCalendarTime(endRaw, zone)
             } else when (rangePreset) {
-                "week" -> startTime.plusDays(7)
-                "month" -> startTime.plusMonths(1)
-                else -> now.toLocalDate().plusDays(1).atStartOfDay(zone)
+                "week" -> startTime.plusLocalDateUnits(7, DateTimeUnit.DAY, zone)
+                "month" -> startTime.plusLocalDateUnits(1, DateTimeUnit.MONTH, zone)
+                else -> today.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone)
             }
         } catch (e: Exception) {
             val payload = buildJsonObject {
@@ -127,7 +135,7 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        if (!startTime.isBefore(endTime)) {
+        if (startTime >= endTime) {
             val payload = buildJsonObject {
                 put("error", "INVALID_RANGE")
                 put("message", "begin must be earlier than end.")
@@ -135,8 +143,8 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        val startMs = startTime.toInstant().toEpochMilli()
-        val endMs = endTime.toInstant().toEpochMilli()
+        val startMs = startTime.toEpochMilliseconds()
+        val endMs = endTime.toEpochMilliseconds()
 
         val projection = arrayOf(
             CalendarContract.Instances.EVENT_ID,
@@ -180,21 +188,27 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
                         val dtEnd = cursor.getLong(5)
                         val allDay = cursor.getInt(6) == 1
                         if (allDay) {
-                            put("start", Instant.ofEpochMilli(dtStart).atZone(ZoneOffset.UTC).toLocalDate().toString())
+                            put(
+                                "start",
+                                Instant.fromEpochMilliseconds(dtStart).toLocalDateTime(TimeZone.UTC).date.toString()
+                            )
                             put(
                                 "end",
                                 if (dtEnd > 0) {
-                                    Instant.ofEpochMilli(dtEnd).atZone(ZoneOffset.UTC).toLocalDate().toString()
+                                    Instant.fromEpochMilliseconds(dtEnd)
+                                        .toLocalDateTime(TimeZone.UTC)
+                                        .date
+                                        .toString()
                                 } else {
                                     ""
                                 }
                             )
                         } else {
-                            put("start", Instant.ofEpochMilli(dtStart).atZone(zone).withNano(0).toString())
+                            put("start", Instant.fromEpochMilliseconds(dtStart).toLocalToolDateTimeString(zone))
                             put(
                                 "end",
                                 if (dtEnd > 0) {
-                                    Instant.ofEpochMilli(dtEnd).atZone(zone).withNano(0).toString()
+                                    Instant.fromEpochMilliseconds(dtEnd).toLocalToolDateTimeString(zone)
                                 } else {
                                     ""
                                 }
@@ -209,8 +223,8 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
         }
 
         val payload = buildJsonObject {
-            put("range_start", startTime.withNano(0).toString())
-            put("range_end", endTime.withNano(0).toString())
+            put("range_start", startTime.toLocalToolDateTimeString(zone))
+            put("range_end", endTime.toLocalToolDateTimeString(zone))
             put("count", events.size)
             put("events", events)
         }
@@ -223,7 +237,7 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
     description = """
         Create a new calendar event on the user's device.
         Requires title and start time at minimum. End time defaults to 1 hour after start.
-        The device timezone is '${ZoneId.systemDefault()}' (UTC offset ${OffsetDateTime.now().offset});
+        The device timezone is '${TimeZone.currentSystemDefault().id}' (UTC offset ${currentLocalToolUtcOffset()});
         times without an explicit offset are interpreted in this timezone.
         Requires the 'Calendar' permission; if it is not granted, an error is returned and the
         permission request is triggered automatically.
@@ -294,17 +308,17 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        val zone = ZoneId.systemDefault()
-        val startTime: ZonedDateTime
-        val endTime: ZonedDateTime
+        val zone = TimeZone.currentSystemDefault()
+        val startTime: Instant
+        val endTime: Instant
         try {
             startTime = parseCalendarTime(startRaw, zone)
             endTime = if (endRaw != null) {
                 parseCalendarTime(endRaw, zone)
             } else if (allDay) {
-                startTime.toLocalDate().plusDays(1).atStartOfDay(zone)
+                startTime.toLocalDateTime(zone).date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone)
             } else {
-                startTime.plusHours(1)
+                startTime + 1.hours
             }
         } catch (e: Exception) {
             val payload = buildJsonObject {
@@ -314,7 +328,7 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        if (!startTime.isBefore(endTime)) {
+        if (startTime >= endTime) {
             val payload = buildJsonObject {
                 put("error", "INVALID_RANGE")
                 put("message", "end must be later than start.")
@@ -329,21 +343,21 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
         val eventEndMillis: Long
         val eventTimeZone: String
         if (allDay) {
-            val startDate = startTime.toLocalDate()
-            val endDate = endTime.toLocalDate()
-            if (!startDate.isBefore(endDate)) {
+            val startDate = startTime.toLocalDateTime(zone).date
+            val endDate = endTime.toLocalDateTime(zone).date
+            if (startDate >= endDate) {
                 val payload = buildJsonObject {
                     put("error", "INVALID_RANGE")
                     put("message", "all-day event end date must be later than start date.")
                 }
                 return@Tool listOf(UIMessagePart.Text(payload.toString()))
             }
-            eventStartMillis = startDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-            eventEndMillis = endDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+            eventStartMillis = startDate.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+            eventEndMillis = endDate.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
             eventTimeZone = "UTC"
         } else {
-            eventStartMillis = startTime.toInstant().toEpochMilli()
-            eventEndMillis = endTime.toInstant().toEpochMilli()
+            eventStartMillis = startTime.toEpochMilliseconds()
+            eventEndMillis = endTime.toEpochMilliseconds()
             eventTimeZone = zone.id
         }
 
@@ -383,8 +397,8 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
             put("success", true)
             put("event_id", eventId)
             put("title", title)
-            put("start", startTime.withNano(0).toString())
-            put("end", endTime.withNano(0).toString())
+            put("start", startTime.toLocalToolDateTimeString(zone))
+            put("end", endTime.toLocalToolDateTimeString(zone))
             put("all_day", allDay)
             put("location", location)
         }
@@ -425,6 +439,13 @@ private fun getDefaultCalendarId(context: Context): Long? {
     return null
 }
 
-private fun parseCalendarTime(raw: String, zone: ZoneId): ZonedDateTime {
-    return Instant.ofEpochMilli(parseLocalToolTimeEpochMillis(raw, zone.id)).atZone(zone)
+private fun parseCalendarTime(raw: String, timeZone: TimeZone): Instant =
+    Instant.fromEpochMilliseconds(parseLocalToolTimeEpochMillis(raw, timeZone.id))
+
+private fun Instant.plusLocalDateUnits(
+    value: Int,
+    unit: DateTimeUnit.DateBased,
+    timeZone: TimeZone,
+): Instant = toLocalDateTime(timeZone).let { local ->
+    LocalDateTime(local.date.plus(value, unit), local.time).toInstant(timeZone)
 }
