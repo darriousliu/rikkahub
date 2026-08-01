@@ -13,6 +13,13 @@ interface ZipArchive {
     suspend fun read(source: Source, readEntry: suspend (ZipArchiveEntry) -> Unit)
 }
 
+expect object PlatformZipArchive : ZipArchive {
+    override fun create(sink: Sink, writeEntries: ZipArchiveWriter.() -> Unit)
+    override suspend fun read(source: Source, readEntry: suspend (ZipArchiveEntry) -> Unit)
+}
+
+class ZipArchiveException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
 interface ZipArchiveWriter {
     /** Adds an entry and takes ownership of [source]. */
     fun add(name: String, source: Source)

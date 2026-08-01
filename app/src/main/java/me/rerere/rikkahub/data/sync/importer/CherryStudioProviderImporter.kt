@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.registry.ModelRegistry
-import me.rerere.common.archive.JvmZipArchive
+import me.rerere.common.archive.PlatformZipArchive
 import me.rerere.common.archive.readText
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.rikkahub.utils.JsonInstant
@@ -22,7 +22,7 @@ import java.io.FileInputStream
 object CherryStudioProviderImporter {
     suspend fun importProviders(file: File): List<ProviderSetting> {
         var dataJson: String? = null
-        JvmZipArchive.read(FileInputStream(file).asSource().buffered()) { entry ->
+        PlatformZipArchive.read(FileInputStream(file).asSource().buffered()) { entry ->
             if (dataJson == null && entry.name == "data.json") {
                 dataJson = entry.readText()
             }

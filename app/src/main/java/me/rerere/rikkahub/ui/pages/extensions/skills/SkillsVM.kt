@@ -5,7 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.io.Buffer
-import me.rerere.common.archive.JvmZipArchive
+import me.rerere.common.archive.PlatformZipArchive
 import me.rerere.common.archive.ZipEntryPathPolicy
 import me.rerere.common.archive.readBytes
 import java.net.HttpURLConnection
@@ -159,7 +159,7 @@ class SkillsVM(
 
     private suspend fun importSkillsFromZip(bytes: ByteArray): List<String> {
         val files = LinkedHashMap<String, ByteArray>()
-        JvmZipArchive.read(Buffer().apply { write(bytes) }) { entry ->
+        PlatformZipArchive.read(Buffer().apply { write(bytes) }) { entry ->
             val path = ZipEntryPathPolicy.normalizeOrNull(entry.name)
                 ?: error("压缩包包含不安全的文件路径")
             if (!entry.isDirectory) {

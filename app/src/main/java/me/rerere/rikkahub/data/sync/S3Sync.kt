@@ -9,7 +9,7 @@ import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.Json
-import me.rerere.common.archive.JvmZipArchive
+import me.rerere.common.archive.PlatformZipArchive
 import me.rerere.common.archive.ZipArchiveEntry
 import me.rerere.common.archive.ZipArchiveWriter
 import me.rerere.common.archive.ZipEntryPathPolicy
@@ -123,7 +123,7 @@ class S3Sync(
         }
 
         // Create zip file and backup data
-        JvmZipArchive.create(FileOutputStream(backupFile).asSink().buffered()) {
+        PlatformZipArchive.create(FileOutputStream(backupFile).asSink().buffered()) {
             addVirtualFileToZip(
                 zipOut = this,
                 name = "settings.json",
@@ -202,7 +202,7 @@ class S3Sync(
     private suspend fun restoreFromBackupFile(backupFile: File, config: S3Config) = withContext(Dispatchers.IO) {
         Log.i(TAG, "restoreFromBackupFile: Starting restore from ${backupFile.absolutePath}")
 
-        JvmZipArchive.read(FileInputStream(backupFile).asSource().buffered()) { zipEntry ->
+        PlatformZipArchive.read(FileInputStream(backupFile).asSource().buffered()) { zipEntry ->
             val entryPath = ZipEntryPathPolicy.normalizeOrNull(zipEntry.name)
                 ?: throw IllegalArgumentException("Unsafe ZIP entry path")
             Log.i(TAG, "restoreFromBackupFile: Processing entry $entryPath")
