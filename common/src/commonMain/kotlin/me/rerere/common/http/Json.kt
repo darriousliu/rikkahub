@@ -14,6 +14,4 @@ val JsonElement.jsonArrayOrNull: JsonArray?
 val JsonElement.jsonPrimitiveOrNull: JsonPrimitive?
     get() = this as? JsonPrimitive
 
-fun JsonObject.getByKey(key: String): String {
-    return evaluateJsonExpr(key, this)
-}
+fun JsonObject.getByKey(key: String): String = evaluateJsonExpr(key, this)

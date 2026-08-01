@@ -38,17 +38,18 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
+            implementation(project(":common"))
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
+            api(libs.ktor.client.core)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.ktor.client.mock)
         }
         androidMain.dependencies {
-            implementation(project(":common"))
             implementation(libs.androidx.core.ktx)
-            api(libs.ktor.client.core)
         }
         named("androidHostTest") {
             dependencies {

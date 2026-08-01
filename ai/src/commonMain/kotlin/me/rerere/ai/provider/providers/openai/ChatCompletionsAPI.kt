@@ -182,7 +182,7 @@ class ChatCompletionsAPI(
     }
 
 
-    private fun buildChatCompletionRequest(
+    internal fun buildChatCompletionRequest(
         messages: List<UIMessage>,
         params: TextGenerationParams,
         providerSetting: ProviderSetting.OpenAI,
@@ -393,7 +393,7 @@ class ChatCompletionsAPI(
                !isMoonshotRestricted
     }
 
-    private fun buildMessages(
+    internal fun buildMessages(
         messages: List<UIMessage>,
         includeHistoryReasoning: Boolean = true,
         supportInputModalities: List<Modality> = listOf(Modality.TEXT, Modality.IMAGE),
@@ -726,7 +726,7 @@ class ChatCompletionsAPI(
         }
     }
 
-    private fun parseTokenUsage(jsonObject: JsonObject?): TokenUsage? {
+    internal fun parseTokenUsage(jsonObject: JsonObject?): TokenUsage? {
         if (jsonObject == null) return null
         return TokenUsage(
             promptTokens = jsonObject["prompt_tokens"]?.jsonPrimitive?.intOrNull ?: 0,

@@ -57,7 +57,7 @@ import kotlin.time.Clock
 
 private const val TAG = "ResponseAPI"
 
-class ResponseAPI(
+internal class ResponseAPI(
     private val client: HttpClient,
     private val keyRoulette: KeyRoulette = KeyRoulette.default()
 ) : OpenAIImpl {

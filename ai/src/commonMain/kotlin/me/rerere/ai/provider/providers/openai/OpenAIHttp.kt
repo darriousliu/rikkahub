@@ -53,4 +53,4 @@ internal fun SseEvent.Failure.toOpenAIStreamException(): Throwable? {
     }
 }
 
-internal class OpenAIStreamCompleted : CancellationException()
+internal class OpenAIStreamCompleted : CancellationException("OpenAI stream completed")

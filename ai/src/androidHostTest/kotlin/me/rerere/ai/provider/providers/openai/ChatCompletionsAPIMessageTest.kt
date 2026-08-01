@@ -9,8 +9,6 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Modality
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.util.KeyRoulette
-import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -28,27 +26,18 @@ class ChatCompletionsAPIMessageTest {
 
     @Before
     fun setUp() {
-        api = ChatCompletionsAPI(OkHttpClient(), KeyRoulette.default())
+        api = chatCompletionsApiForTest()
     }
 
-    // Helper to invoke private buildMessages method via reflection
     private fun invokeBuildMessages(
         messages: List<UIMessage>,
         includeHistoryReasoning: Boolean = true
     ): JsonArray {
-        val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
-            "buildMessages",
-            List::class.java,
-            Boolean::class.javaPrimitiveType,
-            List::class.java
+        return api.buildMessages(
+            messages = messages,
+            includeHistoryReasoning = includeHistoryReasoning,
+            supportInputModalities = listOf(Modality.TEXT, Modality.IMAGE),
         )
-        method.isAccessible = true
-        return method.invoke(
-            api,
-            messages,
-            includeHistoryReasoning,
-            listOf(Modality.TEXT, Modality.IMAGE)
-        ) as JsonArray
     }
 
     @Test

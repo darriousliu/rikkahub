@@ -9,8 +9,6 @@ import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.UIMessage
-import me.rerere.ai.util.KeyRoulette
-import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Before
@@ -26,22 +24,13 @@ class ChatCompletionsAPIMoonshotTest {
 
     @Before
     fun setUp() {
-        api = ChatCompletionsAPI(OkHttpClient(), KeyRoulette.default())
+        api = chatCompletionsApiForTest()
     }
 
-    // Helper to invoke private buildChatCompletionRequest via reflection
     private fun buildRequest(
         modelId: String,
         reasoningLevel: ReasoningLevel,
     ): JsonObject {
-        val method = ChatCompletionsAPI::class.java.getDeclaredMethod(
-            "buildChatCompletionRequest",
-            List::class.java,
-            TextGenerationParams::class.java,
-            ProviderSetting.OpenAI::class.java,
-            Boolean::class.javaPrimitiveType
-        )
-        method.isAccessible = true
         val model = Model(
             modelId = modelId,
             abilities = listOf(ModelAbility.REASONING)
@@ -51,13 +40,12 @@ class ChatCompletionsAPIMoonshotTest {
             reasoningLevel = reasoningLevel,
         )
         val providerSetting = ProviderSetting.OpenAI(baseUrl = "https://api.moonshot.cn/v1")
-        return method.invoke(
-            api,
-            listOf(UIMessage.user("hi")),
-            params,
-            providerSetting,
-            true
-        ) as JsonObject
+        return api.buildChatCompletionRequest(
+            messages = listOf(UIMessage.user("hi")),
+            params = params,
+            providerSetting = providerSetting,
+            stream = true,
+        )
     }
 
     // #1586: K2.6 思考开启时发送 thinking.keep = "all"（保留式思考）

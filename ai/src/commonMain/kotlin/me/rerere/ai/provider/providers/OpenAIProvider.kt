@@ -40,12 +40,15 @@ import me.rerere.ai.ui.ImageGenerationItem
 import me.rerere.ai.ui.MessageChunk
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.util.KeyRoulette
+import me.rerere.ai.util.LocalFilePayload
 import me.rerere.ai.util.json
 import me.rerere.ai.util.mergeCustomBody
+import me.rerere.ai.util.readLocalFile
 import me.rerere.common.http.getByKey
-import java.io.File
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.math.absoluteValue
+import kotlin.math.round
 
 private const val TAG = "OpenAIProvider"
 
@@ -89,7 +92,7 @@ class OpenAIProvider(
         val value = bodyJson.getByKey(providerSetting.balanceOption.resultPath)
         val digitalValue = value.toFloatOrNull()
         return if (digitalValue != null) {
-            "%.2f".format(digitalValue)
+            digitalValue.toFixedTwoDecimals()
         } else {
             value
         }
@@ -224,18 +227,17 @@ class OpenAIProvider(
                 append("n", params.numOfImages)
                 if (params.size.isNotBlank()) append("size", params.size)
                 params.images.forEach { path ->
-                    val imageFile = File(path)
-                    require(imageFile.exists()) { "Image file does not exist: $path" }
-                    require(imageFile.extension.lowercase() in SUPPORTED_EDIT_IMAGE_EXTENSIONS) {
+                    val imageFile = readLocalFile(path)
+                    require(imageFile.extension in SUPPORTED_EDIT_IMAGE_EXTENSIONS) {
                         "Unsupported image file type for OpenAI edit: ${imageFile.extension}"
                     }
                     append(
                         key = imageFieldName,
                         filename = imageFile.name,
                         contentType = ContentType.parse(imageFile.imageMediaType()),
-                        size = imageFile.length(),
+                        size = imageFile.bytes.size.toLong(),
                     ) {
-                        write(imageFile.readBytes())
+                        write(imageFile.bytes)
                     }
                 }
                 params.customBody.forEach { customBody ->
@@ -294,7 +296,7 @@ class OpenAIProvider(
         )
     }
 
-    private fun File.imageMediaType(): String = when (extension.lowercase()) {
+    private fun LocalFilePayload.imageMediaType(): String = when (extension) {
         "jpg", "jpeg" -> "image/jpeg"
         "webp" -> "image/webp"
         else -> "image/png"
@@ -309,4 +311,11 @@ class OpenAIProvider(
     companion object {
         private val SUPPORTED_EDIT_IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "webp")
     }
+}
+
+private fun Float.toFixedTwoDecimals(): String {
+    val scaled = round(toDouble() * 100.0).toLong()
+    val absolute = scaled.absoluteValue
+    val sign = if (scaled < 0) "-" else ""
+    return "$sign${absolute / 100}.${(absolute % 100).toString().padStart(2, '0')}"
 }
