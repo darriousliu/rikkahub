@@ -56,6 +56,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.androidx.navigation3.runtime)
             implementation(project(":ai"))
             implementation(project(":hugeicons"))
             implementation(project(":search"))
