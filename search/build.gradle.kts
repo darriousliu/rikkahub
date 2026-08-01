@@ -43,15 +43,20 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
+            implementation(compose.material3)
+            implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(project(":ai"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.http)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.fleeksoft.ksoup)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.ktor.client.mock)
+            implementation(libs.kotlinx.coroutines.test)
         }
         androidMain.dependencies {
             implementation(project(":common"))

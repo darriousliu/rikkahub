@@ -37,7 +37,10 @@ interface SearchService<T : SearchServiceOptions> {
         fun <T : SearchServiceOptions> getService(options: T): SearchService<T> =
             SearchProviderRegistry.serviceFor(options)
 
-        internal var httpClient: HttpClient = HttpClient()
+        private var configuredHttpClient: HttpClient? = null
+
+        internal val httpClient: HttpClient
+            get() = checkNotNull(configuredHttpClient) { "SearchService.init must be called before making requests" }
 
         internal var keyRoulette: KeyRoulette = KeyRoulette.default()
 
@@ -45,7 +48,7 @@ interface SearchService<T : SearchServiceOptions> {
             client: HttpClient,
             keyRoulette: KeyRoulette = KeyRoulette.default(),
         ) {
-            httpClient = client
+            configuredHttpClient = client
             this.keyRoulette = keyRoulette
         }
 
