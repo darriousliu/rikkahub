@@ -1,6 +1,8 @@
 package me.rerere.ai.provider.providers
 
 import android.content.Context
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -75,8 +77,15 @@ private const val TAG = "GoogleProvider"
 
 class GoogleProvider(private val client: OkHttpClient, context: Context? = null) : Provider<ProviderSetting.Google> {
     private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
+    private val vertexTokenHttpClient by lazy {
+        HttpClient(OkHttp) {
+            engine {
+                preconfigured = client
+            }
+        }
+    }
     private val serviceAccountTokenProvider by lazy {
-        ServiceAccountTokenProvider(client)
+        ServiceAccountTokenProvider(vertexTokenHttpClient)
     }
 
     private fun buildUrl(providerSetting: ProviderSetting.Google, path: String): HttpUrl {

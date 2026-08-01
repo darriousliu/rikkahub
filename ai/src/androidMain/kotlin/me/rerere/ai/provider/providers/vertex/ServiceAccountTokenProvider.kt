@@ -1,5 +1,13 @@
 package me.rerere.ai.provider.providers.vertex
 
+import io.ktor.client.HttpClient
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.Parameters
+import io.ktor.http.content.TextContent
+import io.ktor.http.formUrlEncode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -8,9 +16,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.rerere.common.crypto.RsaSha256Signer
-import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -31,15 +36,15 @@ internal data class ServiceAccountTokenHttpResponse(
 
 /**
  * 使用服务账号（email + private key PEM）换取 Google OAuth2 Access Token。
- * 构造时传入 OkHttpClient；调用时传 email、私钥 PEM 与 scopes。
+ * 构造时传入 HttpClient；调用时传 email、私钥 PEM 与 scopes。
  */
 class ServiceAccountTokenProvider internal constructor(
     private val transport: ServiceAccountTokenTransport,
     private val clock: Clock,
     private val rsaSha256Signer: RsaSha256Signer = JdkVertexRsaSha256Signer,
 ) {
-    constructor(http: OkHttpClient) : this(
-        transport = OkHttpServiceAccountTokenTransport(http),
+    constructor(http: HttpClient) : this(
+        transport = KtorServiceAccountTokenTransport(http),
         clock = Clock.System,
     )
 
@@ -142,34 +147,32 @@ class ServiceAccountTokenProvider internal constructor(
 
 }
 
-private class OkHttpServiceAccountTokenTransport(
-    private val http: OkHttpClient,
+private class KtorServiceAccountTokenTransport(
+    private val http: HttpClient,
     private val tokenEndpoint: String = TOKEN_ENDPOINT,
 ) : ServiceAccountTokenTransport {
-    override suspend fun exchange(assertion: String): ServiceAccountTokenHttpResponse =
-        withContext(Dispatchers.IO) {
-            val form = FormBody.Builder()
-                .add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-                .add("assertion", assertion)
-                .build()
-
-            val request = Request.Builder()
-                .url(tokenEndpoint)
-                .post(form)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .build()
-
-            http.newCall(request).execute().use { response ->
-                ServiceAccountTokenHttpResponse(
-                    code = response.code,
-                    body = response.body.string(),
-                )
-            }
+    override suspend fun exchange(assertion: String): ServiceAccountTokenHttpResponse {
+        val form = Parameters.build {
+            append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+            append("assertion", assertion)
         }
+        val response = http.post(tokenEndpoint) {
+            setBody(
+                TextContent(
+                    text = form.formUrlEncode(),
+                    contentType = ContentType.Application.FormUrlEncoded,
+                )
+            )
+        }
+        return ServiceAccountTokenHttpResponse(
+            code = response.status.value,
+            body = response.bodyAsText(),
+        )
+    }
 }
 
 internal fun serviceAccountTokenTransportForTest(tokenEndpoint: String): ServiceAccountTokenTransport =
-    OkHttpServiceAccountTokenTransport(
-        http = OkHttpClient(),
+    KtorServiceAccountTokenTransport(
+        http = vertexTokenHttpClientForTest(),
         tokenEndpoint = tokenEndpoint,
     )

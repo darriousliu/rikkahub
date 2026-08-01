@@ -40,6 +40,8 @@ kotlin {
             api(libs.okhttp)
             api(libs.okhttp.sse)
             api(libs.okhttp.logging)
+            api(libs.ktor.client.core)
+            implementation(libs.ktor.client.okhttp)
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
