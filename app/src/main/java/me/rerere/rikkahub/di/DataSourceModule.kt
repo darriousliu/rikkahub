@@ -16,6 +16,7 @@ import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.lru
 import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.common.logging.RikkaLog as Log
+import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.GenerationHandler
@@ -51,8 +52,8 @@ import java.util.concurrent.TimeUnit
 val dataSourceModule = module {
     single {
         SettingsStore(
-            dataStore = createAndroidSettingsDataStore(context = get(), scope = get()),
-            scope = get(),
+            dataStore = createAndroidSettingsDataStore(context = get(), scope = get<AppScope>()),
+            scope = get<AppScope>(),
             defaultProviderDescriptions = ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS,
             onSettingsChanged = { get<TemplateCacheInvalidator>().invalidateCache() },
         )
