@@ -5,8 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -49,8 +47,7 @@ object MetasoSearchService : SearchService<SearchServiceOptions.MetasoOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.MetasoOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
             val requestBody = buildJsonObject {
@@ -74,28 +71,25 @@ object MetasoSearchService : SearchService<SearchServiceOptions.MetasoOptions> {
                 val searchResponse = runCatching {
                     json.decodeFromString<MetasoSearchResponse>(bodyRaw)
                 }.onFailure {
-                    it.printStackTrace()
+                    println(it.stackTraceToString())
                     println("Failed to decode Metaso response: $bodyRaw")
                     error("Failed to decode response: $bodyRaw")
                 }.getOrThrow()
 
-                return@withContext Result.success(
-                    SearchResult(
-                        items = searchResponse.webpages.map { webpage ->
-                            SearchResultItem(
-                                title = webpage.title,
-                                url = webpage.link,
-                                text = webpage.snippet ?: ""
-                            )
-                        }
-                    )
+                SearchResult(
+                    items = searchResponse.webpages.map { webpage ->
+                        SearchResultItem(
+                            title = webpage.title,
+                            url = webpage.link,
+                            text = webpage.snippet ?: ""
+                        )
+                    },
                 )
             } else {
                 val errorBody = response.body
                 println("Metaso search failed with code ${response.code}: $errorBody")
                 error("Search request failed with code ${response.code}: $errorBody")
             }
-        }
     }
 
     override suspend fun scrape(

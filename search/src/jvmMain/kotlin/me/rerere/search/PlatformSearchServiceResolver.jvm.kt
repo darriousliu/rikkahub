@@ -11,5 +11,6 @@ internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options:
         is SearchServiceOptions.SearXNGOptions -> SearXNGService as SearchService<T>
         is SearchServiceOptions.LinkUpOptions -> LinkUpService as SearchService<T>
         is SearchServiceOptions.BraveOptions -> BraveSearchService as SearchService<T>
+        is SearchServiceOptions.MetasoOptions -> MetasoSearchService as SearchService<T>
         else -> error("Search provider is not available on JVM yet: ${options.displayName}")
     }
