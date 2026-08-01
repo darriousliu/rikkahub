@@ -19,7 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
@@ -39,27 +39,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import me.rerere.highlight.LocalCodeHighlighter
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
-import me.rerere.rikkahub.ui.components.richtext.HighlightCodeVisualTransformation
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
-import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.plus
 import me.rerere.search.SearchCommonOptions
 import me.rerere.search.SearchResult
 import me.rerere.search.SearchService
 import me.rerere.search.SearchServiceOptions
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.uuid.Uuid
 
@@ -85,7 +82,7 @@ fun SettingSearchDetailPage(
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(options.displayName)
                 },
@@ -935,9 +932,6 @@ internal fun CustomJsOptions(
         )
     }
 
-    val highlighter = LocalCodeHighlighter.current
-    val darkMode = LocalDarkMode.current
-
     FormItem(
         label = {
             Text(stringResource(Res.string.search_detail_search_script))
@@ -951,12 +945,7 @@ internal fun CustomJsOptions(
             modifier = Modifier.fillMaxWidth(),
             minLines = 8,
             maxLines = 20,
-            visualTransformation = HighlightCodeVisualTransformation(
-                language = "javascript",
-                highlighter = highlighter,
-                darkMode = darkMode
-            ),
-            textStyle = MaterialTheme.typography.bodySmall.merge(fontFamily = JetbrainsMono),
+            textStyle = MaterialTheme.typography.bodySmall.merge(fontFamily = FontFamily.Monospace),
         )
     }
 
@@ -979,16 +968,11 @@ internal fun CustomJsOptions(
             placeholder = {
                 Text(
                     text = SearchServiceOptions.CustomJsOptions.DEFAULT_SCRAPE_SCRIPT.trimIndent(),
-                    style = MaterialTheme.typography.bodySmall.merge(fontFamily = JetbrainsMono),
+                    style = MaterialTheme.typography.bodySmall.merge(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 )
             },
-            visualTransformation = HighlightCodeVisualTransformation(
-                language = "javascript",
-                highlighter = highlighter,
-                darkMode = darkMode
-            ),
-            textStyle = MaterialTheme.typography.bodySmall.merge(fontFamily = JetbrainsMono),
+            textStyle = MaterialTheme.typography.bodySmall.merge(fontFamily = FontFamily.Monospace),
         )
     }
 }
