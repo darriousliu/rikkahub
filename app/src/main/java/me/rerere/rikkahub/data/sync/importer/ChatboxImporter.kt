@@ -21,6 +21,7 @@ import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.crypto.Md5Digest
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
@@ -28,13 +29,20 @@ import me.rerere.rikkahub.utils.JsonInstantPretty
 import java.io.File
 import java.io.Reader
 import java.nio.charset.StandardCharsets
-import java.util.UUID
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-internal fun createStableChatboxUuid(value: String): Uuid =
-    Uuid.parse(UUID.nameUUIDFromBytes(value.toByteArray(StandardCharsets.UTF_8)).toString())
+internal fun createStableChatboxUuid(
+    value: String,
+    md5: Md5Digest = JdkChatboxMd5Digest,
+): Uuid {
+    val bytes = md5.digest(value.encodeToByteArray())
+    require(bytes.size == 16) { "MD5 digest must be 16 bytes" }
+    bytes[6] = ((bytes[6].toInt() and 0x0f) or 0x30).toByte()
+    bytes[8] = ((bytes[8].toInt() and 0x3f) or 0x80).toByte()
+    return Uuid.fromByteArray(bytes)
+}
 
 /**
  * Chatbox exports its data as a single JSON object that is close to its local storage layout.
