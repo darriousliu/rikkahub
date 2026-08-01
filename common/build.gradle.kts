@@ -36,6 +36,7 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
             api(libs.kotlinx.io.core)
+            api(libs.ktor.client.core)
             implementation(libs.dokar.quickjs)
             implementation(libs.kermit)
         }
@@ -46,6 +47,7 @@ kotlin {
             api(libs.okhttp)
             api(libs.okhttp.sse)
             api(libs.okhttp.logging)
+            implementation(libs.ktor.client.okhttp)
             api(libs.floatingx)
             api(libs.floatingx.compose)
             implementation(libs.androidx.core.ktx)

@@ -1,6 +1,14 @@
 package me.rerere.tts.provider.providers
 
 import android.content.Context
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.header
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
@@ -15,16 +23,10 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 import kotlin.io.encoding.Base64
 
 // MiMo 流式音频按文档示例使用 24kHz PCM16LE
 private const val MIMO_SAMPLE_RATE = 24000
-private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 // 只关心 delta.audio.data 其余字段忽略
 private val mimoJson = Json { ignoreUnknownKeys = true }
 private val mimoBase64 = Base64.Default.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
@@ -109,9 +111,11 @@ internal class MiMoSseProcessor(
 }
 
 class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
+    private val httpClient = HttpClient(OkHttp) {
+        install(HttpTimeout) {
+            socketTimeoutMillis = 120_000
+        }
+    }
 
     // MiMo 支持在朗读文本中嵌入风格/音频标签控制语气与情感
     // 官方文档: https://xiaomimimo.com (音频标签控制)
@@ -157,21 +161,17 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
         }
 
         // baseUrl 允许用户在设置页自定义 这里直接拼接路径
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/chat/completions")
-            // MiMo 使用 api-key 头传 token
-            .addHeader("api-key", providerSetting.apiKey)
-            .addHeader("Content-Type", "application/json")
-            // JsonObject 的 toString 会输出 JSON 字符串
-            .post(requestBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-
         val processor = MiMoSseProcessor(
             model = providerSetting.model,
             voice = providerSetting.voice
         )
 
-        httpClient.sseFlow(httpRequest).collect { event ->
+        httpClient.sseFlow("${providerSetting.baseUrl}/chat/completions") {
+            method = HttpMethod.Post
+            header("api-key", providerSetting.apiKey)
+            contentType(ContentType.Application.Json)
+            setBody(requestBody.toString())
+        }.collect { event ->
             processor.process(event)?.let { emit(it) }
         }
     }

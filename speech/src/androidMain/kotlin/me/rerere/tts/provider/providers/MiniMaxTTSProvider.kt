@@ -2,6 +2,15 @@ package me.rerere.tts.provider.providers
 
 import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.header
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.contentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
@@ -15,11 +24,6 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "MiniMaxTTSProvider"
 
@@ -36,9 +40,11 @@ private data class MiniMaxResponse(
 )
 
 class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(60, TimeUnit.SECONDS)
-        .build()
+    private val httpClient = HttpClient(OkHttp) {
+        install(HttpTimeout) {
+            socketTimeoutMillis = 60_000
+        }
+    }
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -66,16 +72,14 @@ class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/t2a_v2")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .build()
-
         var hasEmittedAudio = false
 
-        httpClient.sseFlow(httpRequest).collect {
+        httpClient.sseFlow("${providerSetting.baseUrl}/t2a_v2") {
+            method = HttpMethod.Post
+            header(HttpHeaders.Authorization, "Bearer ${providerSetting.apiKey}")
+            contentType(ContentType.Application.Json)
+            setBody(json.encodeToString(requestBody))
+        }.collect {
             when (it) {
                 is SseEvent.Open -> Log.i(TAG, "SSE connection opened")
                 is SseEvent.Event -> {
