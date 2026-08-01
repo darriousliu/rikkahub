@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.di
 
 import android.content.Context
+import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
@@ -24,7 +25,8 @@ val repositoryModule = module {
     }
 
     single {
-        FolderRepository(get(), get())
+        val conversationDAO: ConversationDAO = get()
+        FolderRepository(get(), conversationDAO::clearFolder)
     }
 
     single {

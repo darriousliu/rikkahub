@@ -2,7 +2,6 @@ package me.rerere.rikkahub.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.db.dao.FolderDAO
 import me.rerere.rikkahub.data.db.entity.FolderEntity
 import me.rerere.rikkahub.data.model.Folder
@@ -12,9 +11,10 @@ import kotlin.uuid.Uuid
 
 class FolderRepository(
     private val folderDAO: FolderDAO,
-    private val conversationDAO: ConversationDAO,
+    private val clearConversationFolder: suspend (String) -> Unit,
+    clock: Clock = Clock.System,
 ) {
-    private val mapper = FolderPersistenceMapper()
+    private val mapper = FolderPersistenceMapper(clock)
 
     fun getFoldersOfAssistant(assistantId: Uuid): Flow<List<Folder>> {
         return folderDAO.getFoldersOfAssistant(assistantId.toString())
@@ -39,7 +39,7 @@ class FolderRepository(
      * 删除文件夹，先把归属该文件夹的会话 folder_id 清空，再删除文件夹本身（不影响会话）。
      */
     suspend fun deleteFolder(id: Uuid) {
-        conversationDAO.clearFolder(id.toString())
+        clearConversationFolder(id.toString())
         folderDAO.deleteById(id.toString())
     }
 }
