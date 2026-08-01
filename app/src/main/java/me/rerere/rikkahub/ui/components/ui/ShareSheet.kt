@@ -27,8 +27,6 @@ import androidx.compose.ui.unit.dp
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Share03
-import me.rerere.rikkahub.utils.JsonInstant
-import kotlin.io.encoding.Base64
 
 @Composable
 fun ShareSheet(
@@ -84,29 +82,6 @@ fun ShareSheet(
             }
         }
     }
-}
-
-fun ProviderSetting.encodeForShare(): String {
-    return buildString {
-        append("ai-provider:")
-        append("v1:")
-
-        val value = JsonInstant.encodeToString(this@encodeForShare.copyProvider(models = emptyList()))
-        append(Base64.encode(value.encodeToByteArray()))
-    }
-}
-
-fun decodeProviderSetting(value: String): ProviderSetting {
-    require(value.startsWith("ai-provider:v1:")) { "Invalid provider setting string" }
-
-    // 去掉前缀
-    val base64Str = value.removePrefix("ai-provider:v1:")
-
-    // Base64解码
-    val jsonBytes = Base64.decode(base64Str)
-    val jsonStr = jsonBytes.decodeToString()
-
-    return JsonInstant.decodeFromString<ProviderSetting>(jsonStr)
 }
 
 class ShareSheetState {

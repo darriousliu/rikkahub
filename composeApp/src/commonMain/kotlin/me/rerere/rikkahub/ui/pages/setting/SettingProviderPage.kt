@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.net.Uri
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Camera01
 import me.rerere.hugeicons.stroke.DragDropHorizontal
@@ -12,8 +9,6 @@ import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.Cancel01
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -37,7 +32,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -45,15 +40,15 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -63,39 +58,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dokar.sonner.ToasterState
 import com.dokar.sonner.ToastType
-import kotlinx.coroutines.Dispatchers
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import me.rerere.ai.provider.ProviderSetting
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.RECOMMENDED_PROVIDERS
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.platform.KScanQrImageDecoder
-import me.rerere.rikkahub.platform.KScanQrScanner
-import me.rerere.rikkahub.platform.QrImageDecoder
 import me.rerere.rikkahub.platform.QrScanResult
+import me.rerere.rikkahub.platform.rememberPlatformQrScanner
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.components.ui.decodeProviderSetting
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
+import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -127,7 +123,7 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(text = stringResource(Res.string.setting_provider_page_title))
                 },
@@ -219,7 +215,9 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                                     modifier = Modifier
                                         .longPressDraggableHandle(
                                             onDragStarted = {
-                                                haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                                haptic.performHapticFeedback(
+                                                    HapticFeedbackType.GestureThresholdActivate
+                                                )
                                             },
                                             onDragStopped = {
                                                 haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
@@ -233,7 +231,9 @@ fun SettingProviderPage(vm: SettingVM = koinViewModel()) {
                                 }
                             },
                             onClick = {
-                                navController.navigate(Screen.SettingProviderDetail(providerId = provider.id.toString()))
+                                navController.navigate(
+                                    Screen.SettingProviderDetail(providerId = provider.id.toString())
+                                )
                             }
                         )
                     }
@@ -260,10 +260,7 @@ private fun RecommendProviderButton(
     if (showSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
-            sheetState = rememberBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-            )
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(
                 modifier = Modifier
@@ -343,32 +340,46 @@ private fun ImportProviderButton(
     onAdd: (ProviderSetting) -> Unit
 ) {
     val toaster = LocalToaster.current
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val qrScanner = remember { KScanQrScanner() }
+    val qrScanner = rememberPlatformQrScanner()
     val qrImageDecoder = remember { KScanQrImageDecoder() }
+    val cameraPermissionState = rememberPermissionState(PermissionCamera)
     var showImportDialog by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
+    var awaitingCameraPermission by remember { mutableStateOf(false) }
+    val messages = ProviderImportMessages(
+        importSuccess = stringResource(Res.string.setting_provider_page_import_success),
+        noPermission = stringResource(Res.string.setting_provider_page_no_permission),
+        noQrFound = stringResource(Res.string.setting_provider_page_no_qr_found),
+        scanError = stringResource(Res.string.setting_provider_page_scan_error, "%s"),
+        qrDecodeFailed = stringResource(Res.string.setting_provider_page_qr_decode_failed, "%s"),
+        imageQrDecodeFailed = stringResource(
+            Res.string.setting_provider_page_image_qr_decode_failed,
+            "%s",
+        ),
+    )
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
+    PermissionManager(cameraPermissionState)
+    LaunchedEffect(
+        awaitingCameraPermission,
+        cameraPermissionState.allPermissionsGranted,
+        cameraPermissionState.permanentlyDeniedPermissions,
+    ) {
+        if (awaitingCameraPermission && cameraPermissionState.allPermissionsGranted) {
             showScanner = true
-        } else {
-            toaster.show(
-                context.getString(R.string.setting_provider_page_no_permission),
-                type = ToastType.Error,
-            )
+            awaitingCameraPermission = false
+        } else if (awaitingCameraPermission && cameraPermissionState.permanentlyDeniedPermissions.isNotEmpty()) {
+            toaster.show(messages.noPermission, type = ToastType.Error)
+            awaitingCameraPermission = false
         }
     }
 
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        uri?.let {
+    val pickImageLauncher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
+        file?.let {
             coroutineScope.launch {
-                handleImageQRCode(it, qrImageDecoder, onAdd, toaster, context)
+                val result = runCatching { qrImageDecoder.decode(it.readBytes()) }
+                    .getOrElse { error -> QrScanResult.Failure(error) }
+                handleImageQrResult(result, onAdd, toaster, messages)
             }
         }
     }
@@ -404,51 +415,45 @@ private fun ImportProviderButton(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // 主要操作：扫描二维码
-                        Button(
-                            onClick = {
-                                showImportDialog = false
-                                if (
-                                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                                    PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    showScanner = true
-                                } else {
-                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
+                        if (qrScanner != null) {
+                            Button(
+                                onClick = {
+                                    showImportDialog = false
+                                    if (cameraPermissionState.allPermissionsGranted) {
+                                        showScanner = true
+                                    } else {
+                                        awaitingCameraPermission = true
+                                        cameraPermissionState.requestPermissions()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                shape = MaterialTheme.shapes.large,
                             ) {
-                                Icon(
-                                    imageVector = HugeIcons.Camera01,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = stringResource(Res.string.setting_provider_page_scan_qr_code),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(
+                                        imageVector = HugeIcons.Camera01,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = stringResource(Res.string.setting_provider_page_scan_qr_code),
+                                        style = MaterialTheme.typography.labelLarge,
+                                    )
+                                }
                             }
                         }
 
-                        // 次要操作：从相册选择
                         OutlinedButton(
                             onClick = {
                                 showImportDialog = false
-                                pickImageLauncher.launch(
-                                    androidx.activity.result.PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
+                                pickImageLauncher.launch()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -490,7 +495,7 @@ private fun ImportProviderButton(
         )
     }
 
-    if (showScanner) {
+    if (showScanner && qrScanner != null) {
         Dialog(
             onDismissRequest = { showScanner = false },
             properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -500,7 +505,7 @@ private fun ImportProviderButton(
                     modifier = Modifier.fillMaxSize(),
                     onResult = { result ->
                         showScanner = false
-                        handleCameraQrResult(result, onAdd, toaster, context)
+                        handleCameraQrResult(result, onAdd, toaster, messages)
                     },
                 )
             }
@@ -508,16 +513,25 @@ private fun ImportProviderButton(
     }
 }
 
+private data class ProviderImportMessages(
+    val importSuccess: String,
+    val noPermission: String,
+    val noQrFound: String,
+    val scanError: String,
+    val qrDecodeFailed: String,
+    val imageQrDecodeFailed: String,
+)
+
 private fun handleCameraQrResult(
     result: QrScanResult,
     onAdd: (ProviderSetting) -> Unit,
-    toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context
+    toaster: ToasterState,
+    messages: ProviderImportMessages,
 ) {
     when (result) {
-        is QrScanResult.Success -> importProviderSetting(result.content, onAdd, toaster, context)
+        is QrScanResult.Success -> importProviderSetting(result.content, onAdd, toaster, messages)
         is QrScanResult.Failure -> toaster.show(
-            context.getString(R.string.setting_provider_page_scan_error, result.cause.message.orEmpty()),
+            messages.scanError.replace("%s", result.cause.message.orEmpty()),
             type = ToastType.Error,
         )
         QrScanResult.Canceled -> Unit
@@ -527,64 +541,44 @@ private fun handleCameraQrResult(
 private fun importProviderSetting(
     content: String,
     onAdd: (ProviderSetting) -> Unit,
-    toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context,
+    toaster: ToasterState,
+    messages: ProviderImportMessages,
 ) {
-    runCatching {
-        val setting = decodeProviderSetting(content)
+    runCatching { decodeProviderSetting(content) }.onSuccess { setting ->
         onAdd(setting)
-        toaster.show(
-            context.getString(R.string.setting_provider_page_import_success),
-            type = ToastType.Success,
-        )
+        toaster.show(messages.importSuccess, type = ToastType.Success)
     }.onFailure { error ->
         toaster.show(
-            context.getString(R.string.setting_provider_page_qr_decode_failed, error.message.orEmpty()),
+            messages.qrDecodeFailed.replace("%s", error.message.orEmpty()),
             type = ToastType.Error,
         )
     }
 }
 
-private suspend fun handleImageQRCode(
-    uri: Uri,
-    decoder: QrImageDecoder,
+private fun handleImageQrResult(
+    result: QrScanResult,
     onAdd: (ProviderSetting) -> Unit,
-    toaster: com.dokar.sonner.ToasterState,
-    context: android.content.Context
+    toaster: ToasterState,
+    messages: ProviderImportMessages,
 ) {
-    val result = runCatching {
-        val imageBytes = withContext(Dispatchers.IO) {
-            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                ?: error("Unable to open selected image")
-        }
-        decoder.decode(imageBytes)
-    }.getOrElse { QrScanResult.Failure(it) }
-
     when (result) {
-        is QrScanResult.Success -> importProviderSetting(result.content, onAdd, toaster, context)
+        is QrScanResult.Success -> importProviderSetting(result.content, onAdd, toaster, messages)
         is QrScanResult.Failure -> {
             val message = result.cause.message.orEmpty()
             if (message.contains("No barcode", ignoreCase = true)) {
-                toaster.show(
-                    context.getString(R.string.setting_provider_page_no_qr_found),
-                    type = ToastType.Error,
-                )
+                toaster.show(messages.noQrFound, type = ToastType.Error)
             } else {
                 toaster.show(
-                    context.getString(R.string.setting_provider_page_image_qr_decode_failed, message),
+                    messages.imageQrDecodeFailed.replace("%s", message),
                     type = ToastType.Error,
                 )
             }
         }
         QrScanResult.Canceled -> {
-            toaster.show(
-                context.getString(R.string.setting_provider_page_no_qr_found),
-                type = ToastType.Error,
-            )
+            toaster.show(messages.noQrFound, type = ToastType.Error)
         }
     }
 }
-
 
 @Composable
 private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
@@ -684,7 +678,15 @@ private fun ProviderItem(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Tag(type = if (provider.enabled) TagType.SUCCESS else TagType.WARNING) {
-                        Text(stringResource(if (provider.enabled) Res.string.setting_provider_page_enabled else Res.string.setting_provider_page_disabled))
+                        Text(
+                            stringResource(
+                                if (provider.enabled) {
+                                    Res.string.setting_provider_page_enabled
+                                } else {
+                                    Res.string.setting_provider_page_disabled
+                                }
+                            )
+                        )
                     }
                     Tag(type = TagType.INFO) {
                         Text(

@@ -13,13 +13,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +41,10 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Connect
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.components.ai.ModelSelector
-import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.ui.components.ui.Select
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.UiState
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
@@ -61,9 +60,10 @@ fun ProviderConnectionTester(
     }
 
     if (showTestDialog) {
-        var model by remember(internalProvider) {
-            mutableStateOf(internalProvider.models.firstOrNull { it.type == ModelType.CHAT })
+        val chatModels = remember(internalProvider) {
+            internalProvider.models.filter { it.type == ModelType.CHAT }
         }
+        var model by remember(internalProvider) { mutableStateOf(chatModels.firstOrNull()) }
         var nonStreamingState: UiState<String> by remember { mutableStateOf(UiState.Idle) }
         var streamingState: UiState<String> by remember { mutableStateOf(UiState.Idle) }
         var toolsState: UiState<String> by remember { mutableStateOf(UiState.Idle) }
@@ -83,13 +83,16 @@ fun ProviderConnectionTester(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ModelSelector(
-                        modelId = model?.id,
-                        providers = listOf(internalProvider),
-                        type = ModelType.CHAT,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        model = it
+                    if (chatModels.isEmpty()) {
+                        Text(stringResource(Res.string.setting_provider_page_model_count, 0))
+                    } else {
+                        Select(
+                            options = chatModels,
+                            selectedOption = model ?: chatModels.first(),
+                            onOptionSelected = { model = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            optionToString = { it.displayName.ifBlank { it.modelId } },
+                        )
                     }
 
                     TestResultItem(
@@ -128,7 +131,10 @@ fun ProviderConnectionTester(
                                     nonStreamingState = UiState.Loading
                                     val chunk = provider.generateText(
                                         providerSetting = internalProvider,
-                                        messages = listOf(UIMessage.system("You are a helpful assistant"), UIMessage.user("hello")),
+                                        messages = listOf(
+                                            UIMessage.system("You are a helpful assistant"),
+                                            UIMessage.user("hello"),
+                                        ),
                                         params = TextGenerationParams(
                                             model = model!!,
                                             customHeaders = model!!.customHeaders,
@@ -146,7 +152,10 @@ fun ProviderConnectionTester(
                                     streamingState = UiState.Loading
                                     val flow = provider.streamText(
                                         providerSetting = internalProvider,
-                                        messages = listOf(UIMessage.system("You are a helpful assistant"), UIMessage.user("hello")),
+                                        messages = listOf(
+                                            UIMessage.system("You are a helpful assistant"),
+                                            UIMessage.user("hello"),
+                                        ),
                                         params = TextGenerationParams(
                                             model = model!!,
                                             customHeaders = model!!.customHeaders,
@@ -171,7 +180,10 @@ fun ProviderConnectionTester(
                                     )
                                     val chunk = provider.generateText(
                                         providerSetting = internalProvider,
-                                        messages = listOf(UIMessage.system("You are a helpful assistant"), UIMessage.user("Use the get_current_time tool.")),
+                                        messages = listOf(
+                                            UIMessage.system("You are a helpful assistant"),
+                                            UIMessage.user("Use the get_current_time tool."),
+                                        ),
                                         params = TextGenerationParams(
                                             model = model!!,
                                             tools = listOf(testTool),
@@ -228,7 +240,7 @@ private fun TestResultItem(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            is UiState.Loading -> LinearWavyProgressIndicator(modifier = Modifier.weight(1f))
+            is UiState.Loading -> LinearProgressIndicator(modifier = Modifier.weight(1f))
             is UiState.Success -> Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -262,7 +274,7 @@ private fun TestResultItem(
     }
 
     if (showErrorSheet && state is UiState.Error) {
-        val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val stackTrace = remember(state.error) {
             state.error.stackTraceToString()
         }

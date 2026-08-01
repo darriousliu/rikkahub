@@ -22,6 +22,9 @@ public interface QrScanner {
     )
 }
 
+@Composable
+public expect fun rememberPlatformQrScanner(): QrScanner?
+
 public fun interface QrImageDecoder {
     public suspend fun decode(imageBytes: ByteArray): QrScanResult
 }

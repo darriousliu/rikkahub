@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.platform
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import org.ncgroup.kscan.BarcodeFormat
 import org.ncgroup.kscan.ScannerUiOptions
@@ -22,3 +23,6 @@ public class KScanQrScanner(
         )
     }
 }
+
+@Composable
+public actual fun rememberPlatformQrScanner(): QrScanner? = remember { KScanQrScanner() }

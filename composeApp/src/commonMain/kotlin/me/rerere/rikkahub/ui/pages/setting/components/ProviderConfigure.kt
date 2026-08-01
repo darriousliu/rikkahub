@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting.components
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,14 +18,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.readString
 import io.ktor.http.URLBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.Url
@@ -37,6 +39,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ClaudePromptCacheTtl
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
@@ -45,8 +48,7 @@ import me.rerere.hugeicons.stroke.View
 import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KClass
 
 @Composable
@@ -127,7 +129,7 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
     }
 }
 
-internal fun ProviderSetting.defaultBaseUrlForReset(): String {
+fun ProviderSetting.defaultBaseUrlForReset(): String {
     val defaultProvider = DEFAULT_PROVIDERS.find { it.id == id }
     if (defaultProvider != null) {
         when (this) {
@@ -143,7 +145,7 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
     }
 }
 
-internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
+fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
     val defaultBaseUrl = defaultBaseUrlForReset()
     return when (this) {
         is ProviderSetting.OpenAI -> this.copy(baseUrl = defaultBaseUrl)
@@ -152,7 +154,7 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
     }
 }
 
-internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
+fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
     val baseUrl = when (this) {
         is ProviderSetting.OpenAI -> this.baseUrl
         is ProviderSetting.Google -> this.baseUrl
@@ -380,8 +382,12 @@ private fun ProviderConfigureClaude(
                     label = {
                         Text(
                             when (ttl) {
-                                ClaudePromptCacheTtl.FIVE_MINUTES -> stringResource(Res.string.setting_provider_page_claude_prompt_cache_ttl_5m)
-                                ClaudePromptCacheTtl.ONE_HOUR -> stringResource(Res.string.setting_provider_page_claude_prompt_cache_ttl_1h)
+                                ClaudePromptCacheTtl.FIVE_MINUTES -> stringResource(
+                                    Res.string.setting_provider_page_claude_prompt_cache_ttl_5m
+                                )
+                                ClaudePromptCacheTtl.ONE_HOUR -> stringResource(
+                                    Res.string.setting_provider_page_claude_prompt_cache_ttl_1h
+                                )
                             }
                         )
                     },
@@ -398,28 +404,29 @@ private fun ProviderConfigureGoogle(
     provider: ProviderSetting.Google,
     onEdit: (provider: ProviderSetting.Google) -> Unit
 ) {
-    val context = LocalContext.current
     val toaster = LocalToaster.current
-    val serviceAccountJsonLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        try {
-            val content = context.contentResolver.openInputStream(uri)
-                ?.bufferedReader()
-                ?.readText()
-                ?: return@rememberLauncherForActivityResult
-            val json = Json.parseToJsonElement(content).jsonObject
-            onEdit(
+    val scope = rememberCoroutineScope()
+    val serviceAccountJsonLauncher = rememberFilePickerLauncher(
+        type = FileKitType.File("json"),
+    ) { file ->
+        file ?: return@rememberFilePickerLauncher
+        scope.launch {
+            runCatching {
+                val json = Json.parseToJsonElement(file.readString()).jsonObject
                 provider.copy(
-                    projectId = json["project_id"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.projectId,
-                    serviceAccountEmail = json["client_email"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.serviceAccountEmail,
-                    privateKey = json["private_key"]?.jsonPrimitive?.contentOrNull?.ifEmpty { null } ?: provider.privateKey,
+                    projectId = json["project_id"]?.jsonPrimitive?.contentOrNull
+                        ?.ifEmpty { null } ?: provider.projectId,
+                    serviceAccountEmail = json["client_email"]?.jsonPrimitive?.contentOrNull
+                        ?.ifEmpty { null } ?: provider.serviceAccountEmail,
+                    privateKey = json["private_key"]?.jsonPrimitive?.contentOrNull
+                        ?.ifEmpty { null } ?: provider.privateKey,
                 )
-            )
-            toaster.show("Service account imported", type = ToastType.Success)
-        } catch (e: Exception) {
-            toaster.show("Failed to import: ${e.message}", type = ToastType.Error)
+            }.onSuccess { importedProvider ->
+                onEdit(importedProvider)
+                toaster.show("Service account imported", type = ToastType.Success)
+            }.onFailure { error ->
+                toaster.show("Failed to import: ${error.message}", type = ToastType.Error)
+            }
         }
     }
 
@@ -504,7 +511,7 @@ private fun ProviderConfigureGoogle(
 
     if (provider.vertexAI && provider.useServiceAccount) {
         OutlinedButton(
-            onClick = { serviceAccountJsonLauncher.launch(arrayOf("application/json", "*/*")) },
+            onClick = { serviceAccountJsonLauncher.launch() },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(Res.string.setting_provider_page_import_service_account_json))
@@ -525,7 +532,7 @@ private fun ProviderConfigureGoogle(
             modifier = Modifier.fillMaxWidth(),
             maxLines = 6,
             minLines = 3,
-            textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = JetbrainsMono),
+            textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
             visualTransformation = if (privateKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 IconButton(onClick = { privateKeyVisible = !privateKeyVisible }) {

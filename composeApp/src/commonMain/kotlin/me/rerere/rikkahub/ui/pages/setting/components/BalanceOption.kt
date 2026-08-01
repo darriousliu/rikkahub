@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,17 +22,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import me.rerere.ai.provider.BalanceOption
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.common.http.isJsonExprValid
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import org.jetbrains.compose.resources.stringResource
 
 private val ApiPathRegex = Regex("""^/[^ \t\n\r]*$""")
+
+internal fun isValidBalanceApiPath(value: String): Boolean = value.matches(ApiPathRegex)
 
 @Composable
 fun SettingProviderBalanceOption(
@@ -87,7 +86,7 @@ fun SettingProviderBalanceOption(
                     value = balanceOption.apiPath,
                     onValueChange = { onEdit(balanceOption.copy(apiPath = it)) },
                     label = { Text(stringResource(Res.string.setting_provider_page_balance_api_path)) },
-                    isError = !balanceOption.apiPath.matches(ApiPathRegex),
+                    isError = !isValidBalanceApiPath(balanceOption.apiPath),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -96,7 +95,7 @@ fun SettingProviderBalanceOption(
                     label = { Text(stringResource(Res.string.setting_provider_page_balance_json_key)) },
                     isError = !isJsonExprValid(balanceOption.resultPath),
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = JetbrainsMono)
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
                 )
                 IconButton(
                     onClick = {

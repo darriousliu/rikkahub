@@ -8,7 +8,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import me.rerere.ai.provider.ProviderSetting
-import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import kotlin.uuid.Uuid
 
 /**
@@ -52,7 +51,9 @@ val RECOMMENDED_PROVIDERS: List<ProviderSetting> = listOf(
         description = {
             Text(
                 text = buildAnnotatedString {
-                    append("可靠高效的 API 中继服务，提供 Claude、Codex、Gemini 等中继服务。注重隐私·无数据倒卖·无模型掺水，充值额度 1:1，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。")
+                    append("可靠高效的 API 中继服务，提供 Claude、Codex、Gemini 等中继服务。")
+                    append("注重隐私·无数据倒卖·无模型掺水，充值额度 1:1，按量付费。")
+                    append("多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。")
                     appendLine()
                     append("官网：")
                     withLink(LinkAnnotation.Url("https://sui-xiang.com")) {
