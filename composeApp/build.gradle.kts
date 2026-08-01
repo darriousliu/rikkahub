@@ -13,6 +13,17 @@ plugins {
 }
 
 kotlin {
+    compilerOptions {
+        optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
+        optIn.add("androidx.compose.animation.ExperimentalAnimationApi")
+        optIn.add("androidx.compose.animation.ExperimentalSharedTransitionApi")
+        optIn.add("androidx.compose.foundation.ExperimentalFoundationApi")
+        optIn.add("androidx.compose.foundation.layout.ExperimentalLayoutApi")
+        optIn.add("kotlin.uuid.ExperimentalUuidApi")
+        optIn.add("kotlin.time.ExperimentalTime")
+        optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
+
     android {
         namespace = "me.rerere.rikkahub.shared"
         compileSdk = 37
@@ -61,7 +72,9 @@ kotlin {
             implementation(libs.androidx.navigation3.runtime)
             implementation(project(":ai"))
             implementation(project(":common"))
+            implementation(project(":highlight"))
             implementation(project(":hugeicons"))
+            implementation(project(":material3"))
             implementation(project(":search"))
             implementation(project(":speech"))
             api(libs.androidx.datastore.preferences)
@@ -69,6 +82,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+            implementation(compose.components.uiToolingPreview)
             api(compose.components.resources)
             api(libs.androidx.room3.runtime)
             api(libs.androidx.room3.paging)

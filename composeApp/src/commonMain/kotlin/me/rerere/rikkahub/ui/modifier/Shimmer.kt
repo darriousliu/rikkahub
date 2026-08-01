@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
+import kotlin.math.PI
 
 /**
  * 为 Composable 添加 Shimmer 加载效果的 Modifier.
@@ -61,7 +62,7 @@ fun Modifier.shimmer(
             label = "ShimmerTranslate"
         )
         // 将角度转换为弧度
-        val angleRad = Math.toRadians(angle.toDouble()).toFloat()
+        val angleRad = (angle * PI / 180.0).toFloat()
         // 计算渐变颜色的列表
         val colors = remember(shimmerColor, backgroundColor) {
             listOf(

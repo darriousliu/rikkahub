@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.ui.components.ui
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.LocalContentColor
@@ -28,8 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.util.fastForEachIndexed
 import me.rerere.rikkahub.ui.theme.CustomColors
 
@@ -107,11 +108,11 @@ private fun CardGroupListItem(
 
     val topCorner by animateDpAsState(
         targetValue = if (isPressed || count == 1 || isFirst) CardGroupCorner else CardGroupInnerCorner,
-        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        animationSpec = spring(),
     )
     val bottomCorner by animateDpAsState(
         targetValue = if (isPressed || count == 1 || isLast) CardGroupCorner else CardGroupInnerCorner,
-        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        animationSpec = spring(),
     )
 
     ListItem(
@@ -155,7 +156,9 @@ fun CardGroup(
     Column(modifier = modifier) {
         if (title != null) {
             CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.primary) {
-                ProvideTextStyle(MaterialTheme.typography.titleSmallEmphasized) {
+                ProvideTextStyle(
+                    MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                ) {
                     Box(modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp)) {
                         title()
                     }
@@ -172,12 +175,12 @@ fun CardGroup(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun CardGroupPreview() {
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            TopAppBar(
                 title = {
                     Text("Card Group")
                 },

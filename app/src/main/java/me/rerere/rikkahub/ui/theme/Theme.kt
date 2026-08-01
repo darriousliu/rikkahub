@@ -11,9 +11,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -27,9 +25,6 @@ import me.rerere.rikkahub.ui.hooks.rememberUserSettingsState
 
 private val ExtendLightColors = lightExtendColors()
 private val ExtendDarkColors = darkExtendColors()
-val LocalExtendColors = compositionLocalOf { ExtendLightColors }
-
-val LocalDarkMode = compositionLocalOf { false }
 
 private val AMOLED_DARK_BACKGROUND = Color(0xFF000000)
 
@@ -102,8 +97,3 @@ fun RikkahubTheme(
         )
     }
 }
-
-val MaterialTheme.extendColors
-    @Composable
-    @ReadOnlyComposable
-    get() = LocalExtendColors.current
