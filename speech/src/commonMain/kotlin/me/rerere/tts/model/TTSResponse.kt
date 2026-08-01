@@ -12,9 +12,7 @@ data class TTSResponse(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as TTSResponse
+        if (other !is TTSResponse) return false
 
         if (!audioData.contentEquals(other.audioData)) return false
         if (format != other.format) return false
@@ -45,9 +43,7 @@ data class AudioChunk(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as AudioChunk
+        if (other !is AudioChunk) return false
 
         if (!data.contentEquals(other.data)) return false
         if (format != other.format) return false
@@ -67,4 +63,3 @@ data class AudioChunk(
         return result
     }
 }
-

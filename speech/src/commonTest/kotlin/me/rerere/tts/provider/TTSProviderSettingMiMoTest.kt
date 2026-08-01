@@ -1,8 +1,8 @@
 package me.rerere.tts.provider
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TTSProviderSettingMiMoTest {
     @Test

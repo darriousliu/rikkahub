@@ -44,13 +44,16 @@ kotlin {
             implementation(compose.runtime)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.io.core)
+            implementation(libs.kotlinx.serialization.json)
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
         androidMain.dependencies {
             implementation(project(":common"))
             implementation(libs.androidx.core.ktx)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.kotlinx.serialization.json)
             implementation(libs.androidx.media3.exoplayer)
             implementation(libs.androidx.media3.ui)
             implementation(libs.androidx.media3.common)

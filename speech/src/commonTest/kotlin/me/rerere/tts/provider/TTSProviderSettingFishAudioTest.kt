@@ -1,10 +1,10 @@
 package me.rerere.tts.provider
 
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import kotlin.uuid.Uuid
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TTSProviderSettingFishAudioTest {
     private val json = Json { ignoreUnknownKeys = true }
