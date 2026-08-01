@@ -34,4 +34,6 @@ expect val PermissionRecordAudio: PermissionInfo
 
 expect val PermissionNotification: PermissionInfo
 
+expect val RuntimeNotificationPermissionRequired: Boolean
+
 expect val PermissionLocalNetwork: PermissionInfo

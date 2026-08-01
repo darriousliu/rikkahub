@@ -70,6 +70,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.androidx.navigation3.runtime)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(project(":ai"))
             implementation(project(":common"))
             implementation(project(":highlight"))
@@ -115,6 +116,9 @@ kotlin {
             implementation(libs.haze.blur)
             implementation(libs.haze.blur.materials)
             implementation(libs.image.viewer)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
 
         val mobileMain by creating {

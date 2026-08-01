@@ -1,12 +1,11 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -25,11 +24,13 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionInfo
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionNotification
+import me.rerere.rikkahub.ui.components.ui.permission.RuntimeNotificationPermissionRequired
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -45,15 +46,16 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     val permissionState = rememberPermissionState(
-        permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setOf(
-            PermissionNotification
-        ) else emptySet(),
+        permissions = notificationPermissions(
+            runtimePermissionRequired = RuntimeNotificationPermissionRequired,
+            notificationPermission = PermissionNotification,
+        ),
     )
     PermissionManager(permissionState = permissionState)
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(stringResource(Res.string.setting_page_preferences_notification))
                 },
@@ -89,8 +91,12 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                         },
                     )
                     item(
-                        headlineContent = { Text(stringResource(Res.string.setting_display_page_notification_message_generated)) },
-                        supportingContent = { Text(stringResource(Res.string.setting_display_page_notification_message_generated_desc)) },
+                        headlineContent = {
+                            Text(stringResource(Res.string.setting_display_page_notification_message_generated))
+                        },
+                        supportingContent = {
+                            Text(stringResource(Res.string.setting_display_page_notification_message_generated_desc))
+                        },
                         trailingContent = {
                             Switch(
                                 checked = displaySetting.enableNotificationOnMessageGeneration,
@@ -98,15 +104,21 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
                                     if (it && !permissionState.allPermissionsGranted) {
                                         permissionState.requestPermissions()
                                     }
-                                    updateDisplaySetting(displaySetting.copy(enableNotificationOnMessageGeneration = it))
+                                    updateDisplaySetting(
+                                        displaySetting.copy(enableNotificationOnMessageGeneration = it)
+                                    )
                                 }
                             )
                         },
                     )
                     if (displaySetting.enableNotificationOnMessageGeneration) {
                         item(
-                            headlineContent = { Text(stringResource(Res.string.setting_display_page_live_update_notification)) },
-                            supportingContent = { Text(stringResource(Res.string.setting_display_page_live_update_notification_desc)) },
+                            headlineContent = {
+                                Text(stringResource(Res.string.setting_display_page_live_update_notification))
+                            },
+                            supportingContent = {
+                                Text(stringResource(Res.string.setting_display_page_live_update_notification_desc))
+                            },
                             trailingContent = {
                                 Switch(
                                     checked = displaySetting.enableLiveUpdateNotification,
@@ -122,3 +134,8 @@ fun SettingPreferencesNotificationPage(vm: SettingVM = koinViewModel()) {
         }
     }
 }
+
+internal fun notificationPermissions(
+    runtimePermissionRequired: Boolean,
+    notificationPermission: PermissionInfo,
+): Set<PermissionInfo> = if (runtimePermissionRequired) setOf(notificationPermission) else emptySet()

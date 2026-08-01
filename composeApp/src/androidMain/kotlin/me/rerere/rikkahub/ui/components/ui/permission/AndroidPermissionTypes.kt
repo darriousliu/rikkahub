@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.ui.components.ui.permission
 
 import android.Manifest
+import android.os.Build
 import androidx.compose.material3.Text
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.permission_camera
@@ -33,6 +34,9 @@ actual val PermissionNotification: PermissionInfo = PermissionInfo(
     usage = { Text(stringResource(Res.string.permission_notification_desc)) },
     required = true,
 )
+
+actual val RuntimeNotificationPermissionRequired: Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
 actual val PermissionLocalNetwork: PermissionInfo = PermissionInfo(
     permission = Manifest.permission.ACCESS_LOCAL_NETWORK,

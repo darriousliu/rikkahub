@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 actual val PermissionCamera: PermissionInfo = passivePermission("camera", "Camera")
 actual val PermissionRecordAudio: PermissionInfo = passivePermission("record_audio", "Microphone")
 actual val PermissionNotification: PermissionInfo = passivePermission("notifications", "Notifications")
+actual val RuntimeNotificationPermissionRequired: Boolean = false
 actual val PermissionLocalNetwork: PermissionInfo = passivePermission("local_network", "Local network")
 
 private fun passivePermission(id: String, label: String): PermissionInfo = PermissionInfo(

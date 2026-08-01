@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.di
 
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
@@ -39,7 +40,10 @@ val viewModelModule = module {
         )
     }
     viewModelOf(::ChatDrawerVM)
-    viewModelOf(::SettingVM)
+    viewModel<SettingVM> {
+        get<McpManager>()
+        SettingVM(settingsStore = get())
+    }
     viewModelOf(::DebugVM)
     viewModelOf(::HistoryVM)
     viewModelOf(::AssistantVM)

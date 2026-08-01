@@ -31,8 +31,10 @@ fun Color.toCssHex(): String {
     val red = (red * 255).toInt()
     val green = (green * 255).toInt()
     val blue = (blue * 255).toInt()
-    return "#${String.format("%02X%02X%02X%02X", red, green, blue, alpha)}"
+    return "#${red.toHexByte()}${green.toHexByte()}${blue.toHexByte()}${alpha.toHexByte()}"
 }
+
+private fun Int.toHexByte(): String = toString(16).uppercase().padStart(2, '0')
 
 @Composable
 fun Dp.toSp(): TextUnit = with(LocalDensity.current) {
