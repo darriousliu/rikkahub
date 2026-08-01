@@ -27,6 +27,7 @@ room = "2.8.4"
 koin-bom = "4.2.2"
 datastore = "1.2.1"
 serialization-json = "1.11.0"
+json-jvm = "20180813"
 kotlin-coroutines-core = "1.11.0"
 kotlinx-datetime = "0.8.0"
 ksp = "2.3.10"
@@ -130,6 +131,7 @@ koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 koin-test = { group = "io.insert-koin", name = "koin-test" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization-json" }
+json-jvm = { group = "org.json", name = "json", version.ref = "json-jvm" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlin-coroutines-core" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlin-coroutines-core" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }

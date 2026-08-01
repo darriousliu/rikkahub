@@ -61,6 +61,8 @@ kotlin {
         named("androidHostTest") {
             dependencies {
                 implementation(libs.junit)
+                implementation(libs.json.jvm)
+                implementation(libs.okhttp.mockwebserver)
             }
         }
         named("androidDeviceTest") {
