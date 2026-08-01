@@ -42,6 +42,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
+            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.io.core)
         }
         androidMain.dependencies {
@@ -49,7 +50,6 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(libs.okhttp)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.coroutines.core)
             implementation(libs.androidx.media3.exoplayer)
             implementation(libs.androidx.media3.ui)
             implementation(libs.androidx.media3.common)
