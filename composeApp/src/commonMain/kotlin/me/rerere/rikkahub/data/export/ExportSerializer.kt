@@ -1,17 +1,15 @@
 package me.rerere.rikkahub.data.export
 
-import android.content.Context
-import android.net.Uri
-import android.provider.OpenableColumns
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import me.rerere.rikkahub.data.model.InjectionPosition
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
-import me.rerere.rikkahub.utils.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -26,7 +24,7 @@ interface ExportSerializer<T> {
     val type: String
 
     fun export(data: T): ExportData
-    fun import(context: Context, uri: Uri): Result<T>
+    fun import(json: String, fileName: String? = null): Result<T>
 
     // 获取导出文件名
     fun getExportFileName(data: T): String = "${type}.json"
@@ -34,23 +32,6 @@ interface ExportSerializer<T> {
     // 便捷方法：直接导出为 JSON 字符串
     fun exportToJson(data: T, json: Json = DefaultJson): String {
         return json.encodeToString(ExportData.serializer(), export(data))
-    }
-
-    // 读取 URI 内容的便捷方法
-    fun readUri(context: Context, uri: Uri): String {
-        return context.contentResolver.openInputStream(uri)
-            ?.bufferedReader()
-            ?.use { it.readText() }
-            ?: error("Failed to read file")
-    }
-
-    fun getUriFileName(context: Context, uri: Uri): String? {
-        return context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (nameIndex != -1) cursor.getString(nameIndex) else null
-            } else null
-        }
     }
 
     companion object {
@@ -76,9 +57,8 @@ object ModeInjectionSerializer : ExportSerializer<PromptInjection.ModeInjection>
         )
     }
 
-    override fun import(context: Context, uri: Uri): Result<PromptInjection.ModeInjection> {
+    override fun import(json: String, fileName: String?): Result<PromptInjection.ModeInjection> {
         return runCatching {
-            val json = readUri(context, uri)
             // 首先尝试解析为自己的格式
             tryImportNative(json)
                 ?: throw IllegalArgumentException("Unsupported format")
@@ -113,13 +93,12 @@ object LorebookSerializer : ExportSerializer<Lorebook> {
         )
     }
 
-    override fun import(context: Context, uri: Uri): Result<Lorebook> {
+    override fun import(json: String, fileName: String?): Result<Lorebook> {
         return runCatching {
-            val json = readUri(context, uri)
             // 首先尝试解析为自己的格式
             tryImportNative(json)
             // 然后尝试解析为 SillyTavern 格式
-                ?: tryImportSillyTavern(json, getUriFileName(context, uri)?.removeSuffix(".json"))
+                ?: tryImportSillyTavern(json, fileName?.removeSuffix(".json"))
                 ?: throw IllegalArgumentException("Unsupported format")
         }
     }
@@ -150,7 +129,7 @@ object LorebookSerializer : ExportSerializer<Lorebook> {
             )
             Lorebook(
                 id = Uuid.random(),
-                name = fileName ?: Clock.System.now().toLocalDateTime(),
+                name = fileName ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).toString(),
                 description = "",
                 enabled = true,
                 entries = stLorebook.entries.values.map { entry ->

@@ -19,7 +19,7 @@ import me.rerere.hugeicons.stroke.File01
 import me.rerere.hugeicons.stroke.Share01
 import me.rerere.rikkahub.data.export.ExporterState
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun <T> ExportDialog(

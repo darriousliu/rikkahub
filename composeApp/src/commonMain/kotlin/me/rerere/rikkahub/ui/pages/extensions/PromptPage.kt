@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,13 +41,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FloatingToolbarDefaults.ScreenOffset
-import androidx.compose.material3.FloatingToolbarDefaults.floatingToolbarVerticalNestedScroll
-import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -59,9 +54,9 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -69,7 +64,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,10 +91,10 @@ import me.rerere.rikkahub.ui.components.ui.Tag
 import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.useEditState
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -113,7 +107,7 @@ fun PromptPage(vm: PromptVM = koinViewModel()) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            TopAppBar(
                 navigationIcon = { BackButton() },
                 title = { Text(stringResource(Res.string.prompt_page_title)) },
                 scrollBehavior = scrollBehavior,
@@ -169,7 +163,6 @@ private fun ModeInjectionTab(
     modeInjections: List<PromptInjection.ModeInjection>,
     onUpdate: (List<PromptInjection.ModeInjection>) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
     val lazyListState = rememberLazyListState()
     val toaster = LocalToaster.current
     val currentModeInjections by rememberUpdatedState(modeInjections)
@@ -188,25 +181,19 @@ private fun ModeInjectionTab(
         }
     }
     val importSuccessMsg = stringResource(Res.string.export_import_success)
-    val importFailedMsg = stringResource(Res.string.export_import_failed)
+    val importFailedMsg = stringResource(Res.string.export_import_failed, "")
     val importer = rememberImporter(ModeInjectionSerializer) { result ->
         result.onSuccess { imported ->
             onUpdate(currentModeInjections + imported)
             toaster.show(importSuccessMsg)
         }.onFailure { error ->
-            toaster.show(importFailedMsg.format(error.message))
+            toaster.show(importFailedMsg + error.message.orEmpty())
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .floatingToolbarVerticalNestedScroll(
-                    expanded = expanded,
-                    onExpand = { expanded = true },
-                    onCollapse = { expanded = false }
-                ),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp) + PaddingValues(bottom = 128.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             state = lazyListState
@@ -256,29 +243,23 @@ private fun ModeInjectionTab(
             }
         }
 
-        HorizontalFloatingToolbar(
-            expanded = expanded,
+        Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = -ScreenOffset),
-            leadingContent = {
+                .padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 IconButton(onClick = { importer.importFromFile() }) {
                     Icon(HugeIcons.FileImport, null)
                 }
-            },
-        ) {
-            Button(onClick = { editState.open(PromptInjection.ModeInjection()) }) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Button(onClick = { editState.open(PromptInjection.ModeInjection()) }) {
                     Icon(HugeIcons.Add01, null)
-                    AnimatedVisibility(expanded) {
-                        Row {
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(Res.string.prompt_page_add_mode_injection))
-                        }
-                    }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(stringResource(Res.string.prompt_page_add_mode_injection))
                 }
             }
         }
@@ -397,7 +378,7 @@ private fun ModeInjectionEditSheet(
     onConfirm: () -> Unit,
     onEdit: (PromptInjection.ModeInjection) -> Unit
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
@@ -581,7 +562,6 @@ private fun LorebookTab(
     lorebooks: List<Lorebook>,
     onUpdate: (List<Lorebook>) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
     val lazyListState = rememberLazyListState()
     val toaster = LocalToaster.current
     val currentLorebooks by rememberUpdatedState(lorebooks)
@@ -600,25 +580,19 @@ private fun LorebookTab(
         }
     }
     val importSuccessMsg = stringResource(Res.string.export_import_success)
-    val importFailedMsg = stringResource(Res.string.export_import_failed)
+    val importFailedMsg = stringResource(Res.string.export_import_failed, "")
     val importer = rememberImporter(LorebookSerializer) { result ->
         result.onSuccess { imported ->
             onUpdate(currentLorebooks + imported)
             toaster.show(importSuccessMsg)
         }.onFailure { error ->
-            toaster.show(importFailedMsg.format(error.message))
+            toaster.show(importFailedMsg + error.message.orEmpty())
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .floatingToolbarVerticalNestedScroll(
-                    expanded = expanded,
-                    onExpand = { expanded = true },
-                    onCollapse = { expanded = false }
-                ),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp) + PaddingValues(bottom = 128.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             state = lazyListState
@@ -668,29 +642,23 @@ private fun LorebookTab(
             }
         }
 
-        HorizontalFloatingToolbar(
-            expanded = expanded,
+        Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = -ScreenOffset),
-            leadingContent = {
+                .padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 IconButton(onClick = { importer.importFromFile() }) {
                     Icon(HugeIcons.FileImport, null)
                 }
-            },
-        ) {
-            Button(onClick = { editState.open(Lorebook()) }) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Button(onClick = { editState.open(Lorebook()) }) {
                     Icon(HugeIcons.Add01, null)
-                    AnimatedVisibility(expanded) {
-                        Row {
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(stringResource(Res.string.prompt_page_add_lorebook))
-                        }
-                    }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(stringResource(Res.string.prompt_page_add_lorebook))
                 }
             }
         }
@@ -820,7 +788,7 @@ private fun LorebookEditSheet(
     onConfirm: () -> Unit,
     onEdit: (Lorebook) -> Unit
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val entryEditState = useEditState<PromptInjection.RegexInjection> { edited ->
         val index = book.entries.indexOfFirst { it.id == edited.id }
