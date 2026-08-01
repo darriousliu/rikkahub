@@ -69,56 +69,6 @@ fun rememberCustomTtsState(): CustomTtsState {
 }
 
 /**
- * Interface defining the public API of our custom TTS state holder.
- */
-interface CustomTtsState {
-    /** Flow indicating if the TTS provider is available and ready. */
-    val isAvailable: StateFlow<Boolean>
-
-    /** Flow indicating if the TTS is currently speaking. */
-    val isSpeaking: StateFlow<Boolean>
-
-    /** Flow holding any error message. */
-    val error: StateFlow<String?>
-
-    /** Flow indicating current chunk being processed (index) */
-    val currentChunk: StateFlow<Int>
-
-    /** Flow indicating total chunks in queue */
-    val totalChunks: StateFlow<Int>
-
-    /** Unified playback state (status, position, duration, speed, etc.) */
-    val playbackState: StateFlow<PlaybackState>
-
-    /**
-     * Speaks the given text using the selected TTS provider.
-     * Long texts will be automatically chunked and queued.
-     */
-    fun speak(text: String, flushCalled: Boolean = true)
-
-    /** Stops the current speech and clears the queue. */
-    fun stop()
-
-    /** Pauses the current playback. */
-    fun pause()
-
-    /** Resumes the paused playback. */
-    fun resume()
-
-    /** Skips to the next chunk in the queue. */
-    fun skipNext()
-
-    /** Fast forward current playback by [ms]. */
-    fun fastForward(ms: Long = 5_000)
-
-    /** Set playback [speed]. */
-    fun setSpeed(speed: Float)
-
-    /** Cleanup resources. */
-    fun cleanup()
-}
-
-/**
  * Internal implementation of CustomTtsState.
  */
 private class CustomTtsStateImpl(

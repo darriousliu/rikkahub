@@ -32,7 +32,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -44,8 +44,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -73,11 +72,11 @@ import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.context.LocalTTSState
 import me.rerere.rikkahub.ui.pages.setting.components.ASRProviderConfigure
 import me.rerere.rikkahub.ui.pages.setting.components.TTSProviderConfigure
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
 import me.rerere.tts.provider.TTSProviderSetting
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import kotlin.math.roundToInt
@@ -92,7 +91,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(text = stringResource(Res.string.speech_page_title))
                 },
@@ -172,7 +171,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
 
     // Edit TTS Provider Bottom Sheet
     editingTTSProvider?.let { provider ->
-        val bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         var currentProvider by remember(provider) { mutableStateOf(provider) }
 
         ModalBottomSheet(
@@ -235,7 +234,7 @@ fun SettingSpeechPage(vm: SettingVM = koinViewModel()) {
     }
 
     editingASRProvider?.let { provider ->
-        val bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         var currentProvider by remember(provider) { mutableStateOf(provider) }
 
         ModalBottomSheet(
@@ -402,7 +401,7 @@ private fun TTSPlaybackSpeedSetting(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "x${"%.1f".format(sliderValue)}",
+                    text = "x$sliderValue",
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -518,7 +517,7 @@ private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
     }
 
     if (showBottomSheet) {
-        val bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
             onDismissRequest = {
                 showBottomSheet = false
@@ -636,7 +635,7 @@ private fun AddASRProviderButton(onAdd: (ASRProviderSetting) -> Unit) {
     }
 
     if (showBottomSheet) {
-        val bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
             onDismissRequest = {
                 showBottomSheet = false

@@ -15,8 +15,8 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.components.ui.SelectTextField
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.tts.provider.TTSProviderSetting
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TTSProviderConfigure(
