@@ -1,30 +1,28 @@
 package me.rerere.rikkahub.data.ai.mcp
 
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
-private const val TOKEN_REFRESH_LEEWAY_MS = 60_000L
+private val TOKEN_REFRESH_LEEWAY = 1.minutes
 
-internal class McpTokenPolicy private constructor(
-    private val currentTimeMillis: () -> Long,
+internal class McpTokenPolicy(
+    private val clock: Clock = Clock.System,
 ) {
-    constructor() : this(System::currentTimeMillis)
-
-    internal constructor(clock: Clock) : this(
-        currentTimeMillis = { clock.now().toEpochMilliseconds() },
-    )
-
     fun needsRefresh(oauth: McpOAuthState): Boolean {
         if (!oauth.enabled || oauth.refreshToken.isNullOrBlank()) return false
 
         val expired = oauth.expiresAt > 0 &&
-            currentTimeMillis() >= oauth.expiresAt - TOKEN_REFRESH_LEEWAY_MS
+            currentEpochMilliseconds() >= oauth.expiresAt - TOKEN_REFRESH_LEEWAY.inWholeMilliseconds
         return oauth.accessToken.isNullOrBlank() || expired
     }
 
     fun computeExpiry(expiresInSeconds: Long?): Long =
         if (expiresInSeconds != null && expiresInSeconds > 0) {
-            currentTimeMillis() + expiresInSeconds * 1_000
+            currentEpochMilliseconds() + expiresInSeconds.seconds.inWholeMilliseconds
         } else {
             0L
         }
+
+    private fun currentEpochMilliseconds(): Long = clock.now().toEpochMilliseconds()
 }
