@@ -22,7 +22,6 @@ import me.rerere.search.SearchService.Companion.json
 import okhttp3.Credentials
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
-import java.net.URLEncoder
 
 private const val TAG = "SearXNGService"
 
@@ -62,7 +61,7 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
 
             // 构建查询URL
             val baseUrl = serviceOptions.url.trimEnd('/')
-            val encodedQuery = URLEncoder.encode(query, "UTF-8")
+            val encodedQuery = encodeSearchQuery(query)
             val url = "$baseUrl/search?q=$encodedQuery&format=json"
                 .toHttpUrl()
                 .newBuilder()

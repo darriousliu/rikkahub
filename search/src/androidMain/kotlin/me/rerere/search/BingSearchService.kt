@@ -17,7 +17,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import okhttp3.Request
-import java.net.URLEncoder
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -49,7 +48,7 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
     ): Result<SearchResult> = withContext(Dispatchers.IO) {
         runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val url = "https://www.bing.com/search?q=" + URLEncoder.encode(query, "UTF-8")
+            val url = "https://www.bing.com/search?q=" + encodeSearchQuery(query)
             val locale = Locale.getDefault()
             val acceptLanguage = "${locale.language}-${locale.country},${locale.language}"
             val request = Request.Builder()
