@@ -37,7 +37,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.util.Collections
 
 private const val TAG = "MiMoASR"
 
@@ -75,7 +74,7 @@ class MiMoASRController(
     private val bufferLock = Any()
     private var currentBuffer = ByteArrayOutputStream()
     private var segmentStartElapsedMs = 0L
-    private val completedTranscripts = Collections.synchronizedList(mutableListOf<String>())
+    private val completedTranscripts = MutableStateFlow<List<String>>(emptyList())
 
     override fun start(onTranscriptChange: (String) -> Unit) {
         if (state.value.isRecording) return
@@ -93,7 +92,7 @@ class MiMoASRController(
             currentBuffer = ByteArrayOutputStream()
             segmentStartElapsedMs = SystemClock.elapsedRealtime()
         }
-        completedTranscripts.clear()
+        completedTranscripts.value = emptyList()
         flushJob = null
 
         // MiMo 是 HTTP 一次性接口, 没有 WebSocket 连接阶段, 直接进入 Listening
@@ -270,13 +269,13 @@ class MiMoASRController(
         }
 
         if (text.isNotEmpty()) {
-            completedTranscripts.add(text)
+            completedTranscripts.update { it + text }
             publishTranscript()
         }
     }
 
     private fun publishTranscript() {
-        val transcript = completedTranscripts
+        val transcript = completedTranscripts.value
             .filter { it.isNotBlank() }
             .joinToString(" ")
         _state.update { it.copy(transcript = transcript, errorMessage = null) }

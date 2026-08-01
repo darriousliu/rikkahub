@@ -28,7 +28,6 @@ import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import java.io.File
 import java.io.Reader
-import java.nio.charset.StandardCharsets
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -79,7 +78,7 @@ object ChatboxImporter {
         var skippedEmptyMessages = 0
         val conversations = arrayListOf<Conversation>()
 
-        file.bufferedReader(StandardCharsets.UTF_8).use { reader ->
+        file.bufferedReader(Charsets.UTF_8).use { reader ->
             forEachSessionSync(reader) { session ->
                 val result = parseSession(session, assistantId, allProviders)
                 skippedImageParts += result.skippedImageParts
@@ -99,7 +98,7 @@ object ChatboxImporter {
     }
 
     fun importProviders(file: File): List<ProviderSetting> {
-        return file.bufferedReader(StandardCharsets.UTF_8).use { reader ->
+        return file.bufferedReader(Charsets.UTF_8).use { reader ->
             readSettings(reader)
                 ?.let { settings -> importProviders(JsonObject(mapOf("settings" to settings))) }
                 ?: emptyList()
@@ -119,7 +118,7 @@ object ChatboxImporter {
         var skippedEmptyMessages = 0
         var hasConversationSystemPrompt = false
 
-        file.bufferedReader(StandardCharsets.UTF_8).use { reader ->
+        file.bufferedReader(Charsets.UTF_8).use { reader ->
             forEachSession(reader) { session ->
                 val result = parseSession(session, assistantId, allProviders)
                 skippedImageParts += result.skippedImageParts
