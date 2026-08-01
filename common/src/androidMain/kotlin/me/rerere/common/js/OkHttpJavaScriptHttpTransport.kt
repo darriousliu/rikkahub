@@ -88,3 +88,6 @@ class OkHttpJavaScriptHttpTransport(
         }
     }
 }
+
+internal fun javaScriptHttpTransportForTest(): JavaScriptHttpTransport =
+    OkHttpJavaScriptHttpTransport(OkHttpClient())
