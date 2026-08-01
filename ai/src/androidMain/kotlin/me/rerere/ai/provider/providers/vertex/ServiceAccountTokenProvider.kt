@@ -18,18 +18,28 @@ import kotlin.time.Duration.Companion.minutes
 
 private val JWT_LIFETIME_SECONDS = 1.hours.inWholeSeconds
 private val TOKEN_REFRESH_BUFFER_SECONDS = 5.minutes.inWholeSeconds
+private const val TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+
+internal fun interface ServiceAccountTokenTransport {
+    suspend fun exchange(assertion: String): ServiceAccountTokenHttpResponse
+}
+
+internal data class ServiceAccountTokenHttpResponse(
+    val code: Int,
+    val body: String,
+)
 
 /**
  * 使用服务账号（email + private key PEM）换取 Google OAuth2 Access Token。
  * 构造时传入 OkHttpClient；调用时传 email、私钥 PEM 与 scopes。
  */
 class ServiceAccountTokenProvider internal constructor(
-    private val http: OkHttpClient,
+    private val transport: ServiceAccountTokenTransport,
     private val clock: Clock,
     private val rsaSha256Signer: RsaSha256Signer = JdkVertexRsaSha256Signer,
 ) {
     constructor(http: OkHttpClient) : this(
-        http = http,
+        transport = OkHttpServiceAccountTokenTransport(http),
         clock = Clock.System,
     )
 
@@ -100,33 +110,19 @@ class ServiceAccountTokenProvider internal constructor(
         )
         val assertion = "$signingInput.${base64UrlNoPad(signature)}"
 
-        val form = FormBody.Builder()
-            .add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-            .add("assertion", assertion)
-            .build()
-
-        val req = Request.Builder()
-            .url("https://oauth2.googleapis.com/token")
-            .post(form)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .build()
-
-        http.newCall(req).execute().use { resp ->
-            if (!resp.isSuccessful) {
-                val body = resp.body.string()
-                throw IllegalStateException("Token endpoint ${resp.code}: $body")
-            }
-            val body = resp.body.string()
-            val tokenResp = json.decodeFromString(TokenResponse.serializer(), body)
-            val accessToken = tokenResp.accessToken ?: error("No access_token in response")
-
-            // Cache the token with expiration time
-            val expiresIn = tokenResp.expiresIn ?: JWT_LIFETIME_SECONDS
-            val expiresAt = now + expiresIn
-            tokenCache.update { it + (cacheKey to CachedToken(accessToken, expiresAt)) }
-
-            accessToken
+        val response = transport.exchange(assertion)
+        if (response.code !in 200..299) {
+            throw IllegalStateException("Token endpoint ${response.code}: ${response.body}")
         }
+        val tokenResp = json.decodeFromString(TokenResponse.serializer(), response.body)
+        val accessToken = tokenResp.accessToken ?: error("No access_token in response")
+
+        // Cache the token with expiration time
+        val expiresIn = tokenResp.expiresIn ?: JWT_LIFETIME_SECONDS
+        val expiresAt = now + expiresIn
+        tokenCache.update { it + (cacheKey to CachedToken(accessToken, expiresAt)) }
+
+        accessToken
     }
 
     @Serializable
@@ -145,3 +141,35 @@ class ServiceAccountTokenProvider internal constructor(
             .encode(bytes)
 
 }
+
+private class OkHttpServiceAccountTokenTransport(
+    private val http: OkHttpClient,
+    private val tokenEndpoint: String = TOKEN_ENDPOINT,
+) : ServiceAccountTokenTransport {
+    override suspend fun exchange(assertion: String): ServiceAccountTokenHttpResponse =
+        withContext(Dispatchers.IO) {
+            val form = FormBody.Builder()
+                .add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+                .add("assertion", assertion)
+                .build()
+
+            val request = Request.Builder()
+                .url(tokenEndpoint)
+                .post(form)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .build()
+
+            http.newCall(request).execute().use { response ->
+                ServiceAccountTokenHttpResponse(
+                    code = response.code,
+                    body = response.body.string(),
+                )
+            }
+        }
+}
+
+internal fun serviceAccountTokenTransportForTest(tokenEndpoint: String): ServiceAccountTokenTransport =
+    OkHttpServiceAccountTokenTransport(
+        http = OkHttpClient(),
+        tokenEndpoint = tokenEndpoint,
+    )
