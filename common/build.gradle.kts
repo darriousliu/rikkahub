@@ -34,6 +34,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.io.core)
             implementation(libs.dokar.quickjs)
             implementation(libs.kermit)
         }
