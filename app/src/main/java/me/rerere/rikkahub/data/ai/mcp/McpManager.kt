@@ -26,6 +26,7 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
 import me.rerere.rikkahub.utils.JsonInstant
+import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 import kotlin.io.encoding.Base64
 import kotlin.uuid.Uuid
@@ -62,11 +63,16 @@ class McpManager(
     }
 
     private val statusStore = McpStatusStore()
+    private val secureRandom = SecureRandom()
     private val oauthCoordinator = McpOAuthCoordinator(
         settingsStore = settingsStore,
         appScope = appScope,
         appEventBus = appEventBus,
-        oauthClient = McpOAuthClient(httpClient),
+        oauthClient = McpOAuthClient(
+            httpClient = httpClient,
+            sha256 = JdkMcpSha256Digest,
+            randomBytes = { size -> ByteArray(size).also(secureRandom::nextBytes) },
+        ),
         updateStatus = statusStore::update,
     )
     private val sessionRegistry = McpSessionRegistry(

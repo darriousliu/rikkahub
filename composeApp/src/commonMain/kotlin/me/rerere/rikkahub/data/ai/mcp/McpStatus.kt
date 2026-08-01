@@ -17,7 +17,8 @@ sealed class McpStatus {
             fun from(throwable: Throwable, fallbackMessage: String? = null): Error {
                 val summary = throwable.message?.takeIf { it.isNotBlank() }
                     ?: fallbackMessage
-                    ?: throwable.javaClass.simpleName
+                    ?: throwable::class.simpleName
+                    ?: "Unknown MCP error"
                 return Error(message = summary, detail = throwable.stackTraceToString())
             }
         }

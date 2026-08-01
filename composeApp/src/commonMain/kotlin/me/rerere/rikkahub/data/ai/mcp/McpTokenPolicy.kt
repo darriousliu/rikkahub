@@ -6,7 +6,7 @@ import kotlin.time.Duration.Companion.seconds
 
 private val TOKEN_REFRESH_LEEWAY = 1.minutes
 
-internal class McpTokenPolicy(
+class McpTokenPolicy(
     private val clock: Clock = Clock.System,
 ) {
     fun needsRefresh(oauth: McpOAuthState): Boolean {

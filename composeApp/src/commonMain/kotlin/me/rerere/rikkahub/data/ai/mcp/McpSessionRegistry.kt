@@ -16,6 +16,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -36,8 +37,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.InputSchema
 import me.rerere.common.concurrent.AtomicSnapshotMap
-import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import kotlin.concurrent.Volatile
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
@@ -69,9 +70,9 @@ private sealed interface ConnectResult {
     data object Failed : ConnectResult
 }
 
-internal class McpClientUnavailableException(message: String) : IllegalStateException(message)
+class McpClientUnavailableException(message: String) : IllegalStateException(message)
 
-internal class McpStatusStore {
+class McpStatusStore {
     private val _status = MutableStateFlow<Map<Uuid, McpStatus>>(emptyMap())
     val status: StateFlow<Map<Uuid, McpStatus>> = _status.asStateFlow()
 
@@ -93,11 +94,11 @@ internal class McpStatusStore {
  * 每个 serverId 对应一个 [McpSession]，该 Session 的连接、同步、关闭和重连通过同一把 Mutex 串行执行。
  * Client 只有在 connect 与首次工具同步都成功后才对外可见。
  */
-internal class McpSessionRegistry(
+class McpSessionRegistry(
     private val settingsStore: SettingsStore,
-    private val appScope: AppScope,
+    private val appScope: CoroutineScope,
     private val httpClient: HttpClient,
-    private val oauthCoordinator: McpOAuthCoordinator,
+    private val oauthCoordinator: McpAuthorizationCoordinator,
     private val statusStore: McpStatusStore,
 ) {
     private val sessions = AtomicSnapshotMap<Uuid, McpSession>()
@@ -204,7 +205,7 @@ internal class McpSessionRegistry(
         requestedConfig: McpServerConfig,
         cancelPendingReconnect: Boolean,
         forceReconnect: Boolean,
-    ): ConnectResult = withContext(Dispatchers.IO) {
+    ): ConnectResult = withContext(Dispatchers.Default) {
         session.lifecycleMutex.withLock {
             if (sessions[requestedConfig.id] !== session) return@withLock ConnectResult.Stale
             if (!hasSameConnectionParameters(session.config, requestedConfig)) {
@@ -278,7 +279,7 @@ internal class McpSessionRegistry(
         }
 
         var reconnectConfig: McpServerConfig? = null
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             session.lifecycleMutex.withLock {
                 val sdkClient = session.client ?: return@withLock
                 val connectedConfig = session.connectedConfig ?: return@withLock
@@ -408,7 +409,7 @@ internal class McpSessionRegistry(
         if (retry) requestReconnect(session.config.id, sourceClient = null, retryAfterFailure = true)
     }
 
-    private suspend fun closeSession(session: McpSession) = withContext(Dispatchers.IO) {
+    private suspend fun closeSession(session: McpSession) = withContext(Dispatchers.Default) {
         session.lifecycleMutex.withLock {
             session.reconnectJob?.cancel()
             session.reconnectJob = null

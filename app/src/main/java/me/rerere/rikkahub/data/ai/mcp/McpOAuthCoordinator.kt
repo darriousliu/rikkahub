@@ -39,7 +39,7 @@ internal class McpOAuthCoordinator(
     private val oauthClient: McpOAuthClient,
     private val updateStatus: (Uuid, McpStatus) -> Unit,
     private val tokenPolicy: McpTokenPolicy = McpTokenPolicy(),
-) {
+) : McpAuthorizationCoordinator {
     private val authorizationJobs = AtomicSnapshotMap<Uuid, Job>()
     private val refreshLocks = AtomicSnapshotMap<Uuid, Mutex>()
 
@@ -65,7 +65,7 @@ internal class McpOAuthCoordinator(
         updateStatus(configId, McpStatus.NeedsAuthorization)
     }
 
-    fun forget(configId: Uuid) {
+    override fun forget(configId: Uuid) {
         authorizationJobs.remove(configId)?.cancel()
         refreshLocks.remove(configId)
     }
@@ -79,7 +79,7 @@ internal class McpOAuthCoordinator(
     /**
      * 按 serverId 串行刷新。获得锁后重新读取配置，避免并发工具调用重复使用同一个 refresh token。
      */
-    suspend fun ensureFreshToken(configInput: McpServerConfig): McpServerConfig {
+    override suspend fun ensureFreshToken(configInput: McpServerConfig): McpServerConfig {
         val lock = refreshLocks.getOrPut(configInput.id) { Mutex() }
         return lock.withLock {
             val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == configInput.id }
@@ -114,7 +114,7 @@ internal class McpOAuthCoordinator(
         }
     }
 
-    suspend fun needsAuthorization(config: McpServerConfig, error: Throwable): Boolean {
+    override suspend fun needsAuthorization(config: McpServerConfig, error: Throwable): Boolean {
         if (!looksUnauthorized(error)) return false
         if (config.commonOptions.oauth?.enabled == true) return true
         if (config.commonOptions.headers.any { it.first.equals("Authorization", ignoreCase = true) }) {

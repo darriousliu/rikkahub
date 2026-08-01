@@ -26,8 +26,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.io.IOException
-import java.security.SecureRandom
 import kotlin.io.encoding.Base64
 
 private const val TAG = "McpOAuthClient"
@@ -46,9 +44,9 @@ private fun Url.origin(): String = URLBuilder(
 
 internal fun createPkceChallenge(
     verifier: String,
-    sha256: Sha256Digest = JdkMcpSha256Digest,
+    sha256: Sha256Digest,
 ): String {
-    val digest = sha256.digest(verifier.toByteArray(Charsets.US_ASCII))
+    val digest = sha256.digest(verifier.encodeToByteArray())
     return Base64.UrlSafe.encode(digest).trimEnd('=')
 }
 
@@ -67,6 +65,8 @@ internal fun createPkceChallenge(
  */
 class McpOAuthClient(
     private val httpClient: HttpClient,
+    private val sha256: Sha256Digest,
+    private val randomBytes: (size: Int) -> ByteArray,
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -129,7 +129,7 @@ class McpOAuthClient(
      * `WWW-Authenticate: resource_metadata="..."` 定位，退回到 well-known 路径。
      */
     suspend fun discoverProtectedResource(serverUrl: String): ProtectedResourceMetadata =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             val candidates = buildList {
                 probeResourceMetadataUrl(serverUrl)?.let { add(it) }
                 addAll(wellKnownPrmUrls(serverUrl))
@@ -149,7 +149,7 @@ class McpOAuthClient(
      * oauth-authorization-server 与 openid-configuration 的多种 well-known 组合。
      */
     suspend fun discoverAuthorizationServer(issuer: String): AuthorizationServerMetadata =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             for (url in wellKnownAsUrls(issuer)) {
                 val meta = runCatching { getJson<AuthorizationServerMetadata>(url) }.getOrNull()
                 if (meta?.authorizationEndpoint != null && meta.tokenEndpoint != null) {
@@ -166,7 +166,7 @@ class McpOAuthClient(
         clientName: String,
         redirectUri: String,
         scope: String?,
-    ): ClientRegistrationResponse = withContext(Dispatchers.IO) {
+    ): ClientRegistrationResponse = withContext(Dispatchers.Default) {
         val body = json.encodeToString(
             ClientRegistrationRequest.serializer(),
             ClientRegistrationRequest(
@@ -191,13 +191,13 @@ class McpOAuthClient(
     // ---------------------------------------------------------------------
 
     fun generatePkce(): Pkce {
-        val verifierBytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
+        val verifierBytes = randomBytes(32).also { require(it.size == 32) }
         val verifier = base64Url(verifierBytes)
-        return Pkce(verifier = verifier, challenge = createPkceChallenge(verifier))
+        return Pkce(verifier = verifier, challenge = createPkceChallenge(verifier, sha256))
     }
 
     fun generateState(): String {
-        val bytes = ByteArray(16).also { SecureRandom().nextBytes(it) }
+        val bytes = randomBytes(16).also { require(it.size == 16) }
         return base64Url(bytes)
     }
 
@@ -235,7 +235,7 @@ class McpOAuthClient(
         codeVerifier: String,
         redirectUri: String,
         resource: String,
-    ): TokenResponse = withContext(Dispatchers.IO) {
+    ): TokenResponse = withContext(Dispatchers.Default) {
         val form = parameters {
             append("grant_type", "authorization_code")
             append("code", code)
@@ -256,7 +256,7 @@ class McpOAuthClient(
         refreshToken: String,
         resource: String,
         scope: String?,
-    ): TokenResponse = withContext(Dispatchers.IO) {
+    ): TokenResponse = withContext(Dispatchers.Default) {
         val form = parameters {
             append("grant_type", "refresh_token")
             append("refresh_token", refreshToken)
@@ -342,7 +342,7 @@ class McpOAuthClient(
     private suspend fun execute(url: String, response: HttpResponse): String {
         val body = response.bodyAsText()
         if (!response.status.isSuccess()) {
-            throw IOException("HTTP ${response.status.value} for $url: ${body.take(300)}")
+            throw IllegalStateException("HTTP ${response.status.value} for $url: ${body.take(300)}")
         }
         return body
     }
