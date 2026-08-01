@@ -305,4 +305,3 @@ val ReasoningHigh: ImageVector
 
 private var _reasoningHigh: ImageVector? = null
 
-

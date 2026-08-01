@@ -15,6 +15,7 @@ plugins {
 kotlin {
     compilerOptions {
         optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
+        optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
         optIn.add("androidx.compose.animation.ExperimentalAnimationApi")
         optIn.add("androidx.compose.animation.ExperimentalSharedTransitionApi")
         optIn.add("androidx.compose.foundation.ExperimentalFoundationApi")
@@ -70,6 +71,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.androidx.navigation3.runtime)
+            implementation(libs.jetbrains.navigation3.ui)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(project(":ai"))
             implementation(project(":common"))
@@ -96,6 +98,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktorfit.lib.light)
             implementation(libs.coil.ktor3)
+            implementation(libs.coil.compose)
             implementation(libs.kscan)
             implementation(libs.dokar.quickjs)
             implementation(libs.ratex)

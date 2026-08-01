@@ -19,8 +19,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,7 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import me.rerere.ai.core.ReasoningLevel
 import me.rerere.hugeicons.HugeIcons
@@ -44,7 +43,7 @@ import me.rerere.rikkahub.ui.components.ui.icons.ReasoningHigh
 import me.rerere.rikkahub.ui.components.ui.icons.ReasoningLow
 import me.rerere.rikkahub.ui.components.ui.icons.ReasoningMedium
 import kotlin.math.roundToInt
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 private val levels = ReasoningLevel.entries
 private val levelCount = levels.size
@@ -102,7 +101,7 @@ fun ReasoningPicker(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
             modifier = Modifier

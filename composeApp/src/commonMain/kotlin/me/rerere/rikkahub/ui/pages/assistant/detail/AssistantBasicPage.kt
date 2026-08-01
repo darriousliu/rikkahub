@@ -14,7 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -46,9 +46,8 @@ import me.rerere.rikkahub.ui.components.ui.Select
 import me.rerere.rikkahub.ui.components.ui.TagsInput
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
 import me.rerere.rikkahub.ui.hooks.heroAnimation
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.utils.toFixed
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
@@ -70,7 +69,7 @@ fun AssistantBasicPage(id: String) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(stringResource(Res.string.assistant_page_tab_basic))
                 },
@@ -542,7 +541,7 @@ internal fun AssistantBasicContent(
                         onValueChange = {
                             onUpdate(
                                 assistant.copy(
-                                    backgroundOpacity = it.toFixed(2).toFloatOrNull()?.coerceIn(0f, 1f) ?: 1.0f
+                                    backgroundOpacity = (it * 100f).roundToInt().div(100f).coerceIn(0f, 1f)
                                 )
                             )
                         },

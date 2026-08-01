@@ -33,8 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,8 +74,8 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.icons.HeartIcon
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -238,10 +237,7 @@ fun ModelListSheet(
     if (!state.visible) return
 
     val coroutineScope = rememberCoroutineScope()
-    val sheetState = rememberBottomSheetState(
-        initialValue = SheetValue.Hidden,
-        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     fun dismiss() {
         coroutineScope.launch {

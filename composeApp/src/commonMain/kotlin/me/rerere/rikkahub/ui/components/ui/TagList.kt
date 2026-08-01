@@ -35,7 +35,7 @@ import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.rikkahub.data.model.Tag
 import kotlin.uuid.Uuid
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TagsInput(

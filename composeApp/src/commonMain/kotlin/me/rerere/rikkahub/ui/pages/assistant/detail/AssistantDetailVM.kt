@@ -1,12 +1,10 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
 import me.rerere.common.logging.RikkaLog as Log
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -16,15 +14,15 @@ import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
-import me.rerere.rikkahub.data.files.FilesManager
-import me.rerere.rikkahub.data.files.SkillManager
-import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.model.Tag
 import me.rerere.rikkahub.data.repository.MemoryRepository
-import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.data.db.dao.WorkspaceDAO
+import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
+import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
+import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
 import kotlin.uuid.Uuid
 
 private const val TAG = "AssistantDetailVM"
@@ -33,18 +31,18 @@ class AssistantDetailVM(
     private val id: String,
     private val settingsStore: SettingsStore,
     private val memoryRepository: MemoryRepository,
-    private val filesManager: FilesManager,
-    private val skillManager: SkillManager,
-    private val workspaceRepository: WorkspaceRepository,
+    private val assetCleaner: AssistantAssetCleaner,
+    private val skillCatalog: AssistantSkillCatalog,
+    private val workspaceDao: WorkspaceDAO,
 ) : ViewModel() {
     private val assistantId = Uuid.parse(id)
 
-    private val _skills = MutableStateFlow<List<SkillMetadata>>(emptyList())
+    private val _skills = MutableStateFlow<List<AssistantSkillMetadata>>(emptyList())
     val skills = _skills.asStateFlow()
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            _skills.value = skillManager.listSkills()
+        viewModelScope.launch {
+            _skills.value = skillCatalog.listSkills()
         }
     }
 
@@ -94,7 +92,7 @@ class AssistantDetailVM(
             scope = viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList()
         )
 
-    val workspaces: StateFlow<List<WorkspaceEntity>> = workspaceRepository
+    val workspaces: StateFlow<List<WorkspaceEntity>> = workspaceDao
         .listFlow()
         .stateIn(
             scope = viewModelScope,
@@ -207,7 +205,7 @@ class AssistantDetailVM(
     fun checkAvatarDelete(old: Assistant, new: Assistant) {
         val oldAvatar = old.avatar
         if (oldAvatar is Avatar.Image && oldAvatar != new.avatar) {
-            filesManager.deleteChatFiles(listOf(oldAvatar.url.toUri()))
+            assetCleaner.deleteLocalAssets(listOf(oldAvatar.url))
         }
     }
 
@@ -217,10 +215,7 @@ class AssistantDetailVM(
 
         if (oldBackground != null && oldBackground != newBackground) {
             try {
-                val oldUri = oldBackground.toUri()
-                if (oldUri.scheme == "content" || oldUri.scheme == "file") {
-                    filesManager.deleteChatFiles(listOf(oldUri))
-                }
+                assetCleaner.deleteLocalAssets(listOf(oldBackground))
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to delete background file: $oldBackground", e)
             }

@@ -20,6 +20,10 @@ import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.AndroidChatNotificationPresenter
 import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
+import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantSkillCatalog
+import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
+import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.createPlatformBuildInfo
 import me.rerere.rikkahub.utils.EmojiData
@@ -42,6 +46,9 @@ val appModule = module {
     }
 
     single<Json> { JsonInstant }
+
+    single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
+    single<AssistantSkillCatalog> { AndroidAssistantSkillCatalog(get()) }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
     single<OAuthCallbackSessionFactory> {

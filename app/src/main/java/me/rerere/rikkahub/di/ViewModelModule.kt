@@ -52,9 +52,9 @@ val viewModelModule = module {
             id = it.get(),
             settingsStore = get(),
             memoryRepository = get(),
-            filesManager = get(),
-            skillManager = get(),
-            workspaceRepository = get(),
+            assetCleaner = get(),
+            skillCatalog = get(),
+            workspaceDao = get(),
         )
     }
     viewModelOf(::TranslatorVM)
