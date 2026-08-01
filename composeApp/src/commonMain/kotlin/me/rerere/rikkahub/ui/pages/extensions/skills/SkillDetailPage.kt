@@ -21,13 +21,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,22 +46,21 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.composables.icons.lucide.ChevronDown
-import com.composables.icons.lucide.ChevronRight
-import com.composables.icons.lucide.FilePen
-import com.composables.icons.lucide.FileText
-import com.composables.icons.lucide.Folder
-import com.composables.icons.lucide.FolderOpen
-import com.composables.icons.lucide.Lucide
-import com.composables.icons.lucide.Plus
-import com.composables.icons.lucide.Trash2
+import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.Add01
+import me.rerere.hugeicons.stroke.ArrowDown01
+import me.rerere.hugeicons.stroke.ArrowRight01
+import me.rerere.hugeicons.stroke.Delete01
+import me.rerere.hugeicons.stroke.File02
+import me.rerere.hugeicons.stroke.Folder01
+import me.rerere.hugeicons.stroke.PencilEdit01
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -73,7 +72,7 @@ fun SkillDetailPage(skillName: String) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val toaster = LocalToaster.current
 
-    var editingFile by remember { mutableStateOf<SkillFile?>(null) }
+    var editingFile by remember { mutableStateOf<Pair<SkillFile, String>?>(null) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<SkillFile?>(null) }
     val deleteFailedMsg = stringResource(Res.string.skill_detail_page_delete_failed)
@@ -90,7 +89,7 @@ fun SkillDetailPage(skillName: String) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            TopAppBar(
                 title = { Text(skillName) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
@@ -104,7 +103,7 @@ fun SkillDetailPage(skillName: String) {
                 exit = fadeOut() + scaleOut(),
             ) {
                 FloatingActionButton(onClick = { showAddDialog = true }) {
-                    Icon(Lucide.Plus, contentDescription = null)
+                    Icon(HugeIcons.Add01, contentDescription = null)
                 }
             }
         },
@@ -120,16 +119,21 @@ fun SkillDetailPage(skillName: String) {
             FileTree(
                 nodes = tree,
                 depth = 0,
-                onEdit = { editingFile = it },
+                onEdit = { skillFile ->
+                    vm.readFile(skillFile) { content ->
+                        if (content == null) toaster.show("读取失败")
+                        else editingFile = skillFile to content
+                    }
+                },
                 onDelete = { deleteTarget = it },
             )
         }
     }
 
-    editingFile?.let { skillFile ->
+    editingFile?.let { (skillFile, initialContent) ->
         EditFileDialog(
             skillFile = skillFile,
-            initialContent = remember(skillFile.relativePath) { vm.readFile(skillFile) },
+            initialContent = initialContent,
             onDismiss = { editingFile = null },
             onConfirm = { content ->
                 vm.saveFile(skillFile.relativePath, content) { error ->
@@ -215,13 +219,13 @@ private fun FileItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Lucide.FileText,
+                imageVector = HugeIcons.File02,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = skillFile.file.name,
+                text = skillFile.name,
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier
@@ -229,13 +233,13 @@ private fun FileItem(
                     .padding(start = 8.dp),
             )
             Text(
-                text = "${skillFile.file.length()} B",
+                text = "${skillFile.size} B",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
                 Icon(
-                    imageVector = Lucide.FilePen,
+                    imageVector = HugeIcons.PencilEdit01,
                     contentDescription = stringResource(Res.string.edit),
                     modifier = Modifier.size(16.dp),
                 )
@@ -243,7 +247,7 @@ private fun FileItem(
             if (skillFile.relativePath != "SKILL.md") {
                 IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        imageVector = Lucide.Trash2,
+                        imageVector = HugeIcons.Delete01,
                         contentDescription = stringResource(Res.string.delete),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.error,
@@ -277,13 +281,13 @@ private fun DirItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(
-                    imageVector = if (expanded) Lucide.ChevronDown else Lucide.ChevronRight,
+                    imageVector = if (expanded) HugeIcons.ArrowDown01 else HugeIcons.ArrowRight01,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Icon(
-                    imageVector = if (expanded) Lucide.FolderOpen else Lucide.Folder,
+                    imageVector = HugeIcons.Folder01,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.tertiary,

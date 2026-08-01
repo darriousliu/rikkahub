@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.ui.pages.extensions.skills
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +21,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -31,9 +28,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,12 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.rikkahub.R
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.Delete01
@@ -58,16 +55,16 @@ import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Puzzle
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
-import me.rerere.rikkahub.data.files.SkillMetadata
+import me.rerere.rikkahub.data.files.SkillSummary
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -77,27 +74,27 @@ fun SkillsPage() {
     val skills by vm.skills.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val toaster = LocalToaster.current
-    val context = LocalContext.current
     var showImportSheet by rememberSaveable { mutableStateOf(false) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var showImportDialog by rememberSaveable { mutableStateOf(false) }
-    var deleteTarget by remember { mutableStateOf<SkillMetadata?>(null) }
-    val fileImportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        vm.importSkillFromFile(context, uri) { success, message ->
+    var deleteTarget by remember { mutableStateOf<SkillSummary?>(null) }
+    val importSuccessPrefix = stringResource(Res.string.skills_page_import_success, "")
+    val importFailedPrefix = stringResource(Res.string.skills_page_import_failed, "")
+    val saveFailedMessage = stringResource(Res.string.skills_page_save_failed)
+    val fileImportLauncher = rememberFilePickerLauncher(type = FileKitType.File()) { file ->
+        file ?: return@rememberFilePickerLauncher
+        vm.importSkillFromFile(file) { success, message ->
             if (success) {
-                toaster.show(context.getString(R.string.skills_page_import_success, message))
+                toaster.show(importSuccessPrefix + message)
             } else {
-                toaster.show(context.getString(R.string.skills_page_import_failed, message))
+                toaster.show(importFailedPrefix + message)
             }
         }
     }
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            TopAppBar(
                 title = { Text(stringResource(Res.string.skills_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
@@ -151,7 +148,7 @@ fun SkillsPage() {
                 }
             }
 
-            items(skills, key = { it.skillDir.absolutePath }) { skill ->
+            items(skills, key = { it.name }) { skill ->
                 SkillCard(
                     skill = skill,
                     onClick = { navController.navigate(Screen.SkillDetail(skill.name)) },
@@ -170,14 +167,7 @@ fun SkillsPage() {
             },
             onImportFromFile = {
                 showImportSheet = false
-                fileImportLauncher.launch(
-                    arrayOf(
-                        "text/*",
-                        "application/zip",
-                        "application/x-zip-compressed",
-                        "application/octet-stream",
-                    )
-                )
+                fileImportLauncher.launch()
             },
             onImportFromGitHub = {
                 showImportSheet = false
@@ -193,7 +183,7 @@ fun SkillsPage() {
                 vm.saveSkill(name, content) { success ->
                     showAddDialog = false
                     if (!success) {
-                        toaster.show(context.getString(R.string.skills_page_save_failed))
+                        toaster.show(saveFailedMessage)
                     }
                 }
             },
@@ -207,9 +197,9 @@ fun SkillsPage() {
                 vm.importSkillFromGitHub(repoUrl) { success, message ->
                     showImportDialog = false
                     if (success) {
-                        toaster.show(context.getString(R.string.skills_page_import_success, message))
+                        toaster.show(importSuccessPrefix + message)
                     } else {
-                        toaster.show(context.getString(R.string.skills_page_import_failed, message))
+                        toaster.show(importFailedPrefix + message)
                     }
                 }
             },
@@ -233,7 +223,7 @@ fun SkillsPage() {
 
 @Composable
 private fun SkillCard(
-    skill: SkillMetadata,
+    skill: SkillSummary,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -264,7 +254,7 @@ private fun SkillCard(
             ) {
                 Text(
                     text = skill.name,
-                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
                     text = skill.description,
@@ -320,7 +310,7 @@ private fun SkillImportSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
             modifier = Modifier

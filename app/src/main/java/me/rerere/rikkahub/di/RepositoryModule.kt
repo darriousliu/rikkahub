@@ -5,7 +5,9 @@ import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.files.AndroidSkillStore
 import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.AndroidConversationFileStore
 import me.rerere.rikkahub.data.repository.AndroidMessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.BackupRepository
@@ -127,5 +129,9 @@ val repositoryModule = module {
 
     single {
         SkillManager(get(), get())
+    }
+
+    single<SkillStore> {
+        AndroidSkillStore(get())
     }
 }
