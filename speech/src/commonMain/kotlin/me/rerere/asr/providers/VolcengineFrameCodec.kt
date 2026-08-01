@@ -32,7 +32,6 @@ internal object VolcengineFrameCodec {
         val messageType = (byte1 shr 4) and 0x0F
         val messageFlags = byte1 and 0x0F
         val compression = byte2 and 0x0F
-        var offset = HEADER_SIZE
 
         return when (messageType) {
             MESSAGE_TYPE_RESULT -> {
@@ -40,14 +39,12 @@ internal object VolcengineFrameCodec {
                 if (hasSequence) {
                     if (source.size < Int.SIZE_BYTES) return null
                     source.readInt()
-                    offset += Int.SIZE_BYTES
                 }
 
                 if (source.size < Int.SIZE_BYTES) return null
                 val payloadSize = source.readInt()
-                offset += Int.SIZE_BYTES
 
-                if (payloadSize <= 0 || offset + payloadSize > data.size) return null
+                if (payloadSize <= 0 || payloadSize.toLong() > source.size) return null
                 ServerFrame.Result(
                     compression = compression,
                     payload = source.readByteArray(payloadSize),
@@ -57,13 +54,11 @@ internal object VolcengineFrameCodec {
             MESSAGE_TYPE_ERROR -> {
                 if (source.size < Int.SIZE_BYTES) return null
                 val code = source.readInt()
-                offset += Int.SIZE_BYTES
 
                 if (source.size < Int.SIZE_BYTES) return null
                 val messageSize = source.readInt()
-                offset += Int.SIZE_BYTES
 
-                val message = if (messageSize > 0 && offset + messageSize <= data.size) {
+                val message = if (messageSize > 0 && messageSize.toLong() <= source.size) {
                     source.readByteArray(messageSize)
                 } else {
                     null
