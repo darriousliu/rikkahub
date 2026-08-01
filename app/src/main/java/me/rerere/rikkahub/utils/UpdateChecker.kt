@@ -23,6 +23,7 @@ private const val API_URL = "https://updates.rikka-ai.com/"
 class UpdateChecker(
     private val client: OkHttpClient,
     private val buildInfo: PlatformBuildInfo,
+    private val apiUrl: String = API_URL,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -33,7 +34,7 @@ class UpdateChecker(
                 data = try {
                     val response = client.newCall(
                         Request.Builder()
-                            .url(API_URL)
+                            .url(apiUrl)
                             .get()
                             .addHeader(
                                 "User-Agent",

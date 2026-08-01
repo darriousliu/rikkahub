@@ -29,9 +29,7 @@ fun Favicon(
     shape: Shape = RoundedCornerShape(25),
 ) {
     val faviconUrl = remember(url) {
-        url.toHttpUrlOrNull()?.host?.let { host ->
-            "https://favicone.com/$host"
-        }
+        faviconUrl(url)
     }
     AsyncImage(
         model = faviconUrl,
@@ -53,7 +51,7 @@ fun FaviconRow(
     size: Dp = 20.dp
 ) {
     val displayUrls = remember(urls) {
-        urls.distinctBy { it.toHttpUrlOrNull()?.host }
+        distinctFaviconUrls(urls)
     }.take(3)
     Layout(
         modifier = modifier,
@@ -93,3 +91,10 @@ fun FaviconRow(
         }
     }
 }
+
+internal fun faviconUrl(url: String): String? = url.toHttpUrlOrNull()?.host?.let { host ->
+    "https://favicone.com/$host"
+}
+
+internal fun distinctFaviconUrls(urls: List<String>): List<String> =
+    urls.distinctBy { it.toHttpUrlOrNull()?.host }
