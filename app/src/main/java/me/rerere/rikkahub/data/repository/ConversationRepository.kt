@@ -34,6 +34,8 @@ class ConversationRepository(
     private val filesManager: FilesManager,
     private val messageFtsManager: MessageFtsManager,
 ) {
+    private val entityMapper = ConversationEntityMapper()
+
     companion object {
         private const val PAGE_SIZE = 20
         private const val INITIAL_LOAD_SIZE = 40
@@ -347,43 +349,14 @@ class ConversationRepository(
     }
 
     fun conversationToConversationEntity(conversation: Conversation): ConversationEntity {
-        require(conversation.messageNodes.none { it.messages.any { message -> message.hasBase64Part() } })
-        return ConversationEntity(
-            id = conversation.id.toString(),
-            title = conversation.title,
-            nodes = "[]",  // nodes 现在存储在单独的表中
-            createAt = conversation.createAt.toEpochMilli(),
-            updateAt = conversation.updateAt.toEpochMilli(),
-            assistantId = conversation.assistantId.toString(),
-            chatSuggestions = JsonInstant.encodeToString(conversation.chatSuggestions),
-            isPinned = conversation.isPinned,
-            customSystemPrompt = conversation.customSystemPrompt ?: "",
-            modeInjectionIds = JsonInstant.encodeToString(conversation.modeInjectionIds),
-            lorebookIds = JsonInstant.encodeToString(conversation.lorebookIds),
-            workspaceCwd = conversation.workspaceCwd ?: "",
-            folderId = conversation.folderId?.toString() ?: "",
-        )
+        return entityMapper.toEntity(conversation)
     }
 
     fun conversationEntityToConversation(
         conversationEntity: ConversationEntity,
         messageNodes: List<MessageNode>
     ): Conversation {
-        return Conversation(
-            id = Uuid.parse(conversationEntity.id),
-            title = conversationEntity.title,
-            messageNodes = messageNodes.filter { it.messages.isNotEmpty() },
-            createAt = Instant.ofEpochMilli(conversationEntity.createAt),
-            updateAt = Instant.ofEpochMilli(conversationEntity.updateAt),
-            assistantId = Uuid.parse(conversationEntity.assistantId),
-            chatSuggestions = JsonInstant.decodeFromString(conversationEntity.chatSuggestions),
-            isPinned = conversationEntity.isPinned,
-            customSystemPrompt = conversationEntity.customSystemPrompt.ifEmpty { null },
-            modeInjectionIds = JsonInstant.decodeFromString(conversationEntity.modeInjectionIds),
-            lorebookIds = JsonInstant.decodeFromString(conversationEntity.lorebookIds),
-            workspaceCwd = conversationEntity.workspaceCwd.ifEmpty { null },
-            folderId = conversationEntity.folderId.ifEmpty { null }?.let { Uuid.parse(it) },
-        )
+        return entityMapper.fromEntity(conversationEntity, messageNodes)
     }
 
     fun getPinnedConversations(): Flow<List<Conversation>> {
@@ -414,16 +387,7 @@ class ConversationRepository(
     }
 
     private fun conversationSummaryToConversation(entity: LightConversationEntity): Conversation {
-        return Conversation(
-            id = Uuid.parse(entity.id),
-            assistantId = Uuid.parse(entity.assistantId),
-            title = entity.title,
-            isPinned = entity.isPinned,
-            createAt = Instant.ofEpochMilli(entity.createAt),
-            updateAt = Instant.ofEpochMilli(entity.updateAt),
-            messageNodes = emptyList(),
-            folderId = entity.folderId.ifEmpty { null }?.let { Uuid.parse(it) },
-        )
+        return entityMapper.fromSummary(entity)
     }
 
     private suspend fun loadMessageNodes(conversationId: String): List<MessageNode> {
@@ -479,6 +443,57 @@ class ConversationRepository(
         }
         messageNodeDAO.insertAll(entities)
     }
+}
+
+internal class ConversationEntityMapper {
+    fun toEntity(conversation: Conversation): ConversationEntity {
+        require(conversation.messageNodes.none { it.messages.any { message -> message.hasBase64Part() } })
+        return ConversationEntity(
+            id = conversation.id.toString(),
+            title = conversation.title,
+            nodes = "[]",  // nodes 现在存储在单独的表中
+            createAt = conversation.createAt.toEpochMilli(),
+            updateAt = conversation.updateAt.toEpochMilli(),
+            assistantId = conversation.assistantId.toString(),
+            chatSuggestions = JsonInstant.encodeToString(conversation.chatSuggestions),
+            isPinned = conversation.isPinned,
+            customSystemPrompt = conversation.customSystemPrompt ?: "",
+            modeInjectionIds = JsonInstant.encodeToString(conversation.modeInjectionIds),
+            lorebookIds = JsonInstant.encodeToString(conversation.lorebookIds),
+            workspaceCwd = conversation.workspaceCwd ?: "",
+            folderId = conversation.folderId?.toString() ?: "",
+        )
+    }
+
+    fun fromEntity(
+        entity: ConversationEntity,
+        messageNodes: List<MessageNode>,
+    ): Conversation = Conversation(
+        id = Uuid.parse(entity.id),
+        title = entity.title,
+        messageNodes = messageNodes.filter { it.messages.isNotEmpty() },
+        createAt = Instant.ofEpochMilli(entity.createAt),
+        updateAt = Instant.ofEpochMilli(entity.updateAt),
+        assistantId = Uuid.parse(entity.assistantId),
+        chatSuggestions = JsonInstant.decodeFromString(entity.chatSuggestions),
+        isPinned = entity.isPinned,
+        customSystemPrompt = entity.customSystemPrompt.ifEmpty { null },
+        modeInjectionIds = JsonInstant.decodeFromString(entity.modeInjectionIds),
+        lorebookIds = JsonInstant.decodeFromString(entity.lorebookIds),
+        workspaceCwd = entity.workspaceCwd.ifEmpty { null },
+        folderId = entity.folderId.ifEmpty { null }?.let { Uuid.parse(it) },
+    )
+
+    fun fromSummary(entity: LightConversationEntity): Conversation = Conversation(
+        id = Uuid.parse(entity.id),
+        assistantId = Uuid.parse(entity.assistantId),
+        title = entity.title,
+        isPinned = entity.isPinned,
+        createAt = Instant.ofEpochMilli(entity.createAt),
+        updateAt = Instant.ofEpochMilli(entity.updateAt),
+        messageNodes = emptyList(),
+        folderId = entity.folderId.ifEmpty { null }?.let { Uuid.parse(it) },
+    )
 }
 
 /**

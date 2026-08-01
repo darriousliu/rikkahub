@@ -14,32 +14,42 @@ import java.util.Locale
 fun Instant.toLocalDate(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
-): String {
-    val localDateTime = this.atZone(zoneId).toLocalDateTime()
+): String = PlatformTimeFormatter.formatDate(toEpochMilli(), zoneId.id, locale)
 
-    return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        .withLocale(locale)
-        .format(localDateTime)
-}
-
-fun Instant.toLocalDateTime(): String {
-    val zoneId = ZoneId.systemDefault()
-    val localDateTime = this.atZone(zoneId).toLocalDateTime()
-
-    return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-        .withLocale(Locale.getDefault())
-        .format(localDateTime)
-}
+fun Instant.toLocalDateTime(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String = PlatformTimeFormatter.formatDateTime(toEpochMilli(), zoneId.id, locale)
 
 fun Instant.toLocalTime(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
-): String {
-    val localDateTime = this.atZone(zoneId).toLocalDateTime()
+): String = PlatformTimeFormatter.formatTime(toEpochMilli(), zoneId.id, locale)
 
-    return DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)
-        .withLocale(locale)
-        .format(localDateTime)
+internal object PlatformTimeFormatter {
+    fun formatDate(epochMillis: Long, timeZoneId: String, locale: Locale): String {
+        return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(locale)
+            .format(localDateTime(epochMillis, timeZoneId))
+    }
+
+    fun formatDateTime(epochMillis: Long, timeZoneId: String, locale: Locale): String {
+        return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+            .withLocale(locale)
+            .format(localDateTime(epochMillis, timeZoneId))
+    }
+
+    fun formatTime(epochMillis: Long, timeZoneId: String, locale: Locale): String {
+        return DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)
+            .withLocale(locale)
+            .format(localDateTime(epochMillis, timeZoneId))
+    }
+
+    private fun localDateTime(epochMillis: Long, timeZoneId: String): LocalDateTime {
+        return Instant.ofEpochMilli(epochMillis)
+            .atZone(ZoneId.of(timeZoneId))
+            .toLocalDateTime()
+    }
 }
 
 fun LocalDateTime.toLocalString(): String {
