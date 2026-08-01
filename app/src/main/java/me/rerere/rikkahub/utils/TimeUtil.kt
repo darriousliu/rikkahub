@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.utils
 
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -10,21 +9,42 @@ import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.time.temporal.ChronoField
 import java.util.Locale
+import java.time.Instant as JavaInstant
+import kotlin.time.Instant as KotlinInstant
 
-fun Instant.toLocalDate(
+fun JavaInstant.toLocalDate(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ): String = PlatformTimeFormatter.formatDate(toEpochMilli(), zoneId.id, locale)
 
-fun Instant.toLocalDateTime(
+fun JavaInstant.toLocalDateTime(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ): String = PlatformTimeFormatter.formatDateTime(toEpochMilli(), zoneId.id, locale)
 
-fun Instant.toLocalTime(
+fun JavaInstant.toLocalTime(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ): String = PlatformTimeFormatter.formatTime(toEpochMilli(), zoneId.id, locale)
+
+fun KotlinInstant.toLocalDate(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String = PlatformTimeFormatter.formatDate(toEpochMilliseconds(), zoneId.id, locale)
+
+fun KotlinInstant.toLocalDateTime(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String = PlatformTimeFormatter.formatDateTime(toEpochMilliseconds(), zoneId.id, locale)
+
+fun KotlinInstant.toLocalTime(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String = PlatformTimeFormatter.formatTime(toEpochMilliseconds(), zoneId.id, locale)
+
+fun KotlinInstant.toPlatformLocalDate(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): LocalDate = PlatformTimeFormatter.localDate(toEpochMilliseconds(), zoneId.id)
 
 internal object PlatformTimeFormatter {
     fun formatDate(epochMillis: Long, timeZoneId: String, locale: Locale): String {
@@ -45,8 +65,12 @@ internal object PlatformTimeFormatter {
             .format(localDateTime(epochMillis, timeZoneId))
     }
 
+    fun localDate(epochMillis: Long, timeZoneId: String): LocalDate {
+        return localDateTime(epochMillis, timeZoneId).toLocalDate()
+    }
+
     private fun localDateTime(epochMillis: Long, timeZoneId: String): LocalDateTime {
-        return Instant.ofEpochMilli(epochMillis)
+        return JavaInstant.ofEpochMilli(epochMillis)
             .atZone(ZoneId.of(timeZoneId))
             .toLocalDateTime()
     }

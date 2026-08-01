@@ -8,7 +8,7 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
-import java.time.Instant
+import kotlin.time.Instant
 
 data class MessageSearchResult(
     val nodeId: String,
@@ -46,7 +46,7 @@ class MessageFtsManager(private val database: AppDatabase) {
                             message.id.toString(),
                             conversationId,
                             conversation.title,
-                            conversation.updateAt.toEpochMilli().toString(),
+                            conversation.updateAt.toEpochMilliseconds().toString(),
                         )
                     )
                 }
@@ -87,7 +87,7 @@ class MessageFtsManager(private val database: AppDatabase) {
                         messageId = it.getString(1),
                         conversationId = it.getString(2),
                         title = it.getString(3),
-                        updateAt = Instant.ofEpochMilli(it.getLong(4)),
+                        updateAt = Instant.fromEpochMilliseconds(it.getLong(4)),
                         snippet = it.getString(5),
                     )
                 )

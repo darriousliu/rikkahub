@@ -84,9 +84,9 @@ import me.rerere.rikkahub.web.BadRequestException
 import me.rerere.rikkahub.web.NotFoundException
 import me.rerere.rikkahub.utils.applyPlaceholders
 import me.rerere.workspace.WorkspaceShellStatus
-import java.time.Instant
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatService"
@@ -583,7 +583,7 @@ class ChatService(
                     messageNodes = getConversationFlow(conversationId).value.messageNodes.map { node ->
                         node.copy(messages = node.messages.map { it.finishReasoning() })
                     },
-                    updateAt = Instant.now()
+                    updateAt = Clock.System.now()
                 )
                 updateConversation(conversationId, updatedConversation)
 

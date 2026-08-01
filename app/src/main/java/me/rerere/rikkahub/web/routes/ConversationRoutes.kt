@@ -134,7 +134,7 @@ fun Route.conversationRoutes(
                     messageId = result.messageId,
                     conversationId = result.conversationId,
                     title = result.title,
-                    updateAt = result.updateAt.toEpochMilli(),
+                    updateAt = result.updateAt.toEpochMilliseconds(),
                     snippet = result.snippet,
                 )
             })

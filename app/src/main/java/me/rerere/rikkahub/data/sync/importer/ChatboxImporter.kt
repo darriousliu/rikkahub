@@ -28,9 +28,9 @@ import me.rerere.rikkahub.utils.JsonInstantPretty
 import java.io.File
 import java.io.Reader
 import java.nio.charset.StandardCharsets
-import java.time.Instant
 import java.util.UUID
-import kotlin.time.Instant as KotlinInstant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 /**
@@ -318,8 +318,8 @@ object ChatboxImporter {
                 assistantId = assistantId,
                 title = title,
                 messageNodes = nodes,
-                createAt = minTimestamp?.let { Instant.ofEpochMilli(it) } ?: Instant.now(),
-                updateAt = maxTimestamp?.let { Instant.ofEpochMilli(it) } ?: Instant.now(),
+                createAt = minTimestamp?.let(Instant::fromEpochMilliseconds) ?: Clock.System.now(),
+                updateAt = maxTimestamp?.let(Instant::fromEpochMilliseconds) ?: Clock.System.now(),
                 customSystemPrompt = customSystemPrompt,
             ),
             skippedImageParts = skippedImageParts,
@@ -434,10 +434,10 @@ object ChatboxImporter {
                             UIMessagePart.Reasoning(
                                 reasoning = it,
                                 createdAt = part.jsonObject["startTime"]?.asLong
-                                    ?.let(KotlinInstant::fromEpochMilliseconds)
-                                    ?: KotlinInstant.fromEpochMilliseconds(message["timestamp"]?.asLong ?: 0L),
+                                    ?.let(Instant::fromEpochMilliseconds)
+                                    ?: Instant.fromEpochMilliseconds(message["timestamp"]?.asLong ?: 0L),
                                 finishedAt = part.jsonObject["startTime"]?.asLong?.let { start ->
-                                    KotlinInstant.fromEpochMilliseconds(
+                                    Instant.fromEpochMilliseconds(
                                         start + (part.jsonObject["duration"]?.asLong ?: 0L)
                                     )
                                 }
@@ -573,7 +573,7 @@ object ChatboxImporter {
     }
 
     private fun millisToLocalDateTime(timestamp: Long?) =
-        KotlinInstant.fromEpochMilliseconds(timestamp ?: System.currentTimeMillis())
+        Instant.fromEpochMilliseconds(timestamp ?: Clock.System.now().toEpochMilliseconds())
             .toLocalDateTime(TimeZone.currentSystemDefault())
 
     private fun stableUuid(value: String): Uuid =

@@ -9,7 +9,8 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.util.InstantSerializer
 import me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
-import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 @Serializable
@@ -21,9 +22,9 @@ data class Conversation(
     val chatSuggestions: List<String> = emptyList(),
     val isPinned: Boolean = false,
     @Serializable(with = InstantSerializer::class)
-    val createAt: Instant = Instant.now(),
+    val createAt: Instant = Clock.System.now(),
     @Serializable(with = InstantSerializer::class)
-    val updateAt: Instant = Instant.now(),
+    val updateAt: Instant = Clock.System.now(),
     val customSystemPrompt: String? = null,
     val modeInjectionIds: Set<Uuid> = emptySet(),
     val lorebookIds: Set<Uuid> = emptySet(),

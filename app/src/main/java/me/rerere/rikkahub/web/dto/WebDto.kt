@@ -310,8 +310,8 @@ fun Conversation.toListDto(isGenerating: Boolean = false) = ConversationListDto(
     title = title,
     isPinned = isPinned,
     folderId = folderId?.toString(),
-    createAt = createAt.toEpochMilli(),
-    updateAt = updateAt.toEpochMilli(),
+    createAt = createAt.toEpochMilliseconds(),
+    updateAt = updateAt.toEpochMilliseconds(),
     isGenerating = isGenerating
 )
 
@@ -335,8 +335,8 @@ fun Conversation.toDto(isGenerating: Boolean = false) = ConversationDto(
     lorebookIds = lorebookIds.map { it.toString() },
     workspaceCwd = workspaceCwd,
     folderId = folderId?.toString(),
-    createAt = createAt.toEpochMilli(),
-    updateAt = updateAt.toEpochMilli(),
+    createAt = createAt.toEpochMilliseconds(),
+    updateAt = updateAt.toEpochMilliseconds(),
     isGenerating = isGenerating
 )
 

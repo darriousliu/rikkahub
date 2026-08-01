@@ -62,7 +62,7 @@ fun Route.eventsRoutes(
                         buildString {
                             append(conversation.id)
                             append('|')
-                            append(conversation.updateAt.toEpochMilli())
+                            append(conversation.updateAt.toEpochMilliseconds())
                             append('|')
                             append(generationJobs[conversation.id] != null)
                             append('|')

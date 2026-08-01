@@ -27,9 +27,9 @@ import me.rerere.rikkahub.data.model.Folder
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.utils.toPlatformLocalDate
 import me.rerere.rikkahub.utils.toLocalString
 import java.time.LocalDate
-import java.time.ZoneId
 import kotlin.uuid.Uuid
 
 class ChatDrawerVM(
@@ -74,9 +74,7 @@ class ChatDrawerVM(
                                 if (after.conversation.isPinned) {
                                     ConversationListItem.PinnedHeader
                                 } else {
-                                    val afterDate = after.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                    val afterDate = after.conversation.updateAt.toPlatformLocalDate()
                                     ConversationListItem.DateHeader(
                                         date = afterDate,
                                         label = getDateLabel(afterDate)
@@ -86,20 +84,14 @@ class ChatDrawerVM(
 
                             before is ConversationListItem.Item && after is ConversationListItem.Item -> {
                                 if (before.conversation.isPinned && !after.conversation.isPinned) {
-                                    val afterDate = after.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                    val afterDate = after.conversation.updateAt.toPlatformLocalDate()
                                     ConversationListItem.DateHeader(
                                         date = afterDate,
                                         label = getDateLabel(afterDate)
                                     )
                                 } else if (!after.conversation.isPinned) {
-                                    val beforeDate = before.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
-                                    val afterDate = after.conversation.updateAt
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDate()
+                                    val beforeDate = before.conversation.updateAt.toPlatformLocalDate()
+                                    val afterDate = after.conversation.updateAt.toPlatformLocalDate()
 
                                     if (beforeDate != afterDate) {
                                         ConversationListItem.DateHeader(

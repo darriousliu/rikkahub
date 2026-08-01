@@ -23,7 +23,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
-import java.time.Instant
+import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 class ConversationRepository(
@@ -452,8 +452,8 @@ internal class ConversationEntityMapper {
             id = conversation.id.toString(),
             title = conversation.title,
             nodes = "[]",  // nodes 现在存储在单独的表中
-            createAt = conversation.createAt.toEpochMilli(),
-            updateAt = conversation.updateAt.toEpochMilli(),
+            createAt = conversation.createAt.toEpochMilliseconds(),
+            updateAt = conversation.updateAt.toEpochMilliseconds(),
             assistantId = conversation.assistantId.toString(),
             chatSuggestions = JsonInstant.encodeToString(conversation.chatSuggestions),
             isPinned = conversation.isPinned,
@@ -472,8 +472,8 @@ internal class ConversationEntityMapper {
         id = Uuid.parse(entity.id),
         title = entity.title,
         messageNodes = messageNodes.filter { it.messages.isNotEmpty() },
-        createAt = Instant.ofEpochMilli(entity.createAt),
-        updateAt = Instant.ofEpochMilli(entity.updateAt),
+        createAt = Instant.fromEpochMilliseconds(entity.createAt),
+        updateAt = Instant.fromEpochMilliseconds(entity.updateAt),
         assistantId = Uuid.parse(entity.assistantId),
         chatSuggestions = JsonInstant.decodeFromString(entity.chatSuggestions),
         isPinned = entity.isPinned,
@@ -489,8 +489,8 @@ internal class ConversationEntityMapper {
         assistantId = Uuid.parse(entity.assistantId),
         title = entity.title,
         isPinned = entity.isPinned,
-        createAt = Instant.ofEpochMilli(entity.createAt),
-        updateAt = Instant.ofEpochMilli(entity.updateAt),
+        createAt = Instant.fromEpochMilliseconds(entity.createAt),
+        updateAt = Instant.fromEpochMilliseconds(entity.updateAt),
         messageNodes = emptyList(),
         folderId = entity.folderId.ifEmpty { null }?.let { Uuid.parse(it) },
     )
