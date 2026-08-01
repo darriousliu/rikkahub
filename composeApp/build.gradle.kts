@@ -120,6 +120,8 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.cio)
             implementation(libs.sentry)
             implementation(libs.jmdns)
         }
