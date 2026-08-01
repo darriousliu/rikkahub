@@ -7,7 +7,8 @@ plugins {
 }
 
 val webUiDir = rootProject.layout.projectDirectory.dir("web-ui")
-val webStaticResourcesDir = layout.projectDirectory.dir("src/androidMain/resources/static")
+val webResourcesDir = layout.projectDirectory.dir("src/androidMain/resources")
+val webStaticResourcesDir = webResourcesDir.dir("static")
 
 val buildWebUi = tasks.register<Exec>("buildWebUi") {
     group = "build"
@@ -55,57 +56,70 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.androidx.core.ktx)
-            implementation(libs.androidx.appcompat)
-            implementation(libs.material)
-            implementation(libs.ktor.server.default.headers)
-            implementation(libs.ktor.server.conditional.headers)
-            implementation(libs.ktor.server.compression)
-            implementation(libs.ktor.server.cors)
-            api(libs.ktor.server.auth)
-            api(libs.ktor.server.auth.jwt)
-            api(libs.ktor.server.core)
-            implementation(libs.ktor.server.host.common)
-            api(libs.ktor.server.content.negotiation)
-            api(libs.ktor.server.status.pages)
-            api(libs.ktor.server.sse)
-            api(libs.ktor.server.cio)
+        val androidJvmMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.ktor.server.default.headers)
+                implementation(libs.ktor.server.conditional.headers)
+                implementation(libs.ktor.server.compression)
+                implementation(libs.ktor.server.cors)
+                api(libs.ktor.server.auth)
+                api(libs.ktor.server.auth.jwt)
+                api(libs.ktor.server.core)
+                implementation(libs.ktor.server.host.common)
+                api(libs.ktor.server.content.negotiation)
+                api(libs.ktor.server.status.pages)
+                api(libs.ktor.server.sse)
+                api(libs.ktor.server.cio)
+            }
         }
-        jvmMain.dependencies {
-            implementation(libs.ktor.server.default.headers)
-            implementation(libs.ktor.server.conditional.headers)
-            implementation(libs.ktor.server.compression)
-            implementation(libs.ktor.server.cors)
-            api(libs.ktor.server.auth)
-            api(libs.ktor.server.auth.jwt)
-            api(libs.ktor.server.core)
-            implementation(libs.ktor.server.host.common)
-            api(libs.ktor.server.content.negotiation)
-            api(libs.ktor.server.status.pages)
-            api(libs.ktor.server.sse)
-            api(libs.ktor.server.cio)
+
+        androidMain {
+            dependsOn(androidJvmMain)
+            dependencies {
+                implementation(libs.androidx.core.ktx)
+                implementation(libs.androidx.appcompat)
+                implementation(libs.material)
+            }
         }
-        named("androidHostTest") {
+
+        jvmMain {
+            dependsOn(androidJvmMain)
+            resources.srcDir(webResourcesDir)
+        }
+
+        val androidJvmTest by creating {
+            dependsOn(commonTest.get())
             dependencies {
                 implementation(libs.junit)
             }
+        }
+
+        named("androidHostTest") {
+            dependsOn(androidJvmTest)
         }
         named("androidDeviceTest") {
             dependencies {
                 implementation(libs.androidx.junit)
                 implementation(libs.androidx.espresso.core)
+                implementation(libs.junit)
             }
+        }
+        jvmTest {
+            dependsOn(androidJvmTest)
         }
     }
 }
 
 tasks.matching {
-    it.name == "androidPreBuild" ||
+        it.name == "androidPreBuild" ||
         it.name == "preBuild" ||
         it.name == "compileAndroidMain" ||
-        it.name == "processAndroidMainJavaRes"
+        it.name == "processAndroidMainJavaRes" ||
+        it.name == "jvmProcessResources"
 }.configureEach {
     dependsOn(buildWebUi)
 }
