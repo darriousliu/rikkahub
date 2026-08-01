@@ -23,7 +23,6 @@ composeMultiplatformAdaptive = "1.3.0-beta02"
 markdown = "0.7.8"
 okhttp = "5.4.0"
 coil = "3.5.0"
-room = "2.8.4"
 koin-bom = "4.2.2"
 datastore = "1.2.1"
 serialization-json = "1.11.0"
@@ -56,7 +55,6 @@ profileinstaller = "1.4.1"
 ktor = "3.5.1"
 sqlite-vector = "0.9.92"
 jmdns = "3.6.3"
-sqlite-android = "-SNAPSHOT"
 termux = "0.118.0"
 room3 = "3.0.1"
 sqlite = "2.7.0"
@@ -104,11 +102,6 @@ jetbrains-material3-adaptive = { module = "org.jetbrains.compose.material3.adapt
 jetbrains-material3-adaptive-layout = { module = "org.jetbrains.compose.material3.adaptive:adaptive-layout", version.ref = "composeMultiplatformAdaptive" }
 jetbrains-material3-adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "composeMultiplatformAdaptive" }
 jetbrains-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
-androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
-androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
-androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
@@ -182,13 +175,13 @@ ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = 
 sqlite-vector = { module = "ai.sqlite:vector", version.ref = "sqlite-vector" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 xz = { module = "org.tukaani:xz", version = "1.12" }
-sqlite-android = { module = "com.github.rikkahub:sqlite-android", version.ref = "sqlite-android" }
 termux-terminal-view = { module = "com.termux.termux-app:terminal-view", version.ref = "termux" }
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
 androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3" }
 androidx-room3-paging = { module = "androidx.room3:room3-paging", version.ref = "room3" }
 androidx-room3-testing = { module = "androidx.room3:room3-testing", version.ref = "room3" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+androidx-sqlite-async = { module = "androidx.sqlite:sqlite-async", version.ref = "sqlite" }
 kscan = { module = "io.github.ismai117:KScan", version.ref = "kscan" }
 dokar-quickjs = { module = "io.github.dokar3:quickjs-kt", version.ref = "quickjsKmp" }
 ratex = { module = "io.github.darriousliu:ratex", version.ref = "ratex" }

@@ -1,15 +1,14 @@
 package me.rerere.rikkahub.di
 
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room3.Room
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
-import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
-import io.requery.android.database.sqlite.SQLiteCustomExtension
 import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
@@ -27,13 +26,11 @@ import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.createAndroidSettingsDataStore
 import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.db.AppDatabaseConstructor
+import me.rerere.rikkahub.data.db.buildAppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
+import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.SimpleDictManager
-import me.rerere.rikkahub.data.db.migrations.Migration_6_7
-import me.rerere.rikkahub.data.db.migrations.Migration_11_12
-import me.rerere.rikkahub.data.db.migrations.Migration_13_14
-import me.rerere.rikkahub.data.db.migrations.Migration_14_15
-import me.rerere.rikkahub.data.db.migrations.Migration_15_16
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
@@ -118,9 +115,7 @@ val dataSourceModule = module {
         get<AppDatabase>().folderDao()
     }
 
-    single {
-        MessageFtsManager(get())
-    }
+    single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
 
     single { McpManager(settingsStore = get(), appScope = get(), filesManager = get(), appEventBus = get()) }
 
@@ -246,17 +241,25 @@ val dataSourceModule = module {
 internal fun createAndroidAppDatabase(
     context: Context,
     name: String = "rikka_hub",
-): AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name)
-    .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-    .addMigrations(Migration_6_7, Migration_11_12, Migration_13_14, Migration_14_15, Migration_15_16)
-    .addCallback(object : RoomDatabase.Callback() {
-        override fun onOpen(db: SupportSQLiteDatabase) {
+): AppDatabase {
+    val driver = BundledSQLiteDriver().apply {
+        addExtension(context.applicationInfo.nativeLibraryDir + "/libsimple.so")
+    }
+    return buildAppDatabase(
+        builder = Room.databaseBuilder<AppDatabase>(
+            context = context,
+            name = name,
+            factory = AppDatabaseConstructor::initialize,
+        ),
+        driver = driver,
+        ftsDialect = MessageFtsDialect.SIMPLE,
+        platformOnOpen = { connection ->
             val dictDir = SimpleDictManager.extractDict(context)
-            val cursor = db.query("SELECT jieba_dict(?)", arrayOf(dictDir.absolutePath))
-            cursor.use {
-                if (it.moveToFirst()) {
-                    val result = it.getString(0)
-                    val success = result?.trimEnd('/') == dictDir.absolutePath.trimEnd('/')
+            connection.prepare("SELECT jieba_dict(?)").use { statement ->
+                statement.bindText(1, dictDir.absolutePath)
+                if (statement.step()) {
+                    val result = statement.getText(0)
+                    val success = result.trimEnd('/') == dictDir.absolutePath.trimEnd('/')
                     if (!success) {
                         Log.e(
                             "DataSourceModule",
@@ -265,34 +268,6 @@ internal fun createAndroidAppDatabase(
                     }
                 }
             }
-            db.execSQL(
-                """
-                CREATE VIRTUAL TABLE IF NOT EXISTS message_fts USING fts5(
-                    text,
-                    node_id UNINDEXED,
-                    message_id UNINDEXED,
-                    conversation_id UNINDEXED,
-                    title UNINDEXED,
-                    update_at UNINDEXED,
-                    tokenize = 'simple'
-                )
-                """.trimIndent()
-            )
-        }
-    })
-    .openHelperFactory(
-        RequerySQLiteOpenHelperFactory(
-            listOf(
-                RequerySQLiteOpenHelperFactory.ConfigurationOptions { options ->
-                    options.customExtensions.add(
-                        SQLiteCustomExtension(
-                            context.applicationInfo.nativeLibraryDir + "/libsimple",
-                            null
-                        )
-                    )
-                    options
-                }
-            )
-        )
+        },
     )
-    .build()
+}

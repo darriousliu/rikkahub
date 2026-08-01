@@ -129,10 +129,6 @@ tasks.register("buildAll") {
     description = "Build both APK and AAB"
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
@@ -226,12 +222,9 @@ dependencies {
     implementation(libs.barcode.scanning)
     implementation(libs.androidx.camera.core)
 
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.paging)
+    implementation(libs.androidx.sqlite.async)
+
     baselineProfile(project(":app:baselineprofile"))
-    ksp(libs.androidx.room.compiler)
 
     // Paging3
     implementation(libs.androidx.paging.runtime)
@@ -260,9 +253,6 @@ dependencies {
     // jmDNS (mDNS/Bonjour for .local hostname)
     implementation(libs.jmdns)
 
-    // sqlite-android (requery SQLite for Android)
-    implementation(libs.sqlite.android)
-
     // modules
     implementation(project(":ai"))
     implementation(project(":web"))
@@ -288,7 +278,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.room3.testing)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }

@@ -7,7 +7,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.map
-import androidx.room.withTransaction
+import androidx.room3.withWriteTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -287,7 +287,7 @@ class ConversationRepository(
     }
 
     suspend fun insertConversation(conversation: Conversation) {
-        database.withTransaction {
+        database.withWriteTransaction {
             conversationDAO.insert(
                 conversationToConversationEntity(conversation)
             )
@@ -297,7 +297,7 @@ class ConversationRepository(
     }
 
     suspend fun updateConversation(conversation: Conversation) {
-        database.withTransaction {
+        database.withWriteTransaction {
             conversationDAO.update(
                 conversationToConversationEntity(conversation)
             )
@@ -316,7 +316,7 @@ class ConversationRepository(
             conversation
         }
         messageFtsManager.deleteConversation(conversation.id.toString())
-        database.withTransaction {
+        database.withWriteTransaction {
             // message_node 会通过 CASCADE 自动删除
             conversationDAO.delete(
                 conversationToConversationEntity(conversation)
@@ -397,7 +397,7 @@ class ConversationRepository(
             .mapNotNull { runCatching { Uuid.parse(it) }.getOrNull() }
             .toSet()
 
-        return database.withTransaction {
+        return database.withWriteTransaction {
             val nodes = mutableListOf<MessageNode>()
             var offset = 0
             val pageSize = 64
@@ -496,19 +496,6 @@ internal class ConversationEntityMapper {
         folderId = entity.folderId.ifEmpty { null }?.let { Uuid.parse(it) },
     )
 }
-
-/**
- * 轻量级的会话查询结果，不包含 nodes 和 suggestions 字段
- */
-data class LightConversationEntity(
-    val id: String,
-    val assistantId: String,
-    val title: String,
-    val isPinned: Boolean,
-    val createAt: Long,
-    val updateAt: Long,
-    val folderId: String = "",
-)
 
 data class ConversationPageResult(
     val items: List<Conversation>,

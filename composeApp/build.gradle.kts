@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.buildkonfig)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room3)
 }
 
 kotlin {
@@ -68,9 +70,10 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             api(compose.components.resources)
-            implementation(libs.androidx.room3.runtime)
-            implementation(libs.androidx.room3.paging)
-            implementation(libs.androidx.sqlite.bundled)
+            api(libs.androidx.room3.runtime)
+            api(libs.androidx.room3.paging)
+            api(libs.androidx.sqlite.bundled)
+            implementation(libs.androidx.sqlite.async)
             implementation(libs.androidx.paging.common)
             implementation(libs.androidx.paging.compose)
             implementation(libs.ktor.client.core)
@@ -126,6 +129,17 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
     }
+}
+
+dependencies {
+    add("kspAndroid", libs.androidx.room3.compiler)
+    add("kspJvm", libs.androidx.room3.compiler)
+    add("kspIosArm64", libs.androidx.room3.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room3.compiler)
+}
+
+room3 {
+    schemaDirectory("${rootProject.projectDir}/app/schemas")
 }
 
 buildkonfig {

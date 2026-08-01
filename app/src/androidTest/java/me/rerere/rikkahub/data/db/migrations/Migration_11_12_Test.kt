@@ -1,54 +1,56 @@
 package me.rerere.rikkahub.data.db.migrations
 
-import android.content.ContentValues
-import android.database.sqlite.SQLiteDatabase
-import me.rerere.common.logging.RikkaLog as Log
-import androidx.room.testing.MigrationTestHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.room3.testing.MigrationTestHelper
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.async.prepare
+import androidx.sqlite.async.step
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.runBlocking
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.TokenUsage
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.Instant
 import kotlin.uuid.Uuid
 
 @RunWith(AndroidJUnit4::class)
 class Migration_11_12_Test {
-    private val TEST_DB = "migration-test"
+    private val instrumentation = InstrumentationRegistry.getInstrumentation()
+    private val testDatabaseName = "migration-test"
 
     @get:Rule
-    val helper: MigrationTestHelper = MigrationTestHelper(
-        InstrumentationRegistry.getInstrumentation(),
-        AppDatabase::class.java,
-        emptyList(),
-        FrameworkSQLiteOpenHelperFactory()
+    val helper = MigrationTestHelper(
+        instrumentation = instrumentation,
+        file = instrumentation.targetContext.getDatabasePath(testDatabaseName),
+        driver = BundledSQLiteDriver(),
+        databaseClass = AppDatabase::class,
+        databaseFactory = AppDatabaseConstructor::initialize,
     )
 
+    @Before
+    fun deleteDatabase() {
+        instrumentation.targetContext.deleteDatabase(testDatabaseName)
+    }
+
     @Test
-    fun migrate11To12_createsMessageNodeTableWithCorrectSchema() {
-        // 创建版本 11 的数据库
-        helper.createDatabase(TEST_DB, 11).apply {
-            close()
-        }
+    fun migrate11To12_createsMessageNodeTableWithCorrectSchema() = runBlocking {
+        helper.createDatabase(11).close()
 
-        // 运行迁移到版本 12
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
-
-        // 验证表结构
-        val cursor = db.query("SELECT * FROM message_node LIMIT 0")
-        val columnNames = cursor.columnNames.toList()
-        cursor.close()
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
+        val columnNames = db.prepare("SELECT * FROM message_node LIMIT 0").use { it.getColumnNames() }
 
         assertTrue("message_node table should exist", columnNames.isNotEmpty())
         assertTrue("Should have 'id' column", columnNames.contains("id"))
@@ -61,8 +63,7 @@ class Migration_11_12_Test {
     }
 
     @Test
-    fun migrate11To12_migratesSimpleConversationCorrectly() {
-        // 准备测试数据
+    fun migrate11To12_migratesSimpleConversationCorrectly() = runBlocking {
         val conversationId = Uuid.random().toString()
         val messageNodes = listOf(
             MessageNode(
@@ -70,10 +71,10 @@ class Migration_11_12_Test {
                 messages = listOf(
                     UIMessage(
                         role = MessageRole.USER,
-                        parts = listOf(UIMessagePart.Text("Hello"))
+                        parts = listOf(UIMessagePart.Text("Hello")),
                     )
                 ),
-                selectIndex = 0
+                selectIndex = 0,
             ),
             MessageNode(
                 id = Uuid.random(),
@@ -82,347 +83,159 @@ class Migration_11_12_Test {
                         role = MessageRole.ASSISTANT,
                         parts = listOf(UIMessagePart.Text("Hi there!")),
                         modelId = Uuid.random(),
-                        usage = TokenUsage(promptTokens = 10, completionTokens = 5)
+                        usage = TokenUsage(promptTokens = 10, completionTokens = 5),
                     )
                 ),
-                selectIndex = 0
+                selectIndex = 0,
             )
         )
         val nodesJson = JsonInstant.encodeToString(messageNodes)
 
-        // 创建版本 11 的数据库并插入数据
-        helper.createDatabase(TEST_DB, 11).apply {
-            val values = ContentValues().apply {
-                put("id", conversationId)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Test Conversation")
-                put("nodes", nodesJson)
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, values)
+        helper.createDatabase(11).apply {
+            insertConversation(conversationId, "Test Conversation", nodesJson)
             close()
         }
 
-        // 运行迁移
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
+        val nodes = db.queryNodes(conversationId)
 
-        // 验证迁移结果
-        val cursor = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ? ORDER BY node_index ASC",
-            arrayOf(conversationId)
-        )
+        assertEquals("Should have migrated 2 message nodes", 2, nodes.size)
 
-        assertEquals("Should have migrated 2 message nodes", 2, cursor.count)
+        val firstNode = nodes[0]
+        assertNotNull("First node should have ID", firstNode.id)
+        assertEquals("Conversation ID should match", conversationId, firstNode.conversationId)
+        assertEquals("First node index should be 0", 0, firstNode.nodeIndex)
+        assertEquals("First node selectIndex should be 0", 0, firstNode.selectIndex)
 
-        // 验证第一个节点
-        assertTrue(cursor.moveToFirst())
-        val firstNodeId = cursor.getString(cursor.getColumnIndex("id"))
-        val firstConversationId = cursor.getString(cursor.getColumnIndex("conversation_id"))
-        val firstNodeIndex = cursor.getInt(cursor.getColumnIndex("node_index"))
-        val firstMessagesJson = cursor.getString(cursor.getColumnIndex("messages"))
-        val firstSelectIndex = cursor.getInt(cursor.getColumnIndex("select_index"))
-
-        assertNotNull("First node should have ID", firstNodeId)
-        assertEquals("Conversation ID should match", conversationId, firstConversationId)
-        assertEquals("First node index should be 0", 0, firstNodeIndex)
-        assertEquals("First node selectIndex should be 0", 0, firstSelectIndex)
-
-        val firstMessages = JsonInstant.decodeFromString<List<UIMessage>>(firstMessagesJson)
+        val firstMessages = JsonInstant.decodeFromString<List<UIMessage>>(firstNode.messages)
         assertEquals("First node should have 1 message", 1, firstMessages.size)
         assertEquals("First message should be from USER", MessageRole.USER, firstMessages[0].role)
         assertEquals(
             "First message content should match",
             "Hello",
-            (firstMessages[0].parts[0] as UIMessagePart.Text).text
+            (firstMessages[0].parts[0] as UIMessagePart.Text).text,
         )
 
-        // 验证第二个节点
-        assertTrue(cursor.moveToNext())
-        val secondNodeIndex = cursor.getInt(cursor.getColumnIndex("node_index"))
-        val secondMessagesJson = cursor.getString(cursor.getColumnIndex("messages"))
-
-        assertEquals("Second node index should be 1", 1, secondNodeIndex)
-
-        val secondMessages = JsonInstant.decodeFromString<List<UIMessage>>(secondMessagesJson)
+        val secondNode = nodes[1]
+        assertEquals("Second node index should be 1", 1, secondNode.nodeIndex)
+        val secondMessages = JsonInstant.decodeFromString<List<UIMessage>>(secondNode.messages)
         assertEquals("Second node should have 1 message", 1, secondMessages.size)
-        assertEquals(
-            "Second message should be from ASSISTANT",
-            MessageRole.ASSISTANT,
-            secondMessages[0].role
-        )
+        assertEquals("Second message should be from ASSISTANT", MessageRole.ASSISTANT, secondMessages[0].role)
         assertEquals(
             "Second message content should match",
             "Hi there!",
-            (secondMessages[0].parts[0] as UIMessagePart.Text).text
+            (secondMessages[0].parts[0] as UIMessagePart.Text).text,
         )
 
-        cursor.close()
-
-        // 验证原 conversationentity 表中的 nodes 字段已被清空
-        val conversationCursor = db.query(
-            "SELECT nodes FROM conversationentity WHERE id = ?",
-            arrayOf(conversationId)
+        assertEquals(
+            "Original nodes should be cleared to empty array",
+            "[]",
+            db.queryText("SELECT nodes FROM conversationentity WHERE id = ?", conversationId),
         )
-        assertTrue(conversationCursor.moveToFirst())
-        val updatedNodes = conversationCursor.getString(0)
-        assertEquals("Original nodes should be cleared to empty array", "[]", updatedNodes)
-        conversationCursor.close()
 
         db.close()
     }
 
     @Test
-    fun migrate11To12_handlesBranchedMessages() {
-        // 准备有分支的测试数据（一个节点有多个备选消息）
+    fun migrate11To12_handlesBranchedMessages() = runBlocking {
         val conversationId = Uuid.random().toString()
         val messageNodes = listOf(
             MessageNode(
                 id = Uuid.random(),
                 messages = listOf(
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(UIMessagePart.Text("Response 1")),
-                        modelId = Uuid.random()
-                    ),
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(UIMessagePart.Text("Response 2")),
-                        modelId = Uuid.random()
-                    ),
-                    UIMessage(
-                        role = MessageRole.ASSISTANT,
-                        parts = listOf(UIMessagePart.Text("Response 3")),
-                        modelId = Uuid.random()
-                    )
+                    assistantMessage("Response 1"),
+                    assistantMessage("Response 2"),
+                    assistantMessage("Response 3"),
                 ),
-                selectIndex = 1 // 选择第二个消息
+                selectIndex = 1,
             )
         )
-        val nodesJson = JsonInstant.encodeToString(messageNodes)
 
-        // 创建版本 11 的数据库并插入数据
-        helper.createDatabase(TEST_DB, 11).apply {
-            val values = ContentValues().apply {
-                put("id", conversationId)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Branched Conversation")
-                put("nodes", nodesJson)
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, values)
+        helper.createDatabase(11).apply {
+            insertConversation(conversationId, "Branched Conversation", JsonInstant.encodeToString(messageNodes))
             close()
         }
 
-        // 运行迁移
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
+        val nodes = db.queryNodes(conversationId)
 
-        // 验证结果
-        val cursor = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ?",
-            arrayOf(conversationId)
-        )
-
-        assertEquals("Should have migrated 1 message node", 1, cursor.count)
-        assertTrue(cursor.moveToFirst())
-
-        val messagesJson = cursor.getString(cursor.getColumnIndex("messages"))
-        val selectIndex = cursor.getInt(cursor.getColumnIndex("select_index"))
-
-        val messages = JsonInstant.decodeFromString<List<UIMessage>>(messagesJson)
+        assertEquals("Should have migrated 1 message node", 1, nodes.size)
+        val messages = JsonInstant.decodeFromString<List<UIMessage>>(nodes.single().messages)
         assertEquals("Node should have 3 messages", 3, messages.size)
-        assertEquals("selectIndex should be preserved", 1, selectIndex)
+        assertEquals("selectIndex should be preserved", 1, nodes.single().selectIndex)
         assertEquals(
             "Should preserve all message variants",
             "Response 2",
-            (messages[1].parts[0] as UIMessagePart.Text).text
+            (messages[1].parts[0] as UIMessagePart.Text).text,
         )
 
-        cursor.close()
         db.close()
     }
 
     @Test
-    fun migrate11To12_handlesEmptyConversations() {
-        // 准备空节点列表的测试数据
+    fun migrate11To12_handlesEmptyConversations() = runBlocking {
         val conversationId = Uuid.random().toString()
-        val nodesJson = "[]"
-
-        // 创建版本 11 的数据库并插入数据
-        helper.createDatabase(TEST_DB, 11).apply {
-            val values = ContentValues().apply {
-                put("id", conversationId)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Empty Conversation")
-                put("nodes", nodesJson)
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, values)
+        helper.createDatabase(11).apply {
+            insertConversation(conversationId, "Empty Conversation", "[]")
             close()
         }
 
-        // 运行迁移
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
-
-        // 验证结果
-        val cursor = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ?",
-            arrayOf(conversationId)
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
+        assertEquals("Empty conversation should have no message nodes", 0, db.queryNodes(conversationId).size)
+        assertEquals(
+            "Conversation should still exist",
+            1,
+            db.rowCount("SELECT id FROM conversationentity WHERE id = ?", conversationId),
         )
-
-        assertEquals("Empty conversation should have no message nodes", 0, cursor.count)
-        cursor.close()
-
-        // 验证 conversation 仍然存在
-        val conversationCursor = db.query(
-            "SELECT id FROM conversationentity WHERE id = ?",
-            arrayOf(conversationId)
-        )
-        assertEquals("Conversation should still exist", 1, conversationCursor.count)
-        conversationCursor.close()
 
         db.close()
     }
 
     @Test
-    fun migrate11To12_handlesMultipleConversations() {
-        // 准备多个对话的测试数据
+    fun migrate11To12_handlesMultipleConversations() = runBlocking {
         val conversationId1 = Uuid.random().toString()
         val conversationId2 = Uuid.random().toString()
-
-        val nodes1 = listOf(
-            MessageNode(
-                id = Uuid.random(),
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.USER,
-                        parts = listOf(UIMessagePart.Text("Conversation 1"))
-                    )
-                ),
-                selectIndex = 0
-            )
-        )
-
+        val nodes1 = listOf(nodeWithUserText("Conversation 1"))
         val nodes2 = listOf(
-            MessageNode(
-                id = Uuid.random(),
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.USER,
-                        parts = listOf(UIMessagePart.Text("Conversation 2 - Message 1"))
-                    )
-                ),
-                selectIndex = 0
-            ),
-            MessageNode(
-                id = Uuid.random(),
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.USER,
-                        parts = listOf(UIMessagePart.Text("Conversation 2 - Message 2"))
-                    )
-                ),
-                selectIndex = 0
-            )
+            nodeWithUserText("Conversation 2 - Message 1"),
+            nodeWithUserText("Conversation 2 - Message 2"),
         )
 
-        // 创建版本 11 的数据库并插入数据
-        helper.createDatabase(TEST_DB, 11).apply {
-            val values1 = ContentValues().apply {
-                put("id", conversationId1)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Conversation 1")
-                put("nodes", JsonInstant.encodeToString(nodes1))
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, values1)
-
-            val values2 = ContentValues().apply {
-                put("id", conversationId2)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Conversation 2")
-                put("nodes", JsonInstant.encodeToString(nodes2))
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, values2)
+        helper.createDatabase(11).apply {
+            insertConversation(conversationId1, "Conversation 1", JsonInstant.encodeToString(nodes1))
+            insertConversation(conversationId2, "Conversation 2", JsonInstant.encodeToString(nodes2))
             close()
         }
 
-        // 运行迁移
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
-
-        // 验证第一个对话的节点数
-        val cursor1 = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ?",
-            arrayOf(conversationId1)
-        )
-        assertEquals("Conversation 1 should have 1 message node", 1, cursor1.count)
-        cursor1.close()
-
-        // 验证第二个对话的节点数
-        val cursor2 = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ?",
-            arrayOf(conversationId2)
-        )
-        assertEquals("Conversation 2 should have 2 message nodes", 2, cursor2.count)
-        cursor2.close()
-
-        // 验证总节点数
-        val cursorAll = db.query("SELECT * FROM message_node")
-        assertEquals("Total should have 3 message nodes", 3, cursorAll.count)
-        cursorAll.close()
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
+        assertEquals("Conversation 1 should have 1 message node", 1, db.queryNodes(conversationId1).size)
+        assertEquals("Conversation 2 should have 2 message nodes", 2, db.queryNodes(conversationId2).size)
+        assertEquals("Total should have 3 message nodes", 3, db.rowCount("SELECT * FROM message_node"))
 
         db.close()
     }
 
     @Test
-    fun migrate11To12_createsIndexOnConversationId() {
-        // 创建版本 11 的数据库
-        helper.createDatabase(TEST_DB, 11).apply {
-            close()
-        }
+    fun migrate11To12_createsIndexOnConversationId() = runBlocking {
+        helper.createDatabase(11).close()
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
 
-        // 运行迁移
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
-
-        // 验证索引是否创建
-        val cursor = db.query(
-            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='message_node' AND name='index_message_node_conversation_id'"
+        assertTrue(
+            "Index on conversation_id should exist",
+            db.rowCount(
+                "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='message_node' AND name='index_message_node_conversation_id'"
+            ) > 0,
         )
 
-        assertTrue("Index on conversation_id should exist", cursor.count > 0)
-        cursor.close()
         db.close()
     }
 
     @Test
-    fun migrate11To12_handlesVeryLargeConversations() {
-        // 准备一个超大对话和一个普通对话
+    fun migrate11To12_handlesVeryLargeConversations() = runBlocking {
         val largeConversationId = Uuid.random().toString()
         val normalConversationId = Uuid.random().toString()
-
-        // 创建一个包含大量消息节点的超大对话（模拟 SQLiteBlobTooBigException 场景）
         val largeNodes = buildList {
-            repeat(5000) { i ->
+            repeat(5000) { index ->
                 add(
                     MessageNode(
                         id = Uuid.random(),
@@ -431,124 +244,126 @@ class Migration_11_12_Test {
                                 role = MessageRole.USER,
                                 parts = listOf(
                                     UIMessagePart.Text(
-                                        "Message $i with some content to increase size " + "x".repeat(
-                                            100
-                                        )
-                                    )
-                                )
-                            ),
-                            UIMessage(
-                                role = MessageRole.ASSISTANT,
-                                parts = listOf(
-                                    UIMessagePart.Text(
-                                        "Response $i with some content to increase size " + "y".repeat(
-                                            100
-                                        )
+                                        "Message $index with some content to increase size " + "x".repeat(100)
                                     )
                                 ),
-                                modelId = Uuid.random()
-                            )
+                            ),
+                            assistantMessage(
+                                "Response $index with some content to increase size " + "y".repeat(100)
+                            ),
                         ),
-                        selectIndex = 0
+                        selectIndex = 0,
                     )
                 )
             }
         }
+        val normalNodes = listOf(nodeWithUserText("Normal conversation message"))
 
-        val normalNodes = listOf(
-            MessageNode(
-                id = Uuid.random(),
-                messages = listOf(
-                    UIMessage(
-                        role = MessageRole.USER,
-                        parts = listOf(UIMessagePart.Text("Normal conversation message"))
-                    )
-                ),
-                selectIndex = 0
-            )
-        )
-
-        // 创建版本 11 的数据库并插入数据
-        helper.createDatabase(TEST_DB, 11).apply {
-            // 插入超大对话
-            val largeValues = ContentValues().apply {
-                put("id", largeConversationId)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Very Large Conversation")
-                put("nodes", JsonInstant.encodeToString(largeNodes))
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, largeValues)
-
-            // 插入普通对话
-            val normalValues = ContentValues().apply {
-                put("id", normalConversationId)
-                put("assistant_id", Uuid.random().toString())
-                put("title", "Normal Conversation")
-                put("nodes", JsonInstant.encodeToString(normalNodes))
-                put("truncate_index", -1)
-                put("suggestions", "[]")
-                put("is_pinned", 0)
-                put("create_at", Instant.now().toEpochMilli())
-                put("update_at", Instant.now().toEpochMilli())
-            }
-            insert("conversationentity", SQLiteDatabase.CONFLICT_NONE, normalValues)
+        helper.createDatabase(11).apply {
+            insertConversation(largeConversationId, "Very Large Conversation", JsonInstant.encodeToString(largeNodes))
+            insertConversation(normalConversationId, "Normal Conversation", JsonInstant.encodeToString(normalNodes))
             close()
         }
 
-        // 运行迁移 - 应该不会失败，即使超大对话无法处理
-        val db = helper.runMigrationsAndValidate(TEST_DB, 12, true, Migration_11_12)
+        val db = helper.runMigrationsAndValidate(12, listOf(Migration_11_12))
+        val largeNodesMigrated = db.queryNodes(largeConversationId).size
+        assertEquals("Normal conversation should be migrated successfully", 1, db.queryNodes(normalConversationId).size)
+        assertEquals("Both conversations should still exist", 2, db.rowCount("SELECT id FROM conversationentity"))
 
-        // 验证超大对话的消息节点（可能被跳过或成功迁移，取决于实际 blob 大小）
-        val largeCursor = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ?",
-            arrayOf(largeConversationId)
-        )
-        val largeNodesMigrated = largeCursor.count
-        largeCursor.close()
-
-        // 验证普通对话应该成功迁移
-        val normalCursor = db.query(
-            "SELECT * FROM message_node WHERE conversation_id = ?",
-            arrayOf(normalConversationId)
-        )
-        assertEquals("Normal conversation should be migrated successfully", 1, normalCursor.count)
-        normalCursor.close()
-
-        // 验证两个对话记录都还存在
-        val conversationsCursor = db.query("SELECT id FROM conversationentity")
-        assertEquals("Both conversations should still exist", 2, conversationsCursor.count)
-        conversationsCursor.close()
-
-        // 如果超大对话被跳过，其 nodes 字段应该仍然保留原始数据
-        // 如果成功迁移，nodes 字段应该被清空为 "[]"
-        val largeConvCursor = db.query(
+        val largeConvNodes = db.queryText(
             "SELECT nodes FROM conversationentity WHERE id = ?",
-            arrayOf(largeConversationId)
+            largeConversationId,
         )
-        assertTrue(largeConvCursor.moveToFirst())
-        val largeConvNodes = largeConvCursor.getString(0)
-        largeConvCursor.close()
-
-        // 验证普通对话的 nodes 应该被清空
-        val normalConvCursor = db.query(
-            "SELECT nodes FROM conversationentity WHERE id = ?",
-            arrayOf(normalConversationId)
+        assertEquals(
+            "Normal conversation nodes should be cleared",
+            "[]",
+            db.queryText("SELECT nodes FROM conversationentity WHERE id = ?", normalConversationId),
         )
-        assertTrue(normalConvCursor.moveToFirst())
-        val normalConvNodes = normalConvCursor.getString(0)
-        assertEquals("Normal conversation nodes should be cleared", "[]", normalConvNodes)
-        normalConvCursor.close()
 
         Log.i(
             "Migration_11_12_Test",
-            "Large conversation migration result: $largeNodesMigrated nodes migrated, nodes field: ${if (largeConvNodes == "[]") "cleared" else "preserved"}"
+            "Large conversation migration result: $largeNodesMigrated nodes migrated, nodes field: ${if (largeConvNodes == "[]") "cleared" else "preserved"}",
         )
 
         db.close()
     }
+
+    private fun assistantMessage(text: String) = UIMessage(
+        role = MessageRole.ASSISTANT,
+        parts = listOf(UIMessagePart.Text(text)),
+        modelId = Uuid.random(),
+    )
+
+    private fun nodeWithUserText(text: String) = MessageNode(
+        id = Uuid.random(),
+        messages = listOf(
+            UIMessage(
+                role = MessageRole.USER,
+                parts = listOf(UIMessagePart.Text(text)),
+            )
+        ),
+        selectIndex = 0,
+    )
+
+    private suspend fun SQLiteConnection.insertConversation(id: String, title: String, nodes: String) {
+        prepare(
+            """
+            INSERT INTO conversationentity(
+                id, assistant_id, title, nodes, create_at, update_at, truncate_index, suggestions, is_pinned
+            ) VALUES (?, ?, ?, ?, ?, ?, -1, '[]', 0)
+            """.trimIndent()
+        ).use { statement ->
+            statement.bindText(1, id)
+            statement.bindText(2, Uuid.random().toString())
+            statement.bindText(3, title)
+            statement.bindText(4, nodes)
+            statement.bindLong(5, 1_700_000_000_000)
+            statement.bindLong(6, 1_700_000_001_000)
+            statement.step()
+        }
+    }
+
+    private suspend fun SQLiteConnection.queryNodes(conversationId: String): List<NodeRow> =
+        prepare(
+            "SELECT id, conversation_id, node_index, messages, select_index " +
+                "FROM message_node WHERE conversation_id = ? ORDER BY node_index ASC"
+        ).use { statement ->
+            statement.bindText(1, conversationId)
+            buildList {
+                while (statement.step()) {
+                    add(
+                        NodeRow(
+                            id = statement.getText(0),
+                            conversationId = statement.getText(1),
+                            nodeIndex = statement.getInt(2),
+                            messages = statement.getText(3),
+                            selectIndex = statement.getInt(4),
+                        )
+                    )
+                }
+            }
+        }
+
+    private suspend fun SQLiteConnection.queryText(sql: String, argument: String): String =
+        prepare(sql).use { statement ->
+            statement.bindText(1, argument)
+            check(statement.step())
+            statement.getText(0)
+        }
+
+    private suspend fun SQLiteConnection.rowCount(sql: String, argument: String? = null): Int =
+        prepare(sql).use { statement ->
+            if (argument != null) statement.bindText(1, argument)
+            var count = 0
+            while (statement.step()) count++
+            count
+        }
+
+    private data class NodeRow(
+        val id: String,
+        val conversationId: String,
+        val nodeIndex: Int,
+        val messages: String,
+        val selectIndex: Int,
+    )
 }

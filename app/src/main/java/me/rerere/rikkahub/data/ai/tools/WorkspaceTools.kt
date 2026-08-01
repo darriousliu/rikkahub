@@ -12,6 +12,7 @@ import me.rerere.ai.ui.DiffMetadata
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.toMetadata
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.db.entity.toolApprovalOverrides
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.shared.diff.generateUnifiedDiff
 import me.rerere.workspace.WorkspaceCommandResult
