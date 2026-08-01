@@ -38,7 +38,7 @@ import me.rerere.rikkahub.web.routes.folderRoutes
 import me.rerere.rikkahub.web.routes.settingsRoutes
 import java.security.MessageDigest
 import java.util.Date
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 private const val WEB_JWT_ISSUER = "rikkahub-web"
 private const val WEB_JWT_AUDIENCE = "rikkahub-web-client"
@@ -47,7 +47,7 @@ private const val WEB_JWT_TTL_MILLIS = 30L * 24 * 60 * 60 * 1000
 private const val WEB_ACCESS_TOKEN_QUERY_KEY = "access_token"
 private const val WEB_AUTH_REALM = "rikkahub-web-api"
 
-internal fun createMissingWebPasswordSecret(): String = "__missing_password_${UUID.randomUUID()}__"
+internal fun createMissingWebPasswordSecret(): String = "__missing_password_${Uuid.random()}__"
 
 /**
  * Configure Web API for the Ktor application.
