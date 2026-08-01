@@ -6,10 +6,12 @@ import me.rerere.rikkahub.data.db.entity.FavoriteEntity
 import me.rerere.rikkahub.data.favorite.NodeFavoriteAdapter
 import me.rerere.rikkahub.data.model.FavoriteType
 import me.rerere.rikkahub.data.model.NodeFavoriteTarget
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 class FavoriteRepository(
     private val dao: FavoriteDAO,
+    private val clock: Clock = Clock.System,
 ) {
     fun listAll(): Flow<List<FavoriteEntity>> = dao.listAll()
 
@@ -31,6 +33,7 @@ class FavoriteRepository(
         val favorite = NodeFavoriteAdapter.buildFavoriteEntity(
             target = target,
             existing = existing,
+            now = clock.now().toEpochMilliseconds(),
         )
         dao.upsert(favorite)
         return favorite

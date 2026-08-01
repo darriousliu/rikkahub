@@ -20,7 +20,7 @@ object NodeFavoriteAdapter : FavoriteAdapter<NodeFavoriteTarget> {
     override fun buildFavoriteEntity(
         target: NodeFavoriteTarget,
         existing: FavoriteEntity?,
-        now: Long
+        now: Long,
     ): FavoriteEntity {
         val ref = NodeFavoriteRef(
             conversationId = target.conversationId,
