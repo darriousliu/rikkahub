@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.sync.s3
 
+import io.ktor.http.encodeURLQueryComponent
 import me.rerere.common.crypto.Sha256Crypto
-import java.net.URLEncoder
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -153,9 +153,13 @@ internal object AwsSignatureV4 {
     }
 
     private fun String.urlEncode(): String {
-        return URLEncoder.encode(this, "UTF-8")
-            .replace("+", "%20")
-            .replace("*", "%2A")
+        return encodeURLQueryComponent(
+            encodeFull = true,
+            spaceToPlus = false,
+        )
+            .replace("%2D", "-")
+            .replace("%2E", ".")
+            .replace("%5F", "_")
             .replace("%7E", "~")
     }
 

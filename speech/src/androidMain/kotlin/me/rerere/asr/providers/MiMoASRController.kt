@@ -8,7 +8,6 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.SystemClock
-import android.util.Base64
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +32,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import kotlin.io.encoding.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -221,7 +221,7 @@ class MiMoASRController(
             channels = 1,
             bitsPerSample = 16
         )
-        val b64 = Base64.encodeToString(wavBytes, Base64.NO_WRAP)
+        val b64 = Base64.Default.encode(wavBytes)
 
         val message = JSONObject()
             .put("role", "user")

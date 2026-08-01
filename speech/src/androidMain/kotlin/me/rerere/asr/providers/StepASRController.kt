@@ -8,7 +8,6 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.SystemClock
-import android.util.Base64
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +32,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import kotlin.io.encoding.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 import okio.BufferedSource
@@ -246,7 +246,7 @@ class StepASRController(
             .put(
                 "audio",
                 JSONObject()
-                    .put("data", Base64.encodeToString(pcmBytes, Base64.NO_WRAP))
+                    .put("data", Base64.Default.encode(pcmBytes))
                     .put(
                         "input",
                         JSONObject()

@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import android.util.Base64
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +32,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import kotlin.io.encoding.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Collections
@@ -169,7 +169,7 @@ class DashScopeASRController(
                         val amplitude = calculateRmsAmplitude(buffer, read)
                         _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
                         if (socket.queueSize() < MAX_WEBSOCKET_QUEUE_BYTES) {
-                            val encoded = Base64.encodeToString(buffer, 0, read, Base64.NO_WRAP)
+                            val encoded = Base64.Default.encode(buffer, 0, read)
                             val event = JSONObject()
                                 .put("event_id", "evt_${System.currentTimeMillis()}")
                                 .put("type", "input_audio_buffer.append")

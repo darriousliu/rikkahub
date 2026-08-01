@@ -2,7 +2,6 @@ package me.rerere.rikkahub.ui.pages.assistant.detail
 
 import android.content.Context
 import android.net.Uri
-import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +32,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlin.io.encoding.Base64
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.data.model.Assistant
@@ -263,7 +263,10 @@ private suspend fun importAssistantFromUri(
                 "image/png" -> {
                     val result = ImageUtils.getTavernCharacterMeta(context, uri)
                     result.map { base64Data ->
-                        val json = String(Base64.decode(base64Data, Base64.DEFAULT))
+                        val json = Base64.Default
+                            .withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+                            .decode(base64Data.filterNot(Char::isWhitespace))
+                            .decodeToString()
                         val bg = filesManager.createChatFilesByContents(listOf(uri)).first().toString()
                         json to bg
                     }.getOrElse { throw it }

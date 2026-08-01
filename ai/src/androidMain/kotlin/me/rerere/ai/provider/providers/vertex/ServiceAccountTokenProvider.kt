@@ -9,8 +9,8 @@ import me.rerere.common.crypto.RsaSha256Signer
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -139,6 +139,8 @@ class ServiceAccountTokenProvider internal constructor(
     )
 
     private fun base64UrlNoPad(bytes: ByteArray): String =
-        Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        Base64.UrlSafe
+            .withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
+            .encode(bytes)
 
 }

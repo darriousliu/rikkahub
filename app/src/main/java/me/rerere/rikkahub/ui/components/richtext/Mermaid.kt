@@ -1,7 +1,6 @@
 package me.rerere.rikkahub.ui.components.richtext
 
 import android.graphics.BitmapFactory
-import android.util.Base64
 import android.webkit.JavascriptInterface
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +39,7 @@ import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.escapeHtml
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.toCssHex
+import kotlin.io.encoding.Base64
 
 @Composable
 fun Mermaid(
@@ -59,7 +59,9 @@ fun Mermaid(
                 runCatching {
                     activity?.let {
                         try {
-                            val imageBytes = Base64.decode(base64Image, Base64.DEFAULT)
+                            val imageBytes = Base64.Default
+                                .withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+                                .decode(base64Image.filterNot(Char::isWhitespace))
                             val bitmap =
                                 BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                             context.exportImage(
