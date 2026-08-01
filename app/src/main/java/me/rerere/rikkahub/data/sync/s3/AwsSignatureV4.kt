@@ -31,8 +31,8 @@ internal object AwsSignatureV4 {
         payloadHash: String? = null,
         contentLength: Long? = null,
         contentType: String? = null,
+        now: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC),
     ): SignedRequest {
-        val now = ZonedDateTime.now(ZoneOffset.UTC)
         val dateStamp = now.format(dateFormatter)
         val amzDate = now.format(timestampFormatter)
 
