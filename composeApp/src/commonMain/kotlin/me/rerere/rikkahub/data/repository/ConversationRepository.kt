@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.data.repository
 
-import android.database.sqlite.SQLiteBlobTooBigException
-import androidx.core.net.toUri
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -20,20 +18,32 @@ import me.rerere.rikkahub.data.db.dao.FavoriteDAO
 import me.rerere.rikkahub.data.db.dao.MessageNodeDAO
 import me.rerere.rikkahub.data.db.entity.ConversationEntity
 import me.rerere.rikkahub.data.db.entity.MessageNodeEntity
-import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
+fun interface ConversationFileStore {
+    fun deleteChatFiles(urls: List<String>)
+}
+
+fun interface MessageNodeReadErrorPolicy {
+    fun canSkip(error: Throwable): Boolean
+
+    companion object {
+        val Default = MessageNodeReadErrorPolicy { error -> error is IllegalStateException }
+    }
+}
+
 class ConversationRepository(
     private val conversationDAO: ConversationDAO,
     private val messageNodeDAO: MessageNodeDAO,
     private val favoriteDAO: FavoriteDAO,
     private val database: AppDatabase,
-    private val filesManager: FilesManager,
+    private val conversationFileStore: ConversationFileStore,
     private val messageFtsManager: MessageFtsManager,
+    private val messageNodeReadErrorPolicy: MessageNodeReadErrorPolicy = MessageNodeReadErrorPolicy.Default,
 ) {
     private val entityMapper = ConversationEntityMapper()
 
@@ -322,7 +332,7 @@ class ConversationRepository(
                 conversationToConversationEntity(conversation)
             )
         }
-        filesManager.deleteChatFiles(fullConversation.files.map { it.toUri() })
+        conversationFileStore.deleteChatFiles(fullConversation.files)
     }
 
     suspend fun searchMessages(
@@ -404,12 +414,9 @@ class ConversationRepository(
             while (true) {
                 val page = try {
                     messageNodeDAO.getNodesOfConversationPaged(conversationId, pageSize, offset)
-                } catch (e: SQLiteBlobTooBigException) {
-                    e.printStackTrace()
-                    offset += pageSize
-                    continue
-                } catch (e: IllegalStateException) {
-                    e.printStackTrace()
+                } catch (error: Throwable) {
+                    if (!messageNodeReadErrorPolicy.canSkip(error)) throw error
+                    error.printStackTrace()
                     offset += pageSize
                     continue
                 }
