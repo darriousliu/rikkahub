@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import me.rerere.common.archive.ZipEntryPathPolicy
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -162,7 +163,7 @@ class SkillsVM(
                 val entry = zipInput.nextEntry ?: break
                 try {
                     if (!entry.isDirectory) {
-                        val path = normalizeZipEntryPath(entry.name)
+                        val path = ZipEntryPathPolicy.normalizeOrNull(entry.name)
                         if (path != null) {
                             files[path] = zipInput.readBytes()
                         }
@@ -234,15 +235,6 @@ class SkillsVM(
         if (basePath.isBlank()) return path
         if (path == basePath) return null
         return path.removePrefix("$basePath/").takeIf { it != path }
-    }
-
-    private fun normalizeZipEntryPath(path: String): String? {
-        val parts = path.replace('\\', '/')
-            .trimStart('/')
-            .split('/')
-            .filter { it.isNotBlank() && it != "." }
-        if (parts.isEmpty() || parts.any { it == ".." }) return null
-        return parts.joinToString("/")
     }
 
     private fun isZipFile(fileName: String, bytes: ByteArray): Boolean {
