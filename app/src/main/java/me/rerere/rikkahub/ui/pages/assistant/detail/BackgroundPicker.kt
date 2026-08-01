@@ -1,8 +1,7 @@
 package me.rerere.rikkahub.ui.pages.assistant.detail
 
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import me.rerere.common.logging.RikkaLog as Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,12 +18,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
+import io.github.vinceglb.filekit.AndroidFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.mimeType
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import kotlinx.coroutines.launch
+import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.FormItem
@@ -39,17 +48,28 @@ fun BackgroundPicker(
     onUpdate: (String?) -> Unit
 ) {
     val filesManager: FilesManager = koinInject()
+    val scope = rememberCoroutineScope()
     var showPickOption by remember { mutableStateOf(false) }
     var showUrlInput by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val localUris = filesManager.createChatFilesByContents(listOf(it))
-            localUris.firstOrNull()?.let { localUri ->
-                onUpdate(localUri.toString())
+    val imagePickerLauncher = rememberFilePickerLauncher(
+        type = FileKitType.Image,
+    ) { platformFile ->
+        platformFile?.let { selectedFile ->
+            scope.launch {
+                runCatching {
+                    val entity = filesManager.saveManagedFromUri(
+                        folder = FileFolders.UPLOAD,
+                        uri = selectedFile.toAndroidUri(),
+                        displayName = selectedFile.name,
+                        mimeType = selectedFile.mimeType()?.toString(),
+                    )
+                    filesManager.getFile(entity).toUri().toString()
+                }.onSuccess(onUpdate)
+                    .onFailure { error ->
+                        Log.e(TAG, "Failed to import selected background", error)
+                    }
             }
         }
     }
@@ -126,7 +146,7 @@ fun BackgroundPicker(
                     Button(
                         onClick = {
                             showPickOption = false
-                            imagePickerLauncher.launch("image/*")
+                            imagePickerLauncher.launch()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -209,3 +229,10 @@ fun BackgroundPicker(
         )
     }
 }
+
+private fun PlatformFile.toAndroidUri(): Uri = when (val file = androidFile) {
+    is AndroidFile.FileWrapper -> file.file.toUri()
+    is AndroidFile.UriWrapper -> file.uri
+}
+
+private const val TAG = "BackgroundPicker"

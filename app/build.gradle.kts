@@ -191,6 +191,11 @@ dependencies {
     implementation(libs.jetbrains.markdown)
     implementation(libs.fleeksoft.ksoup)
 
+    // File picker
+    implementation(libs.filekit.core)
+    implementation(libs.filekit.dialogs)
+    implementation(libs.filekit.dialogs.compose)
+
     // okhttp
     implementation(libs.okhttp)
     implementation(libs.okhttp.sse)
