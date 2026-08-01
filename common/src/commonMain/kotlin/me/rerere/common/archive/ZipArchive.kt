@@ -37,7 +37,7 @@ fun ZipArchiveWriter.addText(name: String, content: String) {
 }
 
 fun ZipArchiveEntry.readBytes(): ByteArray = Buffer().run {
-    copyTo(this)
+    this@readBytes.copyTo(this)
     readByteArray()
 }
 

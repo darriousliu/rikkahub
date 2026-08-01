@@ -4,12 +4,13 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.io.Buffer
+import me.rerere.common.archive.JvmZipArchive
 import me.rerere.common.archive.ZipEntryPathPolicy
-import java.io.ByteArrayInputStream
+import me.rerere.common.archive.readBytes
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.LinkedHashMap
-import java.util.zip.ZipInputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -156,20 +157,13 @@ class SkillsVM(
         return listOf(saved.name)
     }
 
-    private fun importSkillsFromZip(bytes: ByteArray): List<String> {
+    private suspend fun importSkillsFromZip(bytes: ByteArray): List<String> {
         val files = LinkedHashMap<String, ByteArray>()
-        ZipInputStream(ByteArrayInputStream(bytes)).use { zipInput ->
-            while (true) {
-                val entry = zipInput.nextEntry ?: break
-                try {
-                    val path = ZipEntryPathPolicy.normalizeOrNull(entry.name)
-                        ?: error("压缩包包含不安全的文件路径")
-                    if (!entry.isDirectory) {
-                        files[path] = zipInput.readBytes()
-                    }
-                } finally {
-                    zipInput.closeEntry()
-                }
+        JvmZipArchive.read(Buffer().apply { write(bytes) }) { entry ->
+            val path = ZipEntryPathPolicy.normalizeOrNull(entry.name)
+                ?: error("压缩包包含不安全的文件路径")
+            if (!entry.isDirectory) {
+                files[path] = entry.readBytes()
             }
         }
 

@@ -49,9 +49,7 @@ class JvmZipArchiveTest {
         val entries = linkedMapOf<String, ByteArray>()
         JvmZipArchive.read(Buffer().apply { write(output.toByteArray()) }) { entry ->
             yield()
-            val content = Buffer()
-            entry.copyTo(content)
-            entries[entry.name] = content.readByteArray()
+            entries[entry.name] = entry.readBytes()
         }
 
         val expected = ByteArray(256 * 1024) { index -> (index % 251).toByte() }

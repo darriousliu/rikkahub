@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.data.sync.importer
 
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -10,20 +12,25 @@ import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.registry.ModelRegistry
+import me.rerere.common.archive.JvmZipArchive
+import me.rerere.common.archive.readText
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.rikkahub.utils.JsonInstant
 import java.io.File
-import java.util.zip.ZipFile
+import java.io.FileInputStream
 
 object CherryStudioProviderImporter {
-    fun importProviders(file: File): List<ProviderSetting> {
-        val dataJson = ZipFile(file).use { zip ->
-            val entry = zip.getEntry("data.json")
-                ?: throw IllegalArgumentException("Invalid Cherry Studio backup: data.json not found")
-            zip.getInputStream(entry).bufferedReader().use { it.readText() }
+    suspend fun importProviders(file: File): List<ProviderSetting> {
+        var dataJson: String? = null
+        JvmZipArchive.read(FileInputStream(file).asSource().buffered()) { entry ->
+            if (dataJson == null && entry.name == "data.json") {
+                dataJson = entry.readText()
+            }
         }
+        val backupJson = dataJson
+            ?: throw IllegalArgumentException("Invalid Cherry Studio backup: data.json not found")
 
-        val root = JsonInstant.parseToJsonElement(dataJson).jsonObject
+        val root = JsonInstant.parseToJsonElement(backupJson).jsonObject
         val persistedRaw = root["localStorage"]
             ?.jsonObject
             ?.get("persist:cherry-studio")
