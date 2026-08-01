@@ -20,6 +20,8 @@ import kotlin.coroutines.resumeWithException
 
 private const val TAG = "SystemTTSProvider"
 
+internal fun createSystemTtsUtteranceId(): String = UUID.randomUUID().toString()
+
 class SystemTTSProvider : TTSProvider<TTSProviderSetting.SystemTTS> {
     override fun generateSpeech(
         context: Context,
@@ -50,7 +52,7 @@ class SystemTTSProvider : TTSProvider<TTSProviderSetting.SystemTTS> {
                 val tempDir = context.appTempFolder
                 val audioFile = File(tempDir, "tts_${System.currentTimeMillis()}.wav")
 
-                val utteranceId = UUID.randomUUID().toString()
+                val utteranceId = createSystemTtsUtteranceId()
 
                 ttsInstance.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
