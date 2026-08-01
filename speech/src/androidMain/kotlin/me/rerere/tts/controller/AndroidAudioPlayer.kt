@@ -23,39 +23,35 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.PlaybackState
 import me.rerere.tts.model.PlaybackStatus
 import me.rerere.tts.model.TTSResponse
-import java.io.ByteArrayOutputStream
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class AudioPlayer(context: Context) {
+class AndroidAudioPlayer(context: Context) : PlatformAudioPlayer {
     private val player = ExoPlayer.Builder(context).build()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private val _playbackState = MutableStateFlow(PlaybackState())
-    val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
+    override val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     private var positionJob: Job? = null
 
-    fun pause() = player.pause()
-    fun resume() = player.play()
-    fun stop() = player.stop()
-    fun clear() = player.clearMediaItems()
-    fun release() = player.release()
-    fun seekBy(ms: Long) = player.seekTo(player.currentPosition + ms)
-    fun setSpeed(speed: Float) {
+    override fun pause() = player.pause()
+    override fun resume() = player.play()
+    override fun stop() = player.stop()
+    override fun clear() = player.clearMediaItems()
+    override fun release() = player.release()
+    override fun seekBy(ms: Long) = player.seekTo(player.currentPosition + ms)
+    override fun setSpeed(speed: Float) {
         player.playbackParameters = PlaybackParameters(speed)
         _playbackState.update { it.copy(speed = speed) }
     }
 
     @OptIn(UnstableApi::class)
-    suspend fun play(response: TTSResponse) = suspendCancellableCoroutine<Unit> { cont ->
-        val bytes = if (response.format == AudioFormat.PCM) {
-            pcmToWav(response.audioData, response.sampleRate ?: 24000)
-        } else response.audioData
+    override suspend fun play(response: TTSResponse) = suspendCancellableCoroutine<Unit> { cont ->
+        val bytes = audioBytesForPlayback(response)
 
         val dataSourceFactory = DataSource.Factory { ByteArrayDataSource(bytes) }
         val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
@@ -152,43 +148,4 @@ class AudioPlayer(context: Context) {
         positionJob = null
     }
 
-    private fun pcmToWav(
-        pcm: ByteArray,
-        sampleRate: Int,
-        channels: Int = 1,
-        bitsPerSample: Int = 16
-    ): ByteArray {
-        val byteRate = sampleRate * channels * bitsPerSample / 8
-        val out = ByteArrayOutputStream()
-        with(out) {
-            write("RIFF".toByteArray())
-            write(intToBytes(36 + pcm.size))
-            write("WAVE".toByteArray())
-            write("fmt ".toByteArray())
-            write(intToBytes(16))
-            write(shortToBytes(1))
-            write(shortToBytes(channels.toShort()))
-            write(intToBytes(sampleRate))
-            write(intToBytes(byteRate))
-            write(shortToBytes((channels * bitsPerSample / 8).toShort()))
-            write(shortToBytes(bitsPerSample.toShort()))
-            write("data".toByteArray())
-            write(intToBytes(pcm.size))
-            write(pcm)
-        }
-        return out.toByteArray()
-    }
-
-    private fun intToBytes(value: Int) = byteArrayOf(
-        (value and 0xFF).toByte(),
-        ((value shr 8) and 0xFF).toByte(),
-        ((value shr 16) and 0xFF).toByte(),
-        ((value shr 24) and 0xFF).toByte()
-    )
-
-    private fun shortToBytes(value: Short) = byteArrayOf(
-        (value.toInt() and 0xFF).toByte(),
-        ((value.toInt() shr 8) and 0xFF).toByte()
-    )
 }
-

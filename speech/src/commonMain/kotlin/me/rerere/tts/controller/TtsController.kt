@@ -1,9 +1,9 @@
 package me.rerere.tts.controller
 
-import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -32,16 +32,17 @@ private const val TAG = "TtsController"
  * - 对外 API 与原版兼容
  */
 class TtsController(
-    context: Context,
-    private val ttsManager: TTSManager
+    private val ttsManager: TTSManager,
+    private val audio: PlatformAudioPlayer,
+    dispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val synthesisDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     // 协程作用域
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
 
     // 组件
     private val chunker = TextChunker(maxChunkLength = 160)
     private val synthesizer = TtsSynthesizer(ttsManager)
-    private val audio = AudioPlayer(context)
 
     // Provider & 作业
     private var currentProvider: TTSProviderSetting? = null
@@ -282,7 +283,7 @@ class TtsController(
         for (i in begin until endExclusive) {
             val chunk = scheduling.chunkAtOrNull(i) ?: continue
             scheduling.getOrPut(chunk.id) {
-                scope.async(Dispatchers.IO) { synthesizer.synthesize(provider, chunk) }
+                scope.async(synthesisDispatcher) { synthesizer.synthesize(provider, chunk) }
             }
         }
         lastPrefetchedIndex = endExclusive - 1
@@ -290,7 +291,7 @@ class TtsController(
 
     private suspend fun awaitOrCreate(chunk: TtsChunk, provider: TTSProviderSetting): TTSResponse {
         val deferred = scheduling.getOrPut(chunk.id) {
-            scope.async(Dispatchers.IO) { synthesizer.synthesize(provider, chunk) }
+            scope.async(synthesisDispatcher) { synthesizer.synthesize(provider, chunk) }
         }
         return try {
             deferred.await()
