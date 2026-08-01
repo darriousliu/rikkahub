@@ -1,6 +1,5 @@
 package me.rerere.search
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import io.ktor.client.HttpClient
 import kotlinx.serialization.SerialName
@@ -9,7 +8,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.util.KeyRoulette
-import me.rerere.ai.util.lru
 import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 
@@ -39,15 +37,16 @@ interface SearchService<T : SearchServiceOptions> {
         fun <T : SearchServiceOptions> getService(options: T): SearchService<T> =
             SearchProviderRegistry.serviceFor(options)
 
-        @Volatile
         internal var httpClient: HttpClient = HttpClient()
 
-        @Volatile
         internal var keyRoulette: KeyRoulette = KeyRoulette.default()
 
-        fun init(client: HttpClient, context: Context? = null) {
+        fun init(
+            client: HttpClient,
+            keyRoulette: KeyRoulette = KeyRoulette.default(),
+        ) {
             httpClient = client
-            keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
+            this.keyRoulette = keyRoulette
         }
 
         internal val json by lazy {

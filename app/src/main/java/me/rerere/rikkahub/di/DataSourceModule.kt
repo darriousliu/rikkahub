@@ -221,7 +221,7 @@ val dataSourceModule = module {
                     client = HttpClient(OkHttp) {
                         engine { preconfigured = okHttpClient }
                     },
-                    context = get(),
+                    keyRoulette = KeyRoulette.lru(get()),
                 )
             }
     }

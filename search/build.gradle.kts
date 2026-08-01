@@ -44,14 +44,17 @@ kotlin {
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.components.resources)
-            implementation(libs.ktor.http)
-        }
-        androidMain.dependencies {
             implementation(project(":ai"))
-            implementation(project(":common"))
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.http)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+        androidMain.dependencies {
+            implementation(project(":common"))
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.material3)
             implementation(libs.fleeksoft.ksoup)
