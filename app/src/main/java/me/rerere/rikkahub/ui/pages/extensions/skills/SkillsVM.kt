@@ -162,11 +162,10 @@ class SkillsVM(
             while (true) {
                 val entry = zipInput.nextEntry ?: break
                 try {
+                    val path = ZipEntryPathPolicy.normalizeOrNull(entry.name)
+                        ?: error("压缩包包含不安全的文件路径")
                     if (!entry.isDirectory) {
-                        val path = ZipEntryPathPolicy.normalizeOrNull(entry.name)
-                        if (path != null) {
-                            files[path] = zipInput.readBytes()
-                        }
+                        files[path] = zipInput.readBytes()
                     }
                 } finally {
                     zipInput.closeEntry()

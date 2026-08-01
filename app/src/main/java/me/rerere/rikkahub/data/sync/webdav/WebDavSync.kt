@@ -6,8 +6,10 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import me.rerere.common.archive.ZipEntryPathPolicy
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.SkillPaths
+import me.rerere.rikkahub.data.sync.BackupZipPathResolver
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
@@ -220,9 +222,11 @@ class WebDavSync(
             var entry: ZipEntry?
             while (zipIn.nextEntry.also { entry = it } != null) {
                 entry?.let { zipEntry ->
-                    Log.i(TAG, "restoreFromBackupFile: Processing entry ${zipEntry.name}")
+                    val entryPath = ZipEntryPathPolicy.normalizeOrNull(zipEntry.name)
+                        ?: throw IllegalArgumentException("Unsafe ZIP entry path")
+                    Log.i(TAG, "restoreFromBackupFile: Processing entry $entryPath")
 
-                    when (zipEntry.name) {
+                    when (entryPath) {
                         "settings.json" -> {
                             val settingsJson = zipIn.readBytes().toString(Charsets.UTF_8)
                             Log.i(TAG, "restoreFromBackupFile: Restoring settings")
@@ -239,7 +243,7 @@ class WebDavSync(
 
                         "rikka_hub.db", "rikka_hub-wal", "rikka_hub-shm" -> {
                             if (config.items.contains(WebDavConfig.BackupItem.DATABASE)) {
-                                val dbFile = when (zipEntry.name) {
+                                val dbFile = when (entryPath) {
                                     "rikka_hub.db" -> context.getDatabasePath("rikka_hub")
                                     "rikka_hub-wal" -> File(
                                         context.getDatabasePath("rikka_hub").parentFile,
@@ -257,7 +261,7 @@ class WebDavSync(
                                 dbFile?.let { targetFile ->
                                     Log.i(
                                         TAG,
-                                        "restoreFromBackupFile: Restoring ${zipEntry.name} to ${targetFile.absolutePath}"
+                                        "restoreFromBackupFile: Restoring $entryPath to ${targetFile.absolutePath}"
                                     )
                                     targetFile.parentFile?.mkdirs()
                                     FileOutputStream(targetFile).use { outputStream ->
@@ -265,64 +269,67 @@ class WebDavSync(
                                     }
                                     Log.i(
                                         TAG,
-                                        "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)"
+                                        "restoreFromBackupFile: Restored $entryPath (${targetFile.length()} bytes)"
                                     )
                                 }
                             }
                         }
 
                         else -> {
-                            if (config.items.contains(WebDavConfig.BackupItem.FILES) &&
-                                zipEntry.name.startsWith("${FileFolders.UPLOAD}/")
-                            ) {
-                                val fileName = zipEntry.name.substringAfter("${FileFolders.UPLOAD}/")
-                                if (fileName.isNotEmpty()) {
-                                    val uploadFolder = File(context.filesDir, FileFolders.UPLOAD)
-                                    if (!uploadFolder.exists()) {
-                                        uploadFolder.mkdirs()
-                                        Log.i(TAG, "restoreFromBackupFile: Created upload directory")
-                                    }
+                            val restoreFiles = config.items.contains(WebDavConfig.BackupItem.FILES)
+                            val uploadFileName = ZipEntryPathPolicy.directChildOfOrNull(
+                                entryPath,
+                                FileFolders.UPLOAD
+                            )
+                            val skillRelativePath = ZipEntryPathPolicy.relativeToRootOrNull(
+                                entryPath,
+                                FileFolders.SKILLS
+                            )?.takeIf { it.isNotEmpty() }
+                            val fontFileName = ZipEntryPathPolicy.directChildOfOrNull(
+                                entryPath,
+                                FileFolders.FONTS
+                            )
 
-                                    val targetFile = File(uploadFolder, fileName)
-                                    Log.i(
-                                        TAG,
-                                        "restoreFromBackupFile: Restoring file ${zipEntry.name} to ${targetFile.absolutePath}"
-                                    )
+                            if (restoreFiles && uploadFileName != null) {
+                                val targetFile = BackupZipPathResolver.resolveDirectChild(
+                                    filesDir = context.filesDir,
+                                    folderName = FileFolders.UPLOAD,
+                                    entryPath = entryPath
+                                ) ?: throw IllegalArgumentException("Unsafe upload ZIP entry path")
+                                Log.i(
+                                    TAG,
+                                    "restoreFromBackupFile: Restoring file $entryPath to ${targetFile.absolutePath}"
+                                )
 
-                                    try {
-                                        FileOutputStream(targetFile).use { outputStream ->
-                                            zipIn.copyTo(outputStream)
-                                        }
-                                        Log.i(
-                                            TAG,
-                                            "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)"
-                                        )
-                                    } catch (e: Exception) {
-                                        Log.e(TAG, "restoreFromBackupFile: Failed to restore file ${zipEntry.name}", e)
-                                        throw Exception("Failed to restore file ${zipEntry.name}: ${e.message}")
-                                    }
-                                }
-                            } else if (config.items.contains(WebDavConfig.BackupItem.FILES) &&
-                                zipEntry.name.startsWith("${FileFolders.SKILLS}/")
-                            ) {
-                                restoreSkillEntry(zipIn, zipEntry.name)
-                            } else if (config.items.contains(WebDavConfig.BackupItem.FILES) &&
-                                zipEntry.name.startsWith("${FileFolders.FONTS}/")
-                            ) {
-                                val fileName = zipEntry.name.substringAfter("${FileFolders.FONTS}/")
-                                if (fileName.isNotEmpty() && !fileName.contains('/')) {
-                                    val fontsFolder = File(context.filesDir, FileFolders.FONTS).apply { mkdirs() }
-                                    val targetFile = File(fontsFolder, fileName)
+                                try {
                                     FileOutputStream(targetFile).use { outputStream ->
                                         zipIn.copyTo(outputStream)
                                     }
                                     Log.i(
                                         TAG,
-                                        "restoreFromBackupFile: Restored ${zipEntry.name} (${targetFile.length()} bytes)"
+                                        "restoreFromBackupFile: Restored $entryPath (${targetFile.length()} bytes)"
                                     )
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "restoreFromBackupFile: Failed to restore file $entryPath", e)
+                                    throw Exception("Failed to restore file $entryPath: ${e.message}")
                                 }
+                            } else if (restoreFiles && skillRelativePath != null) {
+                                restoreSkillEntry(zipIn, entryPath)
+                            } else if (restoreFiles && fontFileName != null) {
+                                val targetFile = BackupZipPathResolver.resolveDirectChild(
+                                    filesDir = context.filesDir,
+                                    folderName = FileFolders.FONTS,
+                                    entryPath = entryPath
+                                ) ?: throw IllegalArgumentException("Unsafe font ZIP entry path")
+                                FileOutputStream(targetFile).use { outputStream ->
+                                    zipIn.copyTo(outputStream)
+                                }
+                                Log.i(
+                                    TAG,
+                                    "restoreFromBackupFile: Restored $entryPath (${targetFile.length()} bytes)"
+                                )
                             } else {
-                                Log.i(TAG, "restoreFromBackupFile: Skipping entry ${zipEntry.name}")
+                                Log.i(TAG, "restoreFromBackupFile: Skipping entry $entryPath")
                             }
                         }
                     }
@@ -367,7 +374,8 @@ class WebDavSync(
     }
 
     private fun restoreSkillEntry(zipIn: ZipInputStream, entryName: String) {
-        val relativePath = entryName.substringAfter("${FileFolders.SKILLS}/")
+        val relativePath = ZipEntryPathPolicy.relativeToRootOrNull(entryName, FileFolders.SKILLS)
+            ?: throw Exception("Invalid skill entry: $entryName")
         val skillName = relativePath.substringBefore('/', missingDelimiterValue = "")
         val skillRelativePath = relativePath.substringAfter('/', missingDelimiterValue = "")
 
