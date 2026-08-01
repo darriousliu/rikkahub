@@ -15,14 +15,26 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.time.Instant
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Clock
 
 /**
  * 使用服务账号（email + private key PEM）换取 Google OAuth2 Access Token。
  * 构造时传入 OkHttpClient；调用时传 email、私钥 PEM 与 scopes。
  */
-class ServiceAccountTokenProvider(
-    private val http: OkHttpClient
+class ServiceAccountTokenProvider private constructor(
+    private val http: OkHttpClient,
+    private val nowEpochSeconds: () -> Long,
 ) {
+    constructor(http: OkHttpClient) : this(
+        http = http,
+        nowEpochSeconds = { Instant.now().epochSecond },
+    )
+
+    internal constructor(http: OkHttpClient, clock: Clock) : this(
+        http = http,
+        nowEpochSeconds = { clock.now().epochSeconds },
+    )
+
     private val json = Json { ignoreUnknownKeys = true }
 
     // Token cache to avoid frequent token requests
@@ -45,7 +57,7 @@ class ServiceAccountTokenProvider(
      * Check if cached token is still valid (not expired with 5 minutes buffer)
      */
     private fun isCachedTokenValid(cachedToken: CachedToken): Boolean {
-        val now = Instant.now().epochSecond
+        val now = nowEpochSeconds()
         val bufferSeconds = 300 // 5 minutes buffer before actual expiration
         return cachedToken.expiresAt > (now + bufferSeconds)
     }
@@ -69,7 +81,7 @@ class ServiceAccountTokenProvider(
                 return@withContext cachedToken.token
             }
         }
-        val now = Instant.now().epochSecond
+        val now = nowEpochSeconds()
         val exp = now + 3600 // 最长 1h
 
         val headerJson = """{"alg":"RS256","typ":"JWT"}"""
