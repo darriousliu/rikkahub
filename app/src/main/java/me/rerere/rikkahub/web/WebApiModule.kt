@@ -51,14 +51,7 @@ internal fun createMissingWebPasswordSecret(): String = "__missing_password_${Uu
 
 /**
  * Configure Web API for the Ktor application.
- * This should be called from app module when starting the web server.
- *
- * Example usage:
- * ```
- * startWebServer(port = 8080) {
- *     configureWebApi(context, chatService, conversationRepo, settingsStore, filesManager)
- * }
- * ```
+ * This is passed to the platform web-server host by [WebServerManager].
  */
 fun Application.configureWebApi(
     context: Context,
@@ -79,7 +72,8 @@ fun Application.configureWebApi(
             call.respond(status, ErrorResponse("Not Found", status.value))
         }
         exception<ApiException> { call, cause ->
-            call.respond(cause.status, ErrorResponse(cause.message, cause.status.value))
+            val status = HttpStatusCode.fromValue(cause.statusCode)
+            call.respond(status, ErrorResponse(cause.message, status.value))
         }
         exception<Throwable> { call, cause ->
             call.respond(

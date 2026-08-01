@@ -8,6 +8,7 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
+import kotlin.time.Clock
 
 // ========== Request DTOs ==========
 
@@ -261,7 +262,7 @@ data class ConversationSnapshotEvent(
     val type: String = "snapshot",
     val seq: Long,
     val conversation: ConversationDto,
-    val serverTime: Long = System.currentTimeMillis()
+    val serverTime: Long = Clock.System.now().toEpochMilliseconds()
 )
 
 @Serializable
@@ -274,7 +275,7 @@ data class ConversationNodeUpdateEvent(
     val node: MessageNodeDto,
     val updateAt: Long,
     val isGenerating: Boolean,
-    val serverTime: Long = System.currentTimeMillis()
+    val serverTime: Long = Clock.System.now().toEpochMilliseconds()
 )
 
 @Serializable

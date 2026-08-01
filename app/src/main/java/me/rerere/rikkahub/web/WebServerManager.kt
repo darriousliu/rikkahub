@@ -2,11 +2,6 @@ package me.rerere.rikkahub.web
 
 import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
-import io.ktor.server.cio.CIOApplicationEngine
-import io.ktor.server.engine.EmbeddedServer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,14 +12,11 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.service.ChatService
-import me.rerere.rikkahub.web.startWebServer
-import java.net.ServerSocket
 
 private const val TAG = "WebServerManager"
-private const val HOST_ALL_INTERFACES = "0.0.0.0"
-private const val HOST_LOOPBACK = "127.0.0.1"
 
-data class WebServerState(
+data class WebServerManagerState(
+    val lifecycle: WebServerState = WebServerState.Stopped,
     val isRunning: Boolean = false,
     val isLoading: Boolean = false,
     val port: Int = 8080,
@@ -32,7 +24,7 @@ data class WebServerState(
     val localhostOnly: Boolean = false,
     val hostname: String? = null,
     val address: String? = null,
-    val error: String? = null
+    val error: String? = null,
 )
 
 class WebServerManager(
@@ -42,93 +34,81 @@ class WebServerManager(
     private val conversationRepo: ConversationRepository,
     private val folderRepo: FolderRepository,
     private val settingsStore: SettingsStore,
-    private val filesManager: FilesManager
+    private val filesManager: FilesManager,
 ) {
-    private var server: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
     private val nsdRegistrar = NsdServiceRegistrar(context)
+    private val controller = WebServerController(
+        KtorWebServerHost {
+            configureWebApi(context, chatService, conversationRepo, folderRepo, settingsStore, filesManager)
+        }
+    )
 
-    private val _state = MutableStateFlow(WebServerState())
-    val state: StateFlow<WebServerState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(WebServerManagerState())
+    val state: StateFlow<WebServerManagerState> = _state.asStateFlow()
+    val lifecycle: StateFlow<WebServerState> = controller.state
 
     fun start(
         port: Int = 8080,
         serviceName: String = DEFAULT_SERVICE_NAME,
-        localhostOnly: Boolean = false
+        localhostOnly: Boolean = false,
     ) {
-        if (server != null) {
+        if (_state.value.isRunning || _state.value.isLoading) {
             Log.w(TAG, "Server already running")
             return
         }
 
         appScope.launch {
-            // 仅本机模式绑定回环地址
-            val host = if (localhostOnly) HOST_LOOPBACK else HOST_ALL_INTERFACES
-            val baseState = WebServerState(
+            val config = WebServerConfig(
                 port = port,
                 serviceName = serviceName,
-                localhostOnly = localhostOnly
+                localhostOnly = localhostOnly,
             )
-            try {
-                _state.value = _state.value.copy(isLoading = true)
-                Log.i(TAG, "Starting web server on $host:$port")
-                if (!isPortAvailable(port)) {
-                    Log.w(TAG, "Port $port is already in use")
-                    _state.value = baseState.copy(error = "Port $port is already in use")
-                    return@launch
-                }
-                server = startWebServer(port = port, host = host) {
-                    configureWebApi(context, chatService, conversationRepo, folderRepo, settingsStore, filesManager)
-                }.start(wait = false)
-
-                _state.value = baseState.copy(isRunning = true)
-                // 仅局域网模式注册 mDNS
-                if (!localhostOnly) {
-                    runCatching {
-                        nsdRegistrar.register(
-                            port = port,
-                            serviceName = serviceName,
-                            onRegistered = { info ->
-                                _state.value = _state.value.copy(
-                                    serviceName = info.serviceName,
-                                    hostname = info.hostname,
-                                    address = info.address.hostAddress
-                                )
-                            }
-                        )
-                    }.onFailure {
-                        Log.w(TAG, "NSD register failed", it)
-                    }
-                }
-                Log.i(TAG, "Web server started successfully on $host:$port")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to start web server", e)
-                _state.value = baseState.copy(error = e.message)
-            }
+            val baseState = WebServerManagerState(
+                lifecycle = WebServerState.Starting(config),
+                isLoading = true,
+                port = port,
+                serviceName = serviceName,
+                localhostOnly = localhostOnly,
+            )
+            _state.value = baseState
+            Log.i(TAG, "Starting web server on port $port")
+            publishStartResult(baseState, controller.start(config))
         }
     }
 
     fun reportError(message: String) {
-        _state.value = _state.value.copy(isRunning = false, isLoading = false, error = message)
+        _state.value = _state.value.copy(
+            lifecycle = WebServerState.Failed(_state.value.lifecycle.configOrNull(), message),
+            isRunning = false,
+            isLoading = false,
+            error = message,
+        )
     }
 
     fun stop() {
-        _state.value =
-            _state.value.copy(isRunning = false, isLoading = true, hostname = null, address = null, error = null)
+        _state.value = _state.value.copy(
+            isRunning = false,
+            isLoading = true,
+            hostname = null,
+            address = null,
+            error = null,
+        )
         appScope.launch {
             try {
                 Log.i(TAG, "Stopping web server")
-                server?.stop(1000, 2000)
-                server = null
-                runCatching {
-                    nsdRegistrar.unregister()
-                }.onFailure {
-                    Log.w(TAG, "NSD unregister failed", it)
-                }
-                _state.value = _state.value.copy(isLoading = false)
+                val lifecycle = controller.stop()
+                runCatching { nsdRegistrar.unregister() }
+                    .onFailure { Log.w(TAG, "NSD unregister failed", it) }
+                _state.value = _state.value.copy(
+                    lifecycle = lifecycle,
+                    isRunning = false,
+                    isLoading = false,
+                    error = (lifecycle as? WebServerState.Failed)?.message,
+                )
                 Log.i(TAG, "Web server stopped")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to stop web server", e)
-                _state.value = _state.value.copy(isLoading = false, error = e.message)
+            } catch (error: Exception) {
+                Log.e(TAG, "Failed to stop web server", error)
+                _state.value = _state.value.copy(isLoading = false, error = error.message)
             }
         }
     }
@@ -136,17 +116,82 @@ class WebServerManager(
     fun restart(
         port: Int = _state.value.port,
         serviceName: String = _state.value.serviceName,
-        localhostOnly: Boolean = _state.value.localhostOnly
+        localhostOnly: Boolean = _state.value.localhostOnly,
     ) {
-        stop()
-        start(port, serviceName, localhostOnly)
-    }
-
-    private fun isPortAvailable(port: Int): Boolean {
-        return try {
-            ServerSocket(port).use { true }
-        } catch (e: Exception) {
-            false
+        appScope.launch {
+            val config = WebServerConfig(port, serviceName, localhostOnly)
+            runCatching { nsdRegistrar.unregister() }
+            val baseState = WebServerManagerState(
+                lifecycle = WebServerState.Starting(config),
+                isLoading = true,
+                port = port,
+                serviceName = serviceName,
+                localhostOnly = localhostOnly,
+            )
+            _state.value = baseState
+            publishStartResult(baseState, controller.restart(config))
         }
     }
+
+    private suspend fun publishStartResult(baseState: WebServerManagerState, lifecycle: WebServerState) {
+        when (lifecycle) {
+            is WebServerState.Running -> {
+                _state.value = baseState.copy(
+                    lifecycle = lifecycle,
+                    isRunning = true,
+                    isLoading = false,
+                    port = lifecycle.endpoint.port,
+                )
+                if (!lifecycle.config.localhostOnly) {
+                    runCatching {
+                        nsdRegistrar.register(
+                            port = lifecycle.endpoint.port,
+                            serviceName = lifecycle.config.serviceName,
+                            onRegistered = { info ->
+                                _state.value = _state.value.copy(
+                                    serviceName = info.serviceName,
+                                    hostname = info.hostname,
+                                    address = info.address.hostAddress,
+                                )
+                            },
+                        )
+                    }.onFailure { Log.w(TAG, "NSD register failed", it) }
+                }
+                Log.i(
+                    TAG,
+                    "Web server started successfully on ${lifecycle.endpoint.host}:${lifecycle.endpoint.port}",
+                )
+            }
+
+            is WebServerState.Failed -> {
+                Log.e(TAG, "Failed to start web server: ${lifecycle.message}")
+                _state.value = baseState.copy(
+                    lifecycle = lifecycle,
+                    isLoading = false,
+                    error = lifecycle.message,
+                )
+            }
+
+            is WebServerState.Unavailable -> {
+                _state.value = baseState.copy(
+                    lifecycle = lifecycle,
+                    isLoading = false,
+                    error = lifecycle.reason,
+                )
+            }
+
+            is WebServerState.Starting,
+            WebServerState.Stopped,
+            -> _state.value = baseState.copy(lifecycle = lifecycle, isLoading = false)
+        }
+    }
+}
+
+private fun WebServerState.configOrNull(): WebServerConfig? = when (this) {
+    is WebServerState.Starting -> config
+    is WebServerState.Running -> config
+    is WebServerState.Failed -> config
+    WebServerState.Stopped,
+    is WebServerState.Unavailable,
+    -> null
 }
