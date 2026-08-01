@@ -1,7 +1,7 @@
 package me.rerere.asr.providers
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 
 internal object VolcengineFrameCodec {
     fun buildFrame(
@@ -10,25 +10,25 @@ internal object VolcengineFrameCodec {
         serialization: Int,
         compression: Int,
         payload: ByteArray,
-    ): ByteArray {
-        val header = byteArrayOf(
-            0x11.toByte(),
-            ((messageType shl 4) or (flags and 0x0F)).toByte(),
-            ((serialization shl 4) or (compression and 0x0F)).toByte(),
-            0x00,
-        )
-        val size = ByteBuffer.allocate(Int.SIZE_BYTES)
-            .order(ByteOrder.BIG_ENDIAN)
-            .putInt(payload.size)
-            .array()
-        return header + size + payload
+    ): ByteArray = Buffer().run {
+        writeByte(0x11.toByte())
+        writeByte(((messageType shl 4) or (flags and 0x0F)).toByte())
+        writeByte(((serialization shl 4) or (compression and 0x0F)).toByte())
+        writeByte(0x00.toByte())
+        writeInt(payload.size)
+        write(payload)
+        readByteArray()
     }
 
     fun parseResponse(data: ByteArray): ServerFrame? {
         if (data.size < HEADER_SIZE) return null
 
-        val byte1 = data[1].toInt() and 0xFF
-        val byte2 = data[2].toInt() and 0xFF
+        val source = Buffer().apply { write(data) }
+        source.readByte() // protocol version and header size
+        val byte1 = source.readByte().toInt() and 0xFF
+        val byte2 = source.readByte().toInt() and 0xFF
+        source.readByte() // reserved
+
         val messageType = (byte1 shr 4) and 0x0F
         val messageFlags = byte1 and 0x0F
         val compression = byte2 and 0x0F
@@ -37,30 +37,34 @@ internal object VolcengineFrameCodec {
         return when (messageType) {
             MESSAGE_TYPE_RESULT -> {
                 val hasSequence = (messageFlags and FLAG_HAS_SEQUENCE) != 0
-                if (hasSequence) offset += Int.SIZE_BYTES
+                if (hasSequence) {
+                    if (source.size < Int.SIZE_BYTES) return null
+                    source.readInt()
+                    offset += Int.SIZE_BYTES
+                }
 
-                if (offset + Int.SIZE_BYTES > data.size) return null
-                val payloadSize = data.readBigEndianInt(offset)
+                if (source.size < Int.SIZE_BYTES) return null
+                val payloadSize = source.readInt()
                 offset += Int.SIZE_BYTES
 
                 if (payloadSize <= 0 || offset + payloadSize > data.size) return null
                 ServerFrame.Result(
                     compression = compression,
-                    payload = data.copyOfRange(offset, offset + payloadSize),
+                    payload = source.readByteArray(payloadSize),
                 )
             }
 
             MESSAGE_TYPE_ERROR -> {
-                if (offset + Int.SIZE_BYTES > data.size) return null
-                val code = data.readBigEndianInt(offset)
+                if (source.size < Int.SIZE_BYTES) return null
+                val code = source.readInt()
                 offset += Int.SIZE_BYTES
 
-                if (offset + Int.SIZE_BYTES > data.size) return null
-                val messageSize = data.readBigEndianInt(offset)
+                if (source.size < Int.SIZE_BYTES) return null
+                val messageSize = source.readInt()
                 offset += Int.SIZE_BYTES
 
                 val message = if (messageSize > 0 && offset + messageSize <= data.size) {
-                    data.copyOfRange(offset, offset + messageSize)
+                    source.readByteArray(messageSize)
                 } else {
                     null
                 }
@@ -70,11 +74,6 @@ internal object VolcengineFrameCodec {
             else -> ServerFrame.Ignored(messageType)
         }
     }
-
-    private fun ByteArray.readBigEndianInt(offset: Int): Int =
-        ByteBuffer.wrap(this, offset, Int.SIZE_BYTES)
-            .order(ByteOrder.BIG_ENDIAN)
-            .int
 
     internal sealed interface ServerFrame {
         data class Result(
