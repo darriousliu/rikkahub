@@ -10,7 +10,11 @@ internal object WebViewContentCache {
     private val maxAgeMillis = TimeUnit.DAYS.toMillis(7)
     private val hexDigits = "0123456789abcdef".toCharArray()
 
-    fun store(cacheDir: File, content: String): String {
+    fun store(
+        cacheDir: File,
+        content: String,
+        nowMillis: () -> Long = System::currentTimeMillis,
+    ): String {
         val id = content.sha256()
         val directory = File(cacheDir, DIRECTORY_NAME)
         check(directory.isDirectory || directory.mkdirs()) {
@@ -21,13 +25,17 @@ internal object WebViewContentCache {
         if (!file.isFile) {
             file.writeText(content)
         }
-        file.setLastModified(System.currentTimeMillis())
+        file.setLastModified(nowMillis())
 
-        removeExpiredFiles(directory)
+        removeExpiredFiles(directory, nowMillis)
         return id
     }
 
-    fun load(cacheDir: File, id: String): String? {
+    fun load(
+        cacheDir: File,
+        id: String,
+        nowMillis: () -> Long = System::currentTimeMillis,
+    ): String? {
         if (!id.isSha256()) return null
 
         val file = File(File(cacheDir, DIRECTORY_NAME), id)
@@ -35,13 +43,13 @@ internal object WebViewContentCache {
 
         return runCatching {
             file.readText().also {
-                file.setLastModified(System.currentTimeMillis())
+                file.setLastModified(nowMillis())
             }
         }.getOrNull()
     }
 
-    private fun removeExpiredFiles(directory: File) {
-        val expirationTime = System.currentTimeMillis() - maxAgeMillis
+    private fun removeExpiredFiles(directory: File, nowMillis: () -> Long) {
+        val expirationTime = nowMillis() - maxAgeMillis
         directory.listFiles()?.forEach { file ->
             if (file.isFile && file.lastModified() < expirationTime) {
                 file.delete()
