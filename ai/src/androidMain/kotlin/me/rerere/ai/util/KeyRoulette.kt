@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlin.time.Clock
 
 interface KeyRoulette {
     fun next(keys: String, providerId: String = ""): String
@@ -15,7 +16,15 @@ interface KeyRoulette {
          * LRU 轮询，持久化存储到 cacheDir/lru_key_roulette.json
          * 通过 providerId 区分同类型的多个 provider 实例，在 next() 调用时传入
          */
-        fun lru(context: Context): KeyRoulette = LruKeyRoulette(context)
+        fun lru(context: Context): KeyRoulette = LruKeyRoulette(
+            cacheFile = File(context.cacheDir, LRU_CACHE_FILE),
+            currentTimeMillis = System::currentTimeMillis
+        )
+
+        internal fun lru(cacheFile: File, clock: Clock): KeyRoulette = LruKeyRoulette(
+            cacheFile = cacheFile,
+            currentTimeMillis = { clock.now().toEpochMilliseconds() }
+        )
     }
 }
 
@@ -50,7 +59,8 @@ private object LruFileLock
 private typealias LruCache = Map<String, Map<String, Long>>
 
 private class LruKeyRoulette(
-    private val context: Context,
+    private val cacheFile: File,
+    private val currentTimeMillis: () -> Long,
 ) : KeyRoulette {
 
     override fun next(keys: String, providerId: String): String {
@@ -58,7 +68,7 @@ private class LruKeyRoulette(
         if (keyList.isEmpty()) return keys
 
         synchronized(LruFileLock) {
-            val now = System.currentTimeMillis()
+            val now = currentTimeMillis()
             val allCache = loadCache().toMutableMap()
 
             // 取本 provider 的记录，过滤掉已过期条目和不在当前 key 列表中的条目
@@ -85,9 +95,8 @@ private class LruKeyRoulette(
 
     private fun loadCache(): LruCache {
         return try {
-            val file = File(context.cacheDir, LRU_CACHE_FILE)
-            if (!file.exists()) return emptyMap()
-            Json.decodeFromString(file.readText())
+            if (!cacheFile.exists()) return emptyMap()
+            Json.decodeFromString(cacheFile.readText())
         } catch (_: Exception) {
             emptyMap()
         }
@@ -95,7 +104,7 @@ private class LruKeyRoulette(
 
     private fun saveCache(cache: LruCache) {
         try {
-            File(context.cacheDir, LRU_CACHE_FILE).writeText(Json.encodeToString(cache))
+            cacheFile.writeText(Json.encodeToString(cache))
         } catch (_: Exception) {
         }
     }
