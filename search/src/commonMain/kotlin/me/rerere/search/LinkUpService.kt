@@ -8,8 +8,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -65,8 +63,7 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.LinkUpOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
             val body = buildJsonObject {
                 put("q", JsonPrimitive(query))
@@ -92,30 +89,26 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                     json.decodeFromString<LinkUpSearchResponse>(it)
                 }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = responseBody.answer,
-                        items = responseBody.sources.take(commonOptions.resultSize).map {
-                            SearchResultItem(
-                                title = it.name,
-                                url = it.url,
-                                text = it.snippet
-                            )
-                        }
-                    )
+                SearchResult(
+                    answer = responseBody.answer,
+                    items = responseBody.sources.take(commonOptions.resultSize).map {
+                        SearchResultItem(
+                            title = it.name,
+                            url = it.url,
+                            text = it.snippet
+                        )
+                    },
                 )
             } else {
                 error("response failed #${response.code}: ${response.body}")
             }
-        }
     }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.LinkUpOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<ScrapedResult> = runCatching {
             val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
             val body = buildJsonObject {
                 put("url", JsonPrimitive(url))
@@ -138,20 +131,17 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                     json.decodeFromString<LinkUpFetchResponse>(it)
                 }
 
-                return@withContext Result.success(
-                    ScrapedResult(
-                        urls = listOf(
-                            ScrapedResultUrl(
-                                url = url,
-                                content = responseBody.markdown
-                            )
+                ScrapedResult(
+                    urls = listOf(
+                        ScrapedResultUrl(
+                            url = url,
+                            content = responseBody.markdown
                         )
                     )
                 )
             } else {
                 error("response failed #${response.code}: ${response.body}")
             }
-        }
     }
 
     @Serializable
