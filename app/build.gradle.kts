@@ -201,8 +201,6 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktorfit.lib)
 
-    // ucrop
-    implementation(libs.ucrop)
     implementation(libs.androidx.exifinterface)
 
     // coil

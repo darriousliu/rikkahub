@@ -109,9 +109,12 @@ kotlin {
         androidMain {
             dependsOn(mobileMain)
             dependencies {
+                implementation(libs.androidx.activity.compose)
+                implementation(libs.androidx.appcompat)
                 implementation(libs.androidx.lifecycle.process)
                 implementation(libs.floatingx)
                 implementation(libs.ktor.client.okhttp)
+                implementation(libs.ucrop)
             }
         }
         iosMain {
