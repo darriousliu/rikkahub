@@ -1,6 +1,5 @@
 package me.rerere.ai.provider.providers
 
-import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
@@ -52,10 +51,8 @@ private const val TAG = "OpenAIProvider"
 
 class OpenAIProvider(
     private val client: HttpClient,
-    context: Context? = null
+    private val keyRoulette: KeyRoulette = KeyRoulette.default(),
 ) : Provider<ProviderSetting.OpenAI> {
-    private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
-
     private val chatCompletionsAPI = ChatCompletionsAPI(client = client, keyRoulette = keyRoulette)
     private val responseAPI = ResponseAPI(client = client, keyRoulette = keyRoulette)
 

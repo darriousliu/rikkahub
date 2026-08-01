@@ -5,6 +5,7 @@ import io.ktor.client.HttpClient
 import me.rerere.ai.provider.providers.ClaudeProvider
 import me.rerere.ai.provider.providers.GoogleProvider
 import me.rerere.ai.provider.providers.OpenAIProvider
+import me.rerere.ai.util.persistentKeyRoulette
 
 /**
  * Provider管理器，负责注册和获取Provider实例
@@ -15,9 +16,10 @@ class ProviderManager(client: HttpClient, context: Context) {
 
     init {
         // 注册默认Provider
-        registerProvider("openai", OpenAIProvider(client, context))
-        registerProvider("google", GoogleProvider(client, context))
-        registerProvider("claude", ClaudeProvider(client, context))
+        val keyRoulette = persistentKeyRoulette(context)
+        registerProvider("openai", OpenAIProvider(client, keyRoulette))
+        registerProvider("google", GoogleProvider(client, keyRoulette))
+        registerProvider("claude", ClaudeProvider(client, keyRoulette))
     }
 
     /**

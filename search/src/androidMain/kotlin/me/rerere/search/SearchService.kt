@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.util.KeyRoulette
+import me.rerere.ai.util.lru
 import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 

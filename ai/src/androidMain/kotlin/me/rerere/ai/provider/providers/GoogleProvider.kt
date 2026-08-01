@@ -1,6 +1,5 @@
 package me.rerere.ai.provider.providers
 
-import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
@@ -69,8 +68,10 @@ import kotlin.uuid.Uuid
 
 private const val TAG = "GoogleProvider"
 
-class GoogleProvider(private val client: HttpClient, context: Context? = null) : Provider<ProviderSetting.Google> {
-    private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
+class GoogleProvider(
+    private val client: HttpClient,
+    private val keyRoulette: KeyRoulette = KeyRoulette.default(),
+) : Provider<ProviderSetting.Google> {
     private val serviceAccountTokenProvider by lazy {
         ServiceAccountTokenProvider(client)
     }

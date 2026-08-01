@@ -1,6 +1,5 @@
 package me.rerere.ai.provider.providers
 
-import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
@@ -65,9 +64,10 @@ import kotlin.time.Clock
 private const val TAG = "ClaudeProvider"
 private const val ANTHROPIC_VERSION = "2023-06-01"
 
-class ClaudeProvider(private val client: HttpClient, context: Context? = null) : Provider<ProviderSetting.Claude> {
-    private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
-
+class ClaudeProvider(
+    private val client: HttpClient,
+    private val keyRoulette: KeyRoulette = KeyRoulette.default(),
+) : Provider<ProviderSetting.Claude> {
     override suspend fun listModels(providerSetting: ProviderSetting.Claude): List<Model> {
         val response = client.get("${providerSetting.baseUrl}/models") {
             configureClaudeHeaders(providerSetting)
