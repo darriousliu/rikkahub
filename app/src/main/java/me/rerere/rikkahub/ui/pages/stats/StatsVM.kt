@@ -8,14 +8,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import me.rerere.common.time.today
 import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.db.dao.MessageNodeDAO
 import me.rerere.rikkahub.data.db.dao.getMessageCountPerDay
 import me.rerere.rikkahub.data.db.dao.getTokenStats
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
+import kotlin.time.Clock
 
 data class AppStats(
     val isLoading: Boolean = true,
@@ -44,13 +47,10 @@ class StatsVM(
     private suspend fun loadStats() {
         delay(50)
 
-        val today = LocalDate.now()
+        val today = Clock.System.today()
 
         // 热力图起始日期（52 周前的周日），格式 "yyyy-MM-dd" 直接与 JSON 中的 LocalDateTime 前缀比较
-        val startDate = today
-            .with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-            .minusWeeks(52)
-            .toString()
+        val startDate = heatmapStartDate(today).toString()
 
         // 基于用户消息的 createdAt 统计每日活跃消息数，SQLite 侧 GROUP BY，返回 ≤371 行
         val conversationsPerDay = withContext(Dispatchers.IO) {
@@ -80,4 +80,9 @@ class StatsVM(
             launchCount = launchCount,
         )
     }
+}
+
+internal fun heatmapStartDate(today: LocalDate): LocalDate {
+    val daysSinceSunday = (today.dayOfWeek.ordinal - DayOfWeek.SUNDAY.ordinal + 7) % 7
+    return today.minus(daysSinceSunday + 52 * 7, DateTimeUnit.DAY)
 }

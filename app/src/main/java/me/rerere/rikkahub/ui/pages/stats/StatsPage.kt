@@ -40,17 +40,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
+import kotlinx.datetime.plus
+import me.rerere.common.time.today
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import me.rerere.rikkahub.utils.toShortLocalString
 import org.koin.compose.viewmodel.koinViewModel
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.format.TextStyle
-import java.time.temporal.TemporalAdjusters
-import java.util.Locale
+import kotlin.time.Clock
 
 @Composable
 fun StatsPage(vm: StatsVM = koinViewModel()) {
@@ -143,10 +145,8 @@ private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modi
 
 @Composable
 private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
-    val today = LocalDate.now()
-    val startSunday = today
-        .with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-        .minusWeeks(52)
+    val today = Clock.System.today()
+    val startSunday = heatmapStartDate(today)
 
     val numWeeks = 53
     val activeCounts = conversationsPerDay.values.filter { it > 0 }.sorted()
@@ -204,10 +204,10 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
             // Month labels row
             Row(horizontalArrangement = Arrangement.spacedBy(cellSpacing)) {
                 for (weekIdx in 0 until numWeeks) {
-                    val weekStart = startSunday.plusDays((weekIdx * 7).toLong())
+                    val weekStart = startSunday.plus(weekIdx * 7, DateTimeUnit.DAY)
                     val labelDate = (0..6)
-                        .map { weekStart.plusDays(it.toLong()) }
-                        .firstOrNull { it.dayOfMonth == 1 }
+                        .map { weekStart.plus(it, DateTimeUnit.DAY) }
+                        .firstOrNull { it.day == 1 }
                     Box(
                         modifier = Modifier
                             .width(cellSize)
@@ -216,10 +216,10 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
                     ) {
                         if (labelDate != null) {
                             Text(
-                                text = if (labelDate.monthValue == 1) {
+                                text = if (labelDate.month.number == 1) {
                                     labelDate.year.toString()
                                 } else {
-                                    labelDate.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                                    labelDate.month.toShortLocalString()
                                 },
                                 modifier = Modifier.wrapContentWidth(unbounded = true),
                                 style = MaterialTheme.typography.labelSmall,
@@ -238,8 +238,8 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
                 for (weekIdx in 0 until numWeeks) {
                     Column(verticalArrangement = Arrangement.spacedBy(cellSpacing)) {
                         for (dow in 0..6) {
-                            val date = startSunday.plusDays((weekIdx * 7 + dow).toLong())
-                            val isFuture = date.isAfter(today)
+                            val date = startSunday.plus(weekIdx * 7 + dow, DateTimeUnit.DAY)
+                            val isFuture = date > today
                             val count = if (isFuture) 0 else (conversationsPerDay[date] ?: 0)
                             val alpha = when {
                                 isFuture -> -1f

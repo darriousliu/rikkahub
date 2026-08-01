@@ -3,6 +3,7 @@ package me.rerere.rikkahub.utils
 import kotlinx.datetime.DayOfWeek as KotlinDayOfWeek
 import kotlinx.datetime.LocalDate as KotlinLocalDate
 import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
+import kotlinx.datetime.Month as KotlinMonth
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
 import me.rerere.common.time.today
@@ -67,6 +68,10 @@ fun KotlinLocalDateTime.toMessageTimeString(
 fun KotlinDayOfWeek.toLocalString(
     locale: Locale = Locale.getDefault(),
 ): String = java.time.DayOfWeek.valueOf(name).getDisplayName(TextStyle.FULL, locale)
+
+fun KotlinMonth.toShortLocalString(
+    locale: Locale = Locale.getDefault(),
+): String = java.time.Month.valueOf(name).getDisplayName(TextStyle.SHORT, locale)
 
 internal object PlatformTimeFormatter {
     fun formatDate(epochMillis: Long, timeZoneId: String, locale: Locale): String {
