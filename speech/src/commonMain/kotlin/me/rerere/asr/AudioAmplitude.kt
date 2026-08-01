@@ -1,21 +1,19 @@
 package me.rerere.asr
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import kotlinx.io.Buffer
+import kotlinx.io.readShortLe
 import kotlin.math.log10
 import kotlin.math.sqrt
 
 private const val MAX_AMPLITUDES = 32
 
 fun calculateRmsAmplitude(buffer: ByteArray, readBytes: Int): Float {
-    val shorts = ByteBuffer.wrap(buffer, 0, readBytes)
-        .order(ByteOrder.LITTLE_ENDIAN)
-        .asShortBuffer()
+    val source = Buffer().apply { write(buffer, 0, readBytes) }
     var sum = 0.0
-    val count = shorts.remaining()
+    val count = readBytes / Short.SIZE_BYTES
     if (count == 0) return 0f
-    for (i in 0 until count) {
-        val sample = shorts[i].toDouble()
+    repeat(count) {
+        val sample = source.readShortLe().toDouble()
         sum += sample * sample
     }
     val rms = sqrt(sum / count)
