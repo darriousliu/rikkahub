@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.DatabaseRestore
+import me.rerere.rikkahub.data.datastore.BackupReminderConfig
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.resources.stringResource
@@ -33,11 +34,11 @@ fun BackupReminderCard(
 ) {
     val config = settings.backupReminderConfig
     var dismissed by remember { mutableStateOf(false) }
+    val nowMillis = System.currentTimeMillis()
 
-    val isDue = config.enabled &&
-        (System.currentTimeMillis() - config.lastBackupTime) > config.intervalDays * 24L * 60 * 60 * 1000
+    val reminder = calculateBackupReminder(config, nowMillis)
 
-    if (!isDue || dismissed) return
+    if (!reminder.isDue || dismissed) return
 
     Card(onClick = onClick) {
         Row(
@@ -62,8 +63,7 @@ fun BackupReminderCard(
                 val lastBackupText = if (config.lastBackupTime == 0L) {
                     stringResource(Res.string.backup_page_reminder_never_backed_up)
                 } else {
-                    val days = (System.currentTimeMillis() - config.lastBackupTime) / (24L * 60 * 60 * 1000)
-                    stringResource(Res.string.backup_page_reminder_last_days, days)
+                    stringResource(Res.string.backup_page_reminder_last_days, reminder.daysSinceLastBackup)
                 }
                 Text(
                     text = lastBackupText,
@@ -83,3 +83,21 @@ fun BackupReminderCard(
         }
     }
 }
+
+internal data class BackupReminderState(
+    val isDue: Boolean,
+    val daysSinceLastBackup: Long,
+)
+
+internal fun calculateBackupReminder(
+    config: BackupReminderConfig,
+    nowMillis: Long,
+): BackupReminderState {
+    val elapsedMillis = nowMillis - config.lastBackupTime
+    return BackupReminderState(
+        isDue = config.enabled && elapsedMillis > config.intervalDays * MILLIS_PER_DAY,
+        daysSinceLastBackup = elapsedMillis / MILLIS_PER_DAY,
+    )
+}
+
+private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
