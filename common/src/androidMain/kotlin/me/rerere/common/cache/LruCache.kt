@@ -3,6 +3,7 @@ package me.rerere.common.cache
 import java.util.LinkedHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.time.Clock
 
 class LruCache<K, V>(
     private val capacity: Int,
@@ -10,7 +11,7 @@ class LruCache<K, V>(
     private val deleteOnEvict: Boolean = false,
     preloadFromStore: Boolean = false,
     private val expireAfterWriteMillis: Long? = null,
-    private val nowMillis: () -> Long = System::currentTimeMillis
+    private val nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() }
 ) where K : Any {
     private val lock = ReentrantLock()
 
