@@ -34,8 +34,6 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import kotlin.io.encoding.Base64
 import org.json.JSONObject
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "OpenAIRealtimeASR"
 private const val MAX_WEBSOCKET_QUEUE_BYTES = 100_000L
@@ -54,8 +52,8 @@ class OpenAIRealtimeASRController(
     private var recorderJob: Job? = null
     private var audioRecord: AudioRecord? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
-    private val completedTranscripts = Collections.synchronizedList(mutableListOf<String>())
-    private val partialTranscripts = ConcurrentHashMap<String, String>()
+    private val completedTranscripts = MutableStateFlow<List<String>>(emptyList())
+    private val partialTranscripts = MutableStateFlow<Map<String, String>>(emptyMap())
 
     override fun start(onTranscriptChange: (String) -> Unit) {
         if (state.value.isRecording) return
@@ -69,8 +67,8 @@ class OpenAIRealtimeASRController(
         }
 
         this.onTranscriptChange = onTranscriptChange
-        completedTranscripts.clear()
-        partialTranscripts.clear()
+        completedTranscripts.value = emptyList()
+        partialTranscripts.value = emptyMap()
         _state.update {
             ASRState(
                 status = ASRStatus.Connecting,
@@ -202,7 +200,9 @@ class OpenAIRealtimeASRController(
                 val itemId = event.optString("item_id", "default")
                 val delta = event.optString("delta")
                 if (delta.isNotEmpty()) {
-                    partialTranscripts[itemId] = (partialTranscripts[itemId] ?: "") + delta
+                    partialTranscripts.update { transcripts ->
+                        transcripts + (itemId to ((transcripts[itemId] ?: "") + delta))
+                    }
                     publishTranscript()
                 }
             }
@@ -210,9 +210,9 @@ class OpenAIRealtimeASRController(
             "conversation.item.input_audio_transcription.completed" -> {
                 val itemId = event.optString("item_id", "default")
                 val transcript = event.optString("transcript").trim()
-                partialTranscripts.remove(itemId)
+                partialTranscripts.update { it - itemId }
                 if (transcript.isNotEmpty()) {
-                    completedTranscripts.add(transcript)
+                    completedTranscripts.update { it + transcript }
                 }
                 publishTranscript()
             }
@@ -229,7 +229,7 @@ class OpenAIRealtimeASRController(
     }
 
     private fun publishTranscript() {
-        val transcript = (completedTranscripts + partialTranscripts.values)
+        val transcript = (completedTranscripts.value + partialTranscripts.value.values)
             .filter { it.isNotBlank() }
             .joinToString(" ")
         _state.update { it.copy(transcript = transcript, errorMessage = null) }

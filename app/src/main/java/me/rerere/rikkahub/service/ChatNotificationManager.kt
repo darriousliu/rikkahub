@@ -11,6 +11,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
@@ -25,7 +26,6 @@ import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.utils.cancelNotification
 import me.rerere.rikkahub.utils.sendNotification
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.uuid.Uuid
 
 // Live Update 通知节流间隔：流式输出每个chunk都会触发一次更新，
@@ -43,7 +43,7 @@ class ChatNotificationManager(
     private val settingsStore: SettingsStore,
 ) {
     private val isForeground = MutableStateFlow(false)
-    private val liveUpdateLastSentAt = ConcurrentHashMap<Uuid, Long>()
+    private val liveUpdateLastSentAt = MutableStateFlow<Map<Uuid, Long>>(emptyMap())
 
     init {
         // ProcessLifecycleOwner 要求在主线程注册观察者
@@ -76,9 +76,9 @@ class ChatNotificationManager(
         if (!displaySetting.enableLiveUpdateNotification) return
 
         val now = SystemClock.elapsedRealtime()
-        val lastSentAt = liveUpdateLastSentAt[event.conversationId]
+        val lastSentAt = liveUpdateLastSentAt.value[event.conversationId]
         if (lastSentAt != null && now - lastSentAt < LIVE_UPDATE_NOTIFICATION_THROTTLE_MS) return
-        liveUpdateLastSentAt[event.conversationId] = now
+        liveUpdateLastSentAt.update { it + (event.conversationId to now) }
 
         sendLiveUpdateNotification(event.conversationId, event.lastMessage, event.senderName)
     }
@@ -183,7 +183,7 @@ class ChatNotificationManager(
     }
 
     private fun cancelLiveUpdateNotification(conversationId: Uuid) {
-        liveUpdateLastSentAt.remove(conversationId)
+        liveUpdateLastSentAt.update { it - conversationId }
         context.cancelNotification(getLiveUpdateNotificationId(conversationId))
     }
 

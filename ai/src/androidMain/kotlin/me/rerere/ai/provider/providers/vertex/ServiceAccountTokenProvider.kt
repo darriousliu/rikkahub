@@ -1,6 +1,8 @@
 package me.rerere.ai.provider.providers.vertex
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,7 +11,6 @@ import me.rerere.common.crypto.RsaSha256Signer
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -35,7 +36,7 @@ class ServiceAccountTokenProvider internal constructor(
     private val json = Json { ignoreUnknownKeys = true }
 
     // Token cache to avoid frequent token requests
-    private val tokenCache = ConcurrentHashMap<String, CachedToken>()
+    private val tokenCache = MutableStateFlow<Map<String, CachedToken>>(emptyMap())
 
     @Serializable
     private data class CachedToken(
@@ -72,7 +73,7 @@ class ServiceAccountTokenProvider internal constructor(
         val cacheKey = generateCacheKey(serviceAccountEmail, scopes)
 
         // Check cache first
-        tokenCache[cacheKey]?.let { cachedToken ->
+        tokenCache.value[cacheKey]?.let { cachedToken ->
             if (isCachedTokenValid(cachedToken)) {
                 return@withContext cachedToken.token
             }
@@ -122,7 +123,7 @@ class ServiceAccountTokenProvider internal constructor(
             // Cache the token with expiration time
             val expiresIn = tokenResp.expiresIn ?: JWT_LIFETIME_SECONDS
             val expiresAt = now + expiresIn
-            tokenCache[cacheKey] = CachedToken(accessToken, expiresAt)
+            tokenCache.update { it + (cacheKey to CachedToken(accessToken, expiresAt)) }
 
             accessToken
         }
