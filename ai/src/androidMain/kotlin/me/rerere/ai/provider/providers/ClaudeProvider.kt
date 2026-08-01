@@ -1,15 +1,24 @@
 package me.rerere.ai.provider.providers
 
 import android.content.Context
+import io.ktor.client.HttpClient
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
+import io.ktor.http.Url
+import io.ktor.http.isSuccess
+import io.ktor.http.content.TextContent
 import me.rerere.common.logging.RikkaLog as Log
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonArrayBuilder
@@ -44,60 +53,39 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.metadataAs
 import me.rerere.ai.ui.toMetadata
 import me.rerere.ai.util.KeyRoulette
-import me.rerere.ai.util.configureReferHeaders
 import me.rerere.ai.util.encodeBase64
 import me.rerere.ai.util.json
 import me.rerere.ai.util.mergeCustomBody
 import me.rerere.ai.util.parseErrorDetail
-import me.rerere.ai.util.stringSafe
-import me.rerere.ai.util.toHeaders
-import me.rerere.common.http.await
+import me.rerere.common.http.SseEvent
 import me.rerere.common.http.jsonPrimitiveOrNull
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.sse.EventSource
-import okhttp3.sse.EventSourceListener
-import okhttp3.sse.EventSources
+import me.rerere.common.http.sseFlow
 import kotlin.time.Clock
 
 private const val TAG = "ClaudeProvider"
 private const val ANTHROPIC_VERSION = "2023-06-01"
 
-class ClaudeProvider(private val client: OkHttpClient, context: Context? = null) : Provider<ProviderSetting.Claude> {
+class ClaudeProvider(private val client: HttpClient, context: Context? = null) : Provider<ProviderSetting.Claude> {
     private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
 
-    override suspend fun listModels(providerSetting: ProviderSetting.Claude): List<Model> =
-        withContext(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url("${providerSetting.baseUrl}/models")
-                .addHeader("x-api-key", keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString()))
-                .addHeader("anthropic-version", ANTHROPIC_VERSION)
-                .get()
-                .build()
-
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) {
-                error("Failed to get models: ${response.code} ${response.body?.string()}")
-            }
-
-            val bodyStr = response.body?.string() ?: ""
-            val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-            val data = bodyJson["data"]?.jsonArray ?: return@withContext emptyList()
-
-            data.mapNotNull { modelJson ->
-                val modelObj = modelJson.jsonObject
-                val id = modelObj["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val displayName = modelObj["display_name"]?.jsonPrimitive?.contentOrNull ?: id
-
-                Model(
-                    modelId = id,
-                    displayName = displayName,
-                )
-            }
+    override suspend fun listModels(providerSetting: ProviderSetting.Claude): List<Model> {
+        val response = client.get("${providerSetting.baseUrl}/models") {
+            configureClaudeHeaders(providerSetting)
         }
+        val bodyStr = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            error("Failed to get models: ${response.status.value} $bodyStr")
+        }
+
+        val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
+        val data = bodyJson["data"]?.jsonArray ?: return emptyList()
+        return data.mapNotNull { modelJson ->
+            val modelObj = modelJson.jsonObject
+            val id = modelObj["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val displayName = modelObj["display_name"]?.jsonPrimitive?.contentOrNull ?: id
+            Model(modelId = id, displayName = displayName)
+        }
+    }
 
     override suspend fun generateImage(
         providerSetting: ProviderSetting,
@@ -110,25 +98,21 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
         providerSetting: ProviderSetting.Claude,
         messages: List<UIMessage>,
         params: TextGenerationParams
-    ): MessageChunk = withContext(Dispatchers.IO) {
+    ): MessageChunk {
         val requestBody = buildMessageRequest(providerSetting, messages, params)
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/messages")
-            .headers(params.customHeaders.toHeaders())
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .addHeader("x-api-key", keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString()))
-            .addHeader("anthropic-version", ANTHROPIC_VERSION)
-            .configureReferHeaders(providerSetting.baseUrl)
-            .build()
-
         Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
-
-        val response = client.newCall(request).await()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body?.string()}")
+        val response = client.post("${providerSetting.baseUrl}/messages") {
+            params.customHeaders.forEach { customHeader ->
+                if (customHeader.name.isNotBlank()) header(customHeader.name, customHeader.value)
+            }
+            configureClaudeHeaders(providerSetting)
+            configureReferHeaders(providerSetting.baseUrl)
+            setBody(requestBody.toJsonTextContent())
         }
-
-        val bodyStr = response.body?.string() ?: ""
+        val bodyStr = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            throw Exception("Failed to get response: ${response.status.value} $bodyStr")
+        }
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
 
         // 从 JsonObject 中提取必要的信息
@@ -138,7 +122,7 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
         val stopReason = bodyJson["stop_reason"]?.jsonPrimitive?.contentOrNull ?: "unknown"
         val usage = parseTokenUsage(bodyJson)
 
-        MessageChunk(
+        return MessageChunk(
             id = id,
             model = model,
             choices = listOf(
@@ -157,115 +141,84 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
         providerSetting: ProviderSetting.Claude,
         messages: List<UIMessage>,
         params: TextGenerationParams
-    ): Flow<MessageChunk> = callbackFlow {
-        val requestBody = buildMessageRequest(providerSetting, messages, params, stream = true)
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/messages")
-            .headers(params.customHeaders.toHeaders())
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .addHeader("x-api-key", keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString()))
-            .addHeader("anthropic-version", ANTHROPIC_VERSION)
-            .addHeader("Content-Type", "application/json")
-            .configureReferHeaders(providerSetting.baseUrl)
-            .build()
+    ): Flow<MessageChunk> = flow {
+        try {
+            val requestBody = buildMessageRequest(providerSetting, messages, params, stream = true)
+            Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+            requestBody["messages"]!!.jsonArray.forEach { Log.i(TAG, "streamText: $it") }
 
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
-
-        requestBody["messages"]!!.jsonArray.forEach {
-            Log.i(TAG, "streamText: $it")
-        }
-
-        val listener = object : EventSourceListener() {
-            override fun onEvent(
-                eventSource: EventSource,
-                id: String?,
-                type: String?,
-                data: String
-            ) {
-                Log.d(TAG, "onEvent: type=$type, data=$data")
-                if (data == "[DONE]") {
-                    return
+            client.sseFlow("${providerSetting.baseUrl}/messages") {
+                method = HttpMethod.Post
+                params.customHeaders.forEach { customHeader ->
+                    if (customHeader.name.isNotBlank()) header(customHeader.name, customHeader.value)
                 }
-
-                val dataJson = json.parseToJsonElement(data).jsonObject
-                val deltaMessage = parseMessage(buildJsonArray {
-                    val contentBlockObj = dataJson["content_block"]?.jsonObject
-                    val deltaObj = dataJson["delta"]?.jsonObject
-                    if (contentBlockObj != null) {
-                        add(contentBlockObj)
+                configureClaudeHeaders(providerSetting)
+                configureReferHeaders(providerSetting.baseUrl)
+                setBody(requestBody.toJsonTextContent())
+            }.collect { event ->
+                when (event) {
+                    SseEvent.Open -> Unit
+                    SseEvent.Closed -> throw ClaudeStreamCompleted()
+                    is SseEvent.Failure -> {
+                        event.toClaudeStreamException()?.let { throw it }
+                        throw ClaudeStreamCompleted()
                     }
-                    if (deltaObj != null) {
-                        add(deltaObj)
-                    }
-                })
-                val tokenUsage = parseTokenUsage(dataJson)
-                val messageChunk = MessageChunk(
-                    id = id ?: "",
-                    model = "",
-                    choices = listOf(
-                        UIMessageChoice(
-                            index = 0,
-                            delta = deltaMessage,
-                            message = null,
-                            finishReason = null
-                        )
-                    ),
-                    usage = tokenUsage
-                )
-
-                trySend(messageChunk).onFailure { e ->
-                    Log.w(TAG, "onEvent: chunk dropped (${e?.message})")
-                }
-
-                when (type) {
-                    "message_stop" -> {
-                        Log.d(TAG, "Stream ended")
-                        close()
-                    }
-
-                    "error" -> {
-                        val eventData = json.parseToJsonElement(data).jsonObject
-                        val error = eventData["error"]?.parseErrorDetail()
-                        close(error)
+                    is SseEvent.Event -> {
+                        if (event.data == "[DONE]") return@collect
+                        val chunk = parseStreamEvent(event)
+                        emit(chunk)
+                        when (event.type) {
+                            "message_stop" -> throw ClaudeStreamCompleted()
+                            "error" -> {
+                                val eventData = json.parseToJsonElement(event.data).jsonObject
+                                throw eventData["error"]?.parseErrorDetail() ?: Exception("Stream failed")
+                            }
+                        }
                     }
                 }
             }
-
-            override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
-                var exception = t
-
-                t?.printStackTrace()
-                Log.e(TAG, "onFailure: ${t?.javaClass?.name} ${t?.message} / $response")
-
-                val bodyRaw = response?.body?.stringSafe()
-                try {
-                    if (!bodyRaw.isNullOrBlank()) {
-                        val bodyElement = Json.parseToJsonElement(bodyRaw)
-                        Log.i(TAG, "Error response: $bodyElement")
-                        exception = bodyElement.parseErrorDetail()
-                    }
-                } catch (e: Throwable) {
-                    Log.w(TAG, "onFailure: failed to parse from $bodyRaw")
-                    e.printStackTrace()
-                } finally {
-                    close(exception)
-                }
-            }
-
-            override fun onClosed(eventSource: EventSource) {
-                close()
-            }
-        }
-
-        val eventSource = EventSources.createFactory(client)
-            .newEventSource(request, listener)
-
-        awaitClose {
-            Log.d(TAG, "Closing eventSource")
-            eventSource.cancel()
+        } catch (_: ClaudeStreamCompleted) {
+            Log.d(TAG, "Stream ended")
         }
         // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
     }.buffer(Channel.UNLIMITED)
+
+    private fun parseStreamEvent(event: SseEvent.Event): MessageChunk {
+        Log.d(TAG, "onEvent: type=${event.type}, data=${event.data}")
+        val dataJson = json.parseToJsonElement(event.data).jsonObject
+        val deltaMessage = parseMessage(buildJsonArray {
+            dataJson["content_block"]?.jsonObject?.let(::add)
+            dataJson["delta"]?.jsonObject?.let(::add)
+        })
+        return MessageChunk(
+            id = event.id ?: "",
+            model = "",
+            choices = listOf(
+                UIMessageChoice(
+                    index = 0,
+                    delta = deltaMessage,
+                    message = null,
+                    finishReason = null,
+                )
+            ),
+            usage = parseTokenUsage(dataJson),
+        )
+    }
+
+    private fun HttpRequestBuilder.configureClaudeHeaders(providerSetting: ProviderSetting.Claude) {
+        header("x-api-key", keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString()))
+        header("anthropic-version", ANTHROPIC_VERSION)
+    }
+
+    private fun HttpRequestBuilder.configureReferHeaders(baseUrl: String) {
+        when (Url(baseUrl).host) {
+            "aihubmix.com" -> header("APP-Code", "DKHA9468")
+            "openrouter.ai" -> {
+                header("X-Title", "RikkaHub")
+                header("HTTP-Referer", "https://rikka-ai.com")
+            }
+        }
+    }
 
     private fun buildMessageRequest(
         providerSetting: ProviderSetting.Claude,
@@ -607,3 +560,26 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
         )
     }
 }
+
+private fun JsonObject.toJsonTextContent(): TextContent =
+    TextContent(
+        text = json.encodeToString(this),
+        contentType = ContentType.Application.Json.withParameter("charset", "utf-8"),
+    )
+
+private fun SseEvent.Failure.toClaudeStreamException(): Throwable? {
+    throwable?.let { return it }
+    val body = response?.body
+    if (body.isNullOrBlank()) return null
+    return try {
+        val bodyElement = Json.parseToJsonElement(body)
+        Log.i(TAG, "Error response: $bodyElement")
+        bodyElement.parseErrorDetail()
+    } catch (error: Throwable) {
+        Log.w(TAG, "onFailure: failed to parse from $body")
+        error.printStackTrace()
+        null
+    }
+}
+
+private class ClaudeStreamCompleted : CancellationException()

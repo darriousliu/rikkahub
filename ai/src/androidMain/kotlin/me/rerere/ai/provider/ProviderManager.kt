@@ -16,20 +16,15 @@ class ProviderManager(client: OkHttpClient, context: Context) {
     private val providers = mutableMapOf<String, Provider<*>>()
 
     init {
+        val ktorClient = HttpClient(OkHttp) {
+            engine {
+                preconfigured = client
+            }
+        }
         // 注册默认Provider
         registerProvider("openai", OpenAIProvider(client, context))
-        registerProvider(
-            "google",
-            GoogleProvider(
-                client = HttpClient(OkHttp) {
-                    engine {
-                        preconfigured = client
-                    }
-                },
-                context = context,
-            )
-        )
-        registerProvider("claude", ClaudeProvider(client, context))
+        registerProvider("google", GoogleProvider(ktorClient, context))
+        registerProvider("claude", ClaudeProvider(ktorClient, context))
     }
 
     /**
