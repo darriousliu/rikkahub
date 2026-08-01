@@ -14,13 +14,13 @@ import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
 import java.io.File
 import java.util.Locale
-import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.uuid.Uuid
 
 private const val TAG = "SystemTTSProvider"
 
-internal fun createSystemTtsUtteranceId(): String = UUID.randomUUID().toString()
+internal fun createSystemTtsUtteranceId(): String = Uuid.random().toString()
 
 class SystemTTSProvider : TTSProvider<TTSProviderSetting.SystemTTS> {
     override fun generateSpeech(
