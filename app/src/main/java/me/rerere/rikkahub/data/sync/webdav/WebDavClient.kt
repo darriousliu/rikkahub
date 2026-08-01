@@ -14,20 +14,24 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.fromHttpToGmtDate
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.jvm.javaio.toInputStream
 import io.ktor.utils.io.readAvailable
 import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Month
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import org.xmlpull.v1.XmlPullParser
 import java.io.File
 import java.io.InputStream
 import java.io.StringReader
-import java.time.Instant
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import kotlin.time.Instant
 
 private const val TAG = "WebDavClient"
 
@@ -374,11 +378,11 @@ class WebDavClient(
                     val tagName = parser.name.substringAfter(":")
                     if (tagName == "response" && currentHref != null) {
                         val displayName = currentDisplayName
-                            ?: currentHref!!.trimEnd('/').substringAfterLast("/")
+                            ?: currentHref.trimEnd('/').substringAfterLast("/")
 
                         resources.add(
                             WebDavResourceInfo(
-                                href = currentHref!!,
+                                href = currentHref,
                                 displayName = displayName,
                                 contentLength = currentContentLength,
                                 contentType = currentContentType ?: "application/octet-stream",
@@ -402,24 +406,63 @@ class WebDavClient(
 internal fun parseWebDavLastModified(dateString: String?): Instant? {
     if (dateString.isNullOrBlank()) return null
 
-    return try {
-        // RFC 1123 format: "Tue, 15 Nov 1994 08:12:31 GMT"
-        ZonedDateTime.parse(dateString, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
-    } catch (_: Exception) {
-        try {
-            // RFC 850 format: "Tuesday, 15-Nov-94 08:12:31 GMT"
-            ZonedDateTime.parse(dateString, DateTimeFormatter.ofPattern("EEEE, dd-MMM-yy HH:mm:ss zzz")).toInstant()
-        } catch (_: Exception) {
-            try {
-                // ISO 8601
-                Instant.parse(dateString)
-            } catch (_: Exception) {
-                Log.w(TAG, "Failed to parse date: $dateString")
-                null
-            }
-        }
+    val legacyRfc850Match = RFC_850_DATE_REGEX.matchEntire(dateString)
+    if (legacyRfc850Match != null) {
+        return parseLegacyRfc850Date(legacyRfc850Match)
+    }
+
+    return runCatching {
+        Instant.fromEpochMilliseconds(dateString.fromHttpToGmtDate().timestamp)
+    }.getOrNull() ?: runCatching {
+        Instant.parse(dateString)
+    }.getOrElse {
+        Log.w(TAG, "Failed to parse date: $dateString")
+        null
     }
 }
+
+private val RFC_850_DATE_REGEX = Regex(
+    """([A-Za-z]+), (\d{2})-([A-Za-z]{3})-(\d{2}) (\d{2}):(\d{2}):(\d{2}) GMT"""
+)
+
+private val RFC_850_MONTHS = mapOf(
+    "Jan" to Month.JANUARY,
+    "Feb" to Month.FEBRUARY,
+    "Mar" to Month.MARCH,
+    "Apr" to Month.APRIL,
+    "May" to Month.MAY,
+    "Jun" to Month.JUNE,
+    "Jul" to Month.JULY,
+    "Aug" to Month.AUGUST,
+    "Sep" to Month.SEPTEMBER,
+    "Oct" to Month.OCTOBER,
+    "Nov" to Month.NOVEMBER,
+    "Dec" to Month.DECEMBER,
+)
+
+private val RFC_850_WEEKDAYS = mapOf(
+    "Monday" to DayOfWeek.MONDAY,
+    "Tuesday" to DayOfWeek.TUESDAY,
+    "Wednesday" to DayOfWeek.WEDNESDAY,
+    "Thursday" to DayOfWeek.THURSDAY,
+    "Friday" to DayOfWeek.FRIDAY,
+    "Saturday" to DayOfWeek.SATURDAY,
+    "Sunday" to DayOfWeek.SUNDAY,
+)
+
+private fun parseLegacyRfc850Date(match: MatchResult): Instant? = runCatching {
+    val (weekday, day, month, reducedYear, hour, minute, second) = match.destructured
+    val dateTime = LocalDateTime(
+        year = 2000 + reducedYear.toInt(),
+        month = RFC_850_MONTHS.getValue(month),
+        day = day.toInt(),
+        hour = hour.toInt(),
+        minute = minute.toInt(),
+        second = second.toInt(),
+    )
+    require(dateTime.dayOfWeek == RFC_850_WEEKDAYS[weekday])
+    dateTime.toInstant(TimeZone.UTC)
+}.getOrNull()
 
 data class WebDavResourceInfo(
     val href: String,

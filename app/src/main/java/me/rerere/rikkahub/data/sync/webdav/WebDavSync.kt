@@ -28,8 +28,8 @@ import me.rerere.rikkahub.utils.fileSizeToString
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.time.Instant
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 private const val TAG = "WebDavSync"
 
@@ -85,7 +85,7 @@ class WebDavSync(
                     href = resource.href,
                     displayName = resource.displayName,
                     size = resource.contentLength,
-                    lastModified = resource.lastModified ?: Instant.EPOCH
+                    lastModified = resource.lastModified ?: Instant.fromEpochMilliseconds(0)
                 )
             }
             .sortedByDescending { it.lastModified }
