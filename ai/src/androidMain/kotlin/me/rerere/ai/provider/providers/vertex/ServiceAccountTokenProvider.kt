@@ -147,7 +147,7 @@ class ServiceAccountTokenProvider internal constructor(
 
 }
 
-private class KtorServiceAccountTokenTransport(
+internal class KtorServiceAccountTokenTransport(
     private val http: HttpClient,
     private val tokenEndpoint: String = TOKEN_ENDPOINT,
 ) : ServiceAccountTokenTransport {
@@ -170,9 +170,3 @@ private class KtorServiceAccountTokenTransport(
         )
     }
 }
-
-internal fun serviceAccountTokenTransportForTest(tokenEndpoint: String): ServiceAccountTokenTransport =
-    KtorServiceAccountTokenTransport(
-        http = vertexTokenHttpClientForTest(),
-        tokenEndpoint = tokenEndpoint,
-    )

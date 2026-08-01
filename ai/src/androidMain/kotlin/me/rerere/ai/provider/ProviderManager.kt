@@ -2,29 +2,22 @@ package me.rerere.ai.provider
 
 import android.content.Context
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import me.rerere.ai.provider.providers.ClaudeProvider
 import me.rerere.ai.provider.providers.GoogleProvider
 import me.rerere.ai.provider.providers.OpenAIProvider
-import okhttp3.OkHttpClient
 
 /**
  * Provider管理器，负责注册和获取Provider实例
  */
-class ProviderManager(client: OkHttpClient, context: Context) {
+class ProviderManager(client: HttpClient, context: Context) {
     // 存储已注册的Provider实例
     private val providers = mutableMapOf<String, Provider<*>>()
 
     init {
-        val ktorClient = HttpClient(OkHttp) {
-            engine {
-                preconfigured = client
-            }
-        }
         // 注册默认Provider
         registerProvider("openai", OpenAIProvider(client, context))
-        registerProvider("google", GoogleProvider(ktorClient, context))
-        registerProvider("claude", ClaudeProvider(ktorClient, context))
+        registerProvider("google", GoogleProvider(client, context))
+        registerProvider("claude", ClaudeProvider(client, context))
     }
 
     /**

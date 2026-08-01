@@ -37,11 +37,7 @@ kotlin {
             implementation(libs.androidx.core.ktx)
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.material3)
-            api(libs.okhttp)
-            api(libs.okhttp.sse)
-            api(libs.okhttp.logging)
             api(libs.ktor.client.core)
-            implementation(libs.ktor.client.okhttp)
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
@@ -50,6 +46,7 @@ kotlin {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.okhttp.mockwebserver)
+                implementation(libs.ktor.client.okhttp)
             }
         }
         named("androidDeviceTest") {

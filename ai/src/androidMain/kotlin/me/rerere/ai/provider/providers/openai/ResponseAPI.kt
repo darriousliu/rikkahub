@@ -1,13 +1,17 @@
 package me.rerere.ai.provider.providers.openai
 
+import io.ktor.client.HttpClient
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpMethod
+import io.ktor.http.Url
+import io.ktor.http.isSuccess
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.JsonArrayBuilder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -41,31 +45,20 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.metadataAs
 import me.rerere.ai.ui.toMetadata
 import me.rerere.ai.util.KeyRoulette
-import me.rerere.ai.util.configureReferHeaders
 import me.rerere.ai.util.encodeBase64
 import me.rerere.ai.util.json
 import me.rerere.ai.util.mergeCustomBody
 import me.rerere.ai.util.parseErrorDetail
-import me.rerere.ai.util.stringSafe
-import me.rerere.ai.util.toHeaders
-import me.rerere.common.http.await
+import me.rerere.common.http.SseEvent
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.common.http.jsonPrimitiveOrNull
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
-import okhttp3.sse.EventSource
-import okhttp3.sse.EventSourceListener
-import okhttp3.sse.EventSources
+import me.rerere.common.http.sseFlow
 import kotlin.time.Clock
 
 private const val TAG = "ResponseAPI"
 
 class ResponseAPI(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
     private val keyRoulette: KeyRoulette = KeyRoulette.default()
 ) : OpenAIImpl {
     override suspend fun generateText(
@@ -79,26 +72,15 @@ class ResponseAPI(
             params = params,
             stream = false,
         )
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/responses")
-            .headers(params.customHeaders.toHeaders())
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .addHeader(
-                "Authorization",
-                "Bearer ${keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())}"
-            )
-            .addHeader("Content-Type", "application/json")
-            .configureReferHeaders(providerSetting.baseUrl)
-            .build()
-
         Log.i(TAG, "generateText: ${json.encodeToString(requestBody)}")
-
-        val response = client.newCall(request).await()
-        if (!response.isSuccessful) {
-            throw Exception("Failed to get response: ${response.code} ${response.body.string()}")
+        val response = client.post("${providerSetting.baseUrl}/responses") {
+            configureOpenAIRequest(providerSetting, keyRoulette, params.customHeaders)
+            setBody(requestBody.toOpenAIJsonContent())
         }
-
-        val bodyStr = response.body?.string() ?: ""
+        val bodyStr = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            throw Exception("Failed to get response: ${response.status.value} $bodyStr")
+        }
         Log.i(TAG, "generateText: $bodyStr")
         val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
         val output = parseResponseOutput(bodyJson)
@@ -110,83 +92,37 @@ class ResponseAPI(
         providerSetting: ProviderSetting.OpenAI,
         messages: List<UIMessage>,
         params: TextGenerationParams
-    ): Flow<MessageChunk> = callbackFlow {
-        val requestBody = buildRequestBody(
-            providerSetting = providerSetting,
-            messages = messages,
-            params = params,
-            stream = true,
-        )
-        val request = Request.Builder()
-            .url("${providerSetting.baseUrl}/responses")
-            .headers(params.customHeaders.toHeaders())
-            .post(json.encodeToString(requestBody).toRequestBody("application/json".toMediaType()))
-            .addHeader(
-                "Authorization",
-                "Bearer ${keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())}"
+    ): Flow<MessageChunk> = flow {
+        try {
+            val requestBody = buildRequestBody(
+                providerSetting = providerSetting,
+                messages = messages,
+                params = params,
+                stream = true,
             )
-            .configureReferHeaders(providerSetting.baseUrl)
-            .build()
-
-        Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
-
-        val listener = object : EventSourceListener() {
-            override fun onEvent(
-                eventSource: EventSource,
-                id: String?,
-                type: String?,
-                data: String
-            ) {
-                if (data == "[DONE]") {
-                    close()
-                    return
-                }
-                Log.d(TAG, "onEvent: $id/$type $data")
-                val json = json.parseToJsonElement(data).jsonObject
-                val chunk = parseResponseDelta(json)
-                if (chunk != null) {
-                    trySend(chunk).onFailure { e ->
-                        Log.w(TAG, "onEvent: chunk dropped (${e?.message})")
+            Log.i(TAG, "streamText: ${json.encodeToString(requestBody)}")
+            client.sseFlow("${providerSetting.baseUrl}/responses") {
+                method = HttpMethod.Post
+                configureOpenAIRequest(providerSetting, keyRoulette, params.customHeaders)
+                setBody(requestBody.toOpenAIJsonContent())
+            }.collect { event ->
+                when (event) {
+                    SseEvent.Open -> Unit
+                    SseEvent.Closed -> throw OpenAIStreamCompleted()
+                    is SseEvent.Failure -> {
+                        event.toOpenAIStreamException()?.let { throw it }
+                        throw OpenAIStreamCompleted()
+                    }
+                    is SseEvent.Event -> {
+                        if (event.data == "[DONE]") throw OpenAIStreamCompleted()
+                        Log.d(TAG, "onEvent: ${event.id}/${event.type} ${event.data}")
+                        parseResponseDelta(json.parseToJsonElement(event.data).jsonObject)?.let { emit(it) }
+                        if (event.type == "response.completed") throw OpenAIStreamCompleted()
                     }
                 }
-                if (type == "response.completed") {
-                    close()
-                }
             }
-
-            override fun onFailure(eventSource: EventSource, t: Throwable?, response: Response?) {
-                var exception = t
-
-                t?.printStackTrace()
-                println("[onFailure] 发生错误: ${t?.javaClass?.name} ${t?.message} / $response")
-
-                val bodyRaw = response?.body?.stringSafe()
-                try {
-                    if (!bodyRaw.isNullOrBlank()) {
-                        val bodyElement = Json.parseToJsonElement(bodyRaw)
-                        println(bodyElement)
-                        exception = bodyElement.parseErrorDetail()
-                        Log.i(TAG, "onFailure: $exception")
-                    }
-                } catch (e: Throwable) {
-                    Log.w(TAG, "onFailure: failed to parse from $bodyRaw")
-                    e.printStackTrace()
-                } finally {
-                    close(exception)
-                }
-            }
-
-            override fun onClosed(eventSource: EventSource) {
-                close()
-            }
-        }
-
-        val eventSource = EventSources.createFactory(client)
-            .newEventSource(request, listener)
-
-        awaitClose {
-            println("[awaitClose] 关闭eventSource ")
-            eventSource.cancel()
+        } catch (_: OpenAIStreamCompleted) {
+            Log.d(TAG, "Stream ended")
         }
         // trySend 在缓冲满时会静默丢弃 delta，导致回复中间缺字 (#1295)，因此缓冲必须无界
     }.buffer(Channel.UNLIMITED)
@@ -197,7 +133,7 @@ class ResponseAPI(
         params: TextGenerationParams,
         stream: Boolean
     ): JsonObject {
-        val host = providerSetting.baseUrl.toHttpUrl().host
+        val host = Url(providerSetting.baseUrl).host
         val capabilities = resolveResponseProviderCapabilities(host)
         return buildJsonObject {
             put("model", params.model.modelId)

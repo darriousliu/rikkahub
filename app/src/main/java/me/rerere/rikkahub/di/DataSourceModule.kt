@@ -221,7 +221,15 @@ val dataSourceModule = module {
     }
 
     single {
-        ProviderManager(client = get(), context = get())
+        val aiOkHttpClient = get<OkHttpClient>()
+        ProviderManager(
+            client = HttpClient(OkHttp) {
+                engine {
+                    preconfigured = aiOkHttpClient
+                }
+            },
+            context = get(),
+        )
     }
 
     single {
