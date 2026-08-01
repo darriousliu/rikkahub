@@ -9,7 +9,8 @@ class LruCache<K, V>(
     private val store: CacheStore<K, V>,
     private val deleteOnEvict: Boolean = false,
     preloadFromStore: Boolean = false,
-    private val expireAfterWriteMillis: Long? = null
+    private val expireAfterWriteMillis: Long? = null,
+    private val nowMillis: () -> Long = System::currentTimeMillis
 ) where K : Any {
     private val lock = ReentrantLock()
 
@@ -33,7 +34,7 @@ class LruCache<K, V>(
             try {
                 val all = store.loadAllEntries()
                 lock.withLock {
-                    val now = now()
+                    val now = nowMillis()
                     for ((k, entry) in all) {
                         if (!entry.isExpired(now)) {
                             map[k] = entry
@@ -51,13 +52,13 @@ class LruCache<K, V>(
     fun get(key: K): V? {
         lock.withLock {
             map[key]?.let { entry ->
-                if (!entry.isExpired(now())) return entry.value
+                if (!entry.isExpired(nowMillis())) return entry.value
                 map.remove(key)
             }
         }
         val entry = store.loadEntry(key)
         if (entry != null) {
-            return if (!entry.isExpired(now())) {
+            return if (!entry.isExpired(nowMillis())) {
                 lock.withLock { map[key] = entry }
                 entry.value
             } else {
@@ -71,7 +72,7 @@ class LruCache<K, V>(
     fun put(key: K, value: V) = put(key, value, expireAfterWriteMillis)
 
     fun put(key: K, value: V, ttlMillis: Long?) {
-        val entry = CacheEntry(value = value, expiresAt = ttlMillis?.let { now() + it })
+        val entry = CacheEntry(value = value, expiresAt = ttlMillis?.let { nowMillis() + it })
         lock.withLock { map[key] = entry }
         try {
             store.saveEntry(key, entry)
@@ -96,18 +97,15 @@ class LruCache<K, V>(
     }
 
     fun containsKey(key: K): Boolean {
-        val inMem = lock.withLock { map[key]?.let { !it.isExpired(now()) } ?: false }
+        val inMem = lock.withLock { map[key]?.let { !it.isExpired(nowMillis()) } ?: false }
         if (inMem) return true
         val entry = store.loadEntry(key)
-        if (entry != null && !entry.isExpired(now())) return true
+        if (entry != null && !entry.isExpired(nowMillis())) return true
         if (entry != null) runCatching { store.remove(key) }
         return false
     }
 
     fun size(): Int = lock.withLock { map.size }
 
-    fun keysInMemory(): Set<K> = lock.withLock { map.filterValues { !it.isExpired(now()) }.keys.toSet() }
+    fun keysInMemory(): Set<K> = lock.withLock { map.filterValues { !it.isExpired(nowMillis()) }.keys.toSet() }
 }
-
-private fun now(): Long = System.currentTimeMillis()
-
