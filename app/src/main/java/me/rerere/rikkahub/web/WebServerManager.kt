@@ -11,6 +11,9 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
+import me.rerere.rikkahub.platform.AndroidJmDnsServiceRegistrar
+import me.rerere.rikkahub.platform.DEFAULT_SERVICE_NAME
+import me.rerere.rikkahub.platform.ServiceRegistration
 import me.rerere.rikkahub.service.ChatService
 
 private const val TAG = "WebServerManager"
@@ -36,7 +39,7 @@ class WebServerManager(
     private val settingsStore: SettingsStore,
     private val filesManager: FilesManager,
 ) {
-    private val nsdRegistrar = NsdServiceRegistrar(context)
+    private val serviceRegistrar = AndroidJmDnsServiceRegistrar(context)
     private val controller = WebServerController(
         KtorWebServerHost {
             configureWebApi(context, chatService, conversationRepo, folderRepo, settingsStore, filesManager)
@@ -97,8 +100,8 @@ class WebServerManager(
             try {
                 Log.i(TAG, "Stopping web server")
                 val lifecycle = controller.stop()
-                runCatching { nsdRegistrar.unregister() }
-                    .onFailure { Log.w(TAG, "NSD unregister failed", it) }
+                serviceRegistrar.unregister()
+                    .onFailure { Log.w(TAG, "mDNS unregister failed", it) }
                 _state.value = _state.value.copy(
                     lifecycle = lifecycle,
                     isRunning = false,
@@ -120,7 +123,7 @@ class WebServerManager(
     ) {
         appScope.launch {
             val config = WebServerConfig(port, serviceName, localhostOnly)
-            runCatching { nsdRegistrar.unregister() }
+            serviceRegistrar.unregister()
             val baseState = WebServerManagerState(
                 lifecycle = WebServerState.Starting(config),
                 isLoading = true,
@@ -143,19 +146,18 @@ class WebServerManager(
                     port = lifecycle.endpoint.port,
                 )
                 if (!lifecycle.config.localhostOnly) {
-                    runCatching {
-                        nsdRegistrar.register(
+                    serviceRegistrar.register(
+                        ServiceRegistration(
                             port = lifecycle.endpoint.port,
                             serviceName = lifecycle.config.serviceName,
-                            onRegistered = { info ->
-                                _state.value = _state.value.copy(
-                                    serviceName = info.serviceName,
-                                    hostname = info.hostname,
-                                    address = info.address.hostAddress,
-                                )
-                            },
+                        ),
+                    ).onSuccess { info ->
+                        _state.value = _state.value.copy(
+                            serviceName = info.serviceName,
+                            hostname = info.hostname,
+                            address = info.address,
                         )
-                    }.onFailure { Log.w(TAG, "NSD register failed", it) }
+                    }.onFailure { Log.w(TAG, "mDNS register failed", it) }
                 }
                 Log.i(
                     TAG,

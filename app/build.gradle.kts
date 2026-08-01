@@ -239,9 +239,6 @@ dependencies {
     implementation(libs.modelcontextprotocol.kotlin.sdk.client)
     implementation(libs.modelcontextprotocol.kotlin.sdk.core)
 
-    // jmDNS (mDNS/Bonjour for .local hostname)
-    implementation(libs.jmdns)
-
     // modules
     implementation(project(":ai"))
     implementation(project(":web"))
