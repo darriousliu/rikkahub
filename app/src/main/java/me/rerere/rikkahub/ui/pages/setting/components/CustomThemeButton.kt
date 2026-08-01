@@ -31,6 +31,7 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Tick01
 import me.rerere.rikkahub.ui.theme.CustomTheme
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
+import me.rerere.rikkahub.ui.theme.generateColorScheme
 
 @Composable
 fun CustomThemeButtonGroup(

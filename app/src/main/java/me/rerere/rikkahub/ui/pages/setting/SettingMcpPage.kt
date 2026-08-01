@@ -963,9 +963,10 @@ private fun McpToolCard(
             // 展开后显示描述和参数
             if (expanded) {
                 // 描述
-                if (!tool.description.isNullOrBlank()) {
+                val description = tool.description
+                if (!description.isNullOrBlank()) {
                     Text(
-                        text = tool.description,
+                        text = description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     )

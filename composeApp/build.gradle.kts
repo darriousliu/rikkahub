@@ -58,6 +58,8 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":ai"))
             implementation(project(":hugeicons"))
+            implementation(project(":search"))
+            implementation(project(":speech"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

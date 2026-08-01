@@ -13,9 +13,8 @@ import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
+import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
-import me.rerere.rikkahub.ui.resources.stringResource
 
 val DEFAULT_AUTO_MODEL_ID = Uuid.parse("b7055fb4-39f9-4042-a88a-0d80ed76cf08")
 
@@ -96,11 +95,11 @@ val DEFAULT_PROVIDERS = listOf(
         apiKey = "",
         builtIn = true,
         description = {
-            MarkdownBlock(
-                content = """
+            Text(
+                text = """
                     ${stringResource(Res.string.silicon_flow_description)}
                     ${stringResource(Res.string.silicon_flow_website)}
-                """.trimIndent()
+                """.trimIndent(),
             )
         },
         balanceOption = BalanceOption(
@@ -167,11 +166,11 @@ val DEFAULT_PROVIDERS = listOf(
         enabled = false,
         builtIn = true,
         description = {
-            MarkdownBlock(
-                content = """
+            Text(
+                text = """
                     小马算力是一家提供国产模型的API网关服务，使用统一接口接入多种模型
                     官网: [tokenpony.cn](https://www.tokenpony.cn/79clb)
-                """.trimIndent()
+                """.trimIndent(),
             )
         }
     ),

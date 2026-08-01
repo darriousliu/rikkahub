@@ -6,11 +6,10 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.util.InstantSerializer
+import me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
-
-private val DEFAULT_CONVERSATION_ASSISTANT_ID = Uuid.parse("0950e2dc-9bd5-4801-afa3-aa887aa36b4e")
 
 @Serializable
 data class Conversation(
@@ -93,7 +92,7 @@ data class Conversation(
     companion object {
         fun ofId(
             id: Uuid,
-            assistantId: Uuid = DEFAULT_CONVERSATION_ASSISTANT_ID,
+            assistantId: Uuid = DEFAULT_ASSISTANT_ID,
             messages: List<MessageNode> = emptyList(),
             newConversation: Boolean = false
         ) = Conversation(

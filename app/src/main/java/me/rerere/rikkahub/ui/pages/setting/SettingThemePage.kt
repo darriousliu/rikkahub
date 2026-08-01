@@ -80,6 +80,7 @@ import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.CustomTheme
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
+import me.rerere.rikkahub.ui.theme.generateColorScheme
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
