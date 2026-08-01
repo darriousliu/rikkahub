@@ -1,15 +1,19 @@
 package me.rerere.asr.providers
 
-import kotlinx.coroutines.Dispatchers
+import io.ktor.client.HttpClient
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpMethod
+import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.isSuccess
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.readLine
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.asr.ASRProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okio.BufferedSource
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
@@ -17,10 +21,9 @@ import kotlin.io.encoding.Base64
 
 private const val MAX_STEP_RETRY = 3
 private const val TAG = "BatchAsrHttp"
-private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
 internal suspend fun transcribeMiMoAudio(
-    httpClient: OkHttpClient,
+    httpClient: HttpClient,
     provider: ASRProviderSetting.MiMo,
     wavBytes: ByteArray,
 ): String {
@@ -46,34 +49,28 @@ internal suspend fun transcribeMiMoAudio(
         body.put("asr_options", JSONObject().put("language", provider.language))
     }
 
-    val request = Request.Builder()
-        .url("${provider.baseUrl.trimEnd('/')}/chat/completions")
-        .addHeader("api-key", provider.apiKey)
-        .addHeader("Content-Type", "application/json")
-        .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
-        .build()
-
-    return withContext(Dispatchers.IO) {
-        httpClient.newCall(request).execute().use { response ->
-            val responseBody = response.body.string()
-            if (!response.isSuccessful) {
-                throw IOException("MiMo ASR HTTP ${response.code}: $responseBody")
-            }
-            val json = runCatching { JSONObject(responseBody) }.getOrElse {
-                throw IOException("MiMo ASR response is not valid JSON: $responseBody")
-            }
-            json.optJSONArray("choices")
-                ?.optJSONObject(0)
-                ?.optJSONObject("message")
-                ?.optString("content", "")
-                ?.trim()
-                ?: ""
-        }
+    val response = httpClient.postBatchAsrRequest(
+        url = "${provider.baseUrl.trimEnd('/')}/chat/completions",
+        body = body.toString(),
+        headers = mapOf("api-key" to provider.apiKey),
+    )
+    val responseBody = response.bodyAsText()
+    if (!response.status.isSuccess()) {
+        throw IOException("MiMo ASR HTTP ${response.status.value}: $responseBody")
     }
+    val json = runCatching { JSONObject(responseBody) }.getOrElse {
+        throw IOException("MiMo ASR response is not valid JSON: $responseBody")
+    }
+    return json.optJSONArray("choices")
+        ?.optJSONObject(0)
+        ?.optJSONObject("message")
+        ?.optString("content", "")
+        ?.trim()
+        ?: ""
 }
 
 internal suspend fun transcribeStepAudio(
-    httpClient: OkHttpClient,
+    httpClient: HttpClient,
     provider: ASRProviderSetting.Step,
     pcmBytes: ByteArray,
 ): String {
@@ -109,25 +106,21 @@ internal suspend fun transcribeStepAudio(
                 )
         )
 
-    val request = Request.Builder()
-        .url("${provider.baseUrl.trimEnd('/')}/v1/audio/asr/sse")
-        .addHeader("Authorization", "Bearer ${provider.apiKey}")
-        .addHeader("Accept", "text/event-stream")
-        .addHeader("Content-Type", "application/json")
-        .post(body.toString().toRequestBody(JSON_MEDIA_TYPE))
-        .build()
-
     var lastError: IOException? = null
     for (attempt in 1..MAX_STEP_RETRY) {
         try {
-            return withContext(Dispatchers.IO) {
-                httpClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        throw IOException("Step ASR HTTP ${response.code}: ${response.body.string()}")
-                    }
-                    parseStepSseTranscript(response.body.source())
-                }
+            val response = httpClient.postBatchAsrRequest(
+                url = "${provider.baseUrl.trimEnd('/')}/v1/audio/asr/sse",
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${provider.apiKey}",
+                    "Accept" to "text/event-stream",
+                ),
+            )
+            if (!response.status.isSuccess()) {
+                throw IOException("Step ASR HTTP ${response.status.value}: ${response.bodyAsText()}")
             }
+            return parseStepSseTranscript(response.bodyAsChannel())
         } catch (error: IOException) {
             lastError = error
             Log.w(TAG, "transcribeStepAudio attempt $attempt/$MAX_STEP_RETRY failed: ${error.message}")
@@ -139,7 +132,7 @@ internal suspend fun transcribeStepAudio(
     throw lastError ?: IOException("Step ASR request failed")
 }
 
-private fun parseStepSseTranscript(source: BufferedSource): String {
+private suspend fun parseStepSseTranscript(source: ByteReadChannel): String {
     val transcript = StringBuilder()
     var eventType: String? = null
     val dataLines = mutableListOf<String>()
@@ -154,7 +147,7 @@ private fun parseStepSseTranscript(source: BufferedSource): String {
     }
 
     while (true) {
-        val line = source.readUtf8Line() ?: break
+        val line = source.readLine() ?: break
         if (line.isEmpty()) {
             if (dispatchEvent()) break
             continue
@@ -171,6 +164,19 @@ private fun parseStepSseTranscript(source: BufferedSource): String {
     }
     dispatchEvent()
     return transcript.toString().trim()
+}
+
+private suspend fun HttpClient.postBatchAsrRequest(
+    url: String,
+    body: String,
+    headers: Map<String, String>,
+): HttpResponse = request(url) {
+    method = HttpMethod.Post
+    headers.forEach { (name, value) ->
+        this.headers.append(name, value)
+    }
+    this.headers.append("Content-Type", "application/json; charset=utf-8")
+    setBody(ByteArrayContent(body.encodeToByteArray(), contentType = null))
 }
 
 private fun handleStepSseEvent(

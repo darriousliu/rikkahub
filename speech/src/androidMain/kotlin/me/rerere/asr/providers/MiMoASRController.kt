@@ -8,6 +8,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.SystemClock
+import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +28,6 @@ import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
-import okhttp3.OkHttpClient
 import java.io.ByteArrayOutputStream
 
 private const val TAG = "MiMoASR"
@@ -48,7 +48,7 @@ private const val MAX_SEGMENT_BYTES = 6 * 1024 * 1024
  */
 class MiMoASRController(
     private val context: Context,
-    private val httpClient: OkHttpClient,
+    private val httpClient: HttpClient,
     private val provider: ASRProviderSetting.MiMo
 ) : ASRController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
