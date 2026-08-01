@@ -19,14 +19,15 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.Base64
 import java.util.concurrent.TimeUnit
+import kotlin.io.encoding.Base64
 
 // MiMo 流式音频按文档示例使用 24kHz PCM16LE
 private const val MIMO_SAMPLE_RATE = 24000
 private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 // 只关心 delta.audio.data 其余字段忽略
 private val mimoJson = Json { ignoreUnknownKeys = true }
+private val mimoBase64 = Base64.Default.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
 
 @Serializable
 private data class MiMoChunk(
@@ -57,7 +58,7 @@ internal fun decodeMiMoAudioData(data: String): ByteArray? {
     val encoded = chunk.choices.firstOrNull()?.delta?.audio?.data ?: return null
     // 空字符串视为无音频片段
     if (encoded.isBlank()) return null
-    return Base64.getDecoder().decode(encoded)
+    return mimoBase64.decode(encoded)
 }
 
 internal class MiMoSseProcessor(
