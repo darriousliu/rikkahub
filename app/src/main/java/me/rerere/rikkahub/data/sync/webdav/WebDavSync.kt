@@ -20,6 +20,7 @@ import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.SkillPaths
 import me.rerere.rikkahub.data.sync.BackupZipPathResolver
 import me.rerere.rikkahub.data.sync.BackupZipSourcePolicy
+import me.rerere.rikkahub.data.sync.WebDavBackupTransport
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
@@ -38,19 +39,19 @@ class WebDavSync(
     private val json: Json,
     private val context: Context,
     private val httpClient: HttpClient,
-) {
+) : WebDavBackupTransport {
     private fun getClient(config: WebDavConfig): WebDavClient {
         return WebDavClient(config, httpClient)
     }
 
-    suspend fun testConnection(config: WebDavConfig) = withContext(Dispatchers.IO) {
+    override suspend fun testConnection(config: WebDavConfig) = withContext(Dispatchers.IO) {
         val client = getClient(config)
         // Test by listing the root directory
         client.propfind(depth = 0).getOrThrow()
         Log.i(TAG, "testConnection: Connection successful")
     }
 
-    suspend fun backup(config: WebDavConfig) = withContext(Dispatchers.IO) {
+    override suspend fun backup(config: WebDavConfig) = withContext(Dispatchers.IO) {
         val file = prepareBackupFile(config)
         val client = getClient(config)
 
@@ -70,7 +71,7 @@ class WebDavSync(
         file.delete()
     }
 
-    suspend fun listBackupFiles(config: WebDavConfig): List<WebDavBackupItem> = withContext(Dispatchers.IO) {
+    override suspend fun listBackupFiles(config: WebDavConfig): List<WebDavBackupItem> = withContext(Dispatchers.IO) {
         val client = getClient(config)
 
         // Ensure the backup directory exists
@@ -91,7 +92,7 @@ class WebDavSync(
             .sortedByDescending { it.lastModified }
     }
 
-    suspend fun restore(config: WebDavConfig, item: WebDavBackupItem) = withContext(Dispatchers.IO) {
+    override suspend fun restore(config: WebDavConfig, item: WebDavBackupItem) = withContext(Dispatchers.IO) {
         val client = getClient(config)
         val backupFile = File(context.cacheDir, item.displayName)
 
@@ -113,7 +114,7 @@ class WebDavSync(
         }
     }
 
-    suspend fun deleteBackupFile(config: WebDavConfig, item: WebDavBackupItem) = withContext(Dispatchers.IO) {
+    override suspend fun deleteBackupFile(config: WebDavConfig, item: WebDavBackupItem) = withContext(Dispatchers.IO) {
         val client = getClient(config)
         client.delete(item.displayName).getOrThrow()
         Log.i(TAG, "deleteBackupFile: Deleted ${item.displayName}")
@@ -406,10 +407,3 @@ class WebDavSync(
         }
     }
 }
-
-data class WebDavBackupItem(
-    val href: String,
-    val displayName: String,
-    val size: Long,
-    val lastModified: Instant,
-)

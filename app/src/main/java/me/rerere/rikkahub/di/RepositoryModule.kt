@@ -8,6 +8,8 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.repository.AndroidConversationFileStore
 import me.rerere.rikkahub.data.repository.AndroidMessageNodeReadErrorPolicy
+import me.rerere.rikkahub.data.repository.BackupRepository
+import me.rerere.rikkahub.data.repository.BackupSettingsGateway
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.FavoriteRepository
@@ -17,9 +19,14 @@ import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.RoomStatsQueries
+import me.rerere.rikkahub.data.repository.SettingsStoreBackupSettingsGateway
 import me.rerere.rikkahub.data.repository.StatsQueries
 import me.rerere.rikkahub.data.repository.StatsRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.data.sync.S3BackupTransport
+import me.rerere.rikkahub.data.sync.S3Sync
+import me.rerere.rikkahub.data.sync.WebDavBackupTransport
+import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.workspace.ProotShellRunner
 import me.rerere.workspace.RootfsInstaller
 import me.rerere.workspace.WorkspaceBindMount
@@ -67,6 +74,18 @@ val repositoryModule = module {
             queries = get(),
             launchCountProvider = { settingsStore.settingsFlow.value.launchCount },
         )
+    }
+
+    single<BackupSettingsGateway> {
+        SettingsStoreBackupSettingsGateway(get())
+    }
+
+    single<WebDavBackupTransport> { get<WebDavSync>() }
+
+    single<S3BackupTransport> { get<S3Sync>() }
+
+    single {
+        BackupRepository(get(), get(), get())
     }
 
     single {

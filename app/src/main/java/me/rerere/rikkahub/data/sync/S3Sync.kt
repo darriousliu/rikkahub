@@ -37,19 +37,19 @@ class S3Sync(
     private val json: Json,
     private val context: Context,
     private val httpClient: HttpClient,
-) {
+) : S3BackupTransport {
     private fun getS3Client(config: S3Config): S3Client {
         return S3Client(config, httpClient)
     }
 
-    suspend fun testS3(config: S3Config) = withContext(Dispatchers.IO) {
+    override suspend fun testS3(config: S3Config) = withContext(Dispatchers.IO) {
         val client = getS3Client(config)
         // Test by listing objects with max 1 result
         client.listObjects(maxKeys = 1).getOrThrow()
         Log.i(TAG, "testS3: Connection successful")
     }
 
-    suspend fun backupToS3(config: S3Config) = withContext(Dispatchers.IO) {
+    override suspend fun backupToS3(config: S3Config) = withContext(Dispatchers.IO) {
         val file = prepareBackupFile(config)
         val client = getS3Client(config)
         val key = "rikkahub_backups/${file.name}"
@@ -66,7 +66,7 @@ class S3Sync(
         file.delete()
     }
 
-    suspend fun listBackupFiles(config: S3Config): List<S3BackupItem> = withContext(Dispatchers.IO) {
+    override suspend fun listBackupFiles(config: S3Config): List<S3BackupItem> = withContext(Dispatchers.IO) {
         val client = getS3Client(config)
         val result = client.listObjects(
             prefix = "rikkahub_backups/",
@@ -86,7 +86,7 @@ class S3Sync(
             .sortedByDescending { it.lastModified }
     }
 
-    suspend fun restoreFromS3(config: S3Config, item: S3BackupItem) = withContext(Dispatchers.IO) {
+    override suspend fun restoreFromS3(config: S3Config, item: S3BackupItem) = withContext(Dispatchers.IO) {
         val client = getS3Client(config)
         val backupFile = File(context.cacheDir, item.displayName)
 
@@ -108,7 +108,7 @@ class S3Sync(
         }
     }
 
-    suspend fun deleteS3BackupFile(config: S3Config, item: S3BackupItem) = withContext(Dispatchers.IO) {
+    override suspend fun deleteS3BackupFile(config: S3Config, item: S3BackupItem) = withContext(Dispatchers.IO) {
         val client = getS3Client(config)
         client.deleteObject(item.key).getOrThrow()
         Log.i(TAG, "deleteS3BackupFile: Deleted ${item.key}")
@@ -381,10 +381,3 @@ class S3Sync(
         }
     }
 }
-
-data class S3BackupItem(
-    val key: String,
-    val displayName: String,
-    val size: Long,
-    val lastModified: Instant,
-)
