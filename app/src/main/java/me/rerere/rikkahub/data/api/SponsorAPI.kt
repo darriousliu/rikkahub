@@ -1,32 +1,38 @@
 package me.rerere.rikkahub.data.api
 
+import de.jensklingenberg.ktorfit.Ktorfit
+import de.jensklingenberg.ktorfit.http.GET
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
 import me.rerere.rikkahub.data.model.Sponsor
 import me.rerere.rikkahub.utils.JsonInstant
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import retrofit2.http.GET
 
 interface SponsorAPI {
-    @GET("/sponsors")
+    @GET("sponsors")
     suspend fun getSponsors(): List<Sponsor>
 
     companion object {
-        fun create(httpClient: OkHttpClient): SponsorAPI {
+        fun create(httpClient: HttpClient): SponsorAPI {
             return create("https://sponsors.rikka-ai.com/", httpClient)
         }
 
         internal fun create(
             baseUrl: String,
-            httpClient: OkHttpClient = OkHttpClient(),
+            httpClient: HttpClient = HttpClient(OkHttp),
         ): SponsorAPI {
-            return Retrofit.Builder()
-                .client(httpClient)
+            val configuredClient = httpClient.config {
+                expectSuccess = true
+                install(ContentNegotiation) {
+                    json(JsonInstant)
+                }
+            }
+            return Ktorfit.Builder()
                 .baseUrl(baseUrl)
-                .addConverterFactory(JsonInstant.asConverterFactory("application/json".toMediaType()))
+                .httpClient(configuredClient)
                 .build()
-                .create(SponsorAPI::class.java)
+                .createSponsorAPI()
         }
     }
 }

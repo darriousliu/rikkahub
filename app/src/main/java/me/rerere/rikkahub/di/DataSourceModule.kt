@@ -18,7 +18,6 @@ import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
-import me.rerere.rikkahub.data.api.RikkaHubAPI
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.AppDatabase
@@ -38,12 +37,9 @@ import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
 import me.rerere.search.SearchService
 import me.rerere.rikkahub.data.sync.S3Sync
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
-import retrofit2.Retrofit
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -221,7 +217,7 @@ val dataSourceModule = module {
     }
 
     single<SponsorAPI> {
-        SponsorAPI.create(get<OkHttpClient>())
+        SponsorAPI.create(get<HttpClient>())
     }
 
     single {
@@ -261,14 +257,4 @@ val dataSourceModule = module {
         )
     }
 
-    single<Retrofit> {
-        Retrofit.Builder()
-            .baseUrl("https://api.rikka-ai.com")
-            .addConverterFactory(get<Json>().asConverterFactory("application/json; charset=UTF8".toMediaType()))
-            .build()
-    }
-
-    single<RikkaHubAPI> {
-        get<Retrofit>().create(RikkaHubAPI::class.java)
-    }
 }
