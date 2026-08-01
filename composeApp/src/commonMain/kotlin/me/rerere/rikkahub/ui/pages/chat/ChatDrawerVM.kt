@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import android.app.Application
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,22 +25,20 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import me.rerere.common.time.toCalendarDate
 import me.rerere.common.time.today
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.model.Folder
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
-import me.rerere.rikkahub.service.ChatService
-import me.rerere.rikkahub.utils.toLocalString
+import me.rerere.rikkahub.service.ChatRuntime
+import me.rerere.rikkahub.utils.toLocalizedString
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 class ChatDrawerVM(
-    private val context: Application,
     private val settingsStore: SettingsStore,
     conversationRepo: ConversationRepository,
     private val folderRepo: FolderRepository,
-    private val chatService: ChatService,
+    private val chatService: ChatRuntime,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -179,13 +176,13 @@ class ChatDrawerVM(
         }
     }
 
-    private fun getDateLabel(date: LocalDate): String {
+    private fun getDateLabel(date: LocalDate): ConversationDateLabel {
         val today = Clock.System.today()
         val yesterday = today.minus(1, DateTimeUnit.DAY)
         return when (date) {
-            today -> context.getString(R.string.chat_page_today)
-            yesterday -> context.getString(R.string.chat_page_yesterday)
-            else -> date.toLocalString(date.year != today.year)
+            today -> ConversationDateLabel.Today
+            yesterday -> ConversationDateLabel.Yesterday
+            else -> ConversationDateLabel.Formatted(date.toLocalizedString(date.year != today.year))
         }
     }
 }

@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.hooks
 
-import android.net.Uri
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.getValue
@@ -87,26 +86,26 @@ class ChatInputState {
         return textContent.text.isEmpty()
     }
 
-    fun addImages(uris: List<Uri>) {
+    fun addImages(urls: List<String>) {
         val newMessage = messageContent.toMutableList()
-        uris.forEach { uri ->
-            newMessage.add(UIMessagePart.Image(uri.toString()))
+        urls.forEach { url ->
+            newMessage.add(UIMessagePart.Image(url))
         }
         messageContent = newMessage
     }
 
-    fun addVideos(uris: List<Uri>) {
+    fun addVideos(urls: List<String>) {
         val newMessage = messageContent.toMutableList()
-        uris.forEach { uri ->
-            newMessage.add(UIMessagePart.Video(uri.toString()))
+        urls.forEach { url ->
+            newMessage.add(UIMessagePart.Video(url))
         }
         messageContent = newMessage
     }
 
-    fun addAudios(uris: List<Uri>) {
+    fun addAudios(urls: List<String>) {
         val newMessage = messageContent.toMutableList()
-        uris.forEach { uri ->
-            newMessage.add(UIMessagePart.Audio(uri.toString()))
+        urls.forEach { url ->
+            newMessage.add(UIMessagePart.Audio(url))
         }
         messageContent = newMessage
     }

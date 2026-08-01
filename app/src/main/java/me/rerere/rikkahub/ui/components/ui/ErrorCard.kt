@@ -137,9 +137,9 @@ fun ErrorCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                if (error.title != null) {
+                error.title?.let { title ->
                     Text(
-                        text = error.title,
+                        text = title,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         maxLines = 1,

@@ -13,6 +13,7 @@ import coil3.compose.AsyncImage
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 
+/** Draws the assistant-specific shared chat background. */
 @Composable
 fun AssistantBackground(setting: Settings, modifier: Modifier) {
     val assistant = setting.getCurrentAssistant()

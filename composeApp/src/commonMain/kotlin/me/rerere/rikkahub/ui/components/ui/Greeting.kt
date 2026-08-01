@@ -8,7 +8,7 @@ import androidx.compose.ui.text.TextStyle
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
 @Composable
@@ -20,10 +20,10 @@ fun Greeting(
     fun getGreetingMessage(): String {
         val hour = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
         return when (hour) {
-            in 5..11 -> stringResource(id = Res.string.menu_page_morning_greeting)
-            in 12..17 -> stringResource(id = Res.string.menu_page_afternoon_greeting)
-            in 18..22 -> stringResource(id = Res.string.menu_page_evening_greeting)
-            else -> stringResource(id = Res.string.menu_page_night_greeting)
+            in 5..11 -> stringResource(Res.string.menu_page_morning_greeting)
+            in 12..17 -> stringResource(Res.string.menu_page_afternoon_greeting)
+            in 18..22 -> stringResource(Res.string.menu_page_evening_greeting)
+            else -> stringResource(Res.string.menu_page_night_greeting)
         }
     }
 

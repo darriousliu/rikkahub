@@ -1,13 +1,8 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import android.app.Application
-import android.content.Context
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -21,12 +16,10 @@ import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyInputMessage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
-import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.model.Conversation
@@ -37,25 +30,25 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.trackEvent
 import me.rerere.rikkahub.service.ChatError
-import me.rerere.rikkahub.service.ChatService
-import me.rerere.rikkahub.ui.hooks.writeStringPreference
+import me.rerere.rikkahub.service.ChatRuntime
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.UpdateChecker
-import java.util.Locale
+import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.error_title_compress_conversation
+import me.rerere.rikkahub.generated.resources.error_title_operation
+import org.jetbrains.compose.resources.getString
 import kotlin.uuid.Uuid
 
 private const val TAG = "ChatVM"
 
 class ChatVM(
     id: String,
-    private val context: Application,
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
-    private val chatService: ChatService,
+    private val chatService: ChatRuntime,
     val updateChecker: UpdateChecker,
     private val analytics: AnalyticsTracker,
-    private val filesManager: FilesManager,
     private val favoriteRepository: FavoriteRepository,
 ) : ViewModel() {
     private val _conversationId: Uuid = Uuid.parse(id)
@@ -89,7 +82,7 @@ class ChatVM(
         }
 
         // 记住对话ID, 方便下次启动恢复
-        context.writeStringPreference("lastConversationId", _conversationId.toString())
+        chatService.rememberConversation(_conversationId)
     }
 
     override fun onCleared() {
@@ -119,11 +112,11 @@ class ChatVM(
 
     fun clearAllErrors() = chatService.clearAllErrors()
 
+    fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
+        chatService.shouldCreateNewConversationOnAssistantSwitch()
+
     // 生成完成
     val generationDoneFlow: SharedFlow<Uuid> = chatService.generationDoneFlow
-
-    // MCP管理器
-    val mcpManager = chatService.mcpManager
 
     // 更新设置
     fun updateSettings(newSettings: Settings): Job {
@@ -141,7 +134,7 @@ class ChatVM(
         val newAvatar = newSettings.displaySetting.userAvatar
 
         if (oldAvatar is Avatar.Image && oldAvatar != newAvatar) {
-            filesManager.deleteChatFiles(listOf(oldAvatar.url.toUri()))
+            chatService.deleteChatFiles(listOf(oldAvatar.url))
         }
     }
 
@@ -173,7 +166,7 @@ class ChatVM(
      * @param content 消息内容
      * @param answer 是否触发消息生成，如果为false，则仅添加消息到消息列表中
      */
-    fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
+    fun handleMessageSend(content: List<UIMessagePart>, answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
         analytics.trackEvent("ai_send_message")
 
@@ -198,7 +191,7 @@ class ChatVM(
                 targetTokens,
                 keepRecentMessages
             ).onFailure {
-                chatService.addError(it, title = context.getString(R.string.error_title_compress_conversation))
+                chatService.addError(it, title = getString(Res.string.error_title_compress_conversation))
             }
         }
     }
@@ -214,11 +207,13 @@ class ChatVM(
     }
 
     fun showDeleteBlockedWhileGeneratingError() {
-        chatService.addError(
-            error = IllegalStateException("请先停止生成再删除消息"),
-            conversationId = _conversationId,
-            title = context.getString(R.string.error_title_operation)
-        )
+        viewModelScope.launch {
+            chatService.addError(
+                error = IllegalStateException("请先停止生成再删除消息"),
+                conversationId = _conversationId,
+                title = getString(Res.string.error_title_operation),
+            )
+        }
     }
 
     fun regenerateAtMessage(
@@ -293,8 +288,8 @@ class ChatVM(
         }
     }
 
-    fun translateMessage(message: UIMessage, targetLanguage: Locale) {
-        chatService.translateMessage(_conversationId, message, targetLanguage)
+    fun translateMessage(message: UIMessage, targetLanguageTag: String) {
+        chatService.translateMessage(_conversationId, message, targetLanguageTag)
     }
 
     fun generateTitle(conversation: Conversation, force: Boolean = false) {

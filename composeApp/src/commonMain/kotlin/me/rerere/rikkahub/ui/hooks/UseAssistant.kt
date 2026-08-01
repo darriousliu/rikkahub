@@ -9,6 +9,7 @@ import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.model.Assistant
 
+/** Remembers assistant selection state for shared picker surfaces. */
 @Composable
 fun rememberAssistantState(
     settings: Settings,

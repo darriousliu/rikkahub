@@ -1,11 +1,11 @@
 package me.rerere.rikkahub.ui.pages.chat
 
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,8 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +42,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,7 +64,6 @@ import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.hugeicons.stroke.TransactionHistory
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
@@ -74,24 +71,19 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.Folder
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.ui.components.ai.AssistantPicker
 import me.rerere.rikkahub.ui.components.ui.BackupReminderCard
 import me.rerere.rikkahub.ui.components.ui.Greeting
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.components.ui.UIAvatar
-import me.rerere.rikkahub.ui.components.ui.UpdateCard
 import androidx.compose.ui.draw.clip
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
 import com.dokar.sonner.ToastType
 import me.rerere.rikkahub.ui.hooks.EditStateContent
-import me.rerere.rikkahub.ui.hooks.readBooleanPreference
-import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.modifier.onClick
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.navigateToChatPage
+import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.utils.toDp
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
@@ -103,16 +95,13 @@ fun ChatDrawerContent(
     vm: ChatVM,
     settings: Settings,
     current: Conversation,
+    headerContent: @Composable ColumnScope.() -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val toaster = LocalToaster.current
-    val isPlayStore = rememberIsPlayStoreVersion()
     val repo = koinInject<ConversationRepository>()
-    val buildInfo = koinInject<PlatformBuildInfo>()
-
-    val activity = context as ComponentActivity
-    val drawerVm: ChatDrawerVM = koinViewModel(viewModelStoreOwner = activity)
+    val drawerVm: ChatDrawerVM = koinViewModel()
+    val deleteFolderGeneratingMessage = stringResource(Res.string.chat_page_delete_folder_generating)
 
     val conversations = drawerVm.conversations.collectAsLazyPagingItems()
     val folders by drawerVm.folders.collectAsStateWithLifecycle()
@@ -151,12 +140,12 @@ fun ChatDrawerContent(
     // 移动对话状态
     var showMoveToAssistantSheet by remember { mutableStateOf(false) }
     var conversationToMove by remember { mutableStateOf<Conversation?>(null) }
-    val bottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // 文件夹相关状态
     var showMoveToFolderSheet by remember { mutableStateOf(false) }
     var conversationToMoveFolder by remember { mutableStateOf<Conversation?>(null) }
-    val folderSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val folderSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var folderToRename by remember { mutableStateOf<Folder?>(null) }
     var folderToDelete by remember { mutableStateOf<Folder?>(null) }
@@ -171,9 +160,7 @@ fun ChatDrawerContent(
             modifier = Modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (settings.displaySetting.showUpdates && !isPlayStore) {
-                UpdateCard(vm, buildInfo)
-            }
+            headerContent()
 
             BackupReminderCard(
                 settings = settings,
@@ -257,7 +244,7 @@ fun ChatDrawerContent(
                     .fillMaxWidth()
                     .weight(1f),
                 onClick = {
-                    navigateToChatPage(navController, it.id)
+                    navController.clearAndNavigate(Screen.Chat(id = it.id.toString()))
                 },
                 onRegenerateTitle = {
                     vm.generateTitle(it, true)
@@ -267,7 +254,7 @@ fun ChatDrawerContent(
                         vm.deleteConversation(it).join()
                         conversations.refresh()
                         if (it.id == current.id) {
-                            navigateToChatPage(navController)
+                            navController.clearAndNavigate(Screen.Chat(id = Uuid.random().toString()))
                         }
                     }
                 },
@@ -291,7 +278,7 @@ fun ChatDrawerContent(
                     val updateJob = vm.updateSettings(it)
                     scope.launch {
                         updateJob.join()
-                        val id = if (context.readBooleanPreference("create_new_conversation_on_start", true)) {
+                        val id = if (vm.shouldCreateNewConversationOnAssistantSwitch()) {
                             Uuid.random()
                         } else {
                             repo.getConversationsOfAssistant(it.assistantId)
@@ -299,7 +286,7 @@ fun ChatDrawerContent(
                                 .firstOrNull()
                                 ?.id ?: Uuid.random()
                         }
-                        navigateToChatPage(navigator = navController, chatId = id)
+                        navController.clearAndNavigate(Screen.Chat(id = id.toString()))
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -617,7 +604,7 @@ fun ChatDrawerContent(
                             folderToDelete = null
                             conversations.refresh()
                         } else {
-                            toaster.show(context.getString(R.string.chat_page_delete_folder_generating), type = ToastType.Warning)
+                            toaster.show(deleteFolderGeneratingMessage, type = ToastType.Warning)
                         }
                     }
                 ) { Text(stringResource(Res.string.chat_page_delete)) }

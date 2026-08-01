@@ -470,7 +470,7 @@ private fun TextInputRow(
                                 state.addImages(
                                     filesManager.createChatFilesByContents(
                                         listOf(uri)
-                                    )
+                                    ).map { it.toString() }
                                 )
                             }
                             uri != null

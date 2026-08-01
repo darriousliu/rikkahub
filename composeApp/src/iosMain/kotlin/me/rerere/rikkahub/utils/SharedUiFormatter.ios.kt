@@ -41,4 +41,11 @@ internal actual object SharedUiFormatter {
         val fraction = (scaled % factor).absoluteValue.toString().padStart(fractionDigits, '0')
         return "${scaled / factor}.$fraction"
     }
+
+    actual fun formatDate(year: Int, monthNumber: Int, day: Int, includeYear: Boolean): String =
+        if (includeYear) {
+            "$year-${monthNumber.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
+        } else {
+            "${shortMonthName(monthNumber)} $day"
+        }
 }

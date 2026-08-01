@@ -32,6 +32,7 @@ import kotlin.math.sin
  *
  * 不依赖 Modifier.blur,全 API 级别可用,性能也更好。
  */
+/** Cross-platform animated gradient used behind the chat surface. */
 @Composable
 fun MeshGradientBackground(
     modifier: Modifier = Modifier,

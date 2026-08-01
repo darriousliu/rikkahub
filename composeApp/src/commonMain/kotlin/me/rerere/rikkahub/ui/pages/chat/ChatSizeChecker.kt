@@ -12,7 +12,7 @@ import androidx.compose.runtime.remember
 import me.rerere.ai.core.MessageRole
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 // 消息节点数量警告阈值
 const val MESSAGE_NODE_WARNING_THRESHOLD = 768

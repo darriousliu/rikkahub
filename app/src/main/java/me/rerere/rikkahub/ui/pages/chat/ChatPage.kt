@@ -66,10 +66,12 @@ import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
@@ -84,8 +86,10 @@ import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
+import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
 import me.rerere.rikkahub.ui.layout.currentWindowDpSize
 import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.ui.components.ui.UpdateCard
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.base64Decode
 import me.rerere.rikkahub.utils.isAllowedFileType
@@ -200,7 +204,8 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                         navController = navController,
                         current = conversation,
                         vm = vm,
-                        settings = setting
+                        settings = setting,
+                        headerContent = { ChatDrawerPlatformHeader(vm, setting) },
                     )
                 }
             ) {
@@ -232,7 +237,8 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
                         navController = navController,
                         current = conversation,
                         vm = vm,
-                        settings = setting
+                        settings = setting,
+                        headerContent = { ChatDrawerPlatformHeader(vm, setting) },
                     )
                 }
             ) {
@@ -462,7 +468,7 @@ private fun ChatPageContent(
                     inputState.setMessageText(suggestion)
                 },
                 onTranslate = { message, locale ->
-                    vm.translateMessage(message, locale)
+                    vm.translateMessage(message, locale.toLanguageTag())
                 },
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
@@ -503,6 +509,15 @@ private fun ChatPageContent(
 }
 
 @Composable
+private fun ChatDrawerPlatformHeader(vm: ChatVM, settings: Settings) {
+    val isPlayStore = rememberIsPlayStoreVersion()
+    val buildInfo = koinInject<PlatformBuildInfo>()
+    if (settings.displaySetting.showUpdates && !isPlayStore) {
+        UpdateCard(vm, buildInfo)
+    }
+}
+
+@Composable
 private fun ChatFilesPickerSheet(
     inputState: ChatInputState,
     setting: Settings,
@@ -514,6 +529,7 @@ private fun ChatFilesPickerSheet(
     val context = LocalContext.current
     val toaster = LocalToaster.current
     val filesManager: FilesManager = koinInject()
+    val mcpManager: McpManager = koinInject()
     var showInjectionSheet by remember { mutableStateOf(false) }
     var showCompressDialog by remember { mutableStateOf(false) }
 
@@ -530,7 +546,7 @@ private fun ChatFilesPickerSheet(
     var cameraOutputFile by remember { mutableStateOf<File?>(null) }
     val launchCameraCrop = useCropLauncher(
         onCroppedImageReady = { croppedUri ->
-            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)).map(Uri::toString))
             dismissAll()
         },
         onCleanup = {
@@ -542,7 +558,9 @@ private fun ChatFilesPickerSheet(
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captureSuccessful ->
         if (captureSuccessful && cameraOutputUri != null) {
             if (setting.displaySetting.skipCropImage) {
-                inputState.addImages(filesManager.createChatFilesByContents(listOf(cameraOutputUri!!)))
+                inputState.addImages(
+                    filesManager.createChatFilesByContents(listOf(cameraOutputUri!!)).map(Uri::toString)
+                )
                 cameraOutputFile?.delete()
                 cameraOutputFile = null
                 cameraOutputUri = null
@@ -571,7 +589,7 @@ private fun ChatFilesPickerSheet(
     var preCropTempFile by remember { mutableStateOf<File?>(null) }
     val launchImageCrop = useCropLauncher(
         onCroppedImageReady = { croppedUri ->
-            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)).map(Uri::toString))
             dismissAll()
         },
         onCleanup = {
@@ -584,7 +602,7 @@ private fun ChatFilesPickerSheet(
             if (selectedUris.isNotEmpty()) {
                 Log.d("ImagePickButton", "Selected URIs: $selectedUris")
                 if (setting.displaySetting.skipCropImage) {
-                    inputState.addImages(filesManager.createChatFilesByContents(selectedUris))
+                    inputState.addImages(filesManager.createChatFilesByContents(selectedUris).map(Uri::toString))
                     dismissAll()
                 } else if (selectedUris.size == 1) {
                     val tempFile = File(context.appTempFolder, "pick_temp_${System.currentTimeMillis()}.jpg")
@@ -605,7 +623,7 @@ private fun ChatFilesPickerSheet(
                         launchImageCrop(selectedUris.first())
                     }
                 } else {
-                    inputState.addImages(filesManager.createChatFilesByContents(selectedUris))
+                    inputState.addImages(filesManager.createChatFilesByContents(selectedUris).map(Uri::toString))
                     dismissAll()
                 }
             } else {
@@ -616,7 +634,7 @@ private fun ChatFilesPickerSheet(
     val videoPickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
             if (selectedUris.isNotEmpty()) {
-                inputState.addVideos(filesManager.createChatFilesByContents(selectedUris))
+                inputState.addVideos(filesManager.createChatFilesByContents(selectedUris).map(Uri::toString))
                 dismissAll()
             }
         }
@@ -624,7 +642,7 @@ private fun ChatFilesPickerSheet(
     val audioPickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
             if (selectedUris.isNotEmpty()) {
-                inputState.addAudios(filesManager.createChatFilesByContents(selectedUris))
+                inputState.addAudios(filesManager.createChatFilesByContents(selectedUris).map(Uri::toString))
                 dismissAll()
             }
         }
@@ -672,7 +690,7 @@ private fun ChatFilesPickerSheet(
             conversation = conversation,
             state = inputState,
             assistant = assistant,
-            mcpManager = vm.mcpManager,
+            mcpManager = mcpManager,
             onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
                 vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
             },

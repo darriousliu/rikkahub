@@ -20,6 +20,7 @@ import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.AndroidChatNotificationPresenter
 import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.service.ChatRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
@@ -125,6 +126,7 @@ val appModule = module {
             folderRepository = get()
         )
     }
+    single<ChatRuntime> { get<ChatService>() }
 
     single {
         WebServerManager(

@@ -25,7 +25,7 @@ import me.rerere.hugeicons.stroke.DatabaseRestore
 import me.rerere.rikkahub.data.datastore.BackupReminderConfig
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
 @Composable

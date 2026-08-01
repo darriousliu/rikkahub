@@ -29,13 +29,11 @@ val viewModelModule = module {
     viewModel<ChatVM> { params ->
         ChatVM(
             id = params.get(),
-            context = get(),
             settingsStore = get(),
             conversationRepo = get(),
             chatService = get(),
             updateChecker = get(),
             analytics = get(),
-            filesManager = get(),
             favoriteRepository = get(),
         )
     }

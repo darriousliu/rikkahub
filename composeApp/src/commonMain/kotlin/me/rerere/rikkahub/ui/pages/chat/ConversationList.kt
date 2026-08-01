@@ -50,25 +50,9 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
-import me.rerere.rikkahub.utils.toLocalString
-import kotlinx.datetime.LocalDate
 import kotlin.uuid.Uuid
-
-/**
- * Represents different types of items in the conversation list
- */
-sealed class ConversationListItem {
-    data class DateHeader(
-        val date: LocalDate,
-        val label: String
-    ) : ConversationListItem()
-    data object PinnedHeader : ConversationListItem()
-    data class Item(
-        val conversation: Conversation
-    ) : ConversationListItem()
-}
 
 @Composable
 fun ColumnScope.ConversationList(
@@ -115,7 +99,7 @@ fun ColumnScope.ConversationList(
                     color = MaterialTheme.colorScheme.surfaceContainerLow
                 ) {
                     Text(
-                        text = stringResource(id = Res.string.chat_page_no_conversations),
+                        text = stringResource(Res.string.chat_page_no_conversations),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(16.dp)
@@ -137,7 +121,11 @@ fun ColumnScope.ConversationList(
             when (val item = conversations[index]) {
                 is ConversationListItem.DateHeader -> {
                     DateHeaderItem(
-                        label = item.label,
+                        label = when (val label = item.label) {
+                            ConversationDateLabel.Today -> stringResource(Res.string.chat_page_today)
+                            ConversationDateLabel.Yesterday -> stringResource(Res.string.chat_page_yesterday)
+                            is ConversationDateLabel.Formatted -> label.value
+                        },
                         modifier = Modifier.animateItem()
                     )
                 }
@@ -261,7 +249,7 @@ private fun ConversationItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = conversation.title.ifBlank { stringResource(id = Res.string.chat_page_new_message) },
+                text = conversation.title.ifBlank { stringResource(Res.string.chat_page_new_message) },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -311,7 +299,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(id = Res.string.chat_page_regenerate_title))
+                        Text(stringResource(Res.string.chat_page_regenerate_title))
                     },
                     onClick = {
                         onRegenerateTitle(conversation)
@@ -350,7 +338,7 @@ private fun ConversationItem(
 
                 DropdownMenuItem(
                     text = {
-                        Text(stringResource(id = Res.string.chat_page_delete))
+                        Text(stringResource(Res.string.chat_page_delete))
                     },
                     onClick = {
                         onDelete(conversation)

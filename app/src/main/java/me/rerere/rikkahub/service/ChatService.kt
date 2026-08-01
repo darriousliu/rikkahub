@@ -84,6 +84,8 @@ import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.web.BadRequestException
 import me.rerere.rikkahub.web.NotFoundException
 import me.rerere.rikkahub.utils.applyPlaceholders
+import me.rerere.rikkahub.ui.hooks.writeStringPreference
+import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.workspace.WorkspaceShellStatus
 import java.util.Locale
 import kotlin.time.Clock
@@ -100,19 +102,6 @@ internal fun backgroundTextGenerationParams(
     customHeaders = model.customHeaders,
     customBody = model.customBodies,
 )
-
-data class ChatError(
-    val id: Uuid = Uuid.random(),
-    val title: String? = null,
-    val error: Throwable,
-    val conversationId: Uuid? = null,
-    val timestamp: Long = System.currentTimeMillis(),
-    val solution: ChatErrorSolution? = null,
-)
-
-enum class ChatErrorSolution {
-    CheckTitleModelSettings,
-}
 
 private val inputTransformers by lazy {
     listOf(
@@ -148,7 +137,7 @@ class ChatService(
     private val skillManager: SkillManager,
     private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
-) {
+) : ChatRuntime {
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
 
@@ -158,13 +147,13 @@ class ChatService(
 
     // 错误状态
     private val _errors = MutableStateFlow<List<ChatError>>(emptyList())
-    val errors: StateFlow<List<ChatError>> = _errors.asStateFlow()
+    override val errors: StateFlow<List<ChatError>> = _errors.asStateFlow()
 
-    fun addError(
+    override fun addError(
         error: Throwable,
-        conversationId: Uuid? = null,
-        title: String? = null,
-        solution: ChatErrorSolution? = null,
+        conversationId: Uuid?,
+        title: String?,
+        solution: ChatErrorSolution?,
     ) {
         if (error is CancellationException) return
         _errors.update {
@@ -172,17 +161,17 @@ class ChatService(
         }
     }
 
-    fun dismissError(id: Uuid) {
+    override fun dismissError(id: Uuid) {
         _errors.update { list -> list.filter { it.id != id } }
     }
 
-    fun clearAllErrors() {
+    override fun clearAllErrors() {
         _errors.value = emptyList()
     }
 
     // 生成完成流
     private val _generationDoneFlow = MutableSharedFlow<Uuid>()
-    val generationDoneFlow: SharedFlow<Uuid> = _generationDoneFlow.asSharedFlow()
+    override val generationDoneFlow: SharedFlow<Uuid> = _generationDoneFlow.asSharedFlow()
 
     fun cleanup() = runCatching {
         sessions.clear().forEach { it.cleanup() }
@@ -224,11 +213,11 @@ class ChatService(
 
     // ---- 引用管理 ----
 
-    fun addConversationReference(conversationId: Uuid) {
+    override fun addConversationReference(conversationId: Uuid) {
         getOrCreateSession(conversationId).acquire()
     }
 
-    fun removeConversationReference(conversationId: Uuid) {
+    override fun removeConversationReference(conversationId: Uuid) {
         sessions[conversationId]?.release()
     }
 
@@ -246,21 +235,21 @@ class ChatService(
 
     // ---- 对话状态访问 ----
 
-    fun getConversationFlow(conversationId: Uuid): StateFlow<Conversation> {
+    override fun getConversationFlow(conversationId: Uuid): StateFlow<Conversation> {
         return getOrCreateSession(conversationId).state
     }
 
-    fun getGenerationJobStateFlow(conversationId: Uuid): Flow<Job?> {
+    override fun getGenerationJobStateFlow(conversationId: Uuid): Flow<Job?> {
         val session = sessions[conversationId] ?: return flowOf(null)
         return session.generationJob
     }
 
-    fun getProcessingStatusFlow(conversationId: Uuid): StateFlow<String?> {
+    override fun getProcessingStatusFlow(conversationId: Uuid): StateFlow<String?> {
         val session = sessions[conversationId] ?: return MutableStateFlow(null)
         return session.processingStatus
     }
 
-    fun getConversationJobs(): Flow<Map<Uuid, Job?>> {
+    override fun getConversationJobs(): Flow<Map<Uuid, Job?>> {
         return _sessionsVersion.flatMapLatest {
             val currentSessions = sessions.valuesSnapshot()
             if (currentSessions.isEmpty()) {
@@ -277,7 +266,7 @@ class ChatService(
 
     // ---- 初始化对话 ----
 
-    suspend fun initializeConversation(conversationId: Uuid) {
+    override suspend fun initializeConversation(conversationId: Uuid) {
         getOrCreateSession(conversationId) // 确保 session 存在
         val conversation = conversationRepo.getConversationById(conversationId)
         if (conversation != null) {
@@ -296,9 +285,20 @@ class ChatService(
         }
     }
 
+    override fun rememberConversation(conversationId: Uuid) {
+        context.writeStringPreference("lastConversationId", conversationId.toString())
+    }
+
+    override fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
+        context.readBooleanPreference("create_new_conversation_on_start", true)
+
+    override fun deleteChatFiles(urls: List<String>) {
+        filesManager.deleteChatFiles(urls.map { it.toUri() })
+    }
+
     // ---- 发送消息 ----
 
-    fun sendMessage(conversationId: Uuid, content: List<UIMessagePart>, answer: Boolean = true) {
+    override fun sendMessage(conversationId: Uuid, content: List<UIMessagePart>, answer: Boolean) {
         if (content.isEmptyInputMessage()) return
 
         val session = getOrCreateSession(conversationId)
@@ -359,10 +359,10 @@ class ChatService(
 
     // ---- 重新生成消息 ----
 
-    fun regenerateAtMessage(
+    override fun regenerateAtMessage(
         conversationId: Uuid,
         message: UIMessage,
-        regenerateAssistantMsg: Boolean = true
+        regenerateAssistantMsg: Boolean,
     ) {
         val session = getOrCreateSession(conversationId)
         session.getJob()?.cancel()
@@ -401,12 +401,12 @@ class ChatService(
 
     // ---- 处理工具调用审批 ----
 
-    fun handleToolApproval(
+    override fun handleToolApproval(
         conversationId: Uuid,
         toolCallId: String,
         approved: Boolean,
-        reason: String = "",
-        answer: String? = null,
+        reason: String,
+        answer: String?,
     ) {
         val session = getOrCreateSession(conversationId)
         session.getJob()?.cancel()
@@ -729,10 +729,10 @@ class ChatService(
 
     // ---- 生成标题 ----
 
-    suspend fun generateTitle(
+    override suspend fun generateTitle(
         conversationId: Uuid,
         conversation: Conversation,
-        force: Boolean = false
+        force: Boolean,
     ) {
         val shouldGenerate = when {
             force -> true
@@ -780,7 +780,7 @@ class ChatService(
 
     // ---- 生成建议 ----
 
-    suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
+    override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
         runCatching {
             val settings = settingsStore.settingsFlow.first()
             if (!settings.enableSuggestion) return
@@ -829,12 +829,12 @@ class ChatService(
 
     // ---- 压缩对话历史 ----
 
-    suspend fun compressConversation(
+    override suspend fun compressConversation(
         conversationId: Uuid,
         conversation: Conversation,
         additionalPrompt: String,
         targetTokens: Int,
-        keepRecentMessages: Int = 32
+        keepRecentMessages: Int,
     ): Result<Unit> = runCatching {
         val settings = settingsStore.settingsFlow.first()
         val model = settings.findModelById(settings.compressModelId)
@@ -922,7 +922,7 @@ class ChatService(
         session.state.value = conversation
     }
 
-    fun updateConversationState(conversationId: Uuid, update: (Conversation) -> Conversation) {
+    override fun updateConversationState(conversationId: Uuid, update: (Conversation) -> Conversation) {
         val current = getConversationFlow(conversationId).value
         updateConversation(conversationId, update(current))
     }
@@ -935,7 +935,7 @@ class ChatService(
      * 后续任意 saveConversation(id, state.value) 会用整对象把 folder_id 覆盖回旧值，导致移动丢失。
      * 先改内存可确保这段窗口内的整对象保存也带上新 folderId。
      */
-    suspend fun moveConversationToFolder(conversationId: Uuid, folderId: Uuid?) {
+    override suspend fun moveConversationToFolder(conversationId: Uuid, folderId: Uuid?) {
         if (sessions.containsKey(conversationId)) {
             updateConversationState(conversationId) { it.copy(folderId = folderId) }
         }
@@ -946,7 +946,7 @@ class ChatService(
      * 文件夹内是否存在正在生成回复的会话。
      * 仅活跃 session 可能在生成；内存态 folderId 为权威（移动会先同步内存态）。
      */
-    fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean {
+    override fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean {
         return sessions.valuesSnapshot().any { it.isGenerating && it.state.value.folderId == folderId }
     }
 
@@ -957,7 +957,7 @@ class ChatService(
      * 否则 clearFolder 只改了数据库，而活跃 session 内存态仍指向该文件夹，
      * 后续整对象保存会写回一个已被删除的 folder_id，导致会话在列表中悬空。
      */
-    suspend fun deleteFolder(folderId: Uuid) {
+    override suspend fun deleteFolder(folderId: Uuid) {
         sessions.valuesSnapshot()
             .filter { it.state.value.folderId == folderId }
             .forEach { updateConversationState(it.id) { c -> c.copy(folderId = null) } }
@@ -976,7 +976,7 @@ class ChatService(
         }
     }
 
-    suspend fun saveConversation(conversationId: Uuid, conversation: Conversation) {
+    override suspend fun saveConversation(conversationId: Uuid, conversation: Conversation) {
         val exists = conversationRepo.existsConversationById(conversation.id)
         if (!exists && conversation.title.isBlank() && conversation.messageNodes.isEmpty()) {
             return // 新会话且为空时不保存
@@ -994,13 +994,14 @@ class ChatService(
 
     // ---- 翻译消息 ----
 
-    fun translateMessage(
+    override fun translateMessage(
         conversationId: Uuid,
         message: UIMessage,
-        targetLanguage: Locale
+        targetLanguageTag: String,
     ) {
         appScope.launch(Dispatchers.IO) {
             try {
+                val targetLanguage = Locale.forLanguageTag(targetLanguageTag)
                 val settings = settingsStore.settingsFlow.first()
 
                 val messageText = message.parts.filterIsInstance<UIMessagePart.Text>()
@@ -1058,7 +1059,7 @@ class ChatService(
 
     // ---- 消息操作 ----
 
-    suspend fun editMessage(
+    override suspend fun editMessage(
         conversationId: Uuid,
         messageId: Uuid,
         parts: List<UIMessagePart>
@@ -1092,7 +1093,7 @@ class ChatService(
         saveConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
     }
 
-    suspend fun forkConversationAtMessage(
+    override suspend fun forkConversationAtMessage(
         conversationId: Uuid,
         messageId: Uuid
     ): Conversation {
@@ -1178,7 +1179,7 @@ class ChatService(
         saveConversation(conversationId, updatedConversation)
     }
 
-    suspend fun deleteMessage(
+    override suspend fun deleteMessage(
         conversationId: Uuid,
         message: UIMessage,
     ) {
@@ -1232,7 +1233,7 @@ class ChatService(
         }
     }
 
-    fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
+    override fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
         val currentConversation = getConversationFlow(conversationId).value
         val updatedNodes = currentConversation.messageNodes.map { node ->
             if (node.messages.any { it.id == messageId }) {
@@ -1253,7 +1254,7 @@ class ChatService(
     }
 
     // 停止当前会话生成任务（不清理会话缓存）
-    suspend fun stopGeneration(conversationId: Uuid) {
+    override suspend fun stopGeneration(conversationId: Uuid) {
         val job = sessions[conversationId]?.getJob() ?: return
         job.cancel()
         runCatching { job.join() }
