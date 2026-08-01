@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -27,9 +28,15 @@ kotlin {
     iosSimulatorArm64()
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(project.dependencies.platform(libs.androidx.compose.bom))
-            implementation(libs.androidx.material3)
+        commonMain {
+            kotlin.srcDir("material-color-utilities/kotlin")
+            dependencies {
+                implementation(compose.material3)
+                implementation(compose.ui)
+            }
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
         named("androidHostTest") {
             dependencies {
@@ -42,11 +49,5 @@ kotlin {
                 implementation(libs.androidx.espresso.core)
             }
         }
-    }
-}
-
-androidComponents {
-    onVariants {
-        it.sources.kotlin?.addStaticSourceDirectory("material-color-utilities/kotlin")
     }
 }
