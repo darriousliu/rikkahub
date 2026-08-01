@@ -2,6 +2,8 @@ package me.rerere.search
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,7 +15,7 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.common.js.DefaultJavaScriptExecutor
 import me.rerere.common.js.JavaScriptExecutionRequest
 import me.rerere.common.js.JavaScriptExecutor
-import me.rerere.common.js.OkHttpJavaScriptHttpTransport
+import me.rerere.common.js.KtorJavaScriptHttpTransport
 import me.rerere.common.js.textOrNull
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
@@ -64,8 +66,7 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
         val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
         val script = serviceOptions.searchScript.ifBlank { error("Search script is empty") }
 
-        val resultJson = executeCustomJavaScript(
-            executor = DefaultJavaScriptExecutor(OkHttpJavaScriptHttpTransport(httpClient)),
+        val resultJson = executeCustomJavaScriptWithHttpClient(
             userScript = script,
             invocation = "search(${quoteJsString(query)}, ${commonOptions.resultSize})",
         )
@@ -83,8 +84,7 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
         val script = serviceOptions.scrapeScript.ifBlank { error("Scrape script is empty") }
         val urlsJson = params["urls"]?.toString() ?: error("urls is required")
 
-        val resultJson = executeCustomJavaScript(
-            executor = DefaultJavaScriptExecutor(OkHttpJavaScriptHttpTransport(httpClient)),
+        val resultJson = executeCustomJavaScriptWithHttpClient(
             userScript = script,
             invocation = "scrape($urlsJson)",
         )
@@ -108,6 +108,26 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
         }
         sb.append("\"")
         return sb.toString()
+    }
+
+    private suspend fun executeCustomJavaScriptWithHttpClient(
+        userScript: String,
+        invocation: String,
+    ): String {
+        val ktorClient = HttpClient(OkHttp) {
+            engine {
+                preconfigured = httpClient
+            }
+        }
+        return try {
+            executeCustomJavaScript(
+                executor = DefaultJavaScriptExecutor(KtorJavaScriptHttpTransport(ktorClient)),
+                userScript = userScript,
+                invocation = invocation,
+            )
+        } finally {
+            ktorClient.close()
+        }
     }
 }
 

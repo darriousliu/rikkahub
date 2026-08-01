@@ -50,6 +50,8 @@ kotlin {
             implementation(project(":ai"))
             implementation(project(":common"))
             implementation(libs.okhttp)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
