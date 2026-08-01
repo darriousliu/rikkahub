@@ -17,7 +17,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -39,15 +39,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
-import me.rerere.rikkahub.utils.toLocalDateTime
+import me.rerere.rikkahub.utils.toLocalizedDateTime
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Instant
 
 @Composable
@@ -62,7 +62,7 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 navigationIcon = {
                     BackButton()
                 },
@@ -102,7 +102,11 @@ fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
             items(favorites, key = { it.id }) { item ->
                 SwipeableFavoriteCard(
                     item = item,
-                    onClick = { navigateToChatPage(navController, item.conversationId, nodeId = item.nodeId) },
+                    onClick = {
+                        navController.clearAndNavigate(
+                            Screen.Chat(id = item.conversationId.toString(), nodeId = item.nodeId.toString())
+                        )
+                    },
                     onDelete = {
                         scope.launch {
                             val entity = vm.getEntityByRefKey(item.refKey) ?: return@launch
@@ -200,7 +204,7 @@ private fun FavoriteCard(
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium,
                 )
-                val dateText = Instant.fromEpochMilliseconds(item.createdAt).toLocalDateTime()
+                val dateText = Instant.fromEpochMilliseconds(item.createdAt).toLocalizedDateTime()
                 Text(
                     text = item.preview,
                     maxLines = 4,

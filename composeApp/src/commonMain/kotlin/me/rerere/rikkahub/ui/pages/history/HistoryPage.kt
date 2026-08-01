@@ -1,4 +1,4 @@
-package me.rerere.rikkahub.ui.pages.history;
+package me.rerere.rikkahub.ui.pages.history
 
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Pin
@@ -52,11 +52,10 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
-import me.rerere.rikkahub.utils.toLocalDateTime
+import me.rerere.rikkahub.utils.toLocalizedDateTime
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun HistoryPage(vm: HistoryVM = koinViewModel()) {
@@ -111,7 +110,7 @@ fun HistoryPage(vm: HistoryVM = koinViewModel()) {
                 SwipeableConversationItem(
                     conversation = conversation,
                     onClick = {
-                        navigateToChatPage(navController, conversation.id)
+                        navController.clearAndNavigate(Screen.Chat(id = conversation.id.toString()))
                     },
                     onDelete = {
                         scope.launch {
@@ -257,7 +256,7 @@ private fun ConversationItem(
                 }
             },
             supportingContent = {
-                Text(conversation.createAt.toLocalDateTime())
+                Text(conversation.createAt.toLocalizedDateTime())
             },
             trailingContent = {
                 IconButton(

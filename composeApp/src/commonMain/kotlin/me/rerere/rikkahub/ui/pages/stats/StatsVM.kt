@@ -24,6 +24,6 @@ class StatsVM(
 
     private suspend fun loadStats() {
         delay(50)
-        _stats.value = withContext(Dispatchers.IO) { statsRepository.loadStats() }
+        _stats.value = withContext(Dispatchers.Default) { statsRepository.loadStats() }
     }
 }

@@ -26,7 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -49,11 +49,12 @@ import me.rerere.rikkahub.data.model.AppStats
 import me.rerere.rikkahub.data.repository.heatmapStartDate
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
+import me.rerere.rikkahub.utils.SharedUiFormatter
 import me.rerere.rikkahub.utils.plus
-import me.rerere.rikkahub.utils.toShortLocalString
+import me.rerere.rikkahub.utils.toLocalizedShortString
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 
 @Composable
@@ -65,7 +66,7 @@ fun StatsPage(vm: StatsVM = koinViewModel()) {
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(Res.string.stats_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
@@ -221,7 +222,7 @@ private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
                                 text = if (labelDate.month.number == 1) {
                                     labelDate.year.toString()
                                 } else {
-                                    labelDate.month.toShortLocalString()
+                                    labelDate.month.toLocalizedShortString()
                                 },
                                 modifier = Modifier.wrapContentWidth(unbounded = true),
                                 style = MaterialTheme.typography.labelSmall,
@@ -364,14 +365,14 @@ private fun StatCard(
 }
 
 private fun formatCount(count: Long): String = when {
-    count >= 1_000_000 -> "%.1fM".format(count / 1_000_000.0)
-    count >= 1_000 -> "%.1fK".format(count / 1_000.0)
+    count >= 1_000_000 -> "${SharedUiFormatter.formatDecimal(count / 1_000_000.0, 1)}M"
+    count >= 1_000 -> "${SharedUiFormatter.formatDecimal(count / 1_000.0, 1)}K"
     else -> count.toString()
 }
 
 private fun formatTokens(count: Long): String = when {
-    count >= 1_000_000_000 -> "%.2fB".format(count / 1_000_000_000.0)
-    count >= 1_000_000 -> "%.2fM".format(count / 1_000_000.0)
-    count >= 1_000 -> "%.1fK".format(count / 1_000.0)
+    count >= 1_000_000_000 -> "${SharedUiFormatter.formatDecimal(count / 1_000_000_000.0, 2)}B"
+    count >= 1_000_000 -> "${SharedUiFormatter.formatDecimal(count / 1_000_000.0, 2)}M"
+    count >= 1_000 -> "${SharedUiFormatter.formatDecimal(count / 1_000.0, 1)}K"
     else -> count.toString()
 }
