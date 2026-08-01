@@ -18,6 +18,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 interface AsrWebSocketSession {
     val queueSize: Long
@@ -54,7 +57,7 @@ interface AsrWebSocketTransport {
 class KtorAsrWebSocketTransport(
     private val client: HttpClient,
 ) : AsrWebSocketTransport {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     override fun connect(
         url: String,
@@ -118,17 +121,17 @@ private fun String.toWebSocketUrl(): String = when {
     else -> this
 }
 
+@OptIn(ExperimentalAtomicApi::class)
 private class KtorAsrWebSocketSession : AsrWebSocketSession {
     private val outgoing = Channel<QueuedFrame>(Channel.UNLIMITED)
-    private val queueLock = Any()
-    private var queuedBytes = 0L
-    private var acceptingFrames = true
+    private val queuedBytes = AtomicLong(0L)
+    private val acceptingFrames = AtomicBoolean(true)
 
     override val queueSize: Long
-        get() = synchronized(queueLock) { queuedBytes }
+        get() = queuedBytes.load()
 
     internal val isClosing: Boolean
-        get() = synchronized(queueLock) { !acceptingFrames }
+        get() = !acceptingFrames.load()
 
     override fun send(text: String): Boolean = enqueue(
         QueuedFrame.Text(text),
@@ -141,11 +144,8 @@ private class KtorAsrWebSocketSession : AsrWebSocketSession {
     )
 
     override fun close(code: Int, reason: String): Boolean {
-        val accepted = synchronized(queueLock) {
-            if (!acceptingFrames) return false
-            acceptingFrames = false
-            outgoing.trySend(QueuedFrame.Close(code, reason)).isSuccess
-        }
+        if (!acceptingFrames.compareAndSet(true, false)) return false
+        val accepted = outgoing.trySend(QueuedFrame.Close(code, reason)).isSuccess
         outgoing.close()
         return accepted
     }
@@ -172,27 +172,30 @@ private class KtorAsrWebSocketSession : AsrWebSocketSession {
     }
 
     internal fun finish() {
-        synchronized(queueLock) {
-            acceptingFrames = false
-            queuedBytes = 0L
-        }
+        acceptingFrames.store(false)
+        queuedBytes.store(0L)
         outgoing.close()
     }
 
-    private fun enqueue(frame: QueuedFrame, byteCount: Long): Boolean = synchronized(queueLock) {
-        if (!acceptingFrames) return false
-        queuedBytes += byteCount
+    private fun enqueue(frame: QueuedFrame, byteCount: Long): Boolean {
+        if (!acceptingFrames.load()) return false
+        updateQueuedBytes { it + byteCount }
         if (outgoing.trySend(frame).isSuccess) {
-            true
+            return true
         } else {
-            queuedBytes -= byteCount
-            false
+            updateQueuedBytes { (it - byteCount).coerceAtLeast(0L) }
+            return false
         }
     }
 
     private fun removeQueuedBytes(byteCount: Long) {
-        synchronized(queueLock) {
-            queuedBytes = (queuedBytes - byteCount).coerceAtLeast(0L)
+        updateQueuedBytes { (it - byteCount).coerceAtLeast(0L) }
+    }
+
+    private fun updateQueuedBytes(transform: (Long) -> Long) {
+        while (true) {
+            val snapshot = queuedBytes.load()
+            if (queuedBytes.compareAndSet(snapshot, transform(snapshot))) return
         }
     }
 }

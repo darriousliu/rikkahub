@@ -12,15 +12,26 @@ import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readLine
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.asr.ASRProviderSetting
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.IOException
+import kotlinx.io.IOException
 import kotlin.io.encoding.Base64
 
 private const val MAX_STEP_RETRY = 3
 private const val TAG = "BatchAsrHttp"
+private val batchAsrJson = Json { ignoreUnknownKeys = true }
 
 internal suspend fun transcribeMiMoAudio(
     httpClient: HttpClient,
@@ -28,25 +39,24 @@ internal suspend fun transcribeMiMoAudio(
     wavBytes: ByteArray,
 ): String {
     val b64 = Base64.Default.encode(wavBytes)
-    val message = JSONObject()
-        .put("role", "user")
-        .put(
-            "content",
-            JSONArray().put(
-                JSONObject()
-                    .put("type", "input_audio")
-                    .put(
-                        "input_audio",
-                        JSONObject().put("data", "data:audio/wav;base64,$b64")
-                    )
-            )
-        )
-
-    val body = JSONObject()
-        .put("model", provider.model)
-        .put("messages", JSONArray().put(message))
-    if (provider.language.isNotBlank()) {
-        body.put("asr_options", JSONObject().put("language", provider.language))
+    val body = buildJsonObject {
+        put("model", provider.model)
+        put("messages", buildJsonArray {
+            add(buildJsonObject {
+                put("role", "user")
+                put("content", buildJsonArray {
+                    add(buildJsonObject {
+                        put("type", "input_audio")
+                        put("input_audio", buildJsonObject {
+                            put("data", "data:audio/wav;base64,$b64")
+                        })
+                    })
+                })
+            })
+        })
+        if (provider.language.isNotBlank()) {
+            put("asr_options", buildJsonObject { put("language", provider.language) })
+        }
     }
 
     val response = httpClient.postBatchAsrRequest(
@@ -58,13 +68,17 @@ internal suspend fun transcribeMiMoAudio(
     if (!response.status.isSuccess()) {
         throw IOException("MiMo ASR HTTP ${response.status.value}: $responseBody")
     }
-    val json = runCatching { JSONObject(responseBody) }.getOrElse {
+    val json = runCatching { batchAsrJson.parseToJsonElement(responseBody).jsonObject }.getOrElse {
         throw IOException("MiMo ASR response is not valid JSON: $responseBody")
     }
-    return json.optJSONArray("choices")
-        ?.optJSONObject(0)
-        ?.optJSONObject("message")
-        ?.optString("content", "")
+    return (json["choices"] as? JsonArray)
+        ?.firstOrNull()
+        ?.let { it as? JsonObject }
+        ?.get("message")
+        ?.let { it as? JsonObject }
+        ?.get("content")
+        ?.let { it as? JsonPrimitive }
+        ?.contentOrNull
         ?.trim()
         ?: ""
 }
@@ -74,37 +88,31 @@ internal suspend fun transcribeStepAudio(
     provider: ASRProviderSetting.Step,
     pcmBytes: ByteArray,
 ): String {
-    val transcription = JSONObject()
-        .put("model", provider.model)
-        .put("enable_itn", provider.enableItn)
-        .put("enable_timestamp", provider.enableTimestamp)
-    if (provider.language.isNotBlank()) {
-        transcription.put("language", provider.language)
-    }
-    if (provider.hotwords.isNotEmpty()) {
-        transcription.put("hotwords", JSONArray(provider.hotwords))
+    val transcription = buildJsonObject {
+        put("model", provider.model)
+        put("enable_itn", provider.enableItn)
+        put("enable_timestamp", provider.enableTimestamp)
+        if (provider.language.isNotBlank()) put("language", provider.language)
+        if (provider.hotwords.isNotEmpty()) {
+            put("hotwords", buildJsonArray { provider.hotwords.forEach { add(it) } })
+        }
     }
 
-    val body = JSONObject()
-        .put(
-            "audio",
-            JSONObject()
-                .put("data", Base64.Default.encode(pcmBytes))
-                .put(
-                    "input",
-                    JSONObject()
-                        .put("transcription", transcription)
-                        .put(
-                            "format",
-                            JSONObject()
-                                .put("type", "pcm")
-                                .put("codec", "pcm_s16le")
-                                .put("rate", provider.sampleRate)
-                                .put("bits", 16)
-                                .put("channel", 1)
-                        )
-                )
-        )
+    val body = buildJsonObject {
+        put("audio", buildJsonObject {
+            put("data", Base64.Default.encode(pcmBytes))
+            put("input", buildJsonObject {
+                put("transcription", transcription)
+                put("format", buildJsonObject {
+                    put("type", "pcm")
+                    put("codec", "pcm_s16le")
+                    put("rate", provider.sampleRate)
+                    put("bits", 16)
+                    put("channel", 1)
+                })
+            })
+        })
+    }
 
     var lastError: IOException? = null
     for (attempt in 1..MAX_STEP_RETRY) {
@@ -186,9 +194,9 @@ private fun handleStepSseEvent(
 ): Boolean {
     if (data == "[DONE]") return true
 
-    val json = runCatching { JSONObject(data) }.getOrNull()
+    val json = runCatching { batchAsrJson.parseToJsonElement(data).jsonObject }.getOrNull()
     val type = eventType?.takeIf { it.isNotBlank() }
-        ?: json?.optString("type")?.takeIf { it.isNotBlank() }
+        ?: json?.get("type")?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
 
     return when (type) {
         "transcript.text.delta" -> {
@@ -214,33 +222,33 @@ private fun handleStepSseEvent(
     }
 }
 
-private fun extractStepTranscriptText(json: JSONObject?, fallback: String): String {
+private fun extractStepTranscriptText(json: JsonObject?, fallback: String): String {
     if (json == null) return fallback
     for (key in listOf("delta", "text", "content", "transcript")) {
-        val value = json.opt(key) ?: continue
-        if (value is JSONObject) {
+        val value = json[key] ?: continue
+        if (value is JsonObject) {
             val nestedValue = extractStepTranscriptText(value, "")
             if (nestedValue.isNotBlank()) return nestedValue
         } else {
-            val text = value.toString()
+            val text = (value as? JsonPrimitive)?.contentOrNull.orEmpty()
             if (text.isNotBlank()) return text
         }
     }
 
     for (key in listOf("data", "result", "transcript")) {
-        val nested = json.optJSONObject(key) ?: continue
+        val nested = json[key] as? JsonObject ?: continue
         val value = extractStepTranscriptText(nested, "")
         if (value.isNotBlank()) return value
     }
     return fallback
 }
 
-private fun extractStepErrorMessage(json: JSONObject?, fallback: String): String {
+private fun extractStepErrorMessage(json: JsonObject?, fallback: String): String {
     if (json == null) return fallback
-    val error = json.optJSONObject("error")
+    val error = json["error"] as? JsonObject
     if (error != null) {
-        val message = error.optString("message", "")
+        val message = error["message"]?.jsonPrimitive?.contentOrNull.orEmpty()
         if (message.isNotBlank()) return message
     }
-    return json.optString("message", fallback)
+    return json["message"]?.jsonPrimitive?.contentOrNull ?: fallback
 }

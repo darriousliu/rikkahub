@@ -44,6 +44,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(project(":common"))
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.websockets)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.io.core)
             implementation(libs.kotlinx.serialization.json)
