@@ -3,14 +3,12 @@ package me.rerere.rikkahub.ui.pages.backup.tabs
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.File01
 import me.rerere.hugeicons.stroke.FileImport
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,22 +18,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.delete
+import io.github.vinceglb.filekit.write
 import me.rerere.common.time.toCompactFileTimestamp
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.StickyHeader
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
-import me.rerere.rikkahub.ui.resources.stringResource
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import kotlin.time.Clock
+import org.jetbrains.compose.resources.stringResource
+
+private enum class BackupImportType {
+    LOCAL,
+    CHATBOX,
+    CHERRY,
+}
 
 @Composable
 fun ImportExportTab(
@@ -44,43 +49,31 @@ fun ImportExportTab(
 ) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     var isExporting by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
+    var importType by remember { mutableStateOf(BackupImportType.LOCAL) }
+    val backupSuccess = stringResource(Res.string.backup_page_backup_success)
+    val restoreSuccess = stringResource(Res.string.backup_page_restore_success)
+    val restoreFailedPrefix = stringResource(Res.string.backup_page_restore_failed, "")
 
-    // 导入类型：local 为本地备份，chatbox 为 Chatbox 导入，cherry 为 Cherry Studio 导入
-    var importType by remember { mutableStateOf("local") }
-
-    // 创建文件保存的launcher
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip")
-    ) { uri ->
-        uri?.let { targetUri ->
+    val createDocumentLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault(),
+    ) { target ->
+        if (target != null) {
             scope.launch {
                 isExporting = true
                 runCatching {
-                    // 导出文件
-                    val exportFile = vm.exportToFile()
-
-                    // 复制到用户选择的位置
-                    context.contentResolver.openOutputStream(targetUri)?.use { outputStream ->
-                        FileInputStream(exportFile).use { inputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
+                    val exportFile = vm.prepareExportFile()
+                    try {
+                        target.write(exportFile)
+                    } finally {
+                        exportFile.delete(mustExist = false)
                     }
-
-                    // 清理临时文件
-                    exportFile.delete()
-
-                    toaster.show(
-                        context.getString(R.string.backup_page_backup_success),
-                        type = ToastType.Success
-                    )
+                    toaster.show(backupSuccess, type = ToastType.Success)
                 }.onFailure { e ->
-                    e.printStackTrace()
                     toaster.show(
-                        context.getString(R.string.backup_page_restore_failed, e.message ?: ""),
-                        type = ToastType.Error
+                        restoreFailedPrefix + (e.message ?: ""),
+                        type = ToastType.Error,
                     )
                 }
                 isExporting = false
@@ -88,80 +81,22 @@ fun ImportExportTab(
         }
     }
 
-    // 创建文件选择的launcher
-    val openDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let { sourceUri ->
+    val openDocumentLauncher = rememberFilePickerLauncher(type = FileKitType.File()) { source ->
+        if (source != null) {
             scope.launch {
                 isRestoring = true
                 runCatching {
                     when (importType) {
-                        "local" -> {
-                            // 本地备份导入：处理zip文件
-                            val tempFile =
-                                File(context.cacheDir, "temp_restore_${System.currentTimeMillis()}.zip")
-
-                            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                                FileOutputStream(tempFile).use { outputStream ->
-                                    inputStream.copyTo(outputStream)
-                                }
-                            }
-
-                            // 从临时文件恢复
-                            vm.restoreFromLocalFile(tempFile)
-
-                            // 清理临时文件
-                            tempFile.delete()
-                        }
-
-                        "chatbox" -> {
-                            // Chatbox导入：处理json文件
-                            val tempFile =
-                                File(context.cacheDir, "temp_chatbox_${System.currentTimeMillis()}.json")
-
-                            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                                FileOutputStream(tempFile).use { outputStream ->
-                                    inputStream.copyTo(outputStream)
-                                }
-                            }
-
-                            // 从Chatbox文件恢复
-                            vm.restoreFromChatBox(tempFile)
-
-                            // 清理临时文件
-                            tempFile.delete()
-                        }
-
-                        "cherry" -> {
-                            // Cherry Studio导入：处理zip文件
-                            val tempFile =
-                                File(context.cacheDir, "temp_cherry_${System.currentTimeMillis()}.zip")
-
-                            context.contentResolver.openInputStream(sourceUri)?.use { inputStream ->
-                                FileOutputStream(tempFile).use { outputStream ->
-                                    inputStream.copyTo(outputStream)
-                                }
-                            }
-
-                            // 从Cherry Studio备份恢复
-                            vm.restoreFromCherryStudio(tempFile)
-
-                            // 清理临时文件
-                            tempFile.delete()
-                        }
+                        BackupImportType.LOCAL -> vm.restoreFromLocalFile(source)
+                        BackupImportType.CHATBOX -> vm.restoreFromChatboxFile(source)
+                        BackupImportType.CHERRY -> vm.restoreFromCherryStudioFile(source)
                     }
-
-                    toaster.show(
-                        context.getString(R.string.backup_page_restore_success),
-                        type = ToastType.Success
-                    )
+                    toaster.show(restoreSuccess, type = ToastType.Success)
                     onShowRestartDialog()
                 }.onFailure { e ->
-                    e.printStackTrace()
                     toaster.show(
-                        context.getString(R.string.backup_page_restore_failed, e.message ?: ""),
-                        type = ToastType.Error
+                        restoreFailedPrefix + (e.message ?: ""),
+                        type = ToastType.Error,
                     )
                 }
                 isRestoring = false
@@ -186,7 +121,11 @@ fun ImportExportTab(
                     onClick = if (!isExporting) {
                         {
                             val timestamp = Clock.System.now().toCompactFileTimestamp()
-                            createDocumentLauncher.launch("rikkahub_backup_$timestamp.zip")
+                            createDocumentLauncher.launch(
+                                suggestedName = "rikkahub_backup_$timestamp",
+                                defaultExtension = "zip",
+                                allowedExtensions = setOf("zip"),
+                            )
                         }
                     } else null,
                     headlineContent = { Text(stringResource(Res.string.backup_page_local_backup_export)) },
@@ -201,7 +140,7 @@ fun ImportExportTab(
                     },
                     leadingContent = {
                         if (isExporting) {
-                            CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             Icon(HugeIcons.File01, null)
                         }
@@ -211,8 +150,8 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isRestoring) {
                         {
-                            importType = "local"
-                            openDocumentLauncher.launch(arrayOf("application/zip"))
+                            importType = BackupImportType.LOCAL
+                            openDocumentLauncher.launch()
                         }
                     } else null,
                     headlineContent = { Text(stringResource(Res.string.backup_page_local_backup_import)) },
@@ -227,7 +166,7 @@ fun ImportExportTab(
                     },
                     leadingContent = {
                         if (isRestoring) {
-                            CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             Icon(HugeIcons.FileImport, null)
                         }
@@ -247,15 +186,15 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isRestoring) {
                         {
-                            importType = "chatbox"
-                            openDocumentLauncher.launch(arrayOf("application/json"))
+                            importType = BackupImportType.CHATBOX
+                            openDocumentLauncher.launch()
                         }
                     } else null,
                     headlineContent = { Text(stringResource(Res.string.backup_page_import_from_chatbox)) },
                     supportingContent = { Text(stringResource(Res.string.backup_page_import_chatbox_desc)) },
                     leadingContent = {
-                        if (isRestoring && importType == "chatbox") {
-                            CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+                        if (isRestoring && importType == BackupImportType.CHATBOX) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             Icon(HugeIcons.FileImport, null)
                         }
@@ -265,15 +204,15 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isRestoring) {
                         {
-                            importType = "cherry"
-                            openDocumentLauncher.launch(arrayOf("application/zip"))
+                            importType = BackupImportType.CHERRY
+                            openDocumentLauncher.launch()
                         }
                     } else null,
                     headlineContent = { Text(stringResource(Res.string.backup_page_import_from_cherry_studio)) },
                     supportingContent = { Text(stringResource(Res.string.backup_page_import_cherry_studio_desc)) },
                     leadingContent = {
-                        if (isRestoring && importType == "cherry") {
-                            CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+                        if (isRestoring && importType == BackupImportType.CHERRY) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             Icon(HugeIcons.FileImport, null)
                         }

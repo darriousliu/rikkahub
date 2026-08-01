@@ -9,6 +9,8 @@ import me.rerere.rikkahub.data.files.AndroidSkillStore
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.AndroidConversationFileStore
+import me.rerere.rikkahub.data.repository.AndroidBackupLocalFileService
+import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.AndroidMessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.BackupRepository
 import me.rerere.rikkahub.data.repository.BackupSettingsGateway
@@ -88,6 +90,10 @@ val repositoryModule = module {
 
     single {
         BackupRepository(get(), get(), get())
+    }
+
+    single<BackupLocalFileService> {
+        AndroidBackupLocalFileService(get(), get(), get(), get())
     }
 
     single {

@@ -4,9 +4,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import kotlin.system.exitProcess
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.platform.terminateApplication
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun BackupDialog() {
@@ -17,7 +17,7 @@ fun BackupDialog() {
         confirmButton = {
             Button(
                 onClick = {
-                    exitProcess(0)
+                    terminateApplication()
                 }
             ) {
                 Text(stringResource(Res.string.backup_page_restart_app))

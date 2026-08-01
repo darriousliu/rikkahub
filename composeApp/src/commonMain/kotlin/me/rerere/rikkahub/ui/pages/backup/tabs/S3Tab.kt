@@ -23,7 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,9 +36,8 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,28 +46,26 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.sync.S3BackupItem
 import me.rerere.rikkahub.data.sync.s3.S3Config
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.UiState
-import me.rerere.rikkahub.utils.fileSizeToString
+import me.rerere.rikkahub.utils.toLocalizedFileSize
 import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onLoading
 import me.rerere.rikkahub.utils.onSuccess
-import me.rerere.rikkahub.utils.toLocalDateTime
+import me.rerere.rikkahub.utils.toLocalizedDateTime
 import kotlin.time.Instant
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun S3Tab(
@@ -79,8 +76,15 @@ fun S3Tab(
     val s3Config = settings.s3Config
     val backupItemsState by vm.s3BackupItems.collectAsStateWithLifecycle()
     val toaster = LocalToaster.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val connectionSuccess = stringResource(Res.string.backup_page_connection_success)
+    val connectionFailedPrefix = stringResource(Res.string.backup_page_connection_failed, "")
+    val backupSuccess = stringResource(Res.string.backup_page_backup_success)
+    val unknownError = stringResource(Res.string.backup_page_unknown_error)
+    val deleteSuccess = stringResource(Res.string.backup_page_delete_success)
+    val deleteFailedPrefix = stringResource(Res.string.backup_page_delete_failed, "")
+    val restoreSuccess = stringResource(Res.string.backup_page_restore_success)
+    val restoreFailedPrefix = stringResource(Res.string.backup_page_restore_failed, "")
     var showBackupFiles by remember { mutableStateOf(false) }
     var restoringItemId by remember { mutableStateOf<String?>(null) }
     var isBackingUp by remember { mutableStateOf(false) }
@@ -94,7 +98,7 @@ fun S3Tab(
     } else {
         stringResource(
             Res.string.backup_page_reminder_last_time,
-            Instant.fromEpochMilliseconds(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
+            Instant.fromEpochMilliseconds(settings.backupReminderConfig.lastBackupTime).toLocalizedDateTime()
         )
     }
     val backupFileSummary = when (val state = backupItemsState) {
@@ -255,16 +259,13 @@ fun S3Tab(
                         try {
                             vm.testS3()
                             toaster.show(
-                                context.getString(R.string.backup_page_connection_success),
+                                connectionSuccess,
                                 type = ToastType.Success
                             )
                         } catch (e: Exception) {
                             e.printStackTrace()
                             toaster.show(
-                                context.getString(
-                                    R.string.backup_page_connection_failed,
-                                    e.message ?: ""
-                                ),
+                                connectionFailedPrefix + (e.message ?: ""),
                                 type = ToastType.Error
                             )
                         }
@@ -290,13 +291,13 @@ fun S3Tab(
                             vm.backupToS3()
                             vm.loadS3BackupFileItems()
                             toaster.show(
-                                context.getString(R.string.backup_page_backup_success),
+                                backupSuccess,
                                 type = ToastType.Success
                             )
                         }.onFailure {
                             it.printStackTrace()
                             toaster.show(
-                                it.message ?: context.getString(R.string.backup_page_unknown_error),
+                                it.message ?: unknownError,
                                 type = ToastType.Error
                             )
                         }
@@ -306,7 +307,7 @@ fun S3Tab(
                 enabled = !isBackingUp
             ) {
                 if (isBackingUp) {
-                    CircularWavyProgressIndicator(
+                    CircularProgressIndicator(
                         modifier = Modifier.size(18.dp)
                     )
                 } else {
@@ -329,7 +330,7 @@ fun S3Tab(
             onDismissRequest = {
                 showBackupFiles = false
             },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
             Column(
                 modifier = Modifier
@@ -358,17 +359,14 @@ fun S3Tab(
                                         runCatching {
                                             vm.deleteS3BackupFile(item)
                                             toaster.show(
-                                                context.getString(R.string.backup_page_delete_success),
+                                                deleteSuccess,
                                                 type = ToastType.Success
                                             )
                                             vm.loadS3BackupFileItems()
                                         }.onFailure { err ->
                                             err.printStackTrace()
                                             toaster.show(
-                                                context.getString(
-                                                    R.string.backup_page_delete_failed,
-                                                    err.message ?: ""
-                                                ),
+                                                deleteFailedPrefix + (err.message ?: ""),
                                                 type = ToastType.Error
                                             )
                                         }
@@ -380,7 +378,7 @@ fun S3Tab(
                                         runCatching {
                                             vm.restoreFromS3(item = restoreItem)
                                             toaster.show(
-                                                context.getString(R.string.backup_page_restore_success),
+                                                restoreSuccess,
                                                 type = ToastType.Success
                                             )
                                             showBackupFiles = false
@@ -388,10 +386,7 @@ fun S3Tab(
                                         }.onFailure { err ->
                                             err.printStackTrace()
                                             toaster.show(
-                                                context.getString(
-                                                    R.string.backup_page_restore_failed,
-                                                    err.message ?: ""
-                                                ),
+                                                restoreFailedPrefix + (err.message ?: ""),
                                                 type = ToastType.Error
                                             )
                                         }
@@ -416,7 +411,7 @@ fun S3Tab(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularWavyProgressIndicator()
+                        CircularProgressIndicator()
                     }
                 }
             }
@@ -484,11 +479,11 @@ private fun S3BackupItemCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = item.lastModified.toLocalDateTime(),
+                            text = item.lastModified.toLocalizedDateTime(),
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Text(
-                            text = item.size.fileSizeToString(),
+                            text = item.size.toLocalizedFileSize(),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -512,7 +507,7 @@ private fun S3BackupItemCard(
                             enabled = !isRestoring
                         ) {
                             if (isRestoring) {
-                                CircularWavyProgressIndicator(
+                                CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))
