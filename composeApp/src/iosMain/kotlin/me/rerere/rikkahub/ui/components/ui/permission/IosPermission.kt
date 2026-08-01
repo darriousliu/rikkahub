@@ -9,6 +9,7 @@ actual val PermissionRecordAudio: PermissionInfo = passivePermission("record_aud
 actual val PermissionNotification: PermissionInfo = passivePermission("notifications", "Notifications")
 actual val RuntimeNotificationPermissionRequired: Boolean = false
 actual val PermissionLocalNetwork: PermissionInfo = passivePermission("local_network", "Local network")
+actual val RuntimeLocalNetworkPermissionRequired: Boolean = false
 
 private fun passivePermission(id: String, label: String): PermissionInfo = PermissionInfo(
     permission = id,

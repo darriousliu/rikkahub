@@ -1,13 +1,9 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.content.Intent
-import android.os.Build
-
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.View
 import me.rerere.hugeicons.stroke.ViewOff
 import me.rerere.hugeicons.stroke.Play
-import me.rerere.hugeicons.stroke.StopCircle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +18,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -41,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,30 +47,42 @@ import kotlinx.coroutines.launch
 import me.rerere.hugeicons.stroke.Stop
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
+import me.rerere.rikkahub.ui.components.ui.CapabilityGate
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionLocalNetwork
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionNotification
+import me.rerere.rikkahub.ui.components.ui.permission.RuntimeLocalNetworkPermissionRequired
+import me.rerere.rikkahub.ui.components.ui.permission.RuntimeNotificationPermissionRequired
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
-import me.rerere.rikkahub.web.WebServerManager
+import me.rerere.rikkahub.shared.PlatformCapability
+import me.rerere.rikkahub.web.WebServerRuntime
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
 fun SettingWebPage() {
-    val webServerManager: WebServerManager = koinInject()
+    CapabilityGate(
+        capability = PlatformCapability.WEB_SERVER,
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        SettingWebPageContent()
+    }
+}
+
+@Composable
+private fun SettingWebPageContent() {
+    val webServerManager: WebServerRuntime = koinInject()
     val settingsStore: SettingsStore = koinInject()
     val settings = LocalSettings.current
     val serverState by webServerManager.state.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
     val copiedText = stringResource(Res.string.copied)
@@ -91,10 +98,10 @@ fun SettingWebPage() {
 
     val permissionState = rememberPermissionState(
         permissions = buildSet {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (RuntimeNotificationPermissionRequired) {
                 add(PermissionNotification)
             }
-            if (Build.VERSION.SDK_INT >= 37 && !settings.webServerLocalhostOnly) {
+            if (RuntimeLocalNetworkPermissionRequired && !settings.webServerLocalhostOnly) {
                 add(PermissionLocalNetwork)
             }
         },
@@ -104,15 +111,10 @@ fun SettingWebPage() {
     var pendingStart by remember { mutableStateOf(false) }
 
     fun startWebServer() {
-        val intent = Intent(context, WebServerService::class.java).apply {
-            action = WebServerService.ACTION_START
-            putExtra(WebServerService.EXTRA_PORT, settings.webServerPort)
-            putExtra(WebServerService.EXTRA_LOCALHOST_ONLY, settings.webServerLocalhostOnly)
-        }
-        context.startForegroundService(intent)
-        scope.launch {
-            settingsStore.update { it.copy(webServerEnabled = true) }
-        }
+        webServerManager.start(
+            port = settings.webServerPort,
+            localhostOnly = settings.webServerLocalhostOnly,
+        )
     }
 
     LaunchedEffect(permissionState.allPermissionsGranted) {
@@ -129,7 +131,7 @@ fun SettingWebPage() {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            TopAppBar(
                 title = { Text(stringResource(Res.string.setting_page_web_server)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
@@ -148,13 +150,7 @@ fun SettingWebPage() {
                             permissionState.requestPermissions()
                         }
                     } else {
-                        val intent = Intent(context, WebServerService::class.java).apply {
-                            action = WebServerService.ACTION_STOP
-                        }
-                        context.startService(intent)
-                        scope.launch {
-                            settingsStore.update { it.copy(webServerEnabled = false) }
-                        }
+                        webServerManager.stop()
                     }
                 },
                 icon = {

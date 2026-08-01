@@ -37,3 +37,5 @@ expect val PermissionNotification: PermissionInfo
 expect val RuntimeNotificationPermissionRequired: Boolean
 
 expect val PermissionLocalNetwork: PermissionInfo
+
+expect val RuntimeLocalNetworkPermissionRequired: Boolean

@@ -18,18 +18,6 @@ import me.rerere.rikkahub.service.ChatService
 
 private const val TAG = "WebServerManager"
 
-data class WebServerManagerState(
-    val lifecycle: WebServerState = WebServerState.Stopped,
-    val isRunning: Boolean = false,
-    val isLoading: Boolean = false,
-    val port: Int = 8080,
-    val serviceName: String = DEFAULT_SERVICE_NAME,
-    val localhostOnly: Boolean = false,
-    val hostname: String? = null,
-    val address: String? = null,
-    val error: String? = null,
-)
-
 class WebServerManager(
     private val context: Context,
     private val appScope: AppScope,
@@ -67,7 +55,6 @@ class WebServerManager(
                 localhostOnly = localhostOnly,
             )
             val baseState = WebServerManagerState(
-                lifecycle = WebServerState.Starting(config),
                 isLoading = true,
                 port = port,
                 serviceName = serviceName,
@@ -81,7 +68,6 @@ class WebServerManager(
 
     fun reportError(message: String) {
         _state.value = _state.value.copy(
-            lifecycle = WebServerState.Failed(_state.value.lifecycle.configOrNull(), message),
             isRunning = false,
             isLoading = false,
             error = message,
@@ -103,7 +89,6 @@ class WebServerManager(
                 serviceRegistrar.unregister()
                     .onFailure { Log.w(TAG, "mDNS unregister failed", it) }
                 _state.value = _state.value.copy(
-                    lifecycle = lifecycle,
                     isRunning = false,
                     isLoading = false,
                     error = (lifecycle as? WebServerState.Failed)?.message,
@@ -125,7 +110,6 @@ class WebServerManager(
             val config = WebServerConfig(port, serviceName, localhostOnly)
             serviceRegistrar.unregister()
             val baseState = WebServerManagerState(
-                lifecycle = WebServerState.Starting(config),
                 isLoading = true,
                 port = port,
                 serviceName = serviceName,
@@ -140,7 +124,6 @@ class WebServerManager(
         when (lifecycle) {
             is WebServerState.Running -> {
                 _state.value = baseState.copy(
-                    lifecycle = lifecycle,
                     isRunning = true,
                     isLoading = false,
                     port = lifecycle.endpoint.port,
@@ -168,7 +151,6 @@ class WebServerManager(
             is WebServerState.Failed -> {
                 Log.e(TAG, "Failed to start web server: ${lifecycle.message}")
                 _state.value = baseState.copy(
-                    lifecycle = lifecycle,
                     isLoading = false,
                     error = lifecycle.message,
                 )
@@ -176,7 +158,6 @@ class WebServerManager(
 
             is WebServerState.Unavailable -> {
                 _state.value = baseState.copy(
-                    lifecycle = lifecycle,
                     isLoading = false,
                     error = lifecycle.reason,
                 )
@@ -184,16 +165,7 @@ class WebServerManager(
 
             is WebServerState.Starting,
             WebServerState.Stopped,
-            -> _state.value = baseState.copy(lifecycle = lifecycle, isLoading = false)
+            -> _state.value = baseState.copy(isLoading = false)
         }
     }
-}
-
-private fun WebServerState.configOrNull(): WebServerConfig? = when (this) {
-    is WebServerState.Starting -> config
-    is WebServerState.Running -> config
-    is WebServerState.Failed -> config
-    WebServerState.Stopped,
-    is WebServerState.Unavailable,
-    -> null
 }

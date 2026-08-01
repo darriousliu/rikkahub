@@ -44,3 +44,5 @@ actual val PermissionLocalNetwork: PermissionInfo = PermissionInfo(
     usage = { Text(stringResource(Res.string.permission_local_network_desc)) },
     required = true,
 )
+
+actual val RuntimeLocalNetworkPermissionRequired: Boolean = Build.VERSION.SDK_INT >= 37

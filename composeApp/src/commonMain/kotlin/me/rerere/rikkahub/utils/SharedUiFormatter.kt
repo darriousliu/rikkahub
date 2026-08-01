@@ -25,6 +25,9 @@ fun Month.toLocalizedShortString(): String = SharedUiFormatter.shortMonthName(nu
 fun LocalDate.toLocalizedString(includeYear: Boolean): String =
     SharedUiFormatter.formatDate(year, month.number, day, includeYear)
 
+fun Float.toLocalizedDecimal(fractionDigits: Int): String =
+    SharedUiFormatter.formatDecimal(toDouble(), fractionDigits)
+
 fun Long.toLocalizedFileSize(): String {
     if (this < 1024) return "$this B"
     val units = arrayOf("KB", "MB", "GB", "TB")

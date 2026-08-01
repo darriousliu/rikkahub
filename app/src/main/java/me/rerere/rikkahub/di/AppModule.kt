@@ -37,6 +37,8 @@ import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.SoundEffectPlayer
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.web.WebServerManager
+import me.rerere.rikkahub.web.AndroidWebServerRuntime
+import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.tts.provider.TTSManager
 import me.rerere.tts.provider.providers.SystemTTSProvider
 import org.koin.dsl.module
@@ -151,6 +153,14 @@ val appModule = module {
             folderRepo = get(),
             settingsStore = get(),
             filesManager = get()
+        )
+    }
+    single<WebServerRuntime> {
+        AndroidWebServerRuntime(
+            context = get(),
+            manager = get(),
+            settingsStore = get(),
+            scope = get<AppScope>(),
         )
     }
 }
