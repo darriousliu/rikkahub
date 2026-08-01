@@ -22,10 +22,10 @@ import me.rerere.hugeicons.stroke.MoneyBag02
 import me.rerere.rikkahub.utils.SimpleCache
 import me.rerere.rikkahub.utils.toDp
 import org.koin.compose.koinInject
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 private val cache = SimpleCache.builder<String, String>()
-    .expireAfterWrite(2, TimeUnit.MINUTES)
+    .expireAfterWrite(2.minutes)
     .build()
 
 @Composable

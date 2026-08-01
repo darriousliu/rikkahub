@@ -1,42 +1,32 @@
 package me.rerere.rikkahub.utils
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 /**
  * A simple thread-safe cache implementation with expiration support.
  * This is a lightweight alternative to Guava Cache to avoid concurrency issues.
  */
-class SimpleCache<K, V> private constructor(
-    private val expireAfterWriteMillis: Long,
-    private val currentTimeMillis: () -> Long
+class SimpleCache<K, V> internal constructor(
+    private val expireAfterWrite: Duration,
+    private val clock: Clock = Clock.System
 ) {
     private data class CacheEntry<V>(
         val value: V,
-        val timestamp: Long
+        val writtenAt: Instant
     ) {
-        fun isExpired(expireAfterWriteMillis: Long, nowMillis: Long): Boolean {
-            return nowMillis - timestamp > expireAfterWriteMillis
+        fun isExpired(expireAfterWrite: Duration, now: Instant): Boolean {
+            return now - writtenAt > expireAfterWrite
         }
     }
-
-    constructor(expireAfterWriteMillis: Long) : this(
-        expireAfterWriteMillis = expireAfterWriteMillis,
-        currentTimeMillis = System::currentTimeMillis
-    )
-
-    internal constructor(expireAfterWrite: Duration, clock: Clock) : this(
-        expireAfterWriteMillis = expireAfterWrite.inWholeMilliseconds,
-        currentTimeMillis = { clock.now().toEpochMilliseconds() }
-    )
 
     private val cache = ConcurrentHashMap<K, CacheEntry<V>>()
 
     fun getIfPresent(key: K): V? {
         val entry = cache[key] ?: return null
-        return if (entry.isExpired(expireAfterWriteMillis, currentTimeMillis())) {
+        return if (entry.isExpired(expireAfterWrite, currentInstant())) {
             cache.remove(key)
             null
         } else {
@@ -45,7 +35,7 @@ class SimpleCache<K, V> private constructor(
     }
 
     fun put(key: K, value: V) {
-        cache[key] = CacheEntry(value, currentTimeMillis())
+        cache[key] = CacheEntry(value, currentInstant())
     }
 
     fun invalidate(key: K) {
@@ -58,26 +48,29 @@ class SimpleCache<K, V> private constructor(
 
     fun cleanUp() {
         cache.entries.removeIf {
-            it.value.isExpired(expireAfterWriteMillis, currentTimeMillis())
+            it.value.isExpired(expireAfterWrite, currentInstant())
         }
     }
 
     fun size(): Int = cache.size
+
+    private fun currentInstant(): Instant =
+        Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())
 
     companion object {
         fun <K, V> builder() = Builder<K, V>()
     }
 
     class Builder<K, V> {
-        private var expireAfterWriteMillis: Long = Long.MAX_VALUE
+        private var expireAfterWrite: Duration = Duration.INFINITE
 
-        fun expireAfterWrite(duration: Long, unit: TimeUnit): Builder<K, V> {
-            expireAfterWriteMillis = unit.toMillis(duration)
+        fun expireAfterWrite(duration: Duration): Builder<K, V> {
+            expireAfterWrite = duration
             return this
         }
 
         fun build(): SimpleCache<K, V> {
-            return SimpleCache(expireAfterWriteMillis)
+            return SimpleCache(expireAfterWrite)
         }
     }
 }
