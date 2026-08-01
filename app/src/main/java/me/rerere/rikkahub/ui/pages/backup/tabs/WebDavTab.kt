@@ -68,6 +68,7 @@ import me.rerere.rikkahub.utils.onLoading
 import me.rerere.rikkahub.utils.onSuccess
 import me.rerere.rikkahub.utils.toLocalDateTime
 import java.time.Instant
+import kotlin.time.Instant as KotlinInstant
 
 @Composable
 fun WebDavTab(
@@ -93,7 +94,7 @@ fun WebDavTab(
     } else {
         stringResource(
             Res.string.backup_page_reminder_last_time,
-            Instant.ofEpochMilli(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
+            KotlinInstant.fromEpochMilliseconds(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
         )
     }
     val backupFileSummary = when (val state = backupItemsState) {

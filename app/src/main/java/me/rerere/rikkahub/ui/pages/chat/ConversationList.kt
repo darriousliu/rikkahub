@@ -53,8 +53,7 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.toLocalString
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.datetime.LocalDate
 import kotlin.uuid.Uuid
 
 /**

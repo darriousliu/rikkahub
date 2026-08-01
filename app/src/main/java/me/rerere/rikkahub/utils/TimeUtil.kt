@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.utils
 
+import kotlinx.datetime.LocalDate as KotlinLocalDate
+import kotlinx.datetime.number
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -42,9 +44,12 @@ fun KotlinInstant.toLocalTime(
     locale: Locale = Locale.getDefault(),
 ): String = PlatformTimeFormatter.formatTime(toEpochMilliseconds(), zoneId.id, locale)
 
-fun KotlinInstant.toPlatformLocalDate(
-    zoneId: ZoneId = ZoneId.systemDefault(),
-): LocalDate = PlatformTimeFormatter.localDate(toEpochMilliseconds(), zoneId.id)
+fun KotlinLocalDate.toLocalString(
+    includeYear: Boolean,
+    locale: Locale = Locale.getDefault(),
+): String {
+    return LocalDate.of(year, month.number, day).toLocalString(includeYear, locale)
+}
 
 internal object PlatformTimeFormatter {
     fun formatDate(epochMillis: Long, timeZoneId: String, locale: Locale): String {
@@ -63,10 +68,6 @@ internal object PlatformTimeFormatter {
         return DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)
             .withLocale(locale)
             .format(localDateTime(epochMillis, timeZoneId))
-    }
-
-    fun localDate(epochMillis: Long, timeZoneId: String): LocalDate {
-        return localDateTime(epochMillis, timeZoneId).toLocalDate()
     }
 
     private fun localDateTime(epochMillis: Long, timeZoneId: String): LocalDateTime {
@@ -94,8 +95,10 @@ fun LocalDateTime.toMessageTimeString(): String {
     }
 }
 
-fun LocalDate.toLocalString(includeYear: Boolean): String {
-    val locale = Locale.getDefault()
+fun LocalDate.toLocalString(
+    includeYear: Boolean,
+    locale: Locale = Locale.getDefault(),
+): String {
     val formatter = if (includeYear) {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
     } else {

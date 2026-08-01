@@ -24,7 +24,7 @@ import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
 import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.toLocalDateTime
-import java.time.Instant
+import kotlin.time.Instant
 
 @Composable
 fun ReminderTab(vm: BackupVM) {
@@ -88,7 +88,7 @@ fun ReminderTab(vm: BackupVM) {
                             } else {
                                 stringResource(
                                     Res.string.backup_page_reminder_last_time,
-                                    Instant.ofEpochMilli(config.lastBackupTime).toLocalDateTime()
+                                    Instant.fromEpochMilliseconds(config.lastBackupTime).toLocalDateTime()
                                 )
                             }
                         )

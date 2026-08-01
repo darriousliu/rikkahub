@@ -48,7 +48,7 @@ import me.rerere.rikkahub.utils.navigateToChatPage
 import me.rerere.rikkahub.utils.plus
 import me.rerere.rikkahub.utils.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
-import java.time.Instant
+import kotlin.time.Instant
 
 @Composable
 fun FavoritePage(vm: FavoriteVM = koinViewModel()) {
@@ -200,7 +200,7 @@ private fun FavoriteCard(
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleMedium,
                 )
-                val dateText = Instant.ofEpochMilli(item.createdAt).toLocalDateTime()
+                val dateText = Instant.fromEpochMilliseconds(item.createdAt).toLocalDateTime()
                 Text(
                     text = item.preview,
                     maxLines = 4,
