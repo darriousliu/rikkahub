@@ -19,8 +19,10 @@ import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.AndroidChatNotificationPresenter
+import me.rerere.rikkahub.service.AndroidTranslationRuntime
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.service.ChatRuntime
+import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
@@ -127,6 +129,7 @@ val appModule = module {
         )
     }
     single<ChatRuntime> { get<ChatService>() }
+    single<TranslationRuntime> { AndroidTranslationRuntime(get(), get()) }
 
     single {
         WebServerManager(

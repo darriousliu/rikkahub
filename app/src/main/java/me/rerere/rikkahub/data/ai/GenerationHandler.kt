@@ -47,7 +47,6 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.utils.applyPlaceholders
-import java.util.Locale
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -492,7 +491,8 @@ class GenerationHandler(
     fun translateText(
         settings: Settings,
         sourceText: String,
-        targetLanguage: Locale,
+        targetLanguageCode: String,
+        targetLanguageName: String,
         onStreamUpdate: ((String) -> Unit)? = null
     ): Flow<String> = flow {
         val model = settings.providers.findModelById(settings.translateModeId)
@@ -506,7 +506,7 @@ class GenerationHandler(
             // Use regular translation with prompt
             val prompt = settings.translatePrompt.applyPlaceholders(
                 "source_text" to sourceText,
-                "target_lang" to targetLanguage.toString(),
+                "target_lang" to targetLanguageCode,
             )
 
             var messages = listOf(UIMessage.user(prompt))
@@ -545,7 +545,7 @@ class GenerationHandler(
                                 put("source_lang", JsonPrimitive("auto"))
                                 put(
                                     "target_lang",
-                                    JsonPrimitive(targetLanguage.getDisplayLanguage(Locale.ENGLISH))
+                                    JsonPrimitive(targetLanguageName)
                                 )
                             }
                         )

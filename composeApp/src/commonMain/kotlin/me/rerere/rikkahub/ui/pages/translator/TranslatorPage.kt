@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.translator
 
-import android.content.ClipData
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Clipboard
 import me.rerere.hugeicons.stroke.LanguageCircle
@@ -28,7 +27,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -41,26 +40,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
-import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ModelType
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.getText
 import org.koin.compose.viewmodel.koinViewModel
-import java.util.Locale
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
@@ -69,9 +64,8 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
     val translatedText by vm.translatedText.collectAsStateWithLifecycle()
     val targetLanguage by vm.targetLanguage.collectAsStateWithLifecycle()
     val translating by vm.translating.collectAsStateWithLifecycle()
-    val clipboard = LocalClipboard.current
+    val clipboard = LocalClipboardManager.current
     val toaster = LocalToaster.current
-    val scope = rememberCoroutineScope()
 
     // 处理错误
     LaunchedEffect(Unit) {
@@ -144,11 +138,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
 
                 FilledTonalButton(
                     onClick = {
-                        scope.launch {
-                            clipboard.getClipEntry()?.clipData?.getText()?.let {
-                                vm.updateInputText(it)
-                            }
-                        }
+                        clipboard.getText()?.text?.let(vm::updateInputText)
                     }
                 ) {
                     Icon(HugeIcons.Clipboard, null)
@@ -159,7 +149,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
             // 翻译进度条
             Crossfade(translating) { isTranslating ->
                 if (isTranslating) {
-                    LinearWavyProgressIndicator(
+                    LinearProgressIndicator(
                         modifier = Modifier
                             .padding(8.dp)
                             .fillMaxWidth()
@@ -185,15 +175,7 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
             AnimatedVisibility(translatedText.isNotBlank()) {
                 FilledTonalButton(
                     onClick = {
-                        scope.launch {
-                            clipboard.setClipEntry(
-                                ClipEntry(
-                                    ClipData.newPlainText(
-                                        null, translatedText
-                                    )
-                                )
-                            )
-                        }
+                        clipboard.setText(AnnotatedString(translatedText))
                     }
                 ) {
                     Icon(HugeIcons.Clipboard, null)
@@ -204,40 +186,27 @@ fun TranslatorPage(vm: TranslatorVM = koinViewModel()) {
     }
 }
 
-private val Locales by lazy {
-    listOf(
-        Locale.SIMPLIFIED_CHINESE,
-        Locale.ENGLISH,
-        Locale.TRADITIONAL_CHINESE,
-        Locale.JAPANESE,
-        Locale.KOREAN,
-        Locale.FRENCH,
-        Locale.GERMAN,
-        Locale.ITALIAN,
-        Locale("es", "ES")
-    )
-}
+private val Languages = TranslationLanguage.entries
 
 @Composable
 private fun LanguageSelector(
-    targetLanguage: Locale,
-    onLanguageSelected: (Locale) -> Unit
+    targetLanguage: TranslationLanguage,
+    onLanguageSelected: (TranslationLanguage) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     @Composable
-    fun getLanguageDisplayName(locale: Locale): String {
-        return when (locale) {
-            Locale.SIMPLIFIED_CHINESE -> stringResource(Res.string.language_simplified_chinese)
-            Locale.ENGLISH -> stringResource(Res.string.language_english)
-            Locale.TRADITIONAL_CHINESE -> stringResource(Res.string.language_traditional_chinese)
-            Locale.JAPANESE -> stringResource(Res.string.language_japanese)
-            Locale.KOREAN -> stringResource(Res.string.language_korean)
-            Locale.FRENCH -> stringResource(Res.string.language_french)
-            Locale.GERMAN -> stringResource(Res.string.language_german)
-            Locale.ITALIAN -> stringResource(Res.string.language_italian)
-            Locale("es", "ES") -> stringResource(Res.string.language_spanish)
-            else -> locale.getDisplayLanguage(Locale.getDefault())
+    fun getLanguageDisplayName(language: TranslationLanguage): String {
+        return when (language) {
+            TranslationLanguage.SimplifiedChinese -> stringResource(Res.string.language_simplified_chinese)
+            TranslationLanguage.English -> stringResource(Res.string.language_english)
+            TranslationLanguage.TraditionalChinese -> stringResource(Res.string.language_traditional_chinese)
+            TranslationLanguage.Japanese -> stringResource(Res.string.language_japanese)
+            TranslationLanguage.Korean -> stringResource(Res.string.language_korean)
+            TranslationLanguage.French -> stringResource(Res.string.language_french)
+            TranslationLanguage.German -> stringResource(Res.string.language_german)
+            TranslationLanguage.Italian -> stringResource(Res.string.language_italian)
+            TranslationLanguage.Spanish -> stringResource(Res.string.language_spanish)
         }
     }
 
@@ -267,7 +236,7 @@ private fun LanguageSelector(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                Locales.forEach { language ->
+                Languages.forEach { language ->
                     DropdownMenuItem(
                         text = { Text(getLanguageDisplayName(language)) },
                         onClick = {
@@ -283,8 +252,8 @@ private fun LanguageSelector(
 
 @Composable
 private fun BottomBar(
-    targetLanguage: Locale,
-    onLanguageSelected: (Locale) -> Unit,
+    targetLanguage: TranslationLanguage,
+    onLanguageSelected: (TranslationLanguage) -> Unit,
     translating: Boolean,
     onTranslate: () -> Unit,
     onCancelTranslation: () -> Unit

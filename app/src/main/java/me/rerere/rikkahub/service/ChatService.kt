@@ -1017,7 +1017,8 @@ class ChatService(
                 generationHandler.translateText(
                     settings = settings,
                     sourceText = messageText,
-                    targetLanguage = targetLanguage
+                    targetLanguageCode = targetLanguage.toString(),
+                    targetLanguageName = targetLanguage.getDisplayLanguage(Locale.ENGLISH),
                 ) { translatedText ->
                     // Update translation field in real-time
                     updateTranslationField(conversationId, message.id, translatedText)

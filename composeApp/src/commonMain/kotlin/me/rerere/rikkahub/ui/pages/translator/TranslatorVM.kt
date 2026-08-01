@@ -9,18 +9,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.SettingsStore
-import java.util.Locale
+import me.rerere.rikkahub.service.TranslationRuntime
 
 private const val TAG = "TranslatorVM"
 
 class TranslatorVM(
-    private val settingsStore: SettingsStore,
-    private val generationHandler: GenerationHandler,
+    private val translationRuntime: TranslationRuntime,
 ) : ViewModel() {
-    val settings: StateFlow<Settings> = settingsStore.settingsFlow
+    val settings: StateFlow<Settings> = translationRuntime.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
 
     // 翻译状态
@@ -36,8 +33,8 @@ class TranslatorVM(
     val translatedText: StateFlow<String> = _translatedText
 
     // 翻译目标语言
-    private val _targetLanguage = MutableStateFlow(Locale.SIMPLIFIED_CHINESE)
-    val targetLanguage: StateFlow<Locale> = _targetLanguage
+    private val _targetLanguage = MutableStateFlow(TranslationLanguage.SimplifiedChinese)
+    val targetLanguage: StateFlow<TranslationLanguage> = _targetLanguage
 
     // 错误流
     val errorFlow = MutableSharedFlow<Throwable>()
@@ -47,7 +44,7 @@ class TranslatorVM(
 
     fun updateSettings(settings: Settings) {
         viewModelScope.launch {
-            settingsStore.update(settings)
+            translationRuntime.updateSettings(settings)
         }
     }
 
@@ -55,7 +52,7 @@ class TranslatorVM(
         _inputText.value = text
     }
 
-    fun updateTargetLanguage(language: Locale) {
+    fun updateTargetLanguage(language: TranslationLanguage) {
         _targetLanguage.value = language
     }
 
@@ -72,7 +69,7 @@ class TranslatorVM(
 
         currentJob = viewModelScope.launch {
             runCatching {
-                generationHandler.translateText(
+                translationRuntime.translateText(
                     settings = settings.value,
                     sourceText = inputText,
                     targetLanguage = targetLanguage.value
