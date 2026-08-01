@@ -7,21 +7,8 @@ import android.graphics.Matrix
 import android.util.Base64
 import android.util.Base64OutputStream
 import androidx.core.net.toUri
-import me.rerere.ai.ui.UIMessagePart
 import java.io.ByteArrayOutputStream
 import java.io.File
-
-private val supportedTypes = setOf(
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-)
-
-data class EncodedImage(
-    val base64: String,
-    val mimeType: String
-)
 
 internal enum class ExifTransformType {
     NONE,
@@ -49,68 +36,39 @@ internal fun mapExifOrientationToTransform(orientation: Int): ExifTransformType 
     else -> ExifTransformType.NONE
 }
 
-fun UIMessagePart.Image.encodeBase64(withPrefix: Boolean = true): Result<EncodedImage> = runCatching {
-    when {
-        this.url.startsWith("file://") -> {
-            val filePath =
-                this.url.toUri().path ?: throw IllegalArgumentException("Invalid file URI: ${this.url}")
-            val file = File(filePath)
-            if (!file.exists()) {
-                throw IllegalArgumentException("File does not exist: ${this.url}")
-            }
-            val mimeType = file.guessMimeType().getOrThrow()
-            // 统一进行压缩处理
-            val (encoded, outputMimeType) = file.compressAndEncode(mimeType)
-            EncodedImage(
-                base64 = if (withPrefix) "data:$outputMimeType;base64,$encoded" else encoded,
-                mimeType = outputMimeType
-            )
-        }
-
-        this.url.startsWith("data:") -> {
-            // 从 data URL 提取 mime type
-            val mimeType = url.substringAfter("data:").substringBefore(";")
-            EncodedImage(base64 = url, mimeType = mimeType)
-        }
-        this.url.startsWith("http") -> {
-            // HTTP URL 无法确定 mime type，默认使用 image/png
-            EncodedImage(base64 = url, mimeType = "image/png")
-        }
-        else -> throw IllegalArgumentException("Unsupported URL format: $url")
-    }
+internal actual fun encodeLocalImageFile(fileUrl: String, withPrefix: Boolean): EncodedImage {
+    val file = fileFromUrl(fileUrl)
+    val mimeType = file.guessMimeType().getOrThrow()
+    val (encoded, outputMimeType) = file.compressAndEncode(mimeType)
+    return EncodedImage(
+        base64 = if (withPrefix) "data:$outputMimeType;base64,$encoded" else encoded,
+        mimeType = outputMimeType,
+    )
 }
 
-fun UIMessagePart.Video.encodeBase64(withPrefix: Boolean = true): Result<String> = runCatching {
-    when {
-        this.url.startsWith("file://") -> {
-            val filePath =
-                this.url.toUri().path ?: throw IllegalArgumentException("Invalid file URI: ${this.url}")
-            val file = File(filePath)
-            if (!file.exists()) {
-                throw IllegalArgumentException("File does not exist: ${this.url}")
-            }
-            val encoded = file.encodeToBase64Streaming()
-            if (withPrefix) "data:video/mp4;base64,$encoded" else encoded
-        }
-
-        else -> throw IllegalArgumentException("Unsupported URL format: $url")
-    }
+internal actual fun encodeLocalMediaFile(
+    fileUrl: String,
+    mimeType: String,
+    withPrefix: Boolean,
+): String {
+    val encoded = fileFromUrl(fileUrl).encodeToBase64Streaming()
+    return if (withPrefix) "data:$mimeType;base64,$encoded" else encoded
 }
 
-fun UIMessagePart.Audio.encodeBase64(withPrefix: Boolean = true): Result<String> = runCatching {
-    when {
-        this.url.startsWith("file://") -> {
-            val filePath =
-                this.url.toUri().path ?: throw IllegalArgumentException("Invalid file URI: ${this.url}")
-            val file = File(filePath)
-            if (!file.exists()) {
-                throw IllegalArgumentException("File does not exist: ${this.url}")
-            }
-            val encoded = file.encodeToBase64Streaming()
-            if (withPrefix) "data:audio/mp3;base64,$encoded" else encoded
-        }
+internal actual fun readLocalFile(pathOrUrl: String): LocalFilePayload {
+    val file = if (pathOrUrl.startsWith("file://")) fileFromUrl(pathOrUrl) else File(pathOrUrl)
+    require(file.exists()) { "File does not exist: $pathOrUrl" }
+    return LocalFilePayload(
+        name = file.name,
+        extension = file.extension.lowercase(),
+        bytes = file.readBytes(),
+    )
+}
 
-        else -> throw IllegalArgumentException("Unsupported URL format: $url")
+private fun fileFromUrl(fileUrl: String): File {
+    val filePath = fileUrl.toUri().path ?: throw IllegalArgumentException("Invalid file URI: $fileUrl")
+    return File(filePath).also { file ->
+        require(file.exists()) { "File does not exist: $fileUrl" }
     }
 }
 
