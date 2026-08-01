@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -74,8 +72,7 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.ExaOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
             val body = buildJsonObject {
                 put("query", JsonPrimitive(query))
@@ -100,36 +97,33 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                 val response = runCatching {
                     json.decodeFromString<ExaData>(bodyRaw)
                 }.onFailure {
-                    it.printStackTrace()
+                    println(it.stackTraceToString())
                     println(bodyRaw)
                     error("Failed to decode response: $bodyRaw")
                 }.getOrThrow()
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = response.output?.content,
-                        items = response.results.map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.url,
-                                text = it.text ?: ""
-                            )
-                        },
-                        images = response.results.mapNotNull { it.image?.takeIf { url -> url.isNotBlank() } },
-                    ))
+                SearchResult(
+                    answer = response.output?.content,
+                    items = response.results.map {
+                        SearchResultItem(
+                            title = it.title,
+                            url = it.url,
+                            text = it.text ?: ""
+                        )
+                    },
+                    images = response.results.mapNotNull { it.image?.takeIf { url -> url.isNotBlank() } },
+                )
             } else {
                 println(response.body)
                 error("response failed #${response.code}")
             }
-        }
     }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.ExaOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<ScrapedResult> = runCatching {
             val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
             val body = buildJsonObject {
                 put("urls", buildJsonArray {
@@ -152,29 +146,26 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                 val data = runCatching {
                     json.decodeFromString<ExaData>(bodyRaw)
                 }.onFailure {
-                    it.printStackTrace()
+                    println(it.stackTraceToString())
                     println(bodyRaw)
                     error("Failed to decode response: $bodyRaw")
                 }.getOrThrow()
 
-                return@withContext Result.success(
-                    ScrapedResult(
-                        urls = data.results.map {
-                            ScrapedResultUrl(
-                                url = it.url,
-                                content = it.text ?: "",
-                                metadata = ScrapedResultMetadata(
-                                    title = it.title,
-                                )
+                ScrapedResult(
+                    urls = data.results.map {
+                        ScrapedResultUrl(
+                            url = it.url,
+                            content = it.text ?: "",
+                            metadata = ScrapedResultMetadata(
+                                title = it.title,
                             )
-                        }
-                    )
+                        )
+                    },
                 )
             } else {
                 println(response.body)
                 error("response failed #${response.code}")
             }
-        }
     }
 
     @Serializable
