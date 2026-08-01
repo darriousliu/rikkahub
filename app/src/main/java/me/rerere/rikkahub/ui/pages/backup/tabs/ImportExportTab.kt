@@ -24,18 +24,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
+import me.rerere.common.time.toCompactFileTimestamp
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.components.ui.StickyHeader
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
+import me.rerere.rikkahub.ui.resources.stringResource
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import me.rerere.rikkahub.ui.resources.stringResource
+import kotlin.time.Clock
 
 @Composable
 fun ImportExportTab(
@@ -185,8 +185,7 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isExporting) {
                         {
-                            val timestamp = LocalDateTime.now()
-                                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+                            val timestamp = Clock.System.now().toCompactFileTimestamp()
                             createDocumentLauncher.launch("rikkahub_backup_$timestamp.zip")
                         }
                     } else null,

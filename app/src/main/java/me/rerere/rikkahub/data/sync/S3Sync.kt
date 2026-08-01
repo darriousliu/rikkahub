@@ -15,6 +15,7 @@ import me.rerere.common.archive.ZipArchiveWriter
 import me.rerere.common.archive.ZipEntryPathPolicy
 import me.rerere.common.archive.addText
 import me.rerere.common.archive.readText
+import me.rerere.common.time.toCompactFileTimestamp
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.SkillPaths
 import me.rerere.rikkahub.data.datastore.Settings
@@ -27,8 +28,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.time.Instant
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import kotlin.time.Clock
 
 private const val TAG = "S3Sync"
 
@@ -115,7 +115,7 @@ class S3Sync(
     }
 
     suspend fun prepareBackupFile(config: S3Config): File = withContext(Dispatchers.IO) {
-        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+        val timestamp = Clock.System.now().toCompactFileTimestamp()
         val backupFile = File(context.cacheDir, "backup_$timestamp.zip")
 
         if (backupFile.exists()) {

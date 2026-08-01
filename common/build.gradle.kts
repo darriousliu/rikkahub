@@ -34,6 +34,7 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.datetime)
             api(libs.kotlinx.io.core)
             implementation(libs.dokar.quickjs)
             implementation(libs.kermit)
@@ -45,7 +46,6 @@ kotlin {
             api(libs.okhttp)
             api(libs.okhttp.sse)
             api(libs.okhttp.logging)
-            api(libs.kotlinx.datetime)
             api(libs.floatingx)
             api(libs.floatingx.compose)
             implementation(libs.androidx.core.ktx)

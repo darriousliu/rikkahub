@@ -11,8 +11,8 @@ import kotlinx.serialization.json.encodeToJsonElement
 import me.rerere.rikkahub.data.model.InjectionPosition
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
-import me.rerere.rikkahub.utils.toLocalString
-import java.time.LocalDateTime
+import me.rerere.rikkahub.utils.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 @Serializable
@@ -150,7 +150,7 @@ object LorebookSerializer : ExportSerializer<Lorebook> {
             )
             Lorebook(
                 id = Uuid.random(),
-                name = fileName ?: LocalDateTime.now().toLocalString(),
+                name = fileName ?: Clock.System.now().toLocalDateTime(),
                 description = "",
                 enabled = true,
                 entries = stLorebook.entries.values.map { entry ->

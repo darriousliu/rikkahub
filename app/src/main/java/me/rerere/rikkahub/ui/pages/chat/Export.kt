@@ -79,6 +79,7 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyUIMessage
 import me.rerere.ai.util.encodeBase64
 import me.rerere.common.android.appTempFolder
+import me.rerere.common.time.toDashedFileTimestamp
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findModelById
@@ -102,10 +103,10 @@ import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.getActivity
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
-import me.rerere.rikkahub.utils.toLocalString
+import me.rerere.rikkahub.utils.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource as sharedPainterResource
 import java.io.FileOutputStream
-import java.time.LocalDateTime
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -244,11 +245,11 @@ private fun exportToMarkdown(
     conversation: Conversation,
     messages: List<UIMessage>
 ) {
-    val filename = "chat-export-${LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.md"
+    val filename = "chat-export-${Clock.System.now().toDashedFileTimestamp()}.md"
 
     val sb = buildAnnotatedString {
         append("# ${conversation.title}\n\n")
-        append("*Exported on ${LocalDateTime.now().toLocalString()}*\n\n")
+        append("*Exported on ${Clock.System.now().toLocalDateTime()}*\n\n")
 
         messages.forEach { message ->
             val role = if (message.role == MessageRole.USER) "**User**" else "**Assistant**"
@@ -387,7 +388,7 @@ private suspend fun exportToImage(
     settings: Settings,
     options: ImageExportOptions = ImageExportOptions()
 ) {
-    val filename = "chat-export-${LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))}.png"
+    val filename = "chat-export-${Clock.System.now().toDashedFileTimestamp()}.png"
     val composer = BitmapComposer(scope)
     val activity = context.getActivity()
     if (activity == null) {
@@ -484,7 +485,7 @@ private fun ExportedChatImage(
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                             )
                             Text(
-                                text = "${LocalDateTime.now().toLocalString()}  rikka-ai.com",
+                                text = "${Clock.System.now().toLocalDateTime()}  rikka-ai.com",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
