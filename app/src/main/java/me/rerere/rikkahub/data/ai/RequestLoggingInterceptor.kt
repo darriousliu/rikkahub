@@ -5,6 +5,7 @@ import me.rerere.common.android.Logging
 import okhttp3.Interceptor
 import okhttp3.Response
 import okio.Buffer
+import kotlin.time.TimeSource
 
 internal interface RequestLogSink {
     val enabled: Boolean
@@ -29,10 +30,10 @@ private object LoggingRequestLogSink : RequestLogSink {
     }
 }
 
-private object WallClockRequestTimeSource : RequestTimeSource {
+private object MonotonicRequestTimeSource : RequestTimeSource {
     override fun markNow(): RequestTimeMark {
-        val startedAt = System.currentTimeMillis()
-        return RequestTimeMark { System.currentTimeMillis() - startedAt }
+        val startedAt = TimeSource.Monotonic.markNow()
+        return RequestTimeMark { startedAt.elapsedNow().inWholeMilliseconds }
     }
 }
 
@@ -42,7 +43,7 @@ class RequestLoggingInterceptor internal constructor(
 ) : Interceptor {
     constructor() : this(
         logSink = LoggingRequestLogSink,
-        timeSource = WallClockRequestTimeSource,
+        timeSource = MonotonicRequestTimeSource,
     )
 
     override fun intercept(chain: Interceptor.Chain): Response {
