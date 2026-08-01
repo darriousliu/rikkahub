@@ -33,6 +33,9 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
+internal fun createStableChatboxUuid(value: String): Uuid =
+    Uuid.parse(UUID.nameUUIDFromBytes(value.toByteArray(StandardCharsets.UTF_8)).toString())
+
 /**
  * Chatbox exports its data as a single JSON object that is close to its local storage layout.
  *
@@ -288,10 +291,10 @@ object ChatboxImporter {
 
             val messageId = message["id"]?.asString ?: "${sessionId}:${message.hashCode()}"
             MessageNode(
-                id = stableUuid("chatbox:node:$sessionId:$messageId"),
+                id = createStableChatboxUuid("chatbox:node:$sessionId:$messageId"),
                 messages = listOf(
                     UIMessage(
-                        id = stableUuid("chatbox:message:$messageId"),
+                        id = createStableChatboxUuid("chatbox:message:$messageId"),
                         role = role,
                         parts = parseResult.parts,
                         createdAt = millisToLocalDateTime(timestamp),
@@ -314,7 +317,7 @@ object ChatboxImporter {
 
         return ChatboxSessionParseResult(
             conversation = Conversation(
-                id = stableUuid("chatbox:session:$sessionId"),
+                id = createStableChatboxUuid("chatbox:session:$sessionId"),
                 assistantId = assistantId,
                 title = title,
                 messageNodes = nodes,
@@ -575,9 +578,6 @@ object ChatboxImporter {
     private fun millisToLocalDateTime(timestamp: Long?) =
         Instant.fromEpochMilliseconds(timestamp ?: Clock.System.now().toEpochMilliseconds())
             .toLocalDateTime(TimeZone.currentSystemDefault())
-
-    private fun stableUuid(value: String): Uuid =
-        Uuid.parse(UUID.nameUUIDFromBytes(value.toByteArray(StandardCharsets.UTF_8)).toString())
 
     private val JsonElement.jsonObjectOrNull: JsonObject?
         get() = this as? JsonObject
