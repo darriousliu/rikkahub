@@ -1,22 +1,23 @@
 package me.rerere.ai.provider
 
-import android.content.Context
 import io.ktor.client.HttpClient
 import me.rerere.ai.provider.providers.ClaudeProvider
 import me.rerere.ai.provider.providers.GoogleProvider
 import me.rerere.ai.provider.providers.OpenAIProvider
-import me.rerere.ai.util.persistentKeyRoulette
+import me.rerere.ai.util.KeyRoulette
 
 /**
  * Provider管理器，负责注册和获取Provider实例
  */
-class ProviderManager(client: HttpClient, context: Context) {
+class ProviderManager(
+    client: HttpClient,
+    keyRoulette: KeyRoulette = KeyRoulette.default(),
+) {
     // 存储已注册的Provider实例
     private val providers = mutableMapOf<String, Provider<*>>()
 
     init {
         // 注册默认Provider
-        val keyRoulette = persistentKeyRoulette(context)
         registerProvider("openai", OpenAIProvider(client, keyRoulette))
         registerProvider("google", GoogleProvider(client, keyRoulette))
         registerProvider("claude", ClaudeProvider(client, keyRoulette))

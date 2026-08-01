@@ -12,6 +12,8 @@ import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import io.requery.android.database.sqlite.SQLiteCustomExtension
 import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
+import me.rerere.ai.util.KeyRoulette
+import me.rerere.ai.util.lru
 import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
@@ -236,7 +238,7 @@ val dataSourceModule = module {
                     preconfigured = aiOkHttpClient
                 }
             },
-            context = get(),
+            keyRoulette = KeyRoulette.lru(get()),
         )
     }
 
