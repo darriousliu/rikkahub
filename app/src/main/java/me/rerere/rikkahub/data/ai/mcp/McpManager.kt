@@ -26,7 +26,6 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
 import me.rerere.rikkahub.utils.JsonInstant
-import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 import kotlin.io.encoding.Base64
 import kotlin.uuid.Uuid
@@ -43,17 +42,15 @@ class McpManager(
     private val filesManager: FilesManager,
     appEventBus: AppEventBus,
 ) {
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.MINUTES)
-        .writeTimeout(120, TimeUnit.SECONDS)
-        .followSslRedirects(true)
-        .followRedirects(true)
-        .build()
-
     private val httpClient = HttpClient(OkHttp) {
         engine {
-            preconfigured = okHttpClient
+            config {
+                connectTimeout(20, TimeUnit.SECONDS)
+                readTimeout(10, TimeUnit.MINUTES)
+                writeTimeout(120, TimeUnit.SECONDS)
+                followSslRedirects(true)
+                followRedirects(true)
+            }
         }
         install(ContentNegotiation) {
             json(Json {
@@ -69,7 +66,7 @@ class McpManager(
         settingsStore = settingsStore,
         appScope = appScope,
         appEventBus = appEventBus,
-        oauthClient = McpOAuthClient(okHttpClient),
+        oauthClient = McpOAuthClient(httpClient),
         updateStatus = statusStore::update,
     )
     private val sessionRegistry = McpSessionRegistry(

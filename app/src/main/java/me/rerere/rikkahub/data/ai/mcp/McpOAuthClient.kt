@@ -2,29 +2,47 @@ package me.rerere.rikkahub.data.ai.mcp
 
 import me.rerere.common.crypto.Sha256Digest
 import me.rerere.common.logging.RikkaLog as Log
+import io.ktor.client.HttpClient
+import io.ktor.client.request.accept
+import io.ktor.client.request.forms.FormDataContent
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
+import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
+import io.ktor.http.Url
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import io.ktor.http.parameters
+import io.ktor.http.takeFrom
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.FormBody
-import okhttp3.HttpUrl
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import java.io.IOException
 import java.security.SecureRandom
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.io.encoding.Base64
 
 private const val TAG = "McpOAuthClient"
+
+private fun String.toHttpUrlOrNull(): Url? = runCatching { Url(this) }
+    .getOrNull()
+    ?.takeIf { url ->
+        url.host.isNotBlank() && url.protocol in setOf(URLProtocol.HTTP, URLProtocol.HTTPS)
+    }
+
+private fun Url.origin(): String = URLBuilder(
+    protocol = protocol,
+    host = host.lowercase(),
+    port = port,
+).buildString()
 
 internal fun createPkceChallenge(
     verifier: String,
@@ -48,7 +66,7 @@ internal fun createPkceChallenge(
  * 最终仅通过 transport 的 requestBuilder 注入 `Authorization: Bearer` 请求头。
  */
 class McpOAuthClient(
-    private val httpClient: OkHttpClient,
+    private val httpClient: HttpClient,
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -157,12 +175,14 @@ class McpOAuthClient(
                 scope = scope,
             )
         )
-        val request = Request.Builder()
-            .url(registrationEndpoint)
-            .header("Accept", "application/json")
-            .post(body.toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-        val text = execute(request)
+        val text = execute(
+            url = registrationEndpoint,
+            response = httpClient.post(registrationEndpoint) {
+                accept(ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            },
+        )
         json.decodeFromString(ClientRegistrationResponse.serializer(), text)
     }
 
@@ -193,17 +213,17 @@ class McpOAuthClient(
     ): String {
         val base = authorizationEndpoint.toHttpUrlOrNull()
             ?: error("非法的授权端点: $authorizationEndpoint")
-        return base.newBuilder()
-            .addQueryParameter("response_type", "code")
-            .addQueryParameter("client_id", clientId)
-            .addQueryParameter("redirect_uri", redirectUri)
-            .addQueryParameter("code_challenge", pkce.challenge)
-            .addQueryParameter("code_challenge_method", "S256")
-            .addQueryParameter("state", state)
-            .addQueryParameter("resource", resource)
-            .apply { if (!scope.isNullOrBlank()) addQueryParameter("scope", scope) }
-            .build()
-            .toString()
+        return URLBuilder().takeFrom(base).apply {
+            host = host.lowercase()
+            parameters.append("response_type", "code")
+            parameters.append("client_id", clientId)
+            parameters.append("redirect_uri", redirectUri)
+            parameters.append("code_challenge", pkce.challenge)
+            parameters.append("code_challenge_method", "S256")
+            parameters.append("state", state)
+            parameters.append("resource", resource)
+            if (!scope.isNullOrBlank()) parameters.append("scope", scope)
+        }.buildString()
     }
 
     /** 用授权码换取访问令牌。 */
@@ -216,15 +236,15 @@ class McpOAuthClient(
         redirectUri: String,
         resource: String,
     ): TokenResponse = withContext(Dispatchers.IO) {
-        val form = FormBody.Builder()
-            .add("grant_type", "authorization_code")
-            .add("code", code)
-            .add("redirect_uri", redirectUri)
-            .add("client_id", clientId)
-            .add("code_verifier", codeVerifier)
-            .add("resource", resource)
-            .apply { if (!clientSecret.isNullOrBlank()) add("client_secret", clientSecret) }
-            .build()
+        val form = parameters {
+            append("grant_type", "authorization_code")
+            append("code", code)
+            append("redirect_uri", redirectUri)
+            append("client_id", clientId)
+            append("code_verifier", codeVerifier)
+            append("resource", resource)
+            if (!clientSecret.isNullOrBlank()) append("client_secret", clientSecret)
+        }
         postToken(tokenEndpoint, form)
     }
 
@@ -237,26 +257,25 @@ class McpOAuthClient(
         resource: String,
         scope: String?,
     ): TokenResponse = withContext(Dispatchers.IO) {
-        val form = FormBody.Builder()
-            .add("grant_type", "refresh_token")
-            .add("refresh_token", refreshToken)
-            .add("client_id", clientId)
-            .add("resource", resource)
-            .apply {
-                if (!clientSecret.isNullOrBlank()) add("client_secret", clientSecret)
-                if (!scope.isNullOrBlank()) add("scope", scope)
-            }
-            .build()
+        val form = parameters {
+            append("grant_type", "refresh_token")
+            append("refresh_token", refreshToken)
+            append("client_id", clientId)
+            append("resource", resource)
+            if (!clientSecret.isNullOrBlank()) append("client_secret", clientSecret)
+            if (!scope.isNullOrBlank()) append("scope", scope)
+        }
         postToken(tokenEndpoint, form)
     }
 
-    private suspend fun postToken(tokenEndpoint: String, form: FormBody): TokenResponse {
-        val request = Request.Builder()
-            .url(tokenEndpoint)
-            .header("Accept", "application/json")
-            .post(form)
-            .build()
-        val text = execute(request)
+    private suspend fun postToken(tokenEndpoint: String, form: Parameters): TokenResponse {
+        val text = execute(
+            url = tokenEndpoint,
+            response = httpClient.post(tokenEndpoint) {
+                accept(ContentType.Application.Json)
+                setBody(FormDataContent(form))
+            },
+        )
         return json.decodeFromString(TokenResponse.serializer(), text)
     }
 
@@ -266,17 +285,14 @@ class McpOAuthClient(
 
     /** 向 MCP Server 发一次探测请求，从 401 的 WWW-Authenticate 提取 resource_metadata。 */
     private suspend fun probeResourceMetadataUrl(serverUrl: String): String? {
-        val request = Request.Builder()
-            .url(serverUrl)
-            .header("Accept", "application/json, text/event-stream")
-            .get()
-            .build()
         return runCatching {
-            executeRaw(request).use { response ->
-                if (response.code != 401) return null
-                val header = response.header("WWW-Authenticate") ?: return null
-                parseResourceMetadata(header)
+            val response = httpClient.get(serverUrl) {
+                header(HttpHeaders.Accept, "application/json, text/event-stream")
             }
+            response.bodyAsText()
+            if (response.status.value != 401) return null
+            val header = response.headers[HttpHeaders.WWWAuthenticate] ?: return null
+            parseResourceMetadata(header)
         }.getOrNull()
     }
 
@@ -288,7 +304,7 @@ class McpOAuthClient(
 
     private fun wellKnownPrmUrls(serverUrl: String): List<String> {
         val url = serverUrl.toHttpUrlOrNull() ?: return emptyList()
-        val origin = "${url.scheme}://${url.host}${portSuffix(url)}"
+        val origin = url.origin()
         val path = url.encodedPath.trimEnd('/')
         return buildList {
             if (path.isNotEmpty() && path != "/") {
@@ -300,7 +316,7 @@ class McpOAuthClient(
 
     private fun wellKnownAsUrls(issuer: String): List<String> {
         val url = issuer.toHttpUrlOrNull() ?: return emptyList()
-        val origin = "${url.scheme}://${url.host}${portSuffix(url)}"
+        val origin = url.origin()
         val path = url.encodedPath.trimEnd('/')
         return buildList {
             if (path.isNotEmpty() && path != "/") {
@@ -313,49 +329,25 @@ class McpOAuthClient(
         }.distinct()
     }
 
-    private fun portSuffix(url: HttpUrl): String {
-        val defaultPort = HttpUrl.defaultPort(url.scheme)
-        return if (url.port == defaultPort) "" else ":${url.port}"
-    }
-
     private suspend inline fun <reified T> getJson(url: String): T {
-        val request = Request.Builder()
-            .url(url)
-            .header("Accept", "application/json")
-            .get()
-            .build()
-        val text = execute(request)
+        val text = execute(
+            url = url,
+            response = httpClient.get(url) {
+                accept(ContentType.Application.Json)
+            },
+        )
         return json.decodeFromString(text)
     }
 
-    private suspend fun execute(request: Request): String {
-        executeRaw(request).use { response ->
-            val body = response.body?.string().orEmpty()
-            if (!response.isSuccessful) {
-                throw IOException("HTTP ${response.code} for ${request.url}: ${body.take(300)}")
-            }
-            return body
+    private suspend fun execute(url: String, response: HttpResponse): String {
+        val body = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            throw IOException("HTTP ${response.status.value} for $url: ${body.take(300)}")
         }
+        return body
     }
 
-    private suspend fun executeRaw(request: Request): Response =
-        suspendCancellableCoroutine { cont ->
-            val call = httpClient.newCall(request)
-            cont.invokeOnCancellation { runCatching { call.cancel() } }
-            call.enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    if (cont.isActive) cont.resumeWithException(e)
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    if (cont.isActive) cont.resume(response)
-                }
-            })
-        }
-
     companion object {
-        private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-
         private fun base64Url(bytes: ByteArray): String =
             Base64.UrlSafe.encode(bytes).trimEnd('=')
 
@@ -364,7 +356,10 @@ class McpOAuthClient(
          */
         fun canonicalResource(serverUrl: String): String {
             val url = serverUrl.toHttpUrlOrNull() ?: return serverUrl
-            return url.newBuilder().fragment(null).build().toString()
+            return URLBuilder().takeFrom(url).apply {
+                host = host.lowercase()
+                encodedFragment = ""
+            }.buildString()
         }
     }
 }
