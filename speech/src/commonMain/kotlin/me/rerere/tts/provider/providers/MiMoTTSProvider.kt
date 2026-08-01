@@ -1,9 +1,6 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.header
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -110,12 +107,9 @@ internal class MiMoSseProcessor(
     }
 }
 
-class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
-    private val httpClient = HttpClient(OkHttp) {
-        install(HttpTimeout) {
-            socketTimeoutMillis = 120_000
-        }
-    }
+class MiMoTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.MiMo> {
 
     // MiMo 支持在朗读文本中嵌入风格/音频标签控制语气与情感
     // 官方文档: https://xiaomimimo.com (音频标签控制)
@@ -140,7 +134,6 @@ class MiMoTTSProvider : TTSProvider<TTSProviderSetting.MiMo> {
     """.trimIndent()
 
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.MiMo,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {

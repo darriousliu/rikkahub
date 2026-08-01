@@ -1,28 +1,35 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
+import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
 import io.ktor.utils.io.readLine
-import org.json.JSONObject
 
 private const val TAG = "QwenTTSProvider"
+private val qwenJson = Json { ignoreUnknownKeys = true }
 
-class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
+class QwenTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.Qwen> {
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.Qwen,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
+        val requestBody = buildJsonObject {
             put("model", providerSetting.model)
-            put("input", JSONObject().apply {
+            put("input", buildJsonObject {
                 put("text", request.text)
                 put("voice", providerSetting.voice)
                 put("language_type", providerSetting.languageType)
@@ -31,7 +38,7 @@ class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val response = postRemoteTtsRequest(
+        val response = httpClient.postRemoteTtsRequest(
             url = "${providerSetting.baseUrl}/services/aigc/multimodal-generation/generation",
             body = requestBody.toString(),
             headers = mapOf(
@@ -85,11 +92,10 @@ class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
 
     private fun parseSSEData(data: String): Pair<ByteArray, Boolean>? {
         return try {
-            val json = JSONObject(data)
-            val output = json.optJSONObject("output") ?: return null
-            val audio = output.optJSONObject("audio") ?: return null
-            val audioBase64 = audio.optString("data", "")
-            val finishReason = output.optString("finish_reason", "")
+            val output = qwenJson.parseToJsonElement(data).jsonObject["output"]?.jsonObject ?: return null
+            val audio = output["audio"]?.jsonObject ?: return null
+            val audioBase64 = audio["data"]?.jsonPrimitive?.contentOrNull.orEmpty()
+            val finishReason = output["finish_reason"]?.jsonPrimitive?.contentOrNull.orEmpty()
 
             if (audioBase64.isNotEmpty()) {
                 val audioData = decodeAudioBase64(audioBase64)

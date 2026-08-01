@@ -22,9 +22,10 @@ private const val TAG = "SystemTTSProvider"
 
 internal fun createSystemTtsUtteranceId(): String = Uuid.random().toString()
 
-class SystemTTSProvider : TTSProvider<TTSProviderSetting.SystemTTS> {
+class SystemTTSProvider(
+    private val context: Context,
+) : TTSProvider<TTSProviderSetting.SystemTTS> {
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.SystemTTS,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {

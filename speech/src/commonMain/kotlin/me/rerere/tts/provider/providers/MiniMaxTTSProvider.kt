@@ -1,10 +1,7 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.header
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -39,12 +36,9 @@ private data class MiniMaxResponse(
     val data: MiniMaxResponseData
 )
 
-class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
-    private val httpClient = HttpClient(OkHttp) {
-        install(HttpTimeout) {
-            socketTimeoutMillis = 60_000
-        }
-    }
+class MiniMaxTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.MiniMax> {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -52,7 +46,6 @@ class MiniMaxTTSProvider : TTSProvider<TTSProviderSetting.MiniMax> {
     }
 
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.MiniMax,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {

@@ -20,6 +20,7 @@ import me.rerere.rikkahub.utils.SoundEffectPlayer
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.web.WebServerManager
 import me.rerere.tts.provider.TTSManager
+import me.rerere.tts.provider.providers.SystemTTSProvider
 import org.koin.dsl.module
 
 val appModule = module {
@@ -54,7 +55,10 @@ val appModule = module {
     }
 
     single {
-        TTSManager(get())
+        TTSManager(
+            httpClient = get(),
+            systemProvider = SystemTTSProvider(get()),
+        )
     }
 
     single {

@@ -1,25 +1,27 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
+import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import org.json.JSONObject
 
 private const val TAG = "FishAudioTTSProvider"
 
-class FishAudioTTSProvider : TTSProvider<TTSProviderSetting.FishAudio> {
+class FishAudioTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.FishAudio> {
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.FishAudio,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
+        val requestBody = buildJsonObject {
             put("text", request.text)
             if (providerSetting.referenceId.isNotBlank()) {
                 put("reference_id", providerSetting.referenceId)
@@ -27,7 +29,7 @@ class FishAudioTTSProvider : TTSProvider<TTSProviderSetting.FishAudio> {
             put("format", providerSetting.format)
             put("temperature", providerSetting.temperature.toDouble())
             put("top_p", providerSetting.topP.toDouble())
-            put("prosody", JSONObject().apply {
+            put("prosody", buildJsonObject {
                 put("speed", providerSetting.speed.toDouble())
             })
             put("chunk_length", providerSetting.chunkLength)
@@ -37,7 +39,7 @@ class FishAudioTTSProvider : TTSProvider<TTSProviderSetting.FishAudio> {
 
         Log.i(TAG, "generateSpeech: model=${providerSetting.model}, referenceId=${providerSetting.referenceId}")
 
-        val response = postRemoteTtsRequest(
+        val response = httpClient.postRemoteTtsRequest(
             url = "${providerSetting.baseUrl}/v1/tts",
             body = requestBody.toString(),
             headers = mapOf(

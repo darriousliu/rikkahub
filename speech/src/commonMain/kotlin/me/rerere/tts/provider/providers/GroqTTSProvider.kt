@@ -1,25 +1,27 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
+import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import org.json.JSONObject
 
 private const val TAG = "GroqTTSProvider"
 
-class GroqTTSProvider : TTSProvider<TTSProviderSetting.Groq> {
+class GroqTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.Groq> {
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.Groq,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
+        val requestBody = buildJsonObject {
             put("model", providerSetting.model)
             put("input", request.text)
             put("voice", providerSetting.voice)
@@ -28,7 +30,7 @@ class GroqTTSProvider : TTSProvider<TTSProviderSetting.Groq> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val response = postRemoteTtsRequest(
+        val response = httpClient.postRemoteTtsRequest(
             url = "${providerSetting.baseUrl}/audio/speech",
             body = requestBody.toString(),
             headers = mapOf(

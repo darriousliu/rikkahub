@@ -1,22 +1,26 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
+import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import org.json.JSONArray
-import org.json.JSONObject
 
 private const val TAG = "GeminiTTSProvider"
 
-class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
+class GeminiTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.Gemini> {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Serializable
@@ -46,27 +50,26 @@ class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
     )
 
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.Gemini,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
-        val requestBody = JSONObject().apply {
-            put("contents", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("parts", JSONArray().apply {
-                        put(JSONObject().apply {
+        val requestBody = buildJsonObject {
+            put("contents", buildJsonArray {
+                add(buildJsonObject {
+                    put("parts", buildJsonArray {
+                        add(buildJsonObject {
                             put("text", request.text)
                         })
                     })
                 })
             })
-            put("generationConfig", JSONObject().apply {
-                put("responseModalities", JSONArray().apply {
-                    put("AUDIO")
+            put("generationConfig", buildJsonObject {
+                put("responseModalities", buildJsonArray {
+                    add("AUDIO")
                 })
-                put("speechConfig", JSONObject().apply {
-                    put("voiceConfig", JSONObject().apply {
-                        put("prebuiltVoiceConfig", JSONObject().apply {
+                put("speechConfig", buildJsonObject {
+                    put("voiceConfig", buildJsonObject {
+                        put("prebuiltVoiceConfig", buildJsonObject {
                             put("voiceName", providerSetting.voiceName)
                         })
                     })
@@ -77,7 +80,7 @@ class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val response = postRemoteTtsRequest(
+        val response = httpClient.postRemoteTtsRequest(
             url = "${providerSetting.baseUrl}/models/${providerSetting.model}:generateContent",
             body = requestBody.toString(),
             headers = mapOf(

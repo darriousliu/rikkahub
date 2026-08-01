@@ -1,6 +1,6 @@
 package me.rerere.tts.provider.providers
 
-import android.content.Context
+import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,9 +28,10 @@ private const val TAG = "StepTTSProvider"
  * - 模型总览: https://platform.stepfun.com/docs/zh/guides/models/stepaudio-2.5-tts
  * - 开发指南: https://platform.stepfun.com/docs/zh/guides/developer/tts
  */
-class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
+class StepTTSProvider(
+    private val httpClient: HttpClient,
+) : TTSProvider<TTSProviderSetting.Step> {
     override fun generateSpeech(
-        context: Context,
         providerSetting: TTSProviderSetting.Step,
         request: TTSRequest
     ): Flow<AudioChunk> = flow {
@@ -51,7 +52,7 @@ class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
 
         Log.i(TAG, "generateSpeech: model=${providerSetting.model} voice=${providerSetting.voice} format=${providerSetting.responseFormat}")
 
-        val response = postRemoteTtsRequest(
+        val response = httpClient.postRemoteTtsRequest(
             url = "${providerSetting.baseUrl.trimEnd('/')}/v1/audio/speech",
             body = requestBody.toString(),
             headers = mapOf(

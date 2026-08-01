@@ -2,26 +2,32 @@ package me.rerere.tts.provider.providers
 
 import me.rerere.common.http.SseEvent
 import me.rerere.tts.model.AudioFormat
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
-import java.util.Base64
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class MiMoTTSProviderTest {
     @Test
     fun decode_audio_data_from_sse_chunk() {
         val expected = byteArrayOf(1, 2, 3, 4)
-        val encoded = Base64.getEncoder().encodeToString(expected)
+        val encoded = "AQIDBA=="
         val data = """{"choices":[{"delta":{"audio":{"data":"$encoded"}}}]}"""
 
         val actual = decodeMiMoAudioData(data)
 
         assertNotNull(actual)
-        assertArrayEquals(expected, actual)
+        assertContentEquals(expected, actual)
+    }
+
+    @Test
+    fun decode_unpadded_audio_data_from_sse_chunk() {
+        val data = """{"choices":[{"delta":{"audio":{"data":"AQIDBA"}}}]}"""
+
+        assertContentEquals(byteArrayOf(1, 2, 3, 4), decodeMiMoAudioData(data))
     }
 
     @Test
@@ -33,7 +39,7 @@ class MiMoTTSProviderTest {
     @Test
     fun emits_single_terminal_chunk_on_done_and_closed() {
         val processor = MiMoSseProcessor(model = "mimo-v2-tts", voice = "mimo_default")
-        val encoded = Base64.getEncoder().encodeToString(byteArrayOf(9, 8, 7))
+        val encoded = "CQgH"
         val audioData = """{"choices":[{"delta":{"audio":{"data":"$encoded"}}}]}"""
 
         val first = processor.process(SseEvent.Event(id = null, type = null, data = audioData))

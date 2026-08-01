@@ -1,6 +1,6 @@
 package me.rerere.tts.provider
 
-import android.content.Context
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.flow.Flow
 import me.rerere.tts.model.AudioChunk
 import me.rerere.tts.model.TTSRequest
@@ -13,38 +13,39 @@ import me.rerere.tts.provider.providers.MiniMaxTTSProvider
 import me.rerere.tts.provider.providers.OpenAITTSProvider
 import me.rerere.tts.provider.providers.QwenTTSProvider
 import me.rerere.tts.provider.providers.StepTTSProvider
-import me.rerere.tts.provider.providers.SystemTTSProvider
 import me.rerere.tts.provider.providers.XAITTSProvider
 
-class TTSManager(private val context: Context) {
-    private val openAIProvider = OpenAITTSProvider()
-    private val geminiProvider = GeminiTTSProvider()
-    private val systemProvider = SystemTTSProvider()
-    private val miniMaxProvider = MiniMaxTTSProvider()
-    private val qwenProvider = QwenTTSProvider()
-    private val groqProvider = GroqTTSProvider()
-    private val xaiProvider = XAITTSProvider()
-    private val miMoProvider = MiMoTTSProvider()
-    private val stepProvider = StepTTSProvider()
-    private val elevenLabsProvider = ElevenLabsTTSProvider()
-    private val fishAudioProvider = FishAudioTTSProvider()
+class TTSManager(
+    httpClient: HttpClient,
+    private val systemProvider: TTSProvider<TTSProviderSetting.SystemTTS>,
+) {
+    private val openAIProvider = OpenAITTSProvider(httpClient)
+    private val geminiProvider = GeminiTTSProvider(httpClient)
+    private val miniMaxProvider = MiniMaxTTSProvider(httpClient)
+    private val qwenProvider = QwenTTSProvider(httpClient)
+    private val groqProvider = GroqTTSProvider(httpClient)
+    private val xaiProvider = XAITTSProvider(httpClient)
+    private val miMoProvider = MiMoTTSProvider(httpClient)
+    private val stepProvider = StepTTSProvider(httpClient)
+    private val elevenLabsProvider = ElevenLabsTTSProvider(httpClient)
+    private val fishAudioProvider = FishAudioTTSProvider(httpClient)
 
     fun generateSpeech(
         providerSetting: TTSProviderSetting,
         request: TTSRequest
     ): Flow<AudioChunk> {
         return when (providerSetting) {
-            is TTSProviderSetting.OpenAI -> openAIProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.Gemini -> geminiProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.SystemTTS -> systemProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.MiniMax -> miniMaxProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.Qwen -> qwenProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.Groq -> groqProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.XAI -> xaiProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.MiMo -> miMoProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.ElevenLabs -> elevenLabsProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.FishAudio -> fishAudioProvider.generateSpeech(context, providerSetting, request)
-            is TTSProviderSetting.Step -> stepProvider.generateSpeech(context, providerSetting, request)
+            is TTSProviderSetting.OpenAI -> openAIProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.Gemini -> geminiProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.SystemTTS -> systemProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.MiniMax -> miniMaxProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.Qwen -> qwenProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.Groq -> groqProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.XAI -> xaiProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.MiMo -> miMoProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.ElevenLabs -> elevenLabsProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.FishAudio -> fishAudioProvider.generateSpeech(providerSetting, request)
+            is TTSProviderSetting.Step -> stepProvider.generateSpeech(providerSetting, request)
         }
     }
 
