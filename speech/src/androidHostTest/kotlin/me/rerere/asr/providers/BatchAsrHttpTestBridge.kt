@@ -11,11 +11,7 @@ internal suspend fun transcribeMiMoAudio(
     wavBytes: ByteArray,
 ): String {
     val client = httpClient.asKtorClient()
-    return try {
-        transcribeMiMoAudio(client, provider, wavBytes)
-    } finally {
-        client.close()
-    }
+    return transcribeMiMoAudio(client, provider, wavBytes)
 }
 
 internal suspend fun transcribeStepAudio(
@@ -24,11 +20,7 @@ internal suspend fun transcribeStepAudio(
     pcmBytes: ByteArray,
 ): String {
     val client = httpClient.asKtorClient()
-    return try {
-        transcribeStepAudio(client, provider, pcmBytes)
-    } finally {
-        client.close()
-    }
+    return transcribeStepAudio(client, provider, pcmBytes)
 }
 
 private fun OkHttpClient.asKtorClient(): HttpClient = HttpClient(OkHttp) {

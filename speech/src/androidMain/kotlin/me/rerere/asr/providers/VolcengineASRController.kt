@@ -27,13 +27,6 @@ import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
-import okio.ByteString
-import okio.ByteString.Companion.toByteString
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.util.zip.GZIPInputStream
@@ -45,7 +38,7 @@ private const val MAX_WEBSOCKET_QUEUE_BYTES = 100_000L
 
 class VolcengineASRController(
     private val context: Context,
-    private val httpClient: OkHttpClient,
+    private val webSocketTransport: AsrWebSocketTransport,
     private val provider: ASRProviderSetting.Volcengine
 ) : ASRController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -53,7 +46,7 @@ class VolcengineASRController(
     private val _state = MutableStateFlow(ASRState(isAvailable = true))
     override val state: StateFlow<ASRState> = _state.asStateFlow()
 
-    private var webSocket: WebSocket? = null
+    private var webSocket: AsrWebSocketSession? = null
     private var recorderJob: Job? = null
     private var audioRecord: AudioRecord? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
@@ -79,16 +72,16 @@ class VolcengineASRController(
             )
         }
 
-        val request = Request.Builder()
-            .url(provider.websocketUrl)
-            .addHeader("X-Api-Key", provider.apiKey)
-            .addHeader("X-Api-Resource-Id", provider.resourceId)
-            .addHeader("X-Api-Request-Id", Uuid.random().toString())
-            .addHeader("X-Api-Sequence", "-1")
-            .build()
-
-        webSocket = httpClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
+        webSocket = webSocketTransport.connect(
+            url = provider.websocketUrl,
+            headers = mapOf(
+                "X-Api-Key" to provider.apiKey,
+                "X-Api-Resource-Id" to provider.resourceId,
+                "X-Api-Request-Id" to Uuid.random().toString(),
+                "X-Api-Sequence" to "-1",
+            ),
+            listener = object : AsrWebSocketListener {
+            override fun onOpen(session: AsrWebSocketSession) {
                 val payload = buildFullClientRequestPayload()
                 val compressed = gzipCompress(payload)
                 val frame = VolcengineFrameCodec.buildFrame(
@@ -98,22 +91,24 @@ class VolcengineASRController(
                     compression = COMP_GZIP,
                     payload = compressed
                 )
-                webSocket.send(frame.toByteString())
+                session.send(frame)
                 _state.update { it.copy(status = ASRStatus.Listening, errorMessage = null) }
-                startRecorder(webSocket)
+                startRecorder(session)
             }
 
-            override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                handleBinaryResponse(bytes.toByteArray())
+            override fun onText(session: AsrWebSocketSession, text: String) = Unit
+
+            override fun onBinary(session: AsrWebSocketSession, bytes: ByteArray) {
+                handleBinaryResponse(bytes)
             }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "Volcengine ASR websocket failed", t)
+            override fun onFailure(session: AsrWebSocketSession, error: Throwable) {
+                Log.e(TAG, "Volcengine ASR websocket failed", error)
                 releaseRecorder()
-                setError(t.message ?: "ASR websocket failed")
+                setError(error.message ?: "ASR websocket failed")
             }
 
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            override fun onClosed(session: AsrWebSocketSession, code: Int, reason: String) {
                 releaseRecorder()
                 _state.update { it.copy(status = ASRStatus.Idle, errorMessage = null) }
             }
@@ -133,7 +128,7 @@ class VolcengineASRController(
                 compression = COMP_NONE,
                 payload = ByteArray(0)
             )
-            socket.send(lastFrame.toByteString())
+            socket.send(lastFrame)
             scope.launch {
                 delay(1000)
                 socket.close(1000, "stop")
@@ -215,7 +210,7 @@ class VolcengineASRController(
     }
 
     @SuppressLint("MissingPermission")
-    private fun startRecorder(socket: WebSocket) {
+    private fun startRecorder(socket: AsrWebSocketSession) {
         recorderJob?.cancel()
         recorderJob = scope.launch(Dispatchers.IO) {
             val minBufferSize = AudioRecord.getMinBufferSize(
@@ -242,7 +237,7 @@ class VolcengineASRController(
                     if (read > 0) {
                         val amplitude = calculateRmsAmplitude(buffer, read)
                         _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
-                        if (socket.queueSize() < MAX_WEBSOCKET_QUEUE_BYTES) {
+                        if (socket.queueSize < MAX_WEBSOCKET_QUEUE_BYTES) {
                             val frame = VolcengineFrameCodec.buildFrame(
                                 messageType = MSG_AUDIO_ONLY,
                                 flags = 0x00,
@@ -250,7 +245,7 @@ class VolcengineASRController(
                                 compression = COMP_NONE,
                                 payload = buffer.copyOfRange(0, read)
                             )
-                            socket.send(frame.toByteString())
+                            socket.send(frame)
                         } else {
                             Log.w(TAG, "WebSocket queue full, dropping audio frame")
                         }

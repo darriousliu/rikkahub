@@ -11,7 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.asr.ASRController
@@ -19,6 +18,7 @@ import me.rerere.asr.ASRProviderSetting
 import me.rerere.asr.ASRState
 import me.rerere.asr.providers.DashScopeASRController
 import me.rerere.asr.providers.MiMoASRController
+import me.rerere.asr.providers.OkHttpAsrWebSocketTransport
 import me.rerere.asr.providers.OpenAIRealtimeASRController
 import me.rerere.asr.providers.StepASRController
 import me.rerere.asr.providers.VolcengineASRController
@@ -32,10 +32,11 @@ fun rememberCustomAsrState(): CustomAsrState {
     val context = LocalContext.current
     val settingsStore = koinInject<SettingsStore>()
     val httpClient = koinInject<OkHttpClient>()
+    val ktorHttpClient = koinInject<HttpClient>()
     val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
 
     val asrState = remember {
-        CustomAsrStateImpl(context.applicationContext, httpClient)
+        CustomAsrStateImpl(context.applicationContext, httpClient, ktorHttpClient)
     }
 
     DisposableEffect(settings.selectedASRProviderId, settings.asrProviders) {
@@ -61,11 +62,10 @@ interface CustomAsrState {
 
 private class CustomAsrStateImpl(
     private val context: Context,
-    private val httpClient: OkHttpClient
+    private val httpClient: OkHttpClient,
+    private val ktorHttpClient: HttpClient,
 ) : CustomAsrState {
-    private val ktorHttpClient = HttpClient(OkHttp) {
-        engine { preconfigured = httpClient }
-    }
+    private val webSocketTransport = OkHttpAsrWebSocketTransport(httpClient)
     private var controller: ASRController? = null
     private val idleState = MutableStateFlow(ASRState())
 
@@ -106,7 +106,6 @@ private class CustomAsrStateImpl(
     override fun cleanup() {
         controller?.dispose()
         controller = null
-        ktorHttpClient.close()
         audioManager.abandonAudioFocusRequest(audioFocusRequest)
     }
 
@@ -114,17 +113,17 @@ private class CustomAsrStateImpl(
         return when (provider) {
             is ASRProviderSetting.OpenAIRealtime -> {
                 if (provider.apiKey.isBlank()) return null
-                OpenAIRealtimeASRController(context, httpClient, provider)
+                OpenAIRealtimeASRController(context, webSocketTransport, provider)
             }
 
             is ASRProviderSetting.DashScope -> {
                 if (provider.apiKey.isBlank()) return null
-                DashScopeASRController(context, httpClient, provider)
+                DashScopeASRController(context, webSocketTransport, provider)
             }
 
             is ASRProviderSetting.Volcengine -> {
                 if (provider.apiKey.isBlank()) return null
-                VolcengineASRController(context, httpClient, provider)
+                VolcengineASRController(context, webSocketTransport, provider)
             }
 
             is ASRProviderSetting.MiMo -> {

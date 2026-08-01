@@ -27,11 +27,6 @@ import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
 import kotlin.io.encoding.Base64
 import org.json.JSONArray
 import org.json.JSONObject
@@ -41,7 +36,7 @@ private const val MAX_WEBSOCKET_QUEUE_BYTES = 100_000L
 
 class DashScopeASRController(
     private val context: Context,
-    private val httpClient: OkHttpClient,
+    private val webSocketTransport: AsrWebSocketTransport,
     private val provider: ASRProviderSetting.DashScope
 ) : ASRController {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -49,7 +44,7 @@ class DashScopeASRController(
     private val _state = MutableStateFlow(ASRState(isAvailable = true))
     override val state: StateFlow<ASRState> = _state.asStateFlow()
 
-    private var webSocket: WebSocket? = null
+    private var webSocket: AsrWebSocketSession? = null
     private var recorderJob: Job? = null
     private var audioRecord: AudioRecord? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
@@ -77,30 +72,32 @@ class DashScopeASRController(
             )
         }
 
-        val request = Request.Builder()
-            .url(provider.websocketEndpoint())
-            .addHeader("Authorization", "Bearer ${provider.apiKey}")
-            .addHeader("OpenAI-Beta", "realtime=v1")
-            .build()
-
-        webSocket = httpClient.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                webSocket.send(provider.sessionUpdateEvent().toString())
+        webSocket = webSocketTransport.connect(
+            url = provider.websocketEndpoint(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${provider.apiKey}",
+                "OpenAI-Beta" to "realtime=v1",
+            ),
+            listener = object : AsrWebSocketListener {
+            override fun onOpen(session: AsrWebSocketSession) {
+                session.send(provider.sessionUpdateEvent().toString())
                 _state.update { it.copy(status = ASRStatus.Listening, errorMessage = null) }
-                startRecorder(webSocket)
+                startRecorder(session)
             }
 
-            override fun onMessage(webSocket: WebSocket, text: String) {
+            override fun onText(session: AsrWebSocketSession, text: String) {
                 handleServerEvent(text)
             }
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e(TAG, "DashScope ASR websocket failed", t)
+            override fun onBinary(session: AsrWebSocketSession, bytes: ByteArray) = Unit
+
+            override fun onFailure(session: AsrWebSocketSession, error: Throwable) {
+                Log.e(TAG, "DashScope ASR websocket failed", error)
                 releaseRecorder()
-                setError(t.message ?: "ASR websocket failed")
+                setError(error.message ?: "ASR websocket failed")
             }
 
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            override fun onClosed(session: AsrWebSocketSession, code: Int, reason: String) {
                 releaseRecorder()
                 _state.update {
                     it.copy(
@@ -137,7 +134,7 @@ class DashScopeASRController(
     }
 
     @SuppressLint("MissingPermission")
-    private fun startRecorder(socket: WebSocket) {
+    private fun startRecorder(socket: AsrWebSocketSession) {
         recorderJob?.cancel()
         recorderJob = scope.launch(Dispatchers.IO) {
             val minBufferSize = AudioRecord.getMinBufferSize(
@@ -166,7 +163,7 @@ class DashScopeASRController(
                     if (read > 0) {
                         val amplitude = calculateRmsAmplitude(buffer, read)
                         _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
-                        if (socket.queueSize() < MAX_WEBSOCKET_QUEUE_BYTES) {
+                        if (socket.queueSize < MAX_WEBSOCKET_QUEUE_BYTES) {
                             val encoded = Base64.Default.encode(buffer, 0, read)
                             val event = JSONObject()
                                 .put("event_id", "evt_${System.currentTimeMillis()}")
