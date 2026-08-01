@@ -10,6 +10,7 @@ import me.rerere.common.archive.ZipEntryPathPolicy
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.SkillPaths
 import me.rerere.rikkahub.data.sync.BackupZipPathResolver
+import me.rerere.rikkahub.data.sync.BackupZipSourcePolicy
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
@@ -170,11 +171,12 @@ class WebDavSync(
             // Backup app files
             if (config.items.contains(WebDavConfig.BackupItem.FILES)) {
                 val uploadFolder = File(context.filesDir, FileFolders.UPLOAD)
-                if (uploadFolder.exists() && uploadFolder.isDirectory) {
-                    Log.i(TAG, "prepareBackupFile: Backing up files from ${uploadFolder.absolutePath}")
-                    uploadFolder.listFiles()?.forEach { file ->
-                        if (file.isFile) {
-                            addFileToZip(zipOut, file, "${FileFolders.UPLOAD}/${file.name}")
+                val safeUploadFolder = BackupZipSourcePolicy.resolveDirectory(context.filesDir, uploadFolder)
+                if (safeUploadFolder != null) {
+                    Log.i(TAG, "prepareBackupFile: Backing up files from ${safeUploadFolder.absolutePath}")
+                    safeUploadFolder.listFiles()?.forEach { file ->
+                        BackupZipSourcePolicy.resolveRegularFile(safeUploadFolder, file)?.let { safeFile ->
+                            addFileToZip(zipOut, safeFile, "${FileFolders.UPLOAD}/${safeFile.name}")
                         }
                     }
                 } else {
@@ -182,12 +184,13 @@ class WebDavSync(
                 }
 
                 val skillsFolder = File(context.filesDir, FileFolders.SKILLS)
-                if (skillsFolder.exists() && skillsFolder.isDirectory) {
-                    Log.i(TAG, "prepareBackupFile: Backing up skills from ${skillsFolder.absolutePath}")
+                val safeSkillsFolder = BackupZipSourcePolicy.resolveDirectory(context.filesDir, skillsFolder)
+                if (safeSkillsFolder != null) {
+                    Log.i(TAG, "prepareBackupFile: Backing up skills from ${safeSkillsFolder.absolutePath}")
                     addDirectoryToZip(
                         zipOut = zipOut,
-                        rootDir = skillsFolder,
-                        currentDir = skillsFolder,
+                        rootDir = safeSkillsFolder,
+                        currentDir = safeSkillsFolder,
                         entryPrefix = "${FileFolders.SKILLS}/"
                     )
                 } else {
@@ -195,11 +198,12 @@ class WebDavSync(
                 }
 
                 val fontsFolder = File(context.filesDir, FileFolders.FONTS)
-                if (fontsFolder.exists() && fontsFolder.isDirectory) {
-                    Log.i(TAG, "prepareBackupFile: Backing up fonts from ${fontsFolder.absolutePath}")
-                    fontsFolder.listFiles()?.forEach { file ->
-                        if (file.isFile) {
-                            addFileToZip(zipOut, file, "${FileFolders.FONTS}/${file.name}")
+                val safeFontsFolder = BackupZipSourcePolicy.resolveDirectory(context.filesDir, fontsFolder)
+                if (safeFontsFolder != null) {
+                    Log.i(TAG, "prepareBackupFile: Backing up fonts from ${safeFontsFolder.absolutePath}")
+                    safeFontsFolder.listFiles()?.forEach { file ->
+                        BackupZipSourcePolicy.resolveRegularFile(safeFontsFolder, file)?.let { safeFile ->
+                            addFileToZip(zipOut, safeFile, "${FileFolders.FONTS}/${safeFile.name}")
                         }
                     }
                 } else {
@@ -359,16 +363,18 @@ class WebDavSync(
         entryPrefix: String,
     ) {
         currentDir.listFiles()?.forEach { file ->
-            if (file.isDirectory) {
+            val safeDirectory = BackupZipSourcePolicy.resolveDirectory(rootDir, file)
+            val safeFile = BackupZipSourcePolicy.resolveRegularFile(rootDir, file)
+            if (safeDirectory != null) {
                 addDirectoryToZip(
                     zipOut = zipOut,
                     rootDir = rootDir,
-                    currentDir = file,
+                    currentDir = safeDirectory,
                     entryPrefix = entryPrefix,
                 )
-            } else if (file.isFile) {
-                val relativePath = file.relativeTo(rootDir).invariantSeparatorsPath
-                addFileToZip(zipOut, file, "$entryPrefix$relativePath")
+            } else if (safeFile != null) {
+                val relativePath = safeFile.relativeTo(rootDir).invariantSeparatorsPath
+                addFileToZip(zipOut, safeFile, "$entryPrefix$relativePath")
             }
         }
     }
