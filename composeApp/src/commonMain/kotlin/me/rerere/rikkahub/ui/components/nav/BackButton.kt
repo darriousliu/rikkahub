@@ -9,8 +9,8 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowLeft01
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun BackButton(modifier: Modifier = Modifier) {
@@ -20,12 +20,13 @@ fun BackButton(modifier: Modifier = Modifier) {
             navController.popBackStack()
         },
         modifier = modifier,
-        shapes = IconButtonDefaults.shapes(),
-        colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = CustomColors.listItemColors.containerColor),
+        colors = IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = CustomColors.listItemColors.containerColor,
+        ),
     ) {
         Icon(
             imageVector = HugeIcons.ArrowLeft01,
-            contentDescription = stringResource(Res.string.back)
+            contentDescription = stringResource(Res.string.back),
         )
     }
 }

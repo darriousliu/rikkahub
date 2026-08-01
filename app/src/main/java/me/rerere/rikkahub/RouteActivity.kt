@@ -64,6 +64,7 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.platform.addPlatformGifDecoder
 import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.RikkaHubApp
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalASRState
@@ -185,7 +186,9 @@ class RouteActivity : ComponentActivity() {
                         }
                         .build()
                 }
-                AppRoutes()
+                RikkaHubApp {
+                    AppRoutes()
+                }
             }
         }
     }
