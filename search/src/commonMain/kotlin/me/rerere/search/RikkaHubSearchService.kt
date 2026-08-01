@@ -2,8 +2,6 @@ package me.rerere.search
 
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -42,47 +40,43 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.RikkaHubOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val body = buildJsonObject {
-                put("q", JsonPrimitive(query))
-                put("depth", JsonPrimitive(serviceOptions.depth))
-                put("outputType", JsonPrimitive("sourcedAnswer"))
-                put("includeImages", JsonPrimitive("false"))
+    ): Result<SearchResult> = runCatching {
+        val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+        val body = buildJsonObject {
+            put("q", JsonPrimitive(query))
+            put("depth", JsonPrimitive(serviceOptions.depth))
+            put("outputType", JsonPrimitive("sourcedAnswer"))
+            put("includeImages", JsonPrimitive("false"))
+        }
+
+        val response = httpClient.postSearchRequest(
+            url = "https://api.rikka-ai.com/v1/search",
+            body = body.toString(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                "Content-Type" to "application/json",
+            ),
+        )
+
+        Log.i(TAG, "search: $query")
+
+        if (response.isSuccessful) {
+            val responseBody = response.body.let {
+                json.decodeFromString<RikkaHubSearchResponse>(it)
             }
 
-            val response = httpClient.postSearchRequest(
-                url = "https://api.rikka-ai.com/v1/search",
-                body = body.toString(),
-                headers = mapOf(
-                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
-                    "Content-Type" to "application/json",
-                ),
-            )
-
-            Log.i(TAG, "search: $query")
-
-            if (response.isSuccessful) {
-                val responseBody = response.body.let {
-                    json.decodeFromString<RikkaHubSearchResponse>(it)
-                }
-
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = responseBody.answer,
-                        items = responseBody.sources.take(commonOptions.resultSize).map {
-                            SearchResultItem(
-                                title = it.name,
-                                url = it.url,
-                                text = it.snippet
-                            )
-                        }
+            SearchResult(
+                answer = responseBody.answer,
+                items = responseBody.sources.take(commonOptions.resultSize).map {
+                    SearchResultItem(
+                        title = it.name,
+                        url = it.url,
+                        text = it.snippet
                     )
-                )
-            } else {
-                error("response failed #${response.code}: ${response.body}")
-            }
+                },
+            )
+        } else {
+            error("response failed #${response.code}: ${response.body}")
         }
     }
 

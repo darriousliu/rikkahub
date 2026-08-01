@@ -47,6 +47,7 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(project(":ai"))
+            implementation(project(":common"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.http)
             implementation(libs.kotlinx.serialization.json)
@@ -59,7 +60,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
         androidMain.dependencies {
-            implementation(project(":common"))
             implementation(project.dependencies.platform(libs.androidx.compose.bom))
             implementation(libs.androidx.material3)
             implementation(libs.fleeksoft.ksoup)

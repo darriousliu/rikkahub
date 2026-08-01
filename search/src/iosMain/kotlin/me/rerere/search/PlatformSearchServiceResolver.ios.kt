@@ -4,5 +4,6 @@ package me.rerere.search
 internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options: T): SearchService<T> =
     when (options) {
         is SearchServiceOptions.BingLocalOptions -> BingSearchService as SearchService<T>
+        is SearchServiceOptions.RikkaHubOptions -> RikkaHubSearchService as SearchService<T>
         else -> error("Search provider is not available on iOS yet: ${options.displayName}")
     }
