@@ -109,6 +109,7 @@ kotlin {
         androidMain {
             dependsOn(mobileMain)
             dependencies {
+                implementation(libs.androidx.lifecycle.process)
                 implementation(libs.ktor.client.okhttp)
             }
         }
