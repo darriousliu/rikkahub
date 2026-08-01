@@ -92,3 +92,6 @@ fun OkHttpClient.sseFlow(request: Request): Flow<SseEvent> {
         }
     }
 }
+
+internal fun sseFlowForTest(url: String): Flow<SseEvent> =
+    OkHttpClient().sseFlow(Request.Builder().url(url).build())
