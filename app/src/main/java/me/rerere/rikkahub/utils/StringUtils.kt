@@ -1,16 +1,28 @@
 package me.rerere.rikkahub.utils
 
-import java.net.URLDecoder
-import java.net.URLEncoder
+import io.ktor.http.URLDecodeException
+import io.ktor.http.decodeURLQueryComponent
+import io.ktor.http.encodeURLQueryComponent
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 fun String.urlEncode(): String {
-    return URLEncoder.encode(this, "UTF-8")
+    return encodeURLQueryComponent(
+        encodeFull = true,
+        spaceToPlus = true,
+    )
+        .replace("%2D", "-")
+        .replace("%2E", ".")
+        .replace("%5F", "_")
+        .replace("%2A", "*")
 }
 
 fun String.urlDecode(): String {
-    return URLDecoder.decode(this, "UTF-8")
+    return try {
+        decodeURLQueryComponent(plusIsSpace = true)
+    } catch (error: URLDecodeException) {
+        throw IllegalArgumentException(error.message, error)
+    }
 }
 
 @OptIn(ExperimentalEncodingApi::class)
