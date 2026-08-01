@@ -21,8 +21,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val PERPLEXITY_ENDPOINT = "https://api.perplexity.ai/search"
 private const val TAG = "PerplexitySearchService"
@@ -85,16 +83,16 @@ object PerplexitySearchService : SearchService<SearchServiceOptions.PerplexityOp
 
             Log.i(TAG, "search: $body")
 
-            val request = Request.Builder()
-                .url(PERPLEXITY_ENDPOINT)
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = PERPLEXITY_ENDPOINT,
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+                val responseBody = response.body.let {
                     json.decodeFromString<PerplexityResponse>(it)
                 }
 
@@ -116,7 +114,7 @@ object PerplexitySearchService : SearchService<SearchServiceOptions.PerplexityOp
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.code}: ${response.body}")
             }
         }
     }

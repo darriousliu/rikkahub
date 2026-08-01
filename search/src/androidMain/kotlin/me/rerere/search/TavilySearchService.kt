@@ -24,8 +24,6 @@ import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
 import me.rerere.search.SearchService.Companion.keyRoulette
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "TavilySearchService"
 
@@ -99,14 +97,13 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://api.tavily.com/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer $apiKey")
-                .build()
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.tavily.com/search",
+                body = body.toString(),
+                headers = mapOf("Authorization" to "Bearer $apiKey"),
+            )
             if (response.isSuccessful) {
-                val response = response.body.string().let {
+                val response = response.body.let {
                     json.decodeFromString<SearchResponse>(it)
                 }
 
@@ -141,14 +138,13 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                 })
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
-            val request = Request.Builder()
-                .url("https://api.tavily.com/extract")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer $apiKey")
-                .build()
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.tavily.com/extract",
+                body = body.toString(),
+                headers = mapOf("Authorization" to "Bearer $apiKey"),
+            )
             if (response.isSuccessful) {
-                val response = response.body.string().let {
+                val response = response.body.let {
                     json.decodeFromString<ScrapeResponse>(it)
                 }
                 return@withContext Result.success(

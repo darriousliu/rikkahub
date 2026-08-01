@@ -21,8 +21,6 @@ import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
 import me.rerere.search.SearchService.Companion.keyRoulette
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "LinkUpService"
 
@@ -78,18 +76,19 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://api.linkup.so/v1/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .build()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.linkup.so/v1/search",
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer $apiKey",
+                    "Content-Type" to "application/json",
+                ),
+            )
 
             Log.i(TAG, "search: $query")
 
-            val response = httpClient.newCall(request).await()
             if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+                val responseBody = response.body.let {
                     json.decodeFromString<LinkUpSearchResponse>(it)
                 }
 
@@ -106,7 +105,7 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.code}: ${response.body}")
             }
         }
     }
@@ -126,16 +125,16 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://api.linkup.so/v1/fetch")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer $apiKey")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.linkup.so/v1/fetch",
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer $apiKey",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+                val responseBody = response.body.let {
                     json.decodeFromString<LinkUpFetchResponse>(it)
                 }
 
@@ -150,7 +149,7 @@ object LinkUpService : SearchService<SearchServiceOptions.LinkUpOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.code}: ${response.body}")
             }
         }
     }

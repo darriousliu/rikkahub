@@ -2,21 +2,13 @@ package me.rerere.search
 
 import android.content.Context
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.suspendCancellableCoroutine
+import io.ktor.client.HttpClient
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.util.KeyRoulette
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Response
-import okhttp3.internal.closeQuietly
-import okio.IOException
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resumeWithException
 import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 
@@ -47,17 +39,12 @@ interface SearchService<T : SearchServiceOptions> {
             SearchProviderRegistry.serviceFor(options)
 
         @Volatile
-        internal var httpClient: OkHttpClient = OkHttpClient.Builder()
-            .retryOnConnectionFailure(true)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
+        internal var httpClient: HttpClient = HttpClient()
 
         @Volatile
         internal var keyRoulette: KeyRoulette = KeyRoulette.default()
 
-        fun init(client: OkHttpClient, context: Context? = null) {
+        fun init(client: HttpClient, context: Context? = null) {
             httpClient = client
             keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
         }
@@ -298,23 +285,5 @@ function search(query, resultSize) {
   };
 }"""
         }
-    }
-}
-
-internal suspend fun Call.await(): Response {
-    return suspendCancellableCoroutine { continuation ->
-        enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                if (continuation.isActive) {
-                    continuation.resumeWithException(e)
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                continuation.resume(response) { cause, _, _ ->
-                    response.closeQuietly()
-                }
-            }
-        })
     }
 }

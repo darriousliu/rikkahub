@@ -14,8 +14,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "RikkaHubSearchService"
 
@@ -54,18 +52,19 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
                 put("includeImages", JsonPrimitive("false"))
             }
 
-            val request = Request.Builder()
-                .url("https://api.rikka-ai.com/v1/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.rikka-ai.com/v1/search",
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
 
             Log.i(TAG, "search: $query")
 
-            val response = httpClient.newCall(request).await()
             if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+                val responseBody = response.body.let {
                     json.decodeFromString<RikkaHubSearchResponse>(it)
                 }
 
@@ -82,7 +81,7 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.code}: ${response.body}")
             }
         }
     }

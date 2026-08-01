@@ -23,9 +23,6 @@ import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
 import me.rerere.search.SearchService.Companion.keyRoulette
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
     override val name: String = "Exa"
@@ -90,15 +87,16 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://api.exa.ai/search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer $apiKey")
-                .build()
-
-            val response = httpClient.newCall(request).execute()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.exa.ai/search",
+                body = json.encodeToString(body),
+                headers = mapOf(
+                    "Authorization" to "Bearer $apiKey",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
+                val bodyRaw = response.body
                 val response = runCatching {
                     json.decodeFromString<ExaData>(bodyRaw)
                 }.onFailure {
@@ -120,7 +118,7 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                         images = response.results.mapNotNull { it.image?.takeIf { url -> url.isNotBlank() } },
                     ))
             } else {
-                println(response.body.string())
+                println(response.body)
                 error("response failed #${response.code}")
             }
         }
@@ -141,15 +139,16 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://api.exa.ai/contents")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer $apiKey")
-                .build()
-
-            val response = httpClient.newCall(request).execute()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.exa.ai/contents",
+                body = json.encodeToString(body),
+                headers = mapOf(
+                    "Authorization" to "Bearer $apiKey",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
+                val bodyRaw = response.body
                 val data = runCatching {
                     json.decodeFromString<ExaData>(bodyRaw)
                 }.onFailure {
@@ -172,7 +171,7 @@ object ExaSearchService : SearchService<SearchServiceOptions.ExaOptions> {
                     )
                 )
             } else {
-                println(response.body.string())
+                println(response.body)
                 error("response failed #${response.code}")
             }
         }

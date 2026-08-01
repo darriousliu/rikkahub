@@ -213,7 +213,14 @@ val dataSourceModule = module {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.HEADERS
             })
-            .build().also { SearchService.init(it, get()) }
+            .build().also { okHttpClient ->
+                SearchService.init(
+                    client = HttpClient(OkHttp) {
+                        engine { preconfigured = okHttpClient }
+                    },
+                    context = get(),
+                )
+            }
     }
 
     single<SponsorAPI> {

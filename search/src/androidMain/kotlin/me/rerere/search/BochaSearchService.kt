@@ -20,9 +20,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
     override val name: String = "Bocha"
@@ -66,16 +63,16 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                 put("count", JsonPrimitive(commonOptions.resultSize))
             }
 
-            val request = Request.Builder()
-                .url("https://api.bochaai.com/v1/web-search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val response = httpClient.newCall(request).execute()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.bochaai.com/v1/web-search",
+                body = json.encodeToString(body),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val bodyRaw = response.body.string()
+                val bodyRaw = response.body
                 val bochaResponse = runCatching {
                     json.decodeFromString<BochaResponse>(bodyRaw)
                 }.onFailure {
@@ -100,7 +97,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                     )
                 )
             } else {
-                println(response.body.string())
+                println(response.body)
                 error("response failed #${response.code}")
             }
         }

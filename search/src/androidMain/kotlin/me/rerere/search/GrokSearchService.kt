@@ -23,8 +23,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "GrokSearchService"
 
@@ -94,16 +92,16 @@ object GrokSearchService : SearchService<SearchServiceOptions.GrokOptions> {
 
             Log.i(TAG, "search: $query")
 
-            val request = Request.Builder()
-                .url(serviceOptions.customUrl)
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = serviceOptions.customUrl,
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string().let {
+                val responseBody = response.body.let {
                     json.decodeFromString<GrokResponse>(it)
                 }
 
@@ -135,7 +133,7 @@ object GrokSearchService : SearchService<SearchServiceOptions.GrokOptions> {
                     )
                 )
             } else {
-                error("response failed #${response.code}: ${response.body?.string()}")
+                error("response failed #${response.code}: ${response.body}")
             }
         }
     }

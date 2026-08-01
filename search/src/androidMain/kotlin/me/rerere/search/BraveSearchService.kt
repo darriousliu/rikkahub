@@ -18,7 +18,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
 
 private const val TAG = "BraveSearchService"
 
@@ -61,15 +60,15 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
                     "?q=${encodeSearchQuery(query)}" +
                     "&count=${commonOptions.resultSize}"
 
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("Accept", "application/json")
-                .addHeader("X-Subscription-Token", serviceOptions.apiKey)
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.executeSearchRequest(
+                url = url,
+                headers = mapOf(
+                    "Accept" to "application/json",
+                    "X-Subscription-Token" to serviceOptions.apiKey,
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string()
+                val responseBody = response.body
                 val searchResponse = json.decodeFromString<BraveSearchResponse>(responseBody)
 
                 val items = searchResponse.web?.results?.map { result ->

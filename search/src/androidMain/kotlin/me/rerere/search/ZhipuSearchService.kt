@@ -20,9 +20,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
     override val name: String = "Zhipu"
@@ -66,15 +63,16 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
                 put("count", JsonPrimitive(commonOptions.resultSize))
             }
 
-            val request = Request.Builder()
-                .url("https://open.bigmodel.cn/api/paas/v4/web_search")
-                .post(json.encodeToString(body).toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
-
-            val response = httpClient.newCall(request).execute()
+            val response = httpClient.postSearchRequest(
+                url = "https://open.bigmodel.cn/api/paas/v4/web_search",
+                body = json.encodeToString(body),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val bodyRaw = response.body?.string() ?: error("Failed to get response body")
+                val bodyRaw = response.body
                 val response = runCatching {
                     json.decodeFromString<ZhipuDto>(bodyRaw)
                 }.onFailure {
@@ -94,7 +92,7 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
                         }
                     ))
             } else {
-                println(response.body?.string())
+                println(response.body)
                 error("response failed #${response.code}")
             }
         }

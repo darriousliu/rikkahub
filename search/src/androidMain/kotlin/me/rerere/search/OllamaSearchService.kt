@@ -18,9 +18,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "OllamaSearchService"
 
@@ -70,15 +67,16 @@ object OllamaSearchService : SearchService<SearchServiceOptions.OllamaOptions> {
                 put("max_results", commonOptions.resultSize.coerceIn(5..10))
             }
 
-            val request = Request.Builder()
-                .url("https://ollama.com/api/web_search")
-                .post(body.toString().toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://ollama.com/api/web_search",
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string()
+                val responseBody = response.body
                 val searchResponse = json.decodeFromString<OllamaSearchResponse>(responseBody)
 
                 return@withContext Result.success(
@@ -110,17 +108,18 @@ object OllamaSearchService : SearchService<SearchServiceOptions.OllamaOptions> {
                 put("url", url)
             }
 
-            val request = Request.Builder()
-                .url("https://ollama.com/api/web_fetch")
-                .post(body.toString().toRequestBody("application/json".toMediaType()))
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://ollama.com/api/web_fetch",
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (!response.isSuccessful) {
                 error("response failed for url $url #${response.code}")
             }
-            val responseData = response.body.string().let {
+            val responseData = response.body.let {
                 json.decodeFromString<OllamaScrapeResponse>(it)
             }
 

@@ -2,8 +2,6 @@ package me.rerere.search
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -114,20 +112,11 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
         userScript: String,
         invocation: String,
     ): String {
-        val ktorClient = HttpClient(OkHttp) {
-            engine {
-                preconfigured = httpClient
-            }
-        }
-        return try {
-            executeCustomJavaScript(
-                executor = DefaultJavaScriptExecutor(KtorJavaScriptHttpTransport(ktorClient)),
-                userScript = userScript,
-                invocation = invocation,
-            )
-        } finally {
-            ktorClient.close()
-        }
+        return executeCustomJavaScript(
+            executor = DefaultJavaScriptExecutor(KtorJavaScriptHttpTransport(httpClient)),
+            userScript = userScript,
+            invocation = invocation,
+        )
     }
 }
 

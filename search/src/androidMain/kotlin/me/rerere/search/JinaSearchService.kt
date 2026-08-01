@@ -18,8 +18,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
     private const val DEFAULT_SEARCH_URL = "https://s.jina.ai/"
@@ -75,17 +73,17 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
 
             val searchUrl = serviceOptions.searchUrl.ifBlank { DEFAULT_SEARCH_URL }
 
-            val request = Request.Builder()
-                .url(searchUrl)
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = searchUrl,
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Accept" to "application/json",
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseData = response.body.string().let {
+                val responseData = response.body.let {
                     json.decodeFromString<JinaSearchResponse>(it)
                 }
 
@@ -120,20 +118,20 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
 
             val scrapeUrl = serviceOptions.scrapeUrl.ifBlank { DEFAULT_SCRAPE_URL }
 
-            val request = Request.Builder()
-                .url(scrapeUrl)
-                .post(body.toString().toRequestBody())
-                .addHeader("Authorization", "Bearer ${serviceOptions.apiKey}")
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .addHeader("X-Return-Format", "markdown")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = scrapeUrl,
+                body = body.toString(),
+                headers = mapOf(
+                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                    "Accept" to "application/json",
+                    "Content-Type" to "application/json",
+                    "X-Return-Format" to "markdown",
+                ),
+            )
             if (!response.isSuccessful) {
                 error("response failed for url $url #${response.code}")
             }
-            val responseData = response.body.string().let {
+            val responseData = response.body.let {
                 json.decodeFromString<JinaScrapeResponse>(it)
             }
 

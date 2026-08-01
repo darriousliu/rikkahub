@@ -16,9 +16,7 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
-import okhttp3.Request
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> {
     override val name: String = "Bing"
@@ -51,30 +49,24 @@ object BingSearchService : SearchService<SearchServiceOptions.BingLocalOptions> 
             val url = "https://www.bing.com/search?q=" + encodeSearchQuery(query)
             val locale = Locale.getDefault()
             val acceptLanguage = "${locale.language}-${locale.country},${locale.language}"
-            val request = Request.Builder()
-                .url(url)
-                .header(
-                    "User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-                )
-                .header(
-                    "Accept",
-                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                )
-                .header("Accept-Language", acceptLanguage)
-                .header("Accept-Charset", "utf-8")
-                .header("Connection", "keep-alive")
-                .header("Referer", "https://www.bing.com/")
-                .header("Cookie", "SRCHHPGUSR=ULSR=1")
-                .build()
-
-            val call = httpClient.newCall(request)
-            call.timeout().timeout(5, TimeUnit.SECONDS)
-            val html = call.await().use { response ->
+            val response = httpClient.executeSearchRequest(
+                url = url,
+                headers = mapOf(
+                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                    "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                    "Accept-Language" to acceptLanguage,
+                    "Accept-Charset" to "utf-8",
+                    "Connection" to "keep-alive",
+                    "Referer" to "https://www.bing.com/",
+                    "Cookie" to "SRCHHPGUSR=ULSR=1",
+                ),
+                timeoutMillis = 5_000,
+            )
+            val html = response.run {
                 check(response.code in 200..399) {
                     "Bing search failed with code ${response.code}: ${response.message}"
                 }
-                response.body.string()
+                response.body
             }
 
             val results = parseBingSearchResults(html)

@@ -19,8 +19,6 @@ import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
 import me.rerere.search.SearchService.Companion.keyRoulette
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val TAG = "SerperSearchService"
 
@@ -66,16 +64,16 @@ object SerperSearchService : SearchService<SearchServiceOptions.SerperOptions> {
             }
             val apiKey = keyRoulette.next(serviceOptions.apiKey, serviceOptions.id.toString())
 
-            val request = Request.Builder()
-                .url("https://google.serper.dev/search")
-                .post(body.toString().toRequestBody())
-                .addHeader("X-API-KEY", apiKey)
-                .addHeader("Content-Type", "application/json")
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://google.serper.dev/search",
+                body = body.toString(),
+                headers = mapOf(
+                    "X-API-KEY" to apiKey,
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string()
+                val responseBody = response.body
                 val searchResponse = json.decodeFromString<SerperSearchResponse>(responseBody)
 
                 val answer = searchResponse.answerBox?.let { it.answer ?: it.snippet }

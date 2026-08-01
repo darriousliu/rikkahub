@@ -19,9 +19,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.search.SearchResult.SearchResultItem
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 object TinyfishSearchService : SearchService<SearchServiceOptions.TinyfishOptions> {
     override val name: String = "Tinyfish"
@@ -70,14 +67,12 @@ object TinyfishSearchService : SearchService<SearchServiceOptions.TinyfishOption
             val url = "https://api.search.tinyfish.ai" +
                     "?query=${encodeSearchQuery(query)}"
 
-            val request = Request.Builder()
-                .url(url)
-                .addHeader("X-API-Key", serviceOptions.apiKey)
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.executeSearchRequest(
+                url = url,
+                headers = mapOf("X-API-Key" to serviceOptions.apiKey),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string()
+                val responseBody = response.body
                 val searchResponse = json.decodeFromString<TinyfishSearchResponse>(responseBody)
 
                 val items = searchResponse.results.map { result ->
@@ -114,15 +109,16 @@ object TinyfishSearchService : SearchService<SearchServiceOptions.TinyfishOption
                 put("format", "markdown")
             }
 
-            val request = Request.Builder()
-                .url("https://api.fetch.tinyfish.ai")
-                .post(body.toString().toRequestBody("application/json".toMediaType()))
-                .addHeader("X-API-Key", serviceOptions.apiKey)
-                .build()
-
-            val response = httpClient.newCall(request).await()
+            val response = httpClient.postSearchRequest(
+                url = "https://api.fetch.tinyfish.ai",
+                body = body.toString(),
+                headers = mapOf(
+                    "X-API-Key" to serviceOptions.apiKey,
+                    "Content-Type" to "application/json",
+                ),
+            )
             if (response.isSuccessful) {
-                val responseBody = response.body.string()
+                val responseBody = response.body
                 val fetchResponse = json.decodeFromString<TinyfishFetchResponse>(responseBody)
 
                 return@withContext Result.success(
