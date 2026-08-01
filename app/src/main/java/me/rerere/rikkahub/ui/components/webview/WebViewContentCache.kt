@@ -2,18 +2,19 @@ package me.rerere.rikkahub.ui.components.webview
 
 import java.io.File
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 internal object WebViewContentCache {
     private const val DIRECTORY_NAME = "webview_content"
     private const val HASH_LENGTH = 64
-    private val maxAgeMillis = TimeUnit.DAYS.toMillis(7)
+    private val maxAgeMillis = 7.days.inWholeMilliseconds
     private val hexDigits = "0123456789abcdef".toCharArray()
 
     fun store(
         cacheDir: File,
         content: String,
-        nowMillis: () -> Long = System::currentTimeMillis,
+        nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     ): String {
         val id = content.sha256()
         val directory = File(cacheDir, DIRECTORY_NAME)
@@ -34,7 +35,7 @@ internal object WebViewContentCache {
     fun load(
         cacheDir: File,
         id: String,
-        nowMillis: () -> Long = System::currentTimeMillis,
+        nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     ): String? {
         if (!id.isSha256()) return null
 
