@@ -147,7 +147,6 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.termux.terminal.view)
-    implementation(libs.guava.listenablefuture)
 
     // Compose
     implementation(libs.androidx.activity.compose)
