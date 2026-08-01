@@ -72,6 +72,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.androidx.navigation3.runtime)
             implementation(libs.jetbrains.navigation3.ui)
+            implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(project(":ai"))
             implementation(project(":common"))
