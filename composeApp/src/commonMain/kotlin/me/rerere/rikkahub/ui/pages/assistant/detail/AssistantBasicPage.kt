@@ -38,6 +38,9 @@ import me.rerere.ai.provider.ModelType
 import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.shared.PlatformCapability
+import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.shared.hasCapability
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -179,34 +182,36 @@ internal fun AssistantBasicContent(
 
             HorizontalDivider()
 
-            FormItem(
-                label = {
-                    Text(stringResource(Res.string.assistant_page_workspace))
-                },
-                description = {
-                    Text(stringResource(Res.string.assistant_page_workspace_desc))
-                },
-                modifier = Modifier.padding(8.dp),
-            ) {
-                val selectedWorkspace = workspaces.find { it.id == assistant.workspaceId?.toString() }
-                Select(
-                    options = listOf<WorkspaceEntity?>(null) + workspaces,
-                    selectedOption = selectedWorkspace,
-                    onOptionSelected = { workspace ->
-                        onUpdate(
-                            assistant.copy(
-                                workspaceId = workspace?.id?.let { Uuid.parse(it) }
+            if (hasCapability(currentPlatformKind, PlatformCapability.WORKSPACE)) {
+                FormItem(
+                    label = {
+                        Text(stringResource(Res.string.assistant_page_workspace))
+                    },
+                    description = {
+                        Text(stringResource(Res.string.assistant_page_workspace_desc))
+                    },
+                    modifier = Modifier.padding(8.dp),
+                ) {
+                    val selectedWorkspace = workspaces.find { it.id == assistant.workspaceId?.toString() }
+                    Select(
+                        options = listOf<WorkspaceEntity?>(null) + workspaces,
+                        selectedOption = selectedWorkspace,
+                        onOptionSelected = { workspace ->
+                            onUpdate(
+                                assistant.copy(
+                                    workspaceId = workspace?.id?.let { Uuid.parse(it) }
+                                )
                             )
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    optionToString = { workspace ->
-                        workspace?.name ?: stringResource(Res.string.workspace_no_binding)
-                    },
-                )
-            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        optionToString = { workspace ->
+                            workspace?.name ?: stringResource(Res.string.workspace_no_binding)
+                        },
+                    )
+                }
 
-            HorizontalDivider()
+                HorizontalDivider()
+            }
 
             FormItem(
                 modifier = Modifier.padding(8.dp),
