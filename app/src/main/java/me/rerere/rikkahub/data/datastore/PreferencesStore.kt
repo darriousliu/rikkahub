@@ -3,7 +3,7 @@ package me.rerere.rikkahub.data.datastore
 import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.datastore.core.IOException
-import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import me.rerere.ai.core.ReasoningLevel
@@ -48,6 +49,14 @@ private val Context.settingsStore by preferencesDataStore(
         )
     }
 )
+
+internal fun Flow<Preferences>.recoverFromReadFailure(): Flow<Preferences> = catch { exception ->
+    if (exception is IOException) {
+        emit(emptyPreferences())
+    } else {
+        throw exception
+    }
+}
 
 class SettingsStore(
     context: Context,
@@ -133,101 +142,96 @@ class SettingsStore(
 
         // 赞助提醒
         val SPONSOR_ALERT_DISMISSED_AT = intPreferencesKey("sponsor_alert_dismissed_at")
+
+        internal fun settingsFromPreferences(preferences: Preferences) = Settings(
+            favoriteModels = preferences[FAVORITE_MODELS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            chatModelId = preferences[SELECT_MODEL]?.let { Uuid.parse(it) }
+                ?: DEFAULT_AUTO_MODEL_ID,
+            fastModelId = preferences[FAST_MODEL]?.let { Uuid.parse(it) }
+                ?: DEFAULT_AUTO_MODEL_ID,
+            titleModelId = preferences[TITLE_MODEL]?.let { Uuid.parse(it) },
+            translateModeId = preferences[TRANSLATE_MODEL]?.let { Uuid.parse(it) }
+                ?: DEFAULT_AUTO_MODEL_ID,
+            enableSuggestion = preferences[ENABLE_SUGGESTION] != false,
+            suggestionModelId = preferences[SUGGESTION_MODEL]?.let { Uuid.parse(it) },
+            imageGenerationModelId = preferences[IMAGE_GENERATION_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
+            titlePrompt = preferences[TITLE_PROMPT] ?: DEFAULT_TITLE_PROMPT,
+            translatePrompt = preferences[TRANSLATION_PROMPT] ?: DEFAULT_TRANSLATION_PROMPT,
+            translateThinkingBudget = preferences[TRANSLATE_THINKING_BUDGET] ?: 0,
+            suggestionPrompt = preferences[SUGGESTION_PROMPT] ?: DEFAULT_SUGGESTION_PROMPT,
+            ocrModelId = preferences[OCR_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
+            ocrPrompt = preferences[OCR_PROMPT] ?: DEFAULT_OCR_PROMPT,
+            compressModelId = preferences[COMPRESS_MODEL]?.let { Uuid.parse(it) } ?: DEFAULT_AUTO_MODEL_ID,
+            compressPrompt = preferences[COMPRESS_PROMPT] ?: DEFAULT_COMPRESS_PROMPT,
+            assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
+                ?: DEFAULT_ASSISTANT_ID,
+            assistantTags = preferences[ASSISTANT_TAGS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            providers = JsonInstant.decodeFromString(preferences[PROVIDERS] ?: "[]"),
+            assistants = JsonInstant.decodeFromString(preferences[ASSISTANTS] ?: "[]"),
+            dynamicColor = preferences[DYNAMIC_COLOR] != false,
+            themeId = preferences[THEME_ID] ?: DEFAULT_THEME_ID,
+            customThemes = preferences[CUSTOM_THEMES]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            developerMode = preferences[DEVELOPER_MODE] == true,
+            displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
+            searchServices = preferences[SEARCH_SERVICES]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: listOf(SearchServiceOptions.DEFAULT),
+            searchCommonOptions = preferences[SEARCH_COMMON]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: SearchCommonOptions(),
+            searchServiceSelected = preferences[SEARCH_SELECTED] ?: 0,
+            mcpServers = preferences[MCP_SERVERS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            webDavConfig = preferences[WEBDAV_CONFIG]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: WebDavConfig(),
+            s3Config = preferences[S3_CONFIG]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: S3Config(),
+            ttsProviders = preferences[TTS_PROVIDERS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            selectedTTSProviderId = preferences[SELECTED_TTS_PROVIDER]?.let { Uuid.parse(it) }
+                ?: DEFAULT_SYSTEM_TTS_ID,
+            defaultTTSPlaybackSpeed = preferences[DEFAULT_TTS_PLAYBACK_SPEED]?.coerceIn(0.5f, 2.0f) ?: 1.0f,
+            asrProviders = preferences[ASR_PROVIDERS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            selectedASRProviderId = preferences[SELECTED_ASR_PROVIDER]?.let { Uuid.parse(it) },
+            modeInjections = preferences[MODE_INJECTIONS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            lorebooks = preferences[LOREBOOKS]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            quickMessages = preferences[QUICK_MESSAGES]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: emptyList(),
+            webServerEnabled = preferences[WEB_SERVER_ENABLED] == true,
+            webServerPort = preferences[WEB_SERVER_PORT] ?: 8080,
+            webServerJwtEnabled = preferences[WEB_SERVER_JWT_ENABLED] == true,
+            webServerAccessPassword = preferences[WEB_SERVER_ACCESS_PASSWORD] ?: "",
+            webServerLocalhostOnly = preferences[WEB_SERVER_LOCALHOST_ONLY] == true,
+            backupReminderConfig = preferences[BACKUP_REMINDER_CONFIG]?.let {
+                JsonInstant.decodeFromString(it)
+            } ?: BackupReminderConfig(),
+            launchCount = preferences[LAUNCH_COUNT] ?: 0,
+            sponsorAlertDismissedAt = preferences[SPONSOR_ALERT_DISMISSED_AT] ?: 0,
+        )
     }
 
     private val dataStore = context.settingsStore
 
     val settingsFlowRaw = dataStore.data
-        .catch { exception ->
-            if (exception is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw exception
-            }
-        }.map { preferences ->
-            Settings(
-                favoriteModels = preferences[FAVORITE_MODELS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                chatModelId = preferences[SELECT_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
-                fastModelId = preferences[FAST_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
-                titleModelId = preferences[TITLE_MODEL]?.let { Uuid.parse(it) },
-                translateModeId = preferences[TRANSLATE_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
-                enableSuggestion = preferences[ENABLE_SUGGESTION] != false,
-                suggestionModelId = preferences[SUGGESTION_MODEL]?.let { Uuid.parse(it) },
-                imageGenerationModelId = preferences[IMAGE_GENERATION_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
-                titlePrompt = preferences[TITLE_PROMPT] ?: DEFAULT_TITLE_PROMPT,
-                translatePrompt = preferences[TRANSLATION_PROMPT] ?: DEFAULT_TRANSLATION_PROMPT,
-                translateThinkingBudget = preferences[TRANSLATE_THINKING_BUDGET] ?: 0,
-                suggestionPrompt = preferences[SUGGESTION_PROMPT] ?: DEFAULT_SUGGESTION_PROMPT,
-                ocrModelId = preferences[OCR_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
-                ocrPrompt = preferences[OCR_PROMPT] ?: DEFAULT_OCR_PROMPT,
-                compressModelId = preferences[COMPRESS_MODEL]?.let { Uuid.parse(it) } ?: DEFAULT_AUTO_MODEL_ID,
-                compressPrompt = preferences[COMPRESS_PROMPT] ?: DEFAULT_COMPRESS_PROMPT,
-                assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_ASSISTANT_ID,
-                assistantTags = preferences[ASSISTANT_TAGS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                providers = JsonInstant.decodeFromString(preferences[PROVIDERS] ?: "[]"),
-                assistants = JsonInstant.decodeFromString(preferences[ASSISTANTS] ?: "[]"),
-                dynamicColor = preferences[DYNAMIC_COLOR] != false,
-                themeId = preferences[THEME_ID] ?: DEFAULT_THEME_ID,
-                customThemes = preferences[CUSTOM_THEMES]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                developerMode = preferences[DEVELOPER_MODE] == true,
-                displaySetting = JsonInstant.decodeFromString(preferences[DISPLAY_SETTING] ?: "{}"),
-                searchServices = preferences[SEARCH_SERVICES]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: listOf(SearchServiceOptions.DEFAULT),
-                searchCommonOptions = preferences[SEARCH_COMMON]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: SearchCommonOptions(),
-                searchServiceSelected = preferences[SEARCH_SELECTED] ?: 0,
-                mcpServers = preferences[MCP_SERVERS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                webDavConfig = preferences[WEBDAV_CONFIG]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: WebDavConfig(),
-                s3Config = preferences[S3_CONFIG]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: S3Config(),
-                ttsProviders = preferences[TTS_PROVIDERS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                selectedTTSProviderId = preferences[SELECTED_TTS_PROVIDER]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_SYSTEM_TTS_ID,
-                defaultTTSPlaybackSpeed = preferences[DEFAULT_TTS_PLAYBACK_SPEED]?.coerceIn(0.5f, 2.0f) ?: 1.0f,
-                asrProviders = preferences[ASR_PROVIDERS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                selectedASRProviderId = preferences[SELECTED_ASR_PROVIDER]?.let { Uuid.parse(it) },
-                modeInjections = preferences[MODE_INJECTIONS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                lorebooks = preferences[LOREBOOKS]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                quickMessages = preferences[QUICK_MESSAGES]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: emptyList(),
-                webServerEnabled = preferences[WEB_SERVER_ENABLED] == true,
-                webServerPort = preferences[WEB_SERVER_PORT] ?: 8080,
-                webServerJwtEnabled = preferences[WEB_SERVER_JWT_ENABLED] == true,
-                webServerAccessPassword = preferences[WEB_SERVER_ACCESS_PASSWORD] ?: "",
-                webServerLocalhostOnly = preferences[WEB_SERVER_LOCALHOST_ONLY] == true,
-                backupReminderConfig = preferences[BACKUP_REMINDER_CONFIG]?.let {
-                    JsonInstant.decodeFromString(it)
-                } ?: BackupReminderConfig(),
-                launchCount = preferences[LAUNCH_COUNT] ?: 0,
-                sponsorAlertDismissedAt = preferences[SPONSOR_ALERT_DISMISSED_AT] ?: 0,
-            )
-        }
+        .recoverFromReadFailure()
+        .map(::settingsFromPreferences)
         .map {
             var providers = it.providers.ifEmpty { DEFAULT_PROVIDERS }.toMutableList()
             DEFAULT_PROVIDERS.forEach { defaultProvider ->
