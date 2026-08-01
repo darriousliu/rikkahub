@@ -36,8 +36,6 @@ import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import kotlin.uuid.Uuid
@@ -93,7 +91,7 @@ class VolcengineASRController(
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 val payload = buildFullClientRequestPayload()
                 val compressed = gzipCompress(payload)
-                val frame = buildFrame(
+                val frame = VolcengineFrameCodec.buildFrame(
                     messageType = MSG_FULL_CLIENT_REQUEST,
                     flags = 0x00,
                     serialization = SER_JSON,
@@ -128,7 +126,7 @@ class VolcengineASRController(
         val socket = webSocket
         if (socket != null) {
             _state.update { it.copy(status = ASRStatus.Stopping) }
-            val lastFrame = buildFrame(
+            val lastFrame = VolcengineFrameCodec.buildFrame(
                 messageType = MSG_AUDIO_ONLY,
                 flags = FLAG_LAST_PACKET,
                 serialization = SER_NONE,
@@ -179,30 +177,10 @@ class VolcengineASRController(
     }
 
     private fun handleBinaryResponse(data: ByteArray) {
-        if (data.size < 4) return
-
-        val byte1 = data[1].toInt() and 0xFF
-        val byte2 = data[2].toInt() and 0xFF
-        val messageType = (byte1 shr 4) and 0x0F
-        val messageFlags = byte1 and 0x0F
-        val compression = byte2 and 0x0F
-
-        var offset = 4
-
-        when (messageType) {
-            0x09 -> {
-                val hasSequence = (messageFlags and 0x01) != 0
-                if (hasSequence) offset += 4
-
-                if (offset + 4 > data.size) return
-                val payloadSize = ByteBuffer.wrap(data, offset, 4)
-                    .order(ByteOrder.BIG_ENDIAN).int
-                offset += 4
-
-                if (payloadSize <= 0 || offset + payloadSize > data.size) return
-
-                var payload = data.copyOfRange(offset, offset + payloadSize)
-                if (compression == COMP_GZIP) {
+        when (val frame = VolcengineFrameCodec.parseResponse(data) ?: return) {
+            is VolcengineFrameCodec.ServerFrame.Result -> {
+                var payload = frame.payload
+                if (frame.compression == COMP_GZIP) {
                     payload = runCatching { gzipDecompress(payload) }.getOrElse {
                         Log.w(TAG, "Gzip decompression failed", it)
                         return
@@ -224,25 +202,15 @@ class VolcengineASRController(
                 }
             }
 
-            0x0F -> {
-                if (offset + 4 > data.size) return
-                offset += 4 // skip error code
-
-                if (offset + 4 > data.size) return
-                val msgSize = ByteBuffer.wrap(data, offset, 4)
-                    .order(ByteOrder.BIG_ENDIAN).int
-                offset += 4
-
-                val errorMsg = if (msgSize > 0 && offset + msgSize <= data.size) {
-                    String(data, offset, msgSize, Charsets.UTF_8)
-                } else {
-                    "Volcengine ASR error"
-                }
+            is VolcengineFrameCodec.ServerFrame.Error -> {
+                val errorMsg = frame.message?.toString(Charsets.UTF_8) ?: "Volcengine ASR error"
                 Log.e(TAG, "Volcengine ASR error: $errorMsg")
                 setError(errorMsg)
             }
 
-            else -> Log.v(TAG, "Ignored message type: $messageType")
+            is VolcengineFrameCodec.ServerFrame.Ignored -> {
+                Log.v(TAG, "Ignored message type: ${frame.messageType}")
+            }
         }
     }
 
@@ -275,7 +243,7 @@ class VolcengineASRController(
                         val amplitude = calculateRmsAmplitude(buffer, read)
                         _state.update { it.copy(amplitudes = it.amplitudes.appendAmplitude(amplitude)) }
                         if (socket.queueSize() < MAX_WEBSOCKET_QUEUE_BYTES) {
-                            val frame = buildFrame(
+                            val frame = VolcengineFrameCodec.buildFrame(
                                 messageType = MSG_AUDIO_ONLY,
                                 flags = 0x00,
                                 serialization = SER_NONE,
@@ -319,26 +287,6 @@ class VolcengineASRController(
         private const val COMP_NONE = 0x00
         private const val COMP_GZIP = 0x01
         private const val FLAG_LAST_PACKET = 0x02
-
-        private fun buildFrame(
-            messageType: Int,
-            flags: Int,
-            serialization: Int,
-            compression: Int,
-            payload: ByteArray
-        ): ByteArray {
-            val header = byteArrayOf(
-                0x11.toByte(),
-                ((messageType shl 4) or (flags and 0x0F)).toByte(),
-                ((serialization shl 4) or (compression and 0x0F)).toByte(),
-                0x00
-            )
-            val size = ByteBuffer.allocate(4)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putInt(payload.size)
-                .array()
-            return header + size + payload
-        }
 
         private fun gzipCompress(data: ByteArray): ByteArray {
             val bos = ByteArrayOutputStream()
