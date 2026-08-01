@@ -26,6 +26,11 @@ import kotlin.io.encoding.Base64
 
 private const val TAG = "McpOAuthClient"
 
+internal fun createPkceChallenge(verifier: String): String {
+    val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII))
+    return Base64.UrlSafe.encode(digest).trimEnd('=')
+}
+
 /**
  * MCP OAuth 2.1 授权客户端，实现规范 (2025-11-25 basic/authorization) 所需的各环节：
  *
@@ -165,8 +170,7 @@ class McpOAuthClient(
     fun generatePkce(): Pkce {
         val verifierBytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
         val verifier = base64Url(verifierBytes)
-        val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII))
-        return Pkce(verifier = verifier, challenge = base64Url(digest))
+        return Pkce(verifier = verifier, challenge = createPkceChallenge(verifier))
     }
 
     fun generateState(): String {
