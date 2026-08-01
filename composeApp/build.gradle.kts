@@ -112,6 +112,7 @@ kotlin {
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.appcompat)
                 implementation(libs.androidx.lifecycle.process)
+                implementation(libs.coil.gif)
                 implementation(libs.floatingx)
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.ucrop)

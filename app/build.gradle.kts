@@ -205,7 +205,6 @@ dependencies {
 
     // coil
     implementation(libs.coil.compose)
-    implementation(libs.coil.gif)
     implementation(libs.coil.ktor3)
     implementation(libs.coil.svg)
     implementation(libs.coil.cache.control)

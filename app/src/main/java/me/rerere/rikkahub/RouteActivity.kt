@@ -49,8 +49,6 @@ import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.setSingletonImageLoaderFactory
-import coil3.gif.AnimatedImageDecoder
-import coil3.gif.GifDecoder
 import coil3.network.cachecontrol.CacheControlCacheStrategy
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
@@ -64,6 +62,7 @@ import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.addPlatformGifDecoder
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.ui.TTSController
@@ -181,11 +180,7 @@ class RouteActivity : ComponentActivity() {
                                     cacheStrategy = { CacheControlCacheStrategy() },
                                 )
                             )
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                add(AnimatedImageDecoder.Factory())
-                            } else {
-                                add(GifDecoder.Factory())
-                            }
+                            addPlatformGifDecoder()
                             add(SvgDecoder.Factory(scaleToDensity = true))
                         }
                         .build()
