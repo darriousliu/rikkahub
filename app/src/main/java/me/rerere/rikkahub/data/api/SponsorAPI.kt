@@ -14,9 +14,16 @@ interface SponsorAPI {
 
     companion object {
         fun create(httpClient: OkHttpClient): SponsorAPI {
+            return create("https://sponsors.rikka-ai.com/", httpClient)
+        }
+
+        internal fun create(
+            baseUrl: String,
+            httpClient: OkHttpClient = OkHttpClient(),
+        ): SponsorAPI {
             return Retrofit.Builder()
                 .client(httpClient)
-                .baseUrl("https://sponsors.rikka-ai.com")
+                .baseUrl(baseUrl)
                 .addConverterFactory(JsonInstant.asConverterFactory("application/json".toMediaType()))
                 .build()
                 .create(SponsorAPI::class.java)

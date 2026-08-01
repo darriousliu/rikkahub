@@ -220,8 +220,8 @@ val dataSourceModule = module {
             .build().also { SearchService.init(it, get()) }
     }
 
-    single {
-        SponsorAPI.create(get())
+    single<SponsorAPI> {
+        SponsorAPI.create(get<OkHttpClient>())
     }
 
     single {
