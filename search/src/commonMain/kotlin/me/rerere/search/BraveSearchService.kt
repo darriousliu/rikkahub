@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -53,8 +51,7 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.BraveOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
             val url = "https://api.search.brave.com/res/v1/web/search" +
                     "?q=${encodeSearchQuery(query)}" +
@@ -79,16 +76,13 @@ object BraveSearchService : SearchService<SearchServiceOptions.BraveOptions> {
                     )
                 } ?: emptyList()
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = null,
-                        items = items
-                    )
+                SearchResult(
+                    answer = null,
+                    items = items
                 )
             } else {
                 error("Brave search failed with code ${response.code}: ${response.message}")
             }
-        }
     }
 
     override suspend fun scrape(

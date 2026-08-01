@@ -10,5 +10,6 @@ internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options:
         is SearchServiceOptions.ExaOptions -> ExaSearchService as SearchService<T>
         is SearchServiceOptions.SearXNGOptions -> SearXNGService as SearchService<T>
         is SearchServiceOptions.LinkUpOptions -> LinkUpService as SearchService<T>
+        is SearchServiceOptions.BraveOptions -> BraveSearchService as SearchService<T>
         else -> error("Search provider is not available on iOS yet: ${options.displayName}")
     }
