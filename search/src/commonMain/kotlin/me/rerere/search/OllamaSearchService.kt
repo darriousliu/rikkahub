@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -58,8 +56,7 @@ object OllamaSearchService : SearchService<SearchServiceOptions.OllamaOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.OllamaOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
             val body = buildJsonObject {
@@ -79,29 +76,25 @@ object OllamaSearchService : SearchService<SearchServiceOptions.OllamaOptions> {
                 val responseBody = response.body
                 val searchResponse = json.decodeFromString<OllamaSearchResponse>(responseBody)
 
-                return@withContext Result.success(
-                    SearchResult(
-                        items = searchResponse.results.map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.url,
-                                text = it.content
-                            )
-                        }
-                    )
+                SearchResult(
+                    items = searchResponse.results.map {
+                        SearchResultItem(
+                            title = it.title,
+                            url = it.url,
+                            text = it.content
+                        )
+                    },
                 )
             } else {
                 error("Ollama search failed with code ${response.code}: ${response.message}")
             }
-        }
     }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.OllamaOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<ScrapedResult> = runCatching {
             val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
 
             val body = buildJsonObject {
@@ -134,7 +127,6 @@ object OllamaSearchService : SearchService<SearchServiceOptions.OllamaOptions> {
                     )
                 )
             )
-        }
     }
 
     @Serializable
