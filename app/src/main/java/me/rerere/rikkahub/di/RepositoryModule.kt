@@ -2,6 +2,7 @@ package me.rerere.rikkahub.di
 
 import android.content.Context
 import me.rerere.rikkahub.data.db.dao.ConversationDAO
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
@@ -15,6 +16,9 @@ import me.rerere.rikkahub.data.repository.FilesRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
+import me.rerere.rikkahub.data.repository.RoomStatsQueries
+import me.rerere.rikkahub.data.repository.StatsQueries
+import me.rerere.rikkahub.data.repository.StatsRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.workspace.ProotShellRunner
 import me.rerere.workspace.RootfsInstaller
@@ -51,6 +55,18 @@ val repositoryModule = module {
 
     single {
         FavoriteRepository(get())
+    }
+
+    single<StatsQueries> {
+        RoomStatsQueries(get(), get())
+    }
+
+    single {
+        val settingsStore: SettingsStore = get()
+        StatsRepository(
+            queries = get(),
+            launchCountProvider = { settingsStore.settingsFlow.value.launchCount },
+        )
     }
 
     single {

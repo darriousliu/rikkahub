@@ -45,6 +45,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import me.rerere.common.time.today
+import me.rerere.rikkahub.data.model.AppStats
+import me.rerere.rikkahub.data.repository.heatmapStartDate
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.resources.stringResource
