@@ -18,9 +18,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
+import io.ktor.http.URLProtocol
+import io.ktor.http.Url
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Link01
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 @Composable
 fun Favicon(
@@ -92,9 +93,18 @@ fun FaviconRow(
     }
 }
 
-internal fun faviconUrl(url: String): String? = url.toHttpUrlOrNull()?.host?.let { host ->
+internal fun faviconUrl(url: String): String? = url.toHttpUrlOrNull()?.host?.lowercase()?.let { host ->
     "https://favicone.com/$host"
 }
 
 internal fun distinctFaviconUrls(urls: List<String>): List<String> =
-    urls.distinctBy { it.toHttpUrlOrNull()?.host }
+    urls.distinctBy { it.toHttpUrlOrNull()?.host?.lowercase() }
+
+private fun String.toHttpUrlOrNull(): Url? {
+    if (!startsWith("http://", ignoreCase = true) && !startsWith("https://", ignoreCase = true)) return null
+    return runCatching { Url(this) }
+        .getOrNull()
+        ?.takeIf { url ->
+            url.host.isNotBlank() && url.protocol in setOf(URLProtocol.HTTP, URLProtocol.HTTPS)
+        }
+}

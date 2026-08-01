@@ -5,6 +5,13 @@ import android.content.Context
 import android.os.Environment
 import android.widget.Toast
 import androidx.core.net.toUri
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
+import io.ktor.http.isSuccess
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -12,16 +19,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import me.rerere.common.http.await
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.updateCheckUserAgent
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 private const val API_URL = "https://updates.rikka-ai.com/"
 
 class UpdateChecker(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
     private val buildInfo: PlatformBuildInfo,
     private val apiUrl: String = API_URL,
 ) {
@@ -32,21 +36,16 @@ class UpdateChecker(
         emit(
             UiState.Success(
                 data = try {
-                    val response = client.newCall(
-                        Request.Builder()
-                            .url(apiUrl)
-                            .get()
-                            .addHeader(
-                                "User-Agent",
-                                buildInfo.updateCheckUserAgent
-                            )
-                            .build()
-                    ).await()
-                    if (response.isSuccessful) {
-                        json.decodeFromString<UpdateInfo>(response.body.string())
+                    val response = client.get(apiUrl) {
+                        header(HttpHeaders.UserAgent, buildInfo.updateCheckUserAgent)
+                    }
+                    if (response.status.isSuccess()) {
+                        json.decodeFromString<UpdateInfo>(response.bodyAsText())
                     } else {
                         throw Exception("Failed to fetch update info")
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     throw Exception("Failed to fetch update info", e)
                 }

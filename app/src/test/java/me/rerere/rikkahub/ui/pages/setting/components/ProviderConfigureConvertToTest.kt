@@ -3,7 +3,7 @@ package me.rerere.rikkahub.ui.pages.setting.components
 import me.rerere.ai.provider.BalanceOption
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ProviderSetting
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import io.ktor.http.Url
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -56,7 +56,7 @@ class ProviderConfigureConvertToTest {
 
         val converted = original.convertTo(ProviderSetting.Google::class) as ProviderSetting.Google
         assertEquals("https://gateway.example.com/api/v1beta", converted.baseUrl)
-        assertEquals("gateway.example.com", converted.baseUrl.toHttpUrlOrNull()?.host)
+        assertEquals("gateway.example.com", Url(converted.baseUrl).host)
     }
 
     @Test
@@ -69,7 +69,7 @@ class ProviderConfigureConvertToTest {
 
         val converted = original.convertTo(ProviderSetting.OpenAI::class) as ProviderSetting.OpenAI
         assertEquals("https://proxy.example.com/vendor/gemini/v1", converted.baseUrl)
-        assertEquals("proxy.example.com", converted.baseUrl.toHttpUrlOrNull()?.host)
+        assertEquals("proxy.example.com", Url(converted.baseUrl).host)
     }
 
     @Test
@@ -82,7 +82,7 @@ class ProviderConfigureConvertToTest {
 
         val converted = original.convertTo(ProviderSetting.Claude::class) as ProviderSetting.Claude
         assertEquals("https://gateway.example.com/proxy/v1", converted.baseUrl)
-        assertEquals("gateway.example.com", converted.baseUrl.toHttpUrlOrNull()?.host)
+        assertEquals("gateway.example.com", Url(converted.baseUrl).host)
     }
 
     @Test

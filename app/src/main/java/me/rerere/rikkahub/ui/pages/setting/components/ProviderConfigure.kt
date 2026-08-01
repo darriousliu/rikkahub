@@ -28,6 +28,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
+import io.ktor.http.URLBuilder
+import io.ktor.http.URLProtocol
+import io.ktor.http.Url
+import io.ktor.http.encodedPath
+import io.ktor.http.takeFrom
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.provider.ClaudePromptCacheTtl
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
@@ -38,11 +47,6 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlin.reflect.KClass
 
 @Composable
@@ -163,7 +167,10 @@ private fun String.convertToTargetBaseUrl(targetDefaultBaseUrl: String): String 
     if (sourceHost in OFFICIAL_PROVIDER_HOSTS) return targetDefaultBaseUrl
     val targetUrl = targetDefaultBaseUrl.toHttpUrlOrNull() ?: return this
     val convertedPath = sourceUrl.encodedPath.convertToTargetPath(targetUrl.encodedPath)
-    return sourceUrl.newBuilder().encodedPath(convertedPath).build().toString()
+    return URLBuilder().takeFrom(sourceUrl).apply {
+        host = host.lowercase()
+        encodedPath = convertedPath
+    }.buildString()
 }
 
 private fun String.convertToTargetPath(targetPath: String): String {
@@ -186,6 +193,15 @@ private fun String.normalizePath(): String {
 }
 
 private fun String.isValidBaseUrl(): Boolean = this.toHttpUrlOrNull() != null
+
+private fun String.toHttpUrlOrNull(): Url? {
+    if (!startsWith("http://", ignoreCase = true) && !startsWith("https://", ignoreCase = true)) return null
+    return runCatching { Url(this) }
+        .getOrNull()
+        ?.takeIf { url ->
+            url.host.isNotBlank() && url.protocol in setOf(URLProtocol.HTTP, URLProtocol.HTTPS)
+        }
+}
 
 private const val OPENAI_OFFICIAL_HOST = "api.openai.com"
 private const val GOOGLE_OFFICIAL_HOST = "generativelanguage.googleapis.com"
@@ -270,7 +286,7 @@ private fun ProviderConfigureOpenAI(
             checked = provider.useResponseApi,
             onCheckedChange = {
                 onEdit(provider.copy(useResponseApi = it))
-                if (it && provider.baseUrl.toHttpUrlOrNull()?.host != "api.openai.com") {
+                if (it && provider.baseUrl.toHttpUrlOrNull()?.host?.lowercase() != OPENAI_OFFICIAL_HOST) {
                     toaster.show(message = responseAPIWarning, type = ToastType.Warning)
                 }
             }
