@@ -34,7 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import kotlinx.datetime.toJavaLocalDateTime
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
@@ -202,7 +201,7 @@ fun ColumnScope.ChatMessageActionButtons(
 
         if (settings.displaySetting.showDateTimeInMessage) {
             Text(
-                text = message.createdAt.toJavaLocalDateTime().toMessageTimeString(),
+                text = message.createdAt.toMessageTimeString(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 maxLines = 1,
@@ -470,7 +469,7 @@ fun ChatMessageActionsSheet(
 
             // Message Info
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
-                Text(message.createdAt.toJavaLocalDateTime().toLocalString())
+                Text(message.createdAt.toLocalString())
                 if (model != null) {
                     Text(model.displayName)
                 }

@@ -5,11 +5,10 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
+import me.rerere.common.time.toCalendarDate
+import me.rerere.rikkahub.utils.toLocalString
 import me.rerere.rikkahub.utils.toLocalDateTime
-import java.time.ZoneId
-import java.time.format.TextStyle
 import java.util.Locale
-import kotlin.time.toJavaInstant
 
 private const val TIME_GAP_THRESHOLD_SECONDS = 3600L // 1 小时
 
@@ -57,10 +56,9 @@ internal fun applyTimeReminder(messages: List<UIMessage>): List<UIMessage> {
 }
 
 private fun buildTimeReminderMessage(gapSeconds: Long?, instant: Instant): UIMessage {
-    val javaInstant = instant.toJavaInstant()
-    val dayOfWeek = javaInstant.atZone(ZoneId.systemDefault()).dayOfWeek
-        .getDisplayName(TextStyle.FULL, Locale.getDefault())
-    val timeStr = javaInstant.toLocalDateTime()
+    val timeZone = TimeZone.currentSystemDefault()
+    val dayOfWeek = instant.toCalendarDate(timeZone).dayOfWeek.toLocalString(Locale.getDefault())
+    val timeStr = instant.toLocalDateTime(timeZone)
     val content = if (gapSeconds != null) {
         val gapText = formatGap(gapSeconds)
         "<time_reminder>Current time: $dayOfWeek, $timeStr ($gapText since last message)</time_reminder>"

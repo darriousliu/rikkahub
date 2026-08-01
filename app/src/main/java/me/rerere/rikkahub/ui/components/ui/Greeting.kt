@@ -5,9 +5,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
-import java.util.Calendar
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.resources.stringResource
+import kotlin.time.Clock
 
 @Composable
 fun Greeting(
@@ -16,7 +18,7 @@ fun Greeting(
 ) {
     @Composable
     fun getGreetingMessage(): String {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val hour = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
         return when (hour) {
             in 5..11 -> stringResource(id = Res.string.menu_page_morning_greeting)
             in 12..17 -> stringResource(id = Res.string.menu_page_afternoon_greeting)

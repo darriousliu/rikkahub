@@ -5,6 +5,7 @@ import android.os.BatteryManager
 import android.os.Build
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import me.rerere.common.time.today
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
@@ -13,14 +14,12 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.utils.toLocalString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.time.temporal.Temporal
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.time.Clock
 
 data class PlaceholderCtx(
     val context: Context,
@@ -59,7 +58,7 @@ fun buildPlaceholders(block: PlaceholderBuilder.() -> Unit): Map<String, Placeho
 object DefaultPlaceholderProvider : PlaceholderProvider {
     override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
         placeholder("cur_date", { Text(stringResource(Res.string.placeholder_current_date)) }) {
-            LocalDate.now().toDateString()
+            Clock.System.today().toLocalString(includeYear = true)
         }
 
         placeholder("model_id", { Text(stringResource(Res.string.placeholder_model_id)) }) {
@@ -102,11 +101,6 @@ object DefaultPlaceholderProvider : PlaceholderProvider {
             it.settingsStore.settingsFlow.value.displaySetting.userNickname.ifBlank { "user" }
         }
     }
-
-    private fun Temporal.toDateString() = DateTimeFormatter
-        .ofLocalizedDate(FormatStyle.MEDIUM)
-        .withLocale(Locale.getDefault())
-        .format(this)
 
     private fun Context.batteryLevel(): Int {
         val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager

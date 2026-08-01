@@ -16,7 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import me.rerere.ai.ui.UIMessage
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Clock02
@@ -26,7 +28,7 @@ import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.utils.formatNumber
 import me.rerere.rikkahub.utils.toFixed
-import java.time.Duration
+import kotlin.time.Duration
 
 /**
  * 显示消息的技术统计信息（如 token 使用量）
@@ -83,12 +85,9 @@ fun ChatMessageNerdLine(
                     )
                     // TPS
                     if (message.finishedAt != null) {
-                        val duration = Duration.between(
-                            message.createdAt.toJavaLocalDateTime(),
-                            message.finishedAt!!.toJavaLocalDateTime()
-                        )
-                        val tps = usage.completionTokens.toFloat() / duration.toMillis() * 1000
-                        val seconds = (duration.toMillis() / 1000f).toFixed(1)
+                        val duration = generationDuration(message.createdAt, message.finishedAt!!)
+                        val tps = usage.completionTokens.toFloat() / duration.inWholeMilliseconds * 1000
+                        val seconds = (duration.inWholeMilliseconds / 1000f).toFixed(1)
                         StatsItem(
                             icon = {
                                 Icon(
@@ -119,6 +118,13 @@ fun ChatMessageNerdLine(
             }
         }
     }
+}
+
+internal fun generationDuration(
+    createdAt: LocalDateTime,
+    finishedAt: LocalDateTime,
+): Duration {
+    return finishedAt.toInstant(TimeZone.UTC) - createdAt.toInstant(TimeZone.UTC)
 }
 
 @Composable

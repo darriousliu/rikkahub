@@ -49,7 +49,6 @@ import me.rerere.rikkahub.utils.onSuccess
 import me.rerere.rikkahub.utils.toLocalDateTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlin.time.toJavaInstant
 
 @OptIn(ExperimentalTime::class)
 @Composable
@@ -145,7 +144,7 @@ fun UpdateCard(vm: ChatVM, buildInfo: PlatformBuildInfo) {
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = Instant.parse(info.publishedAt).toJavaInstant().toLocalDateTime(),
+                        text = Instant.parse(info.publishedAt).toLocalDateTime(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )

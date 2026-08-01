@@ -1,7 +1,11 @@
 package me.rerere.rikkahub.utils
 
+import kotlinx.datetime.DayOfWeek as KotlinDayOfWeek
 import kotlinx.datetime.LocalDate as KotlinLocalDate
+import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
+import me.rerere.common.time.today
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -12,37 +16,28 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoField
 import java.util.Locale
 import java.time.Instant as JavaInstant
+import kotlin.time.Clock
 import kotlin.time.Instant as KotlinInstant
-
-fun JavaInstant.toLocalDate(
-    zoneId: ZoneId = ZoneId.systemDefault(),
-    locale: Locale = Locale.getDefault(),
-): String = PlatformTimeFormatter.formatDate(toEpochMilli(), zoneId.id, locale)
 
 fun JavaInstant.toLocalDateTime(
     zoneId: ZoneId = ZoneId.systemDefault(),
     locale: Locale = Locale.getDefault(),
 ): String = PlatformTimeFormatter.formatDateTime(toEpochMilli(), zoneId.id, locale)
 
-fun JavaInstant.toLocalTime(
-    zoneId: ZoneId = ZoneId.systemDefault(),
-    locale: Locale = Locale.getDefault(),
-): String = PlatformTimeFormatter.formatTime(toEpochMilli(), zoneId.id, locale)
-
 fun KotlinInstant.toLocalDate(
-    zoneId: ZoneId = ZoneId.systemDefault(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
     locale: Locale = Locale.getDefault(),
-): String = PlatformTimeFormatter.formatDate(toEpochMilliseconds(), zoneId.id, locale)
+): String = PlatformTimeFormatter.formatDate(toEpochMilliseconds(), timeZone.id, locale)
 
 fun KotlinInstant.toLocalDateTime(
-    zoneId: ZoneId = ZoneId.systemDefault(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
     locale: Locale = Locale.getDefault(),
-): String = PlatformTimeFormatter.formatDateTime(toEpochMilliseconds(), zoneId.id, locale)
+): String = PlatformTimeFormatter.formatDateTime(toEpochMilliseconds(), timeZone.id, locale)
 
 fun KotlinInstant.toLocalTime(
-    zoneId: ZoneId = ZoneId.systemDefault(),
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
     locale: Locale = Locale.getDefault(),
-): String = PlatformTimeFormatter.formatTime(toEpochMilliseconds(), zoneId.id, locale)
+): String = PlatformTimeFormatter.formatTime(toEpochMilliseconds(), timeZone.id, locale)
 
 fun KotlinLocalDate.toLocalString(
     includeYear: Boolean,
@@ -50,6 +45,28 @@ fun KotlinLocalDate.toLocalString(
 ): String {
     return LocalDate.of(year, month.number, day).toLocalString(includeYear, locale)
 }
+
+fun KotlinLocalDateTime.toLocalString(
+    locale: Locale = Locale.getDefault(),
+): String = toPlatformLocalDateTime().toLocalString(locale)
+
+fun KotlinLocalDateTime.toMessageTimeString(
+    clock: Clock = Clock.System,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    locale: Locale = Locale.getDefault(),
+): String {
+    return if (date == clock.today(timeZone)) {
+        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+            .withLocale(locale)
+            .format(toPlatformLocalDateTime())
+    } else {
+        toLocalString(locale)
+    }
+}
+
+fun KotlinDayOfWeek.toLocalString(
+    locale: Locale = Locale.getDefault(),
+): String = java.time.DayOfWeek.valueOf(name).getDisplayName(TextStyle.FULL, locale)
 
 internal object PlatformTimeFormatter {
     fun formatDate(epochMillis: Long, timeZoneId: String, locale: Locale): String {
@@ -77,22 +94,11 @@ internal object PlatformTimeFormatter {
     }
 }
 
-fun LocalDateTime.toLocalString(): String {
-    val locale = Locale.getDefault()
+fun LocalDateTime.toLocalString(
+    locale: Locale = Locale.getDefault(),
+): String {
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(locale)
     return formatter.format(this)
-}
-
-/**
- * 消息时间显示：当天只显示时间（如 14:30），非当天显示「月日 + 时间」（如 5月20日 14:30）。
- */
-fun LocalDateTime.toMessageTimeString(): String {
-    val locale = Locale.getDefault()
-    return if (this.toLocalDate() == LocalDate.now()) {
-        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(this)
-    } else {
-        this.toLocalString()
-    }
 }
 
 fun LocalDate.toLocalString(
@@ -130,4 +136,8 @@ private fun isMonthFirstLocale(locale: Locale): Boolean {
         "CN", // 中国
     )
     return monthFirstCountries.contains(locale.country)
+}
+
+private fun KotlinLocalDateTime.toPlatformLocalDateTime(): LocalDateTime {
+    return LocalDateTime.of(year, month.number, day, hour, minute, second, nanosecond)
 }

@@ -11,9 +11,7 @@ import me.rerere.rikkahub.shared.template.MessageTemplateSource
 import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.rikkahub.utils.toLocalDate
 import me.rerere.rikkahub.utils.toLocalTime
-import java.time.ZoneId
 import java.util.Locale
-import kotlin.time.toJavaInstant
 
 class TemplateTransformer(
     private val renderer: MessageTemplateRenderer,
@@ -44,19 +42,18 @@ class TemplateTransformer(
 
 class MessageTemplateContextFactory(
     private val timeZoneProvider: () -> TimeZone = { TimeZone.currentSystemDefault() },
-    private val zoneIdProvider: () -> ZoneId = { ZoneId.systemDefault() },
     private val localeProvider: () -> Locale = { Locale.getDefault() },
 ) {
     fun create(message: UIMessage, text: String): Map<String, Any?> {
         // 使用消息本身的发送时间而不是当前时间, 保证多次请求时渲染结果稳定, 不破坏 prompt 缓存
-        val createdAt = message.createdAt.toInstant(timeZoneProvider()).toJavaInstant()
-        val zoneId = zoneIdProvider()
+        val timeZone = timeZoneProvider()
+        val createdAt = message.createdAt.toInstant(timeZone)
         val locale = localeProvider()
         return mapOf(
             "message" to text,
             "role" to message.role.name.lowercase(),
-            "time" to createdAt.toLocalTime(zoneId, locale),
-            "date" to createdAt.toLocalDate(zoneId, locale),
+            "time" to createdAt.toLocalTime(timeZone, locale),
+            "date" to createdAt.toLocalDate(timeZone, locale),
         )
     }
 }
