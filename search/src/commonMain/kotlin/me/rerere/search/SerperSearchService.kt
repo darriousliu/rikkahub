@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -54,8 +52,7 @@ object SerperSearchService : SearchService<SearchServiceOptions.SerperOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.SerperOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
             val body = buildJsonObject {
@@ -87,16 +84,13 @@ object SerperSearchService : SearchService<SearchServiceOptions.SerperOptions> {
                     )
                 }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = answer,
-                        items = items
-                    )
+                SearchResult(
+                    answer = answer,
+                    items = items
                 )
             } else {
                 error("Serper search failed with code ${response.code}: ${response.message}")
             }
-        }
     }
 
     override suspend fun scrape(

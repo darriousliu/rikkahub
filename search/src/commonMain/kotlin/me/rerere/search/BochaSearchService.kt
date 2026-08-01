@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -53,8 +51,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.BochaOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
             val body = buildJsonObject {
@@ -76,7 +73,7 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                 val bochaResponse = runCatching {
                     json.decodeFromString<BochaResponse>(bodyRaw)
                 }.onFailure {
-                    it.printStackTrace()
+                    println(it.stackTraceToString())
                     println(bodyRaw)
                     error("Failed to decode response: $bodyRaw")
                 }.getOrThrow()
@@ -85,22 +82,19 @@ object BochaSearchService : SearchService<SearchServiceOptions.BochaOptions> {
                     error("Bocha API error: ${bochaResponse.msg ?: "Unknown error"}")
                 }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        items = bochaResponse.data?.webPages?.value?.map {
-                            SearchResultItem(
-                                title = it.name,
-                                url = it.url,
-                                text = it.summary ?: it.snippet,
-                            )
-                        } ?: emptyList()
-                    )
+                SearchResult(
+                    items = bochaResponse.data?.webPages?.value?.map {
+                        SearchResultItem(
+                            title = it.name,
+                            url = it.url,
+                            text = it.summary ?: it.snippet,
+                        )
+                    } ?: emptyList()
                 )
             } else {
                 println(response.body)
                 error("response failed #${response.code}")
             }
-        }
     }
 
     override suspend fun scrape(

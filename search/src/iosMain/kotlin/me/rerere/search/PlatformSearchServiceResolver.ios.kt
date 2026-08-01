@@ -14,5 +14,11 @@ internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options:
         is SearchServiceOptions.MetasoOptions -> MetasoSearchService as SearchService<T>
         is SearchServiceOptions.OllamaOptions -> OllamaSearchService as SearchService<T>
         is SearchServiceOptions.PerplexityOptions -> PerplexitySearchService as SearchService<T>
-        else -> error("Search provider is not available on iOS yet: ${options.displayName}")
+        is SearchServiceOptions.FirecrawlOptions -> FirecrawlSearchService as SearchService<T>
+        is SearchServiceOptions.JinaOptions -> JinaSearchService as SearchService<T>
+        is SearchServiceOptions.BochaOptions -> BochaSearchService as SearchService<T>
+        is SearchServiceOptions.GrokOptions -> GrokSearchService as SearchService<T>
+        is SearchServiceOptions.TinyfishOptions -> TinyfishSearchService as SearchService<T>
+        is SearchServiceOptions.SerperOptions -> SerperSearchService as SearchService<T>
+        is SearchServiceOptions.CustomJsOptions -> CustomJsSearchService as SearchService<T>
     }

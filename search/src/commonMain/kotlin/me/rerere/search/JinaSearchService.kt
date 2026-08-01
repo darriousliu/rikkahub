@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -63,8 +61,7 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.JinaOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
             val body = buildJsonObject {
@@ -87,29 +84,25 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
                     json.decodeFromString<JinaSearchResponse>(it)
                 }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        items = responseData.data.take(commonOptions.resultSize).map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.url,
-                                text = it.description
-                            )
-                        }
-                    )
+                SearchResult(
+                    items = responseData.data.take(commonOptions.resultSize).map {
+                        SearchResultItem(
+                            title = it.title,
+                            url = it.url,
+                            text = it.description
+                        )
+                    }
                 )
             } else {
                 error("response failed #${response.code}")
             }
-        }
     }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.JinaOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<ScrapedResult> = runCatching {
             val url = params["url"]?.jsonPrimitive?.content ?: error("urls is required")
 
             val body = buildJsonObject {
@@ -147,7 +140,6 @@ object JinaSearchService : SearchService<SearchServiceOptions.JinaOptions> {
                     )
                 )
             )
-        }
     }
 
     @Serializable
