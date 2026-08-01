@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.buildkonfig)
 }
 
@@ -55,6 +56,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":ai"))
             implementation(project(":hugeicons"))
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -84,6 +86,7 @@ kotlin {
             implementation(libs.filekit.dialogs)
             implementation(libs.filekit.dialogs.compose)
             implementation(libs.kotlinx.io.core)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.modelcontextprotocol.kotlin.sdk.client)
             implementation(libs.modelcontextprotocol.kotlin.sdk.core)
             implementation(libs.haze)

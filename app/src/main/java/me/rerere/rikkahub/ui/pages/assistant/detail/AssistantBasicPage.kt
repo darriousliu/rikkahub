@@ -472,8 +472,9 @@ internal fun AssistantBasicContent(
                         Text(stringResource(Res.string.assistant_page_max_tokens_no_limit))
                     },
                     supportingText = {
-                        if (assistant.maxTokens != null) {
-                            Text(stringResource(Res.string.assistant_page_max_tokens_limit, assistant.maxTokens))
+                        val maxTokens = assistant.maxTokens
+                        if (maxTokens != null) {
+                            Text(stringResource(Res.string.assistant_page_max_tokens_limit, maxTokens))
                         } else {
                             Text(stringResource(Res.string.assistant_page_max_tokens_no_token_limit))
                         }
