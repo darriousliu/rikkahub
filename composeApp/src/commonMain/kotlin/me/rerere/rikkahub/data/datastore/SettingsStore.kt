@@ -1,7 +1,6 @@
 package me.rerere.rikkahub.data.datastore
 
-import android.content.Context
-import me.rerere.common.logging.RikkaLog as Log
+import androidx.datastore.core.DataStore
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -10,45 +9,30 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import me.rerere.ai.core.ReasoningLevel
+import me.rerere.ai.provider.ProviderDescription
 import me.rerere.ai.provider.ProviderSetting
-import me.rerere.rikkahub.AppScope
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_COMPRESS_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_OCR_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_SUGGESTION_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TITLE_PROMPT
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TRANSLATION_PROMPT
-import me.rerere.rikkahub.data.datastore.migration.PreferenceStoreV1Migration
-import me.rerere.rikkahub.data.datastore.migration.PreferenceStoreV2Migration
-import me.rerere.rikkahub.data.datastore.migration.PreferenceStoreV3Migration
 import me.rerere.rikkahub.data.sync.s3.S3Config
-import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.rikkahub.utils.JsonInstant
-import me.rerere.rikkahub.utils.toMutableStateFlow
 import me.rerere.search.SearchCommonOptions
 import me.rerere.search.SearchServiceOptions
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.get
 import kotlin.uuid.Uuid
 
 private const val TAG = "PreferencesStore"
-
-private val Context.settingsStore by preferencesDataStore(
-    name = "settings",
-    produceMigrations = { context ->
-        listOf(
-            PreferenceStoreV1Migration(),
-            PreferenceStoreV2Migration(),
-            PreferenceStoreV3Migration()
-        )
-    }
-)
 
 internal fun Flow<Preferences>.recoverFromReadFailure(): Flow<Preferences> = catch { exception ->
     if (exception is IOException) {
@@ -58,10 +42,23 @@ internal fun Flow<Preferences>.recoverFromReadFailure(): Flow<Preferences> = cat
     }
 }
 
+private fun <T> Flow<T>.toMutableStateFlow(
+    scope: CoroutineScope,
+    initial: T,
+): MutableStateFlow<T> {
+    val stateFlow = MutableStateFlow(initial)
+    scope.launch {
+        collect { value -> stateFlow.value = value }
+    }
+    return stateFlow
+}
+
 class SettingsStore(
-    context: Context,
-    scope: AppScope,
-) : KoinComponent {
+    private val dataStore: DataStore<Preferences>,
+    scope: CoroutineScope,
+    private val defaultProviderDescriptions: Map<Uuid, ProviderDescription> = emptyMap(),
+    private val onSettingsChanged: () -> Unit = {},
+) {
     companion object {
         // 版本号
         val VERSION = intPreferencesKey("data_version")
@@ -227,8 +224,6 @@ class SettingsStore(
         )
     }
 
-    private val dataStore = context.settingsStore
-
     val settingsFlowRaw = dataStore.data
         .recoverFromReadFailure()
         .map(::settingsFromPreferences)
@@ -242,7 +237,7 @@ class SettingsStore(
             providers = providers.map { provider ->
                 val defaultProvider = DEFAULT_PROVIDERS.find { it.id == provider.id }
                 if (defaultProvider != null) {
-                    val platformDescription = ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS[provider.id]
+                    val platformDescription = defaultProviderDescriptions[provider.id]
                     provider.copyProvider(
                         builtIn = defaultProvider.builtIn,
                         description = platformDescription ?: defaultProvider.description,
@@ -325,7 +320,7 @@ class SettingsStore(
             )
         }
         .onEach {
-            get<TemplateCacheInvalidator>().invalidateCache()
+            onSettingsChanged()
         }
 
     val settingsFlow = settingsFlowRaw
@@ -333,7 +328,7 @@ class SettingsStore(
         .toMutableStateFlow(scope, Settings.dummy())
 
     suspend fun update(settings: Settings) {
-        if(settings.init) {
+        if (settings.init) {
             Log.w(TAG, "Cannot update dummy settings")
             return
         }
@@ -380,9 +375,7 @@ class SettingsStore(
             preferences[WEBDAV_CONFIG] = JsonInstant.encodeToString(settings.webDavConfig)
             preferences[S3_CONFIG] = JsonInstant.encodeToString(settings.s3Config)
             preferences[TTS_PROVIDERS] = JsonInstant.encodeToString(settings.ttsProviders)
-            settings.selectedTTSProviderId?.let {
-                preferences[SELECTED_TTS_PROVIDER] = it.toString()
-            } ?: preferences.remove(SELECTED_TTS_PROVIDER)
+            preferences[SELECTED_TTS_PROVIDER] = settings.selectedTTSProviderId.toString()
             preferences[DEFAULT_TTS_PLAYBACK_SPEED] = settings.defaultTTSPlaybackSpeed.coerceIn(0.5f, 2.0f)
             preferences[ASR_PROVIDERS] = JsonInstant.encodeToString(settings.asrProviders)
             settings.selectedASRProviderId?.let {

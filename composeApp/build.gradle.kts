@@ -58,9 +58,11 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.androidx.navigation3.runtime)
             implementation(project(":ai"))
+            implementation(project(":common"))
             implementation(project(":hugeicons"))
             implementation(project(":search"))
             implementation(project(":speech"))
+            api(libs.androidx.datastore.preferences)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -121,6 +123,7 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.androidx.room3.testing)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

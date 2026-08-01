@@ -22,7 +22,9 @@ import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.SponsorAPI
+import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.createAndroidSettingsDataStore
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.db.fts.SimpleDictManager
@@ -48,7 +50,12 @@ import java.util.concurrent.TimeUnit
 
 val dataSourceModule = module {
     single {
-        SettingsStore(context = get(), scope = get())
+        SettingsStore(
+            dataStore = createAndroidSettingsDataStore(context = get(), scope = get()),
+            scope = get(),
+            defaultProviderDescriptions = ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS,
+            onSettingsChanged = { get<TemplateCacheInvalidator>().invalidateCache() },
+        )
     }
 
     single {
