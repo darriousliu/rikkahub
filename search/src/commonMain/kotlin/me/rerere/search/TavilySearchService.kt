@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -77,8 +75,7 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.TavilyOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
             val topic = params["topic"]?.jsonPrimitive?.contentOrNull ?: "general"
 
@@ -107,30 +104,27 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                     json.decodeFromString<SearchResponse>(it)
                 }
 
-                return@withContext Result.success(
-                    SearchResult(
-                        answer = response.answer,
-                        items = response.results.map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.url,
-                                text = it.content
-                            )
-                        },
-                        images = response.images,
-                    ))
+                SearchResult(
+                    answer = response.answer,
+                    items = response.results.map {
+                        SearchResultItem(
+                            title = it.title,
+                            url = it.url,
+                            text = it.content
+                        )
+                    },
+                    images = response.images,
+                )
             } else {
                 error("response failed #${response.code}")
             }
-        }
     }
 
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.TavilyOptions
-    ): Result<ScrapedResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<ScrapedResult> = runCatching {
             val url = params["url"]?.jsonPrimitive?.content ?: error("url is required")
             val body = buildJsonObject {
                 put("urls", buildJsonArray {
@@ -147,20 +141,17 @@ object TavilySearchService : SearchService<SearchServiceOptions.TavilyOptions> {
                 val response = response.body.let {
                     json.decodeFromString<ScrapeResponse>(it)
                 }
-                return@withContext Result.success(
-                    ScrapedResult(
-                        urls = response.results.map {
-                            ScrapedResultUrl(
-                                url = it.url,
-                                content = it.rawContent,
-                            )
-                        }
-                    )
+                ScrapedResult(
+                    urls = response.results.map {
+                        ScrapedResultUrl(
+                            url = it.url,
+                            content = it.rawContent,
+                        )
+                    }
                 )
             } else {
                 error("response failed #${response.code}")
             }
-        }
     }
 
     @Serializable
