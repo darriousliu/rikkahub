@@ -2,10 +2,10 @@ package me.rerere.ai.ui
 
 import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.ai.core.MessageRole
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MessageTest {
 
@@ -44,8 +44,8 @@ class MessageTest {
             for (size in (limit + 1)..20) {
                 val result = all.subList(0, size).limitContext(limit)
                 assertTrue(
+                    result.size in 1..limit,
                     "limit=$limit size=$size produced ${result.size} messages",
-                    result.size in 1..limit
                 )
                 assertEquals(all.subList(size - result.size, size), result)
             }
@@ -88,8 +88,8 @@ class MessageTest {
         for (size in 11..120) {
             val result = all.subList(0, size).limitContext(10)
             assertTrue(
+                result.size in 5..9,
                 "size=$size produced ${result.size} messages",
-                result.size in 5..9
             )
             // 结果必须是原列表的后缀
             assertEquals(all.subList(size - result.size, size), result)
