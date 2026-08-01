@@ -221,7 +221,7 @@ class WebDavClient(
                 displayName = path.substringAfterLast("/"),
                 contentLength = response.headers["Content-Length"]?.toLongOrNull() ?: 0,
                 contentType = response.headers["Content-Type"] ?: "application/octet-stream",
-                lastModified = parseLastModified(response.headers["Last-Modified"]),
+                lastModified = parseWebDavLastModified(response.headers["Last-Modified"]),
                 isCollection = false,
             )
         }
@@ -365,7 +365,7 @@ class WebDavClient(
                             "displayname" -> currentDisplayName = text
                             "getcontentlength" -> currentContentLength = text.toLongOrNull() ?: 0
                             "getcontenttype" -> currentContentType = text
-                            "getlastmodified" -> currentLastModified = parseLastModified(text)
+                            "getlastmodified" -> currentLastModified = parseWebDavLastModified(text)
                         }
                     }
                 }
@@ -397,24 +397,25 @@ class WebDavClient(
         return resources
     }
 
-    private fun parseLastModified(dateString: String?): Instant? {
-        if (dateString.isNullOrBlank()) return null
+}
 
-        return try {
-            // RFC 1123 format: "Tue, 15 Nov 1994 08:12:31 GMT"
-            ZonedDateTime.parse(dateString, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
-        } catch (e: Exception) {
+internal fun parseWebDavLastModified(dateString: String?): Instant? {
+    if (dateString.isNullOrBlank()) return null
+
+    return try {
+        // RFC 1123 format: "Tue, 15 Nov 1994 08:12:31 GMT"
+        ZonedDateTime.parse(dateString, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant()
+    } catch (_: Exception) {
+        try {
+            // RFC 850 format: "Tuesday, 15-Nov-94 08:12:31 GMT"
+            ZonedDateTime.parse(dateString, DateTimeFormatter.ofPattern("EEEE, dd-MMM-yy HH:mm:ss zzz")).toInstant()
+        } catch (_: Exception) {
             try {
-                // RFC 850 format: "Tuesday, 15-Nov-94 08:12:31 GMT"
-                ZonedDateTime.parse(dateString, DateTimeFormatter.ofPattern("EEEE, dd-MMM-yy HH:mm:ss zzz")).toInstant()
-            } catch (e: Exception) {
-                try {
-                    // ISO 8601
-                    Instant.parse(dateString)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse date: $dateString")
-                    null
-                }
+                // ISO 8601
+                Instant.parse(dateString)
+            } catch (_: Exception) {
+                Log.w(TAG, "Failed to parse date: $dateString")
+                null
             }
         }
     }
