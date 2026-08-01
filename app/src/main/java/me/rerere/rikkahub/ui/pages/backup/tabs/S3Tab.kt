@@ -68,8 +68,7 @@ import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onLoading
 import me.rerere.rikkahub.utils.onSuccess
 import me.rerere.rikkahub.utils.toLocalDateTime
-import java.time.Instant
-import kotlin.time.Instant as KotlinInstant
+import kotlin.time.Instant
 
 @Composable
 fun S3Tab(
@@ -95,7 +94,7 @@ fun S3Tab(
     } else {
         stringResource(
             Res.string.backup_page_reminder_last_time,
-            KotlinInstant.fromEpochMilliseconds(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
+            Instant.fromEpochMilliseconds(settings.backupReminderConfig.lastBackupTime).toLocalDateTime()
         )
     }
     val backupFileSummary = when (val state = backupItemsState) {

@@ -1,18 +1,17 @@
 package me.rerere.rikkahub.data.sync.s3
 
 import io.ktor.http.encodeURLQueryComponent
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 import me.rerere.common.crypto.Sha256Crypto
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 internal object AwsSignatureV4 {
     private const val ALGORITHM = "AWS4-HMAC-SHA256"
     private const val SERVICE = "s3"
     private const val UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD"
-
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-    private val timestampFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
 
     data class SignedRequest(
         val headers: Map<String, String>,
@@ -29,11 +28,23 @@ internal object AwsSignatureV4 {
         payloadHash: String? = null,
         contentLength: Long? = null,
         contentType: String? = null,
-        now: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC),
+        now: Instant = Clock.System.now(),
         crypto: Sha256Crypto = JdkSha256Crypto,
     ): SignedRequest {
-        val dateStamp = now.format(dateFormatter)
-        val amzDate = now.format(timestampFormatter)
+        val utc = now.toLocalDateTime(TimeZone.UTC)
+        val dateStamp = buildString {
+            append(utc.year.fixedWidth(4))
+            append(utc.month.number.fixedWidth(2))
+            append(utc.day.fixedWidth(2))
+        }
+        val amzDate = buildString {
+            append(dateStamp)
+            append('T')
+            append(utc.hour.fixedWidth(2))
+            append(utc.minute.fixedWidth(2))
+            append(utc.second.fixedWidth(2))
+            append('Z')
+        }
 
         val resolvedPayloadHash = payloadHash ?: payload?.sha256Hex(crypto) ?: UNSIGNED_PAYLOAD
 
@@ -168,4 +179,6 @@ internal object AwsSignatureV4 {
             if (segment.isEmpty()) segment else segment.urlEncode()
         }
     }
+
+    private fun Int.fixedWidth(width: Int): String = toString().padStart(width, '0')
 }

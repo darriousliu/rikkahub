@@ -27,8 +27,8 @@ import me.rerere.rikkahub.utils.fileSizeToString
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.time.Instant
 import kotlin.time.Clock
+import kotlin.time.Instant
 
 private const val TAG = "S3Sync"
 
@@ -80,7 +80,7 @@ class S3Sync(
                     key = obj.key,
                     displayName = obj.key.substringAfterLast("/"),
                     size = obj.size,
-                    lastModified = obj.lastModified ?: Instant.EPOCH
+                    lastModified = obj.lastModified ?: Instant.fromEpochMilliseconds(0)
                 )
             }
             .sortedByDescending { it.lastModified }

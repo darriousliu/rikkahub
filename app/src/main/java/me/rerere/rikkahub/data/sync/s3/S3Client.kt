@@ -22,7 +22,7 @@ import java.io.File
 import java.io.InputStream
 import java.io.StringReader
 import java.security.MessageDigest
-import java.time.Instant
+import kotlin.time.Instant
 
 private const val TAG = "S3Client"
 
