@@ -1,5 +1,6 @@
 package me.rerere.ai.provider.providers
 
-import okhttp3.OkHttpClient
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 
-internal fun googleProviderForTest(): GoogleProvider = GoogleProvider(OkHttpClient())
+internal fun googleProviderForTest(): GoogleProvider = GoogleProvider(HttpClient(OkHttp))

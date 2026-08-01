@@ -1,6 +1,8 @@
 package me.rerere.ai.provider
 
 import android.content.Context
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
 import me.rerere.ai.provider.providers.ClaudeProvider
 import me.rerere.ai.provider.providers.GoogleProvider
 import me.rerere.ai.provider.providers.OpenAIProvider
@@ -16,7 +18,17 @@ class ProviderManager(client: OkHttpClient, context: Context) {
     init {
         // 注册默认Provider
         registerProvider("openai", OpenAIProvider(client, context))
-        registerProvider("google", GoogleProvider(client, context))
+        registerProvider(
+            "google",
+            GoogleProvider(
+                client = HttpClient(OkHttp) {
+                    engine {
+                        preconfigured = client
+                    }
+                },
+                context = context,
+            )
+        )
         registerProvider("claude", ClaudeProvider(client, context))
     }
 

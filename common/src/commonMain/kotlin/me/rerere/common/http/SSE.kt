@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.prepareRequest
+import io.ktor.client.statement.bodyAsText
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -30,7 +31,10 @@ sealed class SseEvent {
     ) : SseEvent()
 }
 
-data class SseResponse(val code: Int)
+data class SseResponse(
+    val code: Int,
+    val body: String? = null,
+)
 
 fun HttpClient.sseFlow(
     url: String,
@@ -42,7 +46,15 @@ fun HttpClient.sseFlow(
             configure()
         }.execute { response ->
             if (!response.status.isSuccess()) {
-                emit(SseEvent.Failure(throwable = null, response = SseResponse(response.status.value)))
+                emit(
+                    SseEvent.Failure(
+                        throwable = null,
+                        response = SseResponse(
+                            code = response.status.value,
+                            body = response.bodyAsText(),
+                        ),
+                    )
+                )
                 return@execute
             }
 
