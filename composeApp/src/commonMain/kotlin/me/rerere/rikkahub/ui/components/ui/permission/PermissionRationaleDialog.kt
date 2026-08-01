@@ -30,10 +30,10 @@ import androidx.compose.ui.window.Dialog
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.AlertCircle
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 /**
- * 权限请求说明对话框
+ * 平台无关的权限请求说明对话框。
  */
 @Composable
 internal fun PermissionRationaleDialog(

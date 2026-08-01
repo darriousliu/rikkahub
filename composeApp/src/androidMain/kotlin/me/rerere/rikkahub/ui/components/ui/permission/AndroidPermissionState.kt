@@ -15,21 +15,21 @@ import androidx.core.content.ContextCompat
  * 权限状态管理类
  */
 @Stable
-class PermissionState internal constructor(
+internal class AndroidPermissionState(
     private val permissions: Set<PermissionInfo>,
     private val context: Context,
     private val activity: ComponentActivity
-) {
+) : PermissionState {
     // 权限状态映射
     private val _permissionStates = mutableStateMapOf<String, PermissionStatus>()
     val permissionStates: Map<String, PermissionStatus> = _permissionStates
 
     // 是否显示权限说明对话框
-    var showRationaleDialog by mutableStateOf(false)
+    override var showRationaleDialog by mutableStateOf(false)
         private set
 
     // 当前需要显示说明的权限
-    var currentRationalePermissions by mutableStateOf<List<PermissionInfo>>(emptyList())
+    override var currentRationalePermissions by mutableStateOf<List<PermissionInfo>>(emptyList())
         private set
 
     // 权限请求启动器
@@ -89,13 +89,13 @@ class PermissionState internal constructor(
     /**
      * 检查是否所有权限都已授权
      */
-    val allPermissionsGranted: Boolean
+    override val allPermissionsGranted: Boolean
         get() = permissions.all { permissionStates[it.permission] == PermissionStatus.Granted }
 
     /**
      * 检查是否所有必需权限都已授权
      */
-    val allRequiredPermissionsGranted: Boolean
+    override val allRequiredPermissionsGranted: Boolean
         get() = permissions.filter { it.required }.all { permissionStates[it.permission] == PermissionStatus.Granted }
 
     /**
@@ -117,13 +117,13 @@ class PermissionState internal constructor(
     /**
      * 获取永久拒绝的权限
      */
-    val permanentlyDeniedPermissions: List<PermissionInfo>
+    override val permanentlyDeniedPermissions: List<PermissionInfo>
         get() = permissions.filter { permissionStates[it.permission] == PermissionStatus.DeniedPermanently }
 
     /**
      * 请求所有未授权的权限
      */
-    fun requestPermissions() {
+    override fun requestPermissions() {
         val deniedPerms = deniedPermissions
         if (deniedPerms.isEmpty()) return
 
@@ -173,7 +173,7 @@ class PermissionState internal constructor(
     /**
      * 从权限说明对话框继续请求权限
      */
-    fun proceedFromRationale() {
+    override fun proceedFromRationale() {
         showRationaleDialog = false
 
         // 检查是否有永久拒绝的权限
@@ -195,7 +195,7 @@ class PermissionState internal constructor(
     /**
      * 取消权限请求
      */
-    fun cancelPermissionRequest() {
+    override fun cancelPermissionRequest() {
         showRationaleDialog = false
         currentRationalePermissions = emptyList()
     }
@@ -215,7 +215,7 @@ class PermissionState internal constructor(
     /**
      * 跳转到应用设置页面
      */
-    fun openAppSettings() {
+    override fun openAppSettings() {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", context.packageName, null)
         }

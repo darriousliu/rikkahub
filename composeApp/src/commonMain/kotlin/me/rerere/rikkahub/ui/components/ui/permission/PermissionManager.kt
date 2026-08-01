@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 
 /**
  * 权限管理器组件
- * 自动处理权限请求对话框的显示和隐藏
+ * 根据平台权限状态自动显示或隐藏权限请求说明。
  *
  * 使用方式：
  * ```

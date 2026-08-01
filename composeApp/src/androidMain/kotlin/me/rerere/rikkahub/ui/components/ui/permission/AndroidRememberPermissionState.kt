@@ -47,7 +47,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
  * ```
  */
 @Composable
-fun rememberPermissionState(
+actual fun rememberPermissionState(
     permissions: Set<PermissionInfo>
 ): PermissionState {
     val context = LocalContext.current
@@ -56,7 +56,7 @@ fun rememberPermissionState(
 
     // 创建权限状态对象
     val permissionState = remember(permissions) {
-        PermissionState(permissions, context, activity)
+        AndroidPermissionState(permissions, context, activity)
     }
 
     // 多个权限请求启动器
@@ -118,40 +118,4 @@ fun rememberPermissionState(
     }
 
     return permissionState
-}
-
-/**
- * 创建并记住单个权限状态
- *
- * @param permission 权限字符串
- * @param usage 权限使用说明
- * @param required 是否为必需权限
- * @return PermissionState 权限状态管理对象
- */
-@Composable
-fun rememberPermissionState(
-    permission: String,
-    displayName: @Composable () -> Unit,
-    usage: @Composable () -> Unit,
-    required: Boolean = false
-): PermissionState {
-    return rememberPermissionState(
-        permissions = setOf(
-            PermissionInfo(
-                permission = permission,
-                displayName = displayName,
-                usage = usage,
-                required = required,
-            )
-        )
-    )
-}
-
-@Composable
-fun rememberPermissionState(
-    info: PermissionInfo
-): PermissionState {
-    return rememberPermissionState(
-        permissions = setOf(info)
-    )
 }
