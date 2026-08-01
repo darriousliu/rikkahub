@@ -115,6 +115,7 @@ kotlin {
                 implementation(libs.coil.gif)
                 implementation(libs.floatingx)
                 implementation(libs.ktor.client.okhttp)
+                implementation(libs.metadata.extractor)
                 implementation(libs.ucrop)
             }
         }
@@ -130,6 +131,7 @@ kotlin {
             implementation(libs.ktor.server.cio)
             implementation(libs.sentry)
             implementation(libs.jmdns)
+            implementation(libs.metadata.extractor)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

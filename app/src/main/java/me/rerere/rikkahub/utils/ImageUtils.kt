@@ -9,9 +9,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
-import com.drew.imaging.ImageMetadataReader
-import com.drew.imaging.png.PngChunkType
-import com.drew.metadata.png.PngDirectory
+import me.rerere.rikkahub.platform.createCharacterCardMetadataReader
 
 /**
  * 图片处理工具类
@@ -248,21 +246,12 @@ object ImageUtils {
      * @param uri 图片URI
      * @return Result<String> 包含角色元数据的Result对象
      */
-    fun getTavernCharacterMeta(context: Context, uri: Uri): Result<String> = runCatching {
-        val metadata = context.contentResolver.openInputStream(uri)?.use { ImageMetadataReader.readMetadata(it) }
-        if (metadata == null) error("Metadata is null, please check if the image is a character card")
-        if (!metadata.containsDirectoryOfType(PngDirectory::class.java)) error("No PNG directory found, please check if the image is a character card")
-
-        val pngDirectory = metadata.getDirectoriesOfType(PngDirectory::class.java)
-            .firstOrNull { directory ->
-                directory.pngChunkType == PngChunkType.tEXt
-                    && directory.getString(PngDirectory.TAG_TEXTUAL_DATA).startsWith("[chara:")
-            } ?: error("No tEXt chunk found, please check if the image is a character card")
-
-        val value = pngDirectory.getString(PngDirectory.TAG_TEXTUAL_DATA)
-
-        val regex = Regex("""\[chara:\s*(.+?)]""")
-        return Result.success(regex.find(value)?.groupValues?.get(1) ?: error("No character data found"))
+    fun getTavernCharacterMeta(context: Context, uri: Uri): Result<String> {
+        val imageBytes = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: error("Metadata is null, please check if the image is a character card")
+        }.getOrElse { return Result.failure(it) }
+        return createCharacterCardMetadataReader().read(imageBytes)
     }
 
     data class ImageInfo(

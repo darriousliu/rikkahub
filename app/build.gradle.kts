@@ -166,10 +166,6 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    // Image metadata extractor
-    // https://github.com/drewnoakes/metadata-extractor
-    implementation(libs.metadata.extractor)
-
     // Haze (background blur)
     implementation(libs.haze)
     implementation(libs.haze.blur)
