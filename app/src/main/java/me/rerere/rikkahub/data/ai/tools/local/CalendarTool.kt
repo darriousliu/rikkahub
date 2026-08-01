@@ -18,8 +18,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -428,11 +426,5 @@ private fun getDefaultCalendarId(context: Context): Long? {
 }
 
 private fun parseCalendarTime(raw: String, zone: ZoneId): ZonedDateTime {
-    val text = raw.trim()
-    text.toLongOrNull()?.let { return Instant.ofEpochMilli(it).atZone(zone) }
-    runCatching { return OffsetDateTime.parse(text).atZoneSameInstant(zone) }
-    runCatching { return Instant.parse(text).atZone(zone) }
-    runCatching { return LocalDateTime.parse(text).atZone(zone) }
-    runCatching { return LocalDate.parse(text).atStartOfDay(zone) }
-    error("Invalid time format: '$raw'. Use ISO-8601 date/date-time or epoch milliseconds.")
+    return Instant.ofEpochMilli(parseLocalToolTimeEpochMillis(raw, zone.id)).atZone(zone)
 }

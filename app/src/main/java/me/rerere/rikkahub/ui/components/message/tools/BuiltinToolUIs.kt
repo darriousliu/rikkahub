@@ -646,7 +646,7 @@ private val SCREEN_TIME_RANGE_FORMATTER: DateTimeFormatter =
  * 工具用 ZonedDateTime.toString() 输出, 区域 ID 时会带 "[Asia/Shanghai]" 后缀,
  * 故优先用 ZonedDateTime.parse, 再回退到 offset / 本地日期时间.
  */
-private fun formatRangeTime(iso: String): String = runCatching {
+internal fun formatRangeTime(iso: String): String = runCatching {
     ZonedDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)
 }.recoverCatching {
     OffsetDateTime.parse(iso).format(SCREEN_TIME_RANGE_FORMATTER)

@@ -19,8 +19,6 @@ import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.utils.hasUsageStatsPermission
 import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -266,11 +264,5 @@ private fun resolveAppName(pm: PackageManager, packageName: String): String {
  * 本地日期时间 -> 本地日期(当天 0 点). 全部失败时抛出异常.
  */
 private fun parseUsageTime(raw: String, zone: ZoneId): ZonedDateTime {
-    val text = raw.trim()
-    text.toLongOrNull()?.let { return Instant.ofEpochMilli(it).atZone(zone) }
-    runCatching { return OffsetDateTime.parse(text).atZoneSameInstant(zone) }
-    runCatching { return Instant.parse(text).atZone(zone) }
-    runCatching { return LocalDateTime.parse(text).atZone(zone) }
-    runCatching { return LocalDate.parse(text).atStartOfDay(zone) }
-    error("Invalid time format: '$raw'. Use ISO-8601 date/date-time or epoch milliseconds.")
+    return Instant.ofEpochMilli(parseLocalToolTimeEpochMillis(raw, zone.id)).atZone(zone)
 }
