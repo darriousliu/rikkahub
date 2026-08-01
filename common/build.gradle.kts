@@ -48,8 +48,6 @@ kotlin {
             api(libs.okhttp.sse)
             api(libs.okhttp.logging)
             implementation(libs.ktor.client.okhttp)
-            api(libs.floatingx)
-            api(libs.floatingx.compose)
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.appcompat)
             implementation(libs.material)

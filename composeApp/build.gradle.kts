@@ -110,6 +110,7 @@ kotlin {
             dependsOn(mobileMain)
             dependencies {
                 implementation(libs.androidx.lifecycle.process)
+                implementation(libs.floatingx)
                 implementation(libs.ktor.client.okhttp)
             }
         }
