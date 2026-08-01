@@ -7,8 +7,6 @@ import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.searxng_desc_1
 import me.rerere.search.generated.resources.searxng_desc_2
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -49,8 +47,7 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.SearXNGOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
+    ): Result<SearchResult> = runCatching {
             require(serviceOptions.url.isNotBlank()) {
                 "SearXNG URL cannot be empty"
             }
@@ -72,7 +69,7 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
             val headers = buildMap {
                 if (serviceOptions.username.isNotBlank() && serviceOptions.password.isNotBlank()) {
                     val credentials = "${serviceOptions.username}:${serviceOptions.password}"
-                    put("Authorization", "Basic ${Base64.Default.encode(credentials.toByteArray(Charsets.ISO_8859_1))}")
+                    put("Authorization", "Basic ${Base64.Default.encode(credentials.encodeIso88591())}")
                 }
             }
 
@@ -84,7 +81,7 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
                 val searchResponse = runCatching {
                     json.decodeFromString<SearXNGResponse>(bodyRaw)
                 }.onFailure {
-                    it.printStackTrace()
+                    println(it.stackTraceToString())
                     println("SearXNG response body: $bodyRaw")
                     error("Failed to decode SearXNG response: ${it.message}")
                 }.getOrThrow()
@@ -100,13 +97,12 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
                         )
                     }
 
-                return@withContext Result.success(SearchResult(items = items))
+                SearchResult(items = items)
             } else {
                 val errorBody = response.body
                 println("SearXNG API error: ${response.code} - $errorBody")
                 error("SearXNG request failed with status ${response.code}")
             }
-        }
     }
 
     override suspend fun scrape(
@@ -133,4 +129,8 @@ object SearXNGService : SearchService<SearchServiceOptions.SearXNGOptions> {
         @SerialName("content")
         val content: String,
     )
+}
+
+internal fun String.encodeIso88591(): ByteArray = ByteArray(length) { index ->
+    this[index].code.takeIf { code -> code <= 0xff }?.toByte() ?: '?'.code.toByte()
 }

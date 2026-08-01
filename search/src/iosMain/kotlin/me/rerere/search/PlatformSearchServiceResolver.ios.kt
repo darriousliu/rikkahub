@@ -8,5 +8,6 @@ internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options:
         is SearchServiceOptions.ZhipuOptions -> ZhipuSearchService as SearchService<T>
         is SearchServiceOptions.TavilyOptions -> TavilySearchService as SearchService<T>
         is SearchServiceOptions.ExaOptions -> ExaSearchService as SearchService<T>
+        is SearchServiceOptions.SearXNGOptions -> SearXNGService as SearchService<T>
         else -> error("Search provider is not available on iOS yet: ${options.displayName}")
     }
