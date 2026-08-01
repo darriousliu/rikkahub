@@ -41,6 +41,7 @@ import me.rerere.ai.ui.finishPendingTools
 import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.common.android.Logging
+import me.rerere.common.concurrent.AtomicSnapshotMap
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.ai.GenerationChunk
@@ -85,7 +86,6 @@ import me.rerere.rikkahub.web.NotFoundException
 import me.rerere.rikkahub.utils.applyPlaceholders
 import me.rerere.workspace.WorkspaceShellStatus
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -153,7 +153,7 @@ class ChatService(
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
 
     // 统一会话管理
-    private val sessions = ConcurrentHashMap<Uuid, ConversationSession>()
+    private val sessions = AtomicSnapshotMap<Uuid, ConversationSession>()
     private val _sessionsVersion = MutableStateFlow(0L)
 
     // 错误状态
@@ -185,14 +185,14 @@ class ChatService(
     val generationDoneFlow: SharedFlow<Uuid> = _generationDoneFlow.asSharedFlow()
 
     fun cleanup() = runCatching {
-        sessions.values.forEach { it.cleanup() }
-        sessions.clear()
+        sessions.clear().forEach { it.cleanup() }
     }
 
     // ---- Session 管理 ----
 
     private fun getOrCreateSession(conversationId: Uuid): ConversationSession {
-        return sessions.computeIfAbsent(conversationId) { id ->
+        return sessions.getOrPut(conversationId) {
+            val id = conversationId
             val settings = settingsStore.settingsFlow.value
             ConversationSession(
                 id = id,
@@ -203,8 +203,8 @@ class ChatService(
                 scope = appScope,
                 onIdle = { removeSession(it) }
             ).also {
-                _sessionsVersion.value++
-                Log.i(TAG, "createSession: $id (total: ${sessions.size + 1})")
+                _sessionsVersion.update { it + 1 }
+                Log.i(TAG, "createSession: $id (total: ${sessions.size})")
             }
         }
     }
@@ -217,7 +217,7 @@ class ChatService(
         }
         if (sessions.remove(conversationId, session)) {
             session.cleanup()
-            _sessionsVersion.value++
+            _sessionsVersion.update { it + 1 }
             Log.i(TAG, "removeSession: $conversationId (remaining: ${sessions.size})")
         }
     }
@@ -262,7 +262,7 @@ class ChatService(
 
     fun getConversationJobs(): Flow<Map<Uuid, Job?>> {
         return _sessionsVersion.flatMapLatest {
-            val currentSessions = sessions.values.toList()
+            val currentSessions = sessions.valuesSnapshot()
             if (currentSessions.isEmpty()) {
                 flowOf(emptyMap())
             } else {
@@ -947,7 +947,7 @@ class ChatService(
      * 仅活跃 session 可能在生成；内存态 folderId 为权威（移动会先同步内存态）。
      */
     fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean {
-        return sessions.values.any { it.isGenerating && it.state.value.folderId == folderId }
+        return sessions.valuesSnapshot().any { it.isGenerating && it.state.value.folderId == folderId }
     }
 
     /**
@@ -958,7 +958,7 @@ class ChatService(
      * 后续整对象保存会写回一个已被删除的 folder_id，导致会话在列表中悬空。
      */
     suspend fun deleteFolder(folderId: Uuid) {
-        sessions.values
+        sessions.valuesSnapshot()
             .filter { it.state.value.folderId == folderId }
             .forEach { updateConversationState(it.id) { c -> c.copy(folderId = null) } }
         folderRepository.deleteFolder(folderId)
