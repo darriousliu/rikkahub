@@ -5,6 +5,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Instant
 
 interface KeyRoulette {
     fun next(keys: String, providerId: String = ""): String
@@ -18,12 +20,12 @@ interface KeyRoulette {
          */
         fun lru(context: Context): KeyRoulette = LruKeyRoulette(
             cacheFile = File(context.cacheDir, LRU_CACHE_FILE),
-            currentTimeMillis = System::currentTimeMillis
+            clock = Clock.System
         )
 
         internal fun lru(cacheFile: File, clock: Clock): KeyRoulette = LruKeyRoulette(
             cacheFile = cacheFile,
-            currentTimeMillis = { clock.now().toEpochMilliseconds() }
+            clock = clock
         )
     }
 }
@@ -50,7 +52,7 @@ private class DefaultKeyRoulette : KeyRoulette {
 }
 
 private const val LRU_CACHE_FILE = "lru_key_roulette.json"
-private const val EXPIRE_DURATION_MS = 24 * 60 * 60 * 1000L // 1 天
+private val EXPIRE_DURATION = 24.hours
 
 // 全局文件锁，防止多个 provider 实例并发读写同一文件
 private object LruFileLock
@@ -60,7 +62,7 @@ private typealias LruCache = Map<String, Map<String, Long>>
 
 private class LruKeyRoulette(
     private val cacheFile: File,
-    private val currentTimeMillis: () -> Long,
+    private val clock: Clock,
 ) : KeyRoulette {
 
     override fun next(keys: String, providerId: String): String {
@@ -68,24 +70,28 @@ private class LruKeyRoulette(
         if (keyList.isEmpty()) return keys
 
         synchronized(LruFileLock) {
-            val now = currentTimeMillis()
+            val now = currentInstant()
             val allCache = loadCache().toMutableMap()
 
             // 取本 provider 的记录，过滤掉已过期条目和不在当前 key 列表中的条目
             val providerCache = (allCache[providerId] ?: emptyMap())
-                .filter { (k, lastUsed) -> k in keyList && now - lastUsed < EXPIRE_DURATION_MS }
+                .filter { (k, lastUsed) ->
+                    k in keyList && now - Instant.fromEpochMilliseconds(lastUsed) < EXPIRE_DURATION
+                }
                 .toMutableMap()
 
             // 优先选从未使用的 key，否则选最久未使用的
             val selected = keyList.firstOrNull { it !in providerCache }
                 ?: providerCache.minByOrNull { it.value }!!.key
 
-            providerCache[selected] = now
+            providerCache[selected] = now.toEpochMilliseconds()
             allCache[providerId] = providerCache
 
             // 清理整个 provider 条目均已过期的记录
             allCache.entries.removeIf { (id, cache) ->
-                id != providerId && cache.values.all { now - it >= EXPIRE_DURATION_MS }
+                id != providerId && cache.values.all {
+                    now - Instant.fromEpochMilliseconds(it) >= EXPIRE_DURATION
+                }
             }
 
             saveCache(allCache)
@@ -108,4 +114,7 @@ private class LruKeyRoulette(
         } catch (_: Exception) {
         }
     }
+
+    private fun currentInstant(): Instant =
+        Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())
 }
