@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Camera01
@@ -44,6 +46,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -53,6 +56,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,15 +67,23 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
-import io.github.g00fy2.quickie.QRResult
-import io.github.g00fy2.quickie.ScanQRCode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.RECOMMENDED_PROVIDERS
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.KScanQrImageDecoder
+import me.rerere.rikkahub.platform.KScanQrScanner
+import me.rerere.rikkahub.platform.QrImageDecoder
+import me.rerere.rikkahub.platform.QrScanResult
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.components.ui.Tag
@@ -83,7 +95,6 @@ import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigure
 import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.plus
 import org.koin.compose.viewmodel.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
@@ -333,17 +344,32 @@ private fun ImportProviderButton(
 ) {
     val toaster = LocalToaster.current
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val qrScanner = remember { KScanQrScanner() }
+    val qrImageDecoder = remember { KScanQrImageDecoder() }
     var showImportDialog by remember { mutableStateOf(false) }
+    var showScanner by remember { mutableStateOf(false) }
 
-    val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
-        handleQRResult(result, onAdd, toaster, context)
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            showScanner = true
+        } else {
+            toaster.show(
+                context.getString(R.string.setting_provider_page_no_permission),
+                type = ToastType.Error,
+            )
+        }
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         uri?.let {
-            handleImageQRCode(it, onAdd, toaster, context)
+            coroutineScope.launch {
+                handleImageQRCode(it, qrImageDecoder, onAdd, toaster, context)
+            }
         }
     }
 
@@ -382,7 +408,14 @@ private fun ImportProviderButton(
                         Button(
                             onClick = {
                                 showImportDialog = false
-                                scanQrCodeLauncher.launch(null)
+                                if (
+                                    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                                    PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    showScanner = true
+                                } else {
+                                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -456,80 +489,99 @@ private fun ImportProviderButton(
             }
         )
     }
+
+    if (showScanner) {
+        Dialog(
+            onDismissRequest = { showScanner = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                qrScanner.Content(
+                    modifier = Modifier.fillMaxSize(),
+                    onResult = { result ->
+                        showScanner = false
+                        handleCameraQrResult(result, onAdd, toaster, context)
+                    },
+                )
+            }
+        }
+    }
 }
 
-private fun handleQRResult(
-    result: QRResult,
+private fun handleCameraQrResult(
+    result: QrScanResult,
     onAdd: (ProviderSetting) -> Unit,
     toaster: com.dokar.sonner.ToasterState,
     context: android.content.Context
 ) {
+    when (result) {
+        is QrScanResult.Success -> importProviderSetting(result.content, onAdd, toaster, context)
+        is QrScanResult.Failure -> toaster.show(
+            context.getString(R.string.setting_provider_page_scan_error, result.cause.message.orEmpty()),
+            type = ToastType.Error,
+        )
+        QrScanResult.Canceled -> Unit
+    }
+}
+
+private fun importProviderSetting(
+    content: String,
+    onAdd: (ProviderSetting) -> Unit,
+    toaster: com.dokar.sonner.ToasterState,
+    context: android.content.Context,
+) {
     runCatching {
-        when (result) {
-            is QRResult.QRError -> {
-                toaster.show(
-                    context.getString(
-                        R.string.setting_provider_page_scan_error,
-                        result
-                    ), type = ToastType.Error
-                )
-            }
-
-            QRResult.QRMissingPermission -> {
-                toaster.show(
-                    context.getString(R.string.setting_provider_page_no_permission),
-                    type = ToastType.Error
-                )
-            }
-
-            is QRResult.QRSuccess -> {
-                val setting = decodeProviderSetting(result.content.rawValue ?: "")
-                onAdd(setting)
-                toaster.show(
-                    context.getString(R.string.setting_provider_page_import_success),
-                    type = ToastType.Success
-                )
-            }
-
-            QRResult.QRUserCanceled -> {}
-        }
+        val setting = decodeProviderSetting(content)
+        onAdd(setting)
+        toaster.show(
+            context.getString(R.string.setting_provider_page_import_success),
+            type = ToastType.Success,
+        )
     }.onFailure { error ->
         toaster.show(
-            context.getString(R.string.setting_provider_page_qr_decode_failed, error.message ?: ""),
-            type = ToastType.Error
+            context.getString(R.string.setting_provider_page_qr_decode_failed, error.message.orEmpty()),
+            type = ToastType.Error,
         )
     }
 }
 
-private fun handleImageQRCode(
+private suspend fun handleImageQRCode(
     uri: Uri,
+    decoder: QrImageDecoder,
     onAdd: (ProviderSetting) -> Unit,
     toaster: com.dokar.sonner.ToasterState,
     context: android.content.Context
 ) {
-    runCatching {
-        // 使用ImageUtils解析二维码
-        val qrContent = ImageUtils.decodeQRCodeFromUri(context, uri)
+    val result = runCatching {
+        val imageBytes = withContext(Dispatchers.IO) {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: error("Unable to open selected image")
+        }
+        decoder.decode(imageBytes)
+    }.getOrElse { QrScanResult.Failure(it) }
 
-        if (qrContent.isNullOrEmpty()) {
+    when (result) {
+        is QrScanResult.Success -> importProviderSetting(result.content, onAdd, toaster, context)
+        is QrScanResult.Failure -> {
+            val message = result.cause.message.orEmpty()
+            if (message.contains("No barcode", ignoreCase = true)) {
+                toaster.show(
+                    context.getString(R.string.setting_provider_page_no_qr_found),
+                    type = ToastType.Error,
+                )
+            } else {
+                toaster.show(
+                    context.getString(R.string.setting_provider_page_image_qr_decode_failed, message),
+                    type = ToastType.Error,
+                )
+            }
+        }
+        QrScanResult.Canceled -> {
             toaster.show(
                 context.getString(R.string.setting_provider_page_no_qr_found),
-                type = ToastType.Error
+                type = ToastType.Error,
             )
-            return
         }
-
-        val setting = decodeProviderSetting(qrContent)
-        onAdd(setting)
-        toaster.show(
-            context.getString(R.string.setting_provider_page_import_success),
-            type = ToastType.Success
-        )
-    }.onFailure { error ->
-        toaster.show(
-            context.getString(R.string.setting_provider_page_image_qr_decode_failed, error.message ?: ""),
-            type = ToastType.Error
-        )
     }
 }
 

@@ -203,6 +203,7 @@ dependencies {
 
     // ucrop
     implementation(libs.ucrop)
+    implementation(libs.androidx.exifinterface)
 
     // coil
     implementation(libs.coil.compose)
@@ -216,11 +217,6 @@ dependencies {
 
     // zxing
     implementation(libs.zxing.core)
-
-    // quickie (qrcode scanner)
-    implementation(libs.quickie.bundled)
-    implementation(libs.barcode.scanning)
-    implementation(libs.androidx.camera.core)
 
     implementation(libs.androidx.sqlite.async)
 
