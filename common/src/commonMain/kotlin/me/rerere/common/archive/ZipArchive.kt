@@ -10,7 +10,7 @@ interface ZipArchive {
     fun create(sink: Sink, writeEntries: ZipArchiveWriter.() -> Unit)
 
     /** Reads an archive and takes ownership of [source]. Entry content is valid only during [readEntry]. */
-    fun read(source: Source, readEntry: (ZipArchiveEntry) -> Unit)
+    suspend fun read(source: Source, readEntry: suspend (ZipArchiveEntry) -> Unit)
 }
 
 interface ZipArchiveWriter {

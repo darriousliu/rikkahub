@@ -1,5 +1,7 @@
 package me.rerere.common.archive
 
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
 import org.junit.Assert.assertArrayEquals
@@ -36,7 +38,7 @@ class JvmZipArchiveTest {
     }
 
     @Test
-    fun `reads java archive and streams entry content`() {
+    fun `reads java archive and streams entry content`() = runBlocking {
         val output = ByteArrayOutputStream()
         ZipOutputStream(output).use { zip ->
             zip.putNextEntry(ZipEntry("folder/large.bin"))
@@ -46,6 +48,7 @@ class JvmZipArchiveTest {
 
         val entries = linkedMapOf<String, ByteArray>()
         JvmZipArchive.read(Buffer().apply { write(output.toByteArray()) }) { entry ->
+            yield()
             val content = Buffer()
             entry.copyTo(content)
             entries[entry.name] = content.readByteArray()

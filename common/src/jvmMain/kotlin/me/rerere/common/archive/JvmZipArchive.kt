@@ -28,7 +28,7 @@ object JvmZipArchive : ZipArchive {
         }
     }
 
-    override fun read(source: Source, readEntry: (ZipArchiveEntry) -> Unit) {
+    override suspend fun read(source: Source, readEntry: suspend (ZipArchiveEntry) -> Unit) {
         ZipInputStream(source.asInputStream()).use { zipInput ->
             while (true) {
                 val entry = zipInput.nextEntry ?: break
