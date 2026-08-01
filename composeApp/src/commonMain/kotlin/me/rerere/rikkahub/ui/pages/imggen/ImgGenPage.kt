@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.pages.imggen
 
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -36,8 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.ContainedLoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,8 +50,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +63,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -80,12 +74,12 @@ import androidx.paging.compose.itemKey
 import coil3.compose.AsyncImage
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import me.rerere.ai.provider.ModelType
 import me.rerere.ai.ui.ImageGenSize
-import me.rerere.common.android.appTempFolder
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.ArrowUp02
@@ -96,23 +90,18 @@ import me.rerere.hugeicons.stroke.Delete01
 import me.rerere.hugeicons.stroke.FloppyDisk
 import me.rerere.hugeicons.stroke.Image03
 import me.rerere.hugeicons.stroke.Tools
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.files.FileUtils
-import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.PlatformBackHandler
 import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
+import me.rerere.rikkahub.ui.components.ui.LocalImageSaveHandler
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.ImageUtils
 import org.koin.compose.viewmodel.koinViewModel
-import org.koin.compose.koinInject
-import java.io.File
-import kotlin.uuid.Uuid
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ImageGenPage(
@@ -124,7 +113,7 @@ fun ImageGenPage(
 
     val isGenerating by vm.isGenerating.collectAsStateWithLifecycle()
     var showCancelDialog by remember { mutableStateOf(false) }
-    BackHandler(isGenerating) {
+    PlatformBackHandler(isGenerating) {
         showCancelDialog = true
     }
     if (showCancelDialog) {
@@ -245,14 +234,10 @@ private fun ImageGenScreen(
     val currentGeneratedImages by vm.currentGeneratedImages.collectAsStateWithLifecycle()
     val referenceImages by vm.referenceImages.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
-    val settings by vm.settingsStore.settingsFlow.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
+    val settings by vm.settings.collectAsStateWithLifecycle()
     val toaster = LocalToaster.current
     var showSettingsSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberBottomSheetState(
-        initialValue = SheetValue.Hidden,
-        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(error) {
         error?.let { errorMessage ->
@@ -281,7 +266,7 @@ private fun ImageGenScreen(
                     val image = currentGeneratedImages[index]
                     var showPreview by remember { mutableStateOf(false) }
                     AsyncImage(
-                        model = File(image.filePath),
+                        model = image.filePath,
                         contentDescription = null,
                         modifier = Modifier
                             .weight(1f)
@@ -300,7 +285,7 @@ private fun ImageGenScreen(
                 }
             }
             if (isGenerating) {
-                ContainedLoadingIndicator(
+                CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
@@ -321,7 +306,6 @@ private fun ImageGenScreen(
             vm = vm,
             numberOfImages = numberOfImages,
             size = size,
-            scope = scope,
             sheetState = sheetState,
             onDismiss = { showSettingsSheet = false }
         )
@@ -338,29 +322,12 @@ private fun InputBar(
     onShowSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val imagePickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
-            if (selectedUris.isNotEmpty()) {
-                scope.launch {
-                    val paths = selectedUris.mapNotNull { uri ->
-                        withContext(Dispatchers.IO) {
-                            runCatching {
-                                val bitmap = ImageUtils.loadOptimizedBitmap(context, uri, maxSize = 2048)
-                                    ?: error("Failed to decode image")
-                                val pngBytes = FileUtils.compressBitmapToPng(bitmap)
-                                bitmap.recycle()
-                                val file = File(context.appTempFolder, "imggen_ref_${Uuid.random()}.png")
-                                file.writeBytes(pngBytes)
-                                file.absolutePath
-                            }.getOrNull()
-                        }
-                    }
-                    vm.addReferenceImages(paths)
-                }
-            }
-        }
+    val imagePickerLauncher = rememberFilePickerLauncher(
+        type = FileKitType.Image,
+        mode = FileKitMode.Multiple(maxItems = 16),
+    ) { selectedFiles ->
+        selectedFiles?.let(vm::importReferenceImages)
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -397,11 +364,7 @@ private fun InputBar(
                 type = ModelType.IMAGE,
                 onlyIcon = true,
                 onSelect = { model ->
-                    scope.launch {
-                        vm.settingsStore.update { oldSettings ->
-                            oldSettings.copy(imageGenerationModelId = model.id)
-                        }
-                    }
+                    vm.updateImageGenerationModel(model.id)
                 }
             )
 
@@ -412,7 +375,7 @@ private fun InputBar(
             }
 
             IconButton(
-                onClick = { imagePickerLauncher.launch("image/*") }
+                onClick = imagePickerLauncher::launch
             ) {
                 Icon(
                     imageVector = HugeIcons.Add01,
@@ -484,7 +447,7 @@ private fun ReferenceImagesRow(
             ) {
                 Box {
                     AsyncImage(
-                        model = File(image),
+                        model = image,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
@@ -519,8 +482,7 @@ private fun ImageGalleryScreen(
     vm: ImgGenVM,
 ) {
     val generatedImages = vm.generatedImages.collectAsLazyPagingItems()
-    val context = LocalContext.current
-    val filesManager: FilesManager = koinInject()
+    val imageSaveHandler = LocalImageSaveHandler.current
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -576,7 +538,7 @@ private fun ImageGalleryScreen(
                         ) {
                             Column {
                                 AsyncImage(
-                                    model = File(it.filePath),
+                                    model = it.filePath,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -625,23 +587,7 @@ private fun ImageGalleryScreen(
 
                                         IconButton(
                                             onClick = {
-                                                scope.launch {
-                                                    try {
-                                                        filesManager.saveMessageImage(context, "file://${it.filePath}")
-                                                        toaster.show(
-                                                            message = context.getString(R.string.imggen_page_image_saved_success),
-                                                            type = ToastType.Success
-                                                        )
-                                                    } catch (e: Exception) {
-                                                        toaster.show(
-                                                            message = context.getString(
-                                                                R.string.imggen_page_save_failed,
-                                                                e.message
-                                                            ),
-                                                            type = ToastType.Error
-                                                        )
-                                                    }
-                                                }
+                                                scope.launch { imageSaveHandler?.invoke(it.filePath) }
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {
@@ -687,7 +633,6 @@ private fun SettingsBottomSheet(
     vm: ImgGenVM,
     numberOfImages: Int,
     size: String,
-    scope: CoroutineScope,
     sheetState: SheetState,
     onDismiss: () -> Unit
 ) {
