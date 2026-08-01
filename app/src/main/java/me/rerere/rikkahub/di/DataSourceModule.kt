@@ -6,6 +6,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import android.content.Context
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import io.requery.android.database.sqlite.SQLiteCustomExtension
@@ -250,6 +251,11 @@ val dataSourceModule = module {
 
     single<HttpClient> {
         HttpClient(OkHttp) {
+            install(WebSockets) {
+                channels {
+                    outgoing = bounded(capacity = 1)
+                }
+            }
             engine {
                 config {
                     connectTimeout(20, TimeUnit.SECONDS)

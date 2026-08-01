@@ -48,7 +48,6 @@ kotlin {
         androidMain.dependencies {
             implementation(project(":common"))
             implementation(libs.androidx.core.ktx)
-            implementation(libs.okhttp)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.serialization.json)

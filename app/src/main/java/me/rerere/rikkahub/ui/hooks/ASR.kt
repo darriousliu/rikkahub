@@ -18,25 +18,23 @@ import me.rerere.asr.ASRProviderSetting
 import me.rerere.asr.ASRState
 import me.rerere.asr.providers.DashScopeASRController
 import me.rerere.asr.providers.MiMoASRController
-import me.rerere.asr.providers.OkHttpAsrWebSocketTransport
+import me.rerere.asr.providers.KtorAsrWebSocketTransport
 import me.rerere.asr.providers.OpenAIRealtimeASRController
 import me.rerere.asr.providers.StepASRController
 import me.rerere.asr.providers.VolcengineASRController
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getSelectedASRProvider
-import okhttp3.OkHttpClient
 import org.koin.compose.koinInject
 
 @Composable
 fun rememberCustomAsrState(): CustomAsrState {
     val context = LocalContext.current
     val settingsStore = koinInject<SettingsStore>()
-    val httpClient = koinInject<OkHttpClient>()
     val ktorHttpClient = koinInject<HttpClient>()
     val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
 
     val asrState = remember {
-        CustomAsrStateImpl(context.applicationContext, httpClient, ktorHttpClient)
+        CustomAsrStateImpl(context.applicationContext, ktorHttpClient)
     }
 
     DisposableEffect(settings.selectedASRProviderId, settings.asrProviders) {
@@ -62,10 +60,9 @@ interface CustomAsrState {
 
 private class CustomAsrStateImpl(
     private val context: Context,
-    private val httpClient: OkHttpClient,
     private val ktorHttpClient: HttpClient,
 ) : CustomAsrState {
-    private val webSocketTransport = OkHttpAsrWebSocketTransport(httpClient)
+    private val webSocketTransport = KtorAsrWebSocketTransport(ktorHttpClient)
     private var controller: ASRController? = null
     private val idleState = MutableStateFlow(ASRState())
 
@@ -106,6 +103,7 @@ private class CustomAsrStateImpl(
     override fun cleanup() {
         controller?.dispose()
         controller = null
+        webSocketTransport.close()
         audioManager.abandonAudioFocusRequest(audioFocusRequest)
     }
 

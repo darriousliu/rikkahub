@@ -1,12 +1,23 @@
 package me.rerere.asr.providers
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
-import okio.ByteString
-import okio.ByteString.Companion.toByteString
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.headers
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
+import io.ktor.websocket.WebSocketSession
+import io.ktor.websocket.close
+import io.ktor.websocket.readBytes
+import io.ktor.websocket.readText
+import io.ktor.websocket.send
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
 interface AsrWebSocketSession {
     val queueSize: Long
@@ -36,58 +47,160 @@ interface AsrWebSocketTransport {
         headers: Map<String, String>,
         listener: AsrWebSocketListener,
     ): AsrWebSocketSession
+
+    fun close()
 }
 
-class OkHttpAsrWebSocketTransport(
-    private val client: OkHttpClient,
+class KtorAsrWebSocketTransport(
+    private val client: HttpClient,
 ) : AsrWebSocketTransport {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun connect(
         url: String,
         headers: Map<String, String>,
         listener: AsrWebSocketListener,
     ): AsrWebSocketSession {
-        val request = Request.Builder()
-            .url(url)
-            .apply {
-                headers.forEach { (name, value) -> addHeader(name, value) }
+        val session = KtorAsrWebSocketSession()
+        val requestHeaders = headers
+        val webSocketUrl = url.toWebSocketUrl()
+        scope.launch {
+            try {
+                client.webSocket(
+                    urlString = webSocketUrl,
+                    request = {
+                        headers {
+                            requestHeaders.forEach { (name, value) -> append(name, value) }
+                        }
+                    },
+                ) {
+                    val writerJob = launch { session.writeTo(this@webSocket) }
+                    try {
+                        listener.onOpen(session)
+                        for (frame in incoming) {
+                            when (frame) {
+                                is Frame.Text -> listener.onText(session, frame.readText())
+                                is Frame.Binary -> listener.onBinary(session, frame.readBytes())
+                                else -> Unit
+                            }
+                        }
+                        val reason = closeReason.await()
+                        listener.onClosed(
+                            session = session,
+                            code = reason?.code?.toInt() ?: CloseReason.Codes.NORMAL.code.toInt(),
+                            reason = reason?.message.orEmpty(),
+                        )
+                    } finally {
+                        writerJob.cancelAndJoin()
+                    }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                if (!session.isClosing) {
+                    listener.onFailure(session, error)
+                }
+            } finally {
+                session.finish()
             }
-            .build()
-        lateinit var session: OkHttpAsrWebSocketSession
-        val socket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                listener.onOpen(session)
-            }
-
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                listener.onText(session, text)
-            }
-
-            override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                listener.onBinary(session, bytes.toByteArray())
-            }
-
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                listener.onFailure(session, t)
-            }
-
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                listener.onClosed(session, code, reason)
-            }
-        })
-        session = OkHttpAsrWebSocketSession(socket)
+        }
         return session
+    }
+
+    override fun close() {
+        scope.cancel()
     }
 }
 
-private class OkHttpAsrWebSocketSession(
-    private val socket: WebSocket,
-) : AsrWebSocketSession {
+private fun String.toWebSocketUrl(): String = when {
+    startsWith("https://", ignoreCase = true) -> "wss://${substring(8)}"
+    startsWith("http://", ignoreCase = true) -> "ws://${substring(7)}"
+    else -> this
+}
+
+private class KtorAsrWebSocketSession : AsrWebSocketSession {
+    private val outgoing = Channel<QueuedFrame>(Channel.UNLIMITED)
+    private val queueLock = Any()
+    private var queuedBytes = 0L
+    private var acceptingFrames = true
+
     override val queueSize: Long
-        get() = socket.queueSize()
+        get() = synchronized(queueLock) { queuedBytes }
 
-    override fun send(text: String): Boolean = socket.send(text)
+    internal val isClosing: Boolean
+        get() = synchronized(queueLock) { !acceptingFrames }
 
-    override fun send(bytes: ByteArray): Boolean = socket.send(bytes.toByteString())
+    override fun send(text: String): Boolean = enqueue(
+        QueuedFrame.Text(text),
+        text.encodeToByteArray().size.toLong(),
+    )
 
-    override fun close(code: Int, reason: String): Boolean = socket.close(code, reason)
+    override fun send(bytes: ByteArray): Boolean = enqueue(
+        QueuedFrame.Binary(bytes.copyOf()),
+        bytes.size.toLong(),
+    )
+
+    override fun close(code: Int, reason: String): Boolean {
+        val accepted = synchronized(queueLock) {
+            if (!acceptingFrames) return false
+            acceptingFrames = false
+            outgoing.trySend(QueuedFrame.Close(code, reason)).isSuccess
+        }
+        outgoing.close()
+        return accepted
+    }
+
+    internal suspend fun writeTo(socket: WebSocketSession) {
+        for (frame in outgoing) {
+            when (frame) {
+                is QueuedFrame.Text -> {
+                    socket.send(frame.value)
+                    removeQueuedBytes(frame.value.encodeToByteArray().size.toLong())
+                }
+
+                is QueuedFrame.Binary -> {
+                    socket.send(Frame.Binary(fin = true, data = frame.value))
+                    removeQueuedBytes(frame.value.size.toLong())
+                }
+
+                is QueuedFrame.Close -> {
+                    socket.close(CloseReason(frame.code.toShort(), frame.reason))
+                    break
+                }
+            }
+        }
+    }
+
+    internal fun finish() {
+        synchronized(queueLock) {
+            acceptingFrames = false
+            queuedBytes = 0L
+        }
+        outgoing.close()
+    }
+
+    private fun enqueue(frame: QueuedFrame, byteCount: Long): Boolean = synchronized(queueLock) {
+        if (!acceptingFrames) return false
+        queuedBytes += byteCount
+        if (outgoing.trySend(frame).isSuccess) {
+            true
+        } else {
+            queuedBytes -= byteCount
+            false
+        }
+    }
+
+    private fun removeQueuedBytes(byteCount: Long) {
+        synchronized(queueLock) {
+            queuedBytes = (queuedBytes - byteCount).coerceAtLeast(0L)
+        }
+    }
+}
+
+private sealed interface QueuedFrame {
+    data class Text(val value: String) : QueuedFrame
+
+    data class Binary(val value: ByteArray) : QueuedFrame
+
+    data class Close(val code: Int, val reason: String) : QueuedFrame
 }
