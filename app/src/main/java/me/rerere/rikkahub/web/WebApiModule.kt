@@ -47,6 +47,8 @@ private const val WEB_JWT_TTL_MILLIS = 30L * 24 * 60 * 60 * 1000
 private const val WEB_ACCESS_TOKEN_QUERY_KEY = "access_token"
 private const val WEB_AUTH_REALM = "rikkahub-web-api"
 
+internal fun createMissingWebPasswordSecret(): String = "__missing_password_${UUID.randomUUID()}__"
+
 /**
  * Configure Web API for the Ktor application.
  * This should be called from app module when starting the web server.
@@ -97,7 +99,7 @@ fun Application.configureWebApi(
                     val currentPassword = settingsStore.settingsFlow.value.webServerAccessPassword
                     val secret = currentPassword.ifBlank {
                         // Keep protected routes closed when jwt is enabled but password is missing.
-                        "__missing_password_${UUID.randomUUID()}__"
+                        createMissingWebPasswordSecret()
                     }
                     buildWebJwtVerifier(secret)
                 }
