@@ -278,6 +278,7 @@ dependencies {
 
     // tests
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(platform(libs.koin.bom))
     testImplementation(libs.koin.test)
     androidTestImplementation(libs.androidx.junit)
