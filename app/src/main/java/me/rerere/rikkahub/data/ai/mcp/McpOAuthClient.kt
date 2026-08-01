@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.ai.mcp
 
+import me.rerere.common.crypto.Sha256Digest
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -18,7 +19,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
-import java.security.MessageDigest
 import java.security.SecureRandom
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -26,8 +26,11 @@ import kotlin.io.encoding.Base64
 
 private const val TAG = "McpOAuthClient"
 
-internal fun createPkceChallenge(verifier: String): String {
-    val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII))
+internal fun createPkceChallenge(
+    verifier: String,
+    sha256: Sha256Digest = JdkMcpSha256Digest,
+): String {
+    val digest = sha256.digest(verifier.toByteArray(Charsets.US_ASCII))
     return Base64.UrlSafe.encode(digest).trimEnd('=')
 }
 
