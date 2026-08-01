@@ -3,6 +3,7 @@ package me.rerere.rikkahub.data.sync
 import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.client.HttpClient
+import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.io.asSink
@@ -23,6 +24,7 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.migration.SettingsJsonMigrator
 import me.rerere.rikkahub.data.sync.s3.S3Client
 import me.rerere.rikkahub.data.sync.s3.S3Config
+import me.rerere.rikkahub.data.sync.s3.JdkSha256Crypto
 import me.rerere.rikkahub.utils.fileSizeToString
 import java.io.File
 import java.io.FileInputStream
@@ -39,7 +41,7 @@ class S3Sync(
     private val httpClient: HttpClient,
 ) : S3BackupTransport {
     private fun getS3Client(config: S3Config): S3Client {
-        return S3Client(config, httpClient)
+        return S3Client(config, httpClient, JdkSha256Crypto)
     }
 
     override suspend fun testS3(config: S3Config) = withContext(Dispatchers.IO) {
@@ -56,7 +58,9 @@ class S3Sync(
 
         client.putObject(
             key = key,
-            file = file,
+            contentLength = file.length(),
+            payloadHash = JdkSha256Crypto.digestHex(file),
+            content = { file.readChannel() },
             contentType = "application/zip"
         ).getOrThrow()
 
@@ -93,7 +97,11 @@ class S3Sync(
         try {
             // Download backup file directly to file to avoid OOM
             Log.i(TAG, "restoreFromS3: Downloading ${item.displayName}")
-            client.downloadObjectToFile(item.key, backupFile).getOrThrow()
+            backupFile.outputStream().buffered().use { output ->
+                client.downloadObject(item.key) { buffer, byteCount ->
+                    output.write(buffer, 0, byteCount)
+                }.getOrThrow()
+            }
 
             Log.i(TAG, "restoreFromS3: Downloaded ${backupFile.length().fileSizeToString()}")
 

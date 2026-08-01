@@ -3,6 +3,7 @@ package me.rerere.rikkahub.data.sync.webdav
 import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.client.HttpClient
+import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.io.asSink
@@ -61,7 +62,8 @@ class WebDavSync(
         // Upload the backup file
         client.put(
             path = file.name,
-            file = file,
+            contentLength = file.length(),
+            content = { file.readChannel() },
             contentType = "application/zip"
         ).getOrThrow()
 
@@ -99,7 +101,11 @@ class WebDavSync(
         try {
             // Download backup file directly to file to avoid OOM
             Log.i(TAG, "restore: Downloading ${item.displayName}")
-            client.downloadToFile(item.displayName, backupFile).getOrThrow()
+            backupFile.outputStream().buffered().use { output ->
+                client.download(item.displayName) { buffer, byteCount ->
+                    output.write(buffer, 0, byteCount)
+                }.getOrThrow()
+            }
 
             Log.i(TAG, "restore: Downloaded ${backupFile.length().fileSizeToString()}")
 

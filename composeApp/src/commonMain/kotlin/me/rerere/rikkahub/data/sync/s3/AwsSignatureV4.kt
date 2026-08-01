@@ -22,6 +22,7 @@ internal object AwsSignatureV4 {
         config: S3Config,
         method: String,
         path: String,
+        crypto: Sha256Crypto,
         queryParams: Map<String, String> = emptyMap(),
         headers: Map<String, String> = emptyMap(),
         payload: ByteArray? = null,
@@ -29,7 +30,6 @@ internal object AwsSignatureV4 {
         contentLength: Long? = null,
         contentType: String? = null,
         now: Instant = Clock.System.now(),
-        crypto: Sha256Crypto = JdkSha256Crypto,
     ): SignedRequest {
         val utc = now.toLocalDateTime(TimeZone.UTC)
         val dateStamp = buildString {
@@ -47,14 +47,12 @@ internal object AwsSignatureV4 {
         }
 
         val resolvedPayloadHash = payloadHash ?: payload?.sha256Hex(crypto) ?: UNSIGNED_PAYLOAD
-
         val host = config.host
         val canonicalUri = if (config.pathStyle) {
             "/${config.bucket}$path"
         } else {
             path
         }.let { if (it.isEmpty()) "/" else it }
-
         val hostAlreadyContainsBucket = host.startsWith("${config.bucket}.")
 
         val allHeaders = mutableMapOf(
@@ -75,11 +73,9 @@ internal object AwsSignatureV4 {
         val canonicalHeaders = allHeaders.entries
             .sortedBy { it.key }
             .joinToString("") { "${it.key}:${it.value.trim()}\n" }
-
         val canonicalQueryString = queryParams.entries
             .sortedBy { it.key }
             .joinToString("&") { "${it.key.urlEncode()}=${it.value.urlEncode()}" }
-
         val canonicalRequest = buildString {
             appendLine(method)
             appendLine(canonicalUri.urlEncodePath())
@@ -89,7 +85,6 @@ internal object AwsSignatureV4 {
             appendLine(signedHeaders)
             append(resolvedPayloadHash)
         }
-
         val credentialScope = "$dateStamp/${config.region}/$SERVICE/aws4_request"
         val stringToSign = buildString {
             appendLine(ALGORITHM)
@@ -97,7 +92,6 @@ internal object AwsSignatureV4 {
             appendLine(credentialScope)
             append(canonicalRequest.sha256Hex(crypto))
         }
-
         val signingKey = getSignatureKey(
             config.secretAccessKey,
             dateStamp,
@@ -106,17 +100,14 @@ internal object AwsSignatureV4 {
             crypto,
         )
         val signature = crypto.hmac(signingKey, stringToSign.encodeToByteArray()).toHexString()
-
         val authorizationHeader = buildString {
             append("$ALGORITHM ")
             append("Credential=${config.accessKeyId}/$credentialScope, ")
             append("SignedHeaders=$signedHeaders, ")
             append("Signature=$signature")
         }
-
         val resultHeaders = allHeaders.toMutableMap()
         resultHeaders["authorization"] = authorizationHeader
-
         val url = buildString {
             append(if (config.isHttps) "https://" else "http://")
             append(
@@ -127,15 +118,10 @@ internal object AwsSignatureV4 {
                 }
             )
             append(canonicalUri)
-            if (canonicalQueryString.isNotEmpty()) {
-                append("?$canonicalQueryString")
-            }
+            if (canonicalQueryString.isNotEmpty()) append("?$canonicalQueryString")
         }
 
-        return SignedRequest(
-            headers = resultHeaders,
-            url = url
-        )
+        return SignedRequest(headers = resultHeaders, url = url)
     }
 
     private fun getSignatureKey(
@@ -151,34 +137,32 @@ internal object AwsSignatureV4 {
         return crypto.hmac(kService, "aws4_request".encodeToByteArray())
     }
 
-    private fun ByteArray.sha256Hex(crypto: Sha256Crypto): String {
-        return crypto.digest(this).toHexString()
-    }
+    private fun ByteArray.sha256Hex(crypto: Sha256Crypto): String = crypto.digest(this).toHexString()
 
-    private fun String.sha256Hex(crypto: Sha256Crypto): String {
-        return encodeToByteArray().sha256Hex(crypto)
-    }
+    private fun String.sha256Hex(crypto: Sha256Crypto): String = encodeToByteArray().sha256Hex(crypto)
 
-    private fun ByteArray.toHexString(): String {
-        return joinToString("") { "%02x".format(it) }
-    }
-
-    private fun String.urlEncode(): String {
-        return encodeURLQueryComponent(
-            encodeFull = true,
-            spaceToPlus = false,
-        )
-            .replace("%2D", "-")
-            .replace("%2E", ".")
-            .replace("%5F", "_")
-            .replace("%7E", "~")
-    }
-
-    private fun String.urlEncodePath(): String {
-        return split("/").joinToString("/") { segment ->
-            if (segment.isEmpty()) segment else segment.urlEncode()
+    private fun ByteArray.toHexString(): String = buildString(size * 2) {
+        for (byte in this@toHexString) {
+            val value = byte.toInt() and 0xff
+            append(HEX_DIGITS[value ushr 4])
+            append(HEX_DIGITS[value and 0x0f])
         }
     }
 
+    private fun String.urlEncode(): String = encodeURLQueryComponent(
+        encodeFull = true,
+        spaceToPlus = false,
+    )
+        .replace("%2D", "-")
+        .replace("%2E", ".")
+        .replace("%5F", "_")
+        .replace("%7E", "~")
+
+    private fun String.urlEncodePath(): String = split("/").joinToString("/") { segment ->
+        if (segment.isEmpty()) segment else segment.urlEncode()
+    }
+
     private fun Int.fixedWidth(width: Int): String = toString().padStart(width, '0')
+
+    private const val HEX_DIGITS = "0123456789abcdef"
 }
