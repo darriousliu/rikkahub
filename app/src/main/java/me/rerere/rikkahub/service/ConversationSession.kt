@@ -9,12 +9,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.model.Conversation
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.uuid.Uuid
 
 private const val TAG = "ConversationSession"
 private const val IDLE_TIMEOUT_MS = 5_000L
 
+@OptIn(ExperimentalAtomicApi::class)
 class ConversationSession(
     val id: Uuid,
     initial: Conversation,
@@ -25,7 +27,7 @@ class ConversationSession(
     val state = MutableStateFlow(initial)
 
     // 原子引用计数
-    private val refCount = AtomicInteger(0)
+    private val refCount = AtomicInt(0)
 
     // 处理状态（如 OCR 识别中）
     val processingStatus = MutableStateFlow<String?>(null)
@@ -34,17 +36,17 @@ class ConversationSession(
     private val _generationJob = MutableStateFlow<Job?>(null)
     val generationJob: StateFlow<Job?> = _generationJob.asStateFlow()
     val isGenerating: Boolean get() = _generationJob.value?.isActive == true
-    val isInUse: Boolean get() = refCount.get() > 0 || isGenerating
+    val isInUse: Boolean get() = refCount.load() > 0 || isGenerating
 
     // 空闲检查任务
     private var idleCheckJob: Job? = null
 
-    fun acquire(): Int = refCount.incrementAndGet().also {
+    fun acquire(): Int = refCount.addAndFetch(1).also {
         cancelIdleCheck()
         Log.d(TAG, "acquire $id (refs=$it)")
     }
 
-    fun release(): Int = refCount.decrementAndGet().also {
+    fun release(): Int = refCount.addAndFetch(-1).also {
         Log.d(TAG, "release $id (refs=$it)")
         if (it <= 0) scheduleIdleCheck()
     }
@@ -74,7 +76,7 @@ class ConversationSession(
         _generationJob.value = job
         job?.invokeOnCompletion {
             _generationJob.value = null
-            if (refCount.get() <= 0) {
+            if (refCount.load() <= 0) {
                 scheduleIdleCheck()
             }
         }
@@ -86,7 +88,7 @@ class ConversationSession(
         idleCheckJob?.cancel()
         idleCheckJob = scope.launch {
             delay(IDLE_TIMEOUT_MS)
-            if (refCount.get() <= 0 && !isGenerating) {
+            if (refCount.load() <= 0 && !isGenerating) {
                 onIdle(id)
             }
         }
