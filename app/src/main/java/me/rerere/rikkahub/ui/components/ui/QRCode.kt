@@ -11,8 +11,7 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
+import me.rerere.rikkahub.platform.PlatformQrCodeRenderer
 
 @Composable
 fun QRCode(
@@ -25,15 +24,15 @@ fun QRCode(
     val actualColor = color.takeOrElse { MaterialTheme.colorScheme.secondary }
     val actualBackgroundColor = backgroundColor.takeOrElse { Color.Transparent }
 
-    val qrCodeWriter = remember { QRCodeWriter() }
-    val bitMatrix = remember(value) {
-        qrCodeWriter.encode(value, BarcodeFormat.QR_CODE, size, size)
+    val renderer = remember { PlatformQrCodeRenderer() }
+    val matrix = remember(value, size) {
+        renderer.render(content = value, size = size).getOrThrow()
     }
-    val bitmap = remember(bitMatrix) {
-        createBitmap(size, size).apply {
-            for (x in 0 until size) {
-                for (y in 0 until size) {
-                    this[x, y] = if (bitMatrix[x, y]) actualColor.toArgb() else actualBackgroundColor.toArgb()
+    val bitmap = remember(matrix, actualColor, actualBackgroundColor) {
+        createBitmap(matrix.width, matrix.height).apply {
+            for (x in 0 until matrix.width) {
+                for (y in 0 until matrix.height) {
+                    this[x, y] = if (matrix[x, y]) actualColor.toArgb() else actualBackgroundColor.toArgb()
                 }
             }
         }

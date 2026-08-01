@@ -118,6 +118,7 @@ kotlin {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.metadata.extractor)
                 implementation(libs.ucrop)
+                implementation(libs.zxing.core)
             }
         }
         iosMain {
@@ -133,6 +134,7 @@ kotlin {
             implementation(libs.sentry)
             implementation(libs.jmdns)
             implementation(libs.metadata.extractor)
+            implementation(libs.zxing.core)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))

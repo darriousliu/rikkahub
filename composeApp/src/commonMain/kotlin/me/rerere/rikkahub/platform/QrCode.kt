@@ -26,9 +26,36 @@ public fun interface QrImageDecoder {
     public suspend fun decode(imageBytes: ByteArray): QrScanResult
 }
 
+public class QrCodeMatrix internal constructor(
+    public val width: Int,
+    public val height: Int,
+    private val darkModules: BooleanArray,
+) {
+    init {
+        require(width > 0 && height > 0) { "QR code dimensions must be positive" }
+        require(darkModules.size == width * height) { "QR code matrix size does not match its dimensions" }
+    }
+
+    public operator fun get(x: Int, y: Int): Boolean {
+        require(x in 0 until width && y in 0 until height) { "QR code coordinate is out of bounds" }
+        return darkModules[y * width + x]
+    }
+}
+
+public fun interface QrCodeRenderer {
+    public fun render(content: String, size: Int): Result<QrCodeMatrix>
+}
+
+public class PlatformQrCodeRenderer : QrCodeRenderer {
+    override fun render(content: String, size: Int): Result<QrCodeMatrix> =
+        platformRenderQrCode(content = content, size = size)
+}
+
 public class KScanQrImageDecoder : QrImageDecoder {
     override suspend fun decode(imageBytes: ByteArray): QrScanResult = platformDecodeQrImage(imageBytes)
 }
+
+internal expect fun platformRenderQrCode(content: String, size: Int): Result<QrCodeMatrix>
 
 internal expect suspend fun platformDecodeQrImage(imageBytes: ByteArray): QrScanResult
 

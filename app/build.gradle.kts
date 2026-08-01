@@ -208,9 +208,6 @@ dependencies {
     // serialization
     implementation(libs.kotlinx.serialization.json)
 
-    // zxing
-    implementation(libs.zxing.core)
-
     implementation(libs.androidx.sqlite.async)
 
     baselineProfile(project(":app:baselineprofile"))
