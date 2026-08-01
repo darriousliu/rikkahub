@@ -271,6 +271,7 @@ dependencies {
     // tests
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.paging.testing)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(platform(libs.koin.bom))
     testImplementation(libs.koin.test)
