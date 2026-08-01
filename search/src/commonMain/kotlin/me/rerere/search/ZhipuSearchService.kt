@@ -7,8 +7,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import me.rerere.search.generated.resources.Res
 import me.rerere.search.generated.resources.click_to_get_api_key
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -53,48 +51,45 @@ object ZhipuSearchService : SearchService<SearchServiceOptions.ZhipuOptions> {
         params: JsonObject,
         commonOptions: SearchCommonOptions,
         serviceOptions: SearchServiceOptions.ZhipuOptions
-    ): Result<SearchResult> = withContext(Dispatchers.IO) {
-        runCatching {
-            val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
+    ): Result<SearchResult> = runCatching {
+        val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
 
-            val body = buildJsonObject {
-                put("search_query", JsonPrimitive(query))
-                put("search_engine", JsonPrimitive("search_std"))
-                put("count", JsonPrimitive(commonOptions.resultSize))
-            }
+        val body = buildJsonObject {
+            put("search_query", JsonPrimitive(query))
+            put("search_engine", JsonPrimitive("search_std"))
+            put("count", JsonPrimitive(commonOptions.resultSize))
+        }
 
-            val response = httpClient.postSearchRequest(
-                url = "https://open.bigmodel.cn/api/paas/v4/web_search",
-                body = json.encodeToString(body),
-                headers = mapOf(
-                    "Authorization" to "Bearer ${serviceOptions.apiKey}",
-                    "Content-Type" to "application/json",
-                ),
+        val response = httpClient.postSearchRequest(
+            url = "https://open.bigmodel.cn/api/paas/v4/web_search",
+            body = json.encodeToString(body),
+            headers = mapOf(
+                "Authorization" to "Bearer ${serviceOptions.apiKey}",
+                "Content-Type" to "application/json",
+            ),
+        )
+        if (response.isSuccessful) {
+            val bodyRaw = response.body
+            val response = runCatching {
+                json.decodeFromString<ZhipuDto>(bodyRaw)
+            }.onFailure {
+                println(it.stackTraceToString())
+                println(bodyRaw)
+                error("Failed to decode response: $bodyRaw")
+            }.getOrThrow()
+
+            SearchResult(
+                items = response.searchResult.map {
+                    SearchResultItem(
+                        title = it.title,
+                        url = it.link,
+                        text = it.content,
+                    )
+                },
             )
-            if (response.isSuccessful) {
-                val bodyRaw = response.body
-                val response = runCatching {
-                    json.decodeFromString<ZhipuDto>(bodyRaw)
-                }.onFailure {
-                    it.printStackTrace()
-                    println(bodyRaw)
-                    error("Failed to decode response: $bodyRaw")
-                }.getOrThrow()
-
-                return@withContext Result.success(
-                    SearchResult(
-                        items = response.searchResult.map {
-                            SearchResultItem(
-                                title = it.title,
-                                url = it.link,
-                                text = it.content,
-                            )
-                        }
-                    ))
-            } else {
-                println(response.body)
-                error("response failed #${response.code}")
-            }
+        } else {
+            println(response.body)
+            error("response failed #${response.code}")
         }
     }
 

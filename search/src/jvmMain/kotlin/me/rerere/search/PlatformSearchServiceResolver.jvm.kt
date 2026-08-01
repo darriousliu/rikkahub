@@ -5,5 +5,6 @@ internal actual fun <T : SearchServiceOptions> platformSearchServiceFor(options:
     when (options) {
         is SearchServiceOptions.BingLocalOptions -> BingSearchService as SearchService<T>
         is SearchServiceOptions.RikkaHubOptions -> RikkaHubSearchService as SearchService<T>
+        is SearchServiceOptions.ZhipuOptions -> ZhipuSearchService as SearchService<T>
         else -> error("Search provider is not available on JVM yet: ${options.displayName}")
     }
