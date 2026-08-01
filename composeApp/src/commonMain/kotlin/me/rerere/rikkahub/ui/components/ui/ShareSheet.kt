@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,95 +12,77 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Share03
+import me.rerere.rikkahub.platform.rememberPlatformTextSharer
 
 @Composable
-fun ShareSheet(
-    state: ShareSheetState,
-) {
-    val context = LocalContext.current
-    if (state.isShow) {
+fun ShareSheet(state: ShareSheetState) {
+    val textSharer = rememberPlatformTextSharer()
+    val provider = state.currentProvider
+    if (state.isShow && provider != null) {
+        val sharedText = provider.encodeForShare()
         ModalBottomSheet(
-            onDismissRequest = {
-                state.dismiss()
-            },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            onDismissRequest = state::dismiss,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("共享你的LLM模型", style = MaterialTheme.typography.titleLarge)
-
-                    IconButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_SEND)
-                            intent.type = "text/plain"
-                            intent.putExtra(
-                                Intent.EXTRA_TEXT,
-                                state.currentProvider?.encodeForShare() ?: ""
-                            )
-                            try {
-                                context.startActivity(Intent.createChooser(intent, null))
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-                    ) {
-                        Icon(HugeIcons.Share03, null)
+                    Text("共享你的 LLM 模型", style = MaterialTheme.typography.titleLarge)
+                    IconButton(onClick = { textSharer.share(sharedText) }) {
+                        Icon(HugeIcons.Share03, contentDescription = null)
                     }
                 }
-
                 QRCode(
-                    value = state.currentProvider?.encodeForShare() ?: "",
+                    value = sharedText,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .fillMaxWidth()
-                        .aspectRatio(1f)
+                        .aspectRatio(1f),
                 )
             }
         }
     }
 }
 
+@Stable
 class ShareSheetState {
     private var show by mutableStateOf(false)
-    val isShow get() = show
+    val isShow: Boolean get() = show
 
     private var provider by mutableStateOf<ProviderSetting?>(null)
-    val currentProvider get() = provider
+    val currentProvider: ProviderSetting? get() = provider
 
     fun show(provider: ProviderSetting) {
-        this.show = true
+        show = true
         this.provider = provider
     }
 
     fun dismiss() {
-        this.show = false
+        show = false
     }
 }
 
 @Composable
-fun rememberShareSheetState(): ShareSheetState {
-    return ShareSheetState()
-}
+fun rememberShareSheetState(): ShareSheetState = remember { ShareSheetState() }

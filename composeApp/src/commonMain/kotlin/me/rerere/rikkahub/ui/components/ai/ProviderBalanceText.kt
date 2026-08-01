@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.minutes
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
@@ -22,9 +23,8 @@ import me.rerere.hugeicons.stroke.MoneyBag02
 import me.rerere.rikkahub.utils.SimpleCache
 import me.rerere.rikkahub.utils.toDp
 import org.koin.compose.koinInject
-import kotlin.time.Duration.Companion.minutes
 
-private val cache = SimpleCache.builder<String, String>()
+private val providerBalanceCache = SimpleCache.builder<String, String>()
     .expireAfterWrite(2.minutes)
     .build()
 
@@ -33,52 +33,40 @@ fun ProviderBalanceText(
     providerSetting: ProviderSetting,
     modifier: Modifier = Modifier,
     style: TextStyle = LocalTextStyle.current,
-    color: Color = Color.Unspecified
+    color: Color = Color.Unspecified,
 ) {
     if (!providerSetting.balanceOption.enabled || providerSetting !is ProviderSetting.OpenAI) {
-        // Balance option is disabled or provider is not OpenAI type
         return
     }
 
     val providerManager = koinInject<ProviderManager>()
-
-    val value = produceState(initialValue = "~", key1 = providerSetting.id, key2 = providerSetting.balanceOption) {
-        // Check cache first
-        val cachedBalance = cache.getIfPresent("${providerSetting.id},${providerSetting.balanceOption.hashCode()}")
-        if (cachedBalance != null) {
-            value = cachedBalance
-        } else {
-            // Fetch balance from API
-            runCatching {
-                val balance = providerManager.getProviderByType(providerSetting).getBalance(providerSetting)
-                // Cache the result
-                cache.put("${providerSetting.id},${providerSetting.balanceOption.hashCode()}", balance)
-                value = balance
-            }.onFailure {
-                // Handle error
-                val errorMsg = "Error: ${it.message}"
-                // Don't cache error messages
-                value = errorMsg
-            }
+    val balance = produceState(initialValue = "~", providerSetting.id, providerSetting.balanceOption) {
+        val cacheKey = "${providerSetting.id},${providerSetting.balanceOption.hashCode()}"
+        value = providerBalanceCache.getIfPresent(cacheKey) ?: runCatching {
+            providerManager.getProviderByType(providerSetting).getBalance(providerSetting)
+        }.onSuccess {
+            providerBalanceCache.put(cacheKey, it)
+        }.getOrElse {
+            "Error: ${it.message}"
         }
     }
 
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(
             imageVector = HugeIcons.MoneyBag02,
             contentDescription = null,
             modifier = Modifier.size(style.fontSize.toDp()),
-            tint = color.takeOrElse { LocalContentColor.current }
+            tint = color.takeOrElse { LocalContentColor.current },
         )
         Text(
-            text = value.value,
+            text = balance.value,
             style = style,
             maxLines = 1,
-            color = color
+            color = color,
         )
     }
 }

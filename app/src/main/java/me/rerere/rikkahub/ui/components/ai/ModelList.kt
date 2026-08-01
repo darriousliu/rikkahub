@@ -26,7 +26,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -59,35 +58,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.Model
-import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.ArrowRight01
 import me.rerere.hugeicons.stroke.Brain02
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.DragDropHorizontal
 import me.rerere.hugeicons.stroke.Favourite
-import me.rerere.hugeicons.stroke.Image03
 import me.rerere.hugeicons.stroke.Search01
-import me.rerere.hugeicons.stroke.Text
-import me.rerere.hugeicons.stroke.Tools
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
-import me.rerere.rikkahub.ui.components.ui.Tag
-import me.rerere.rikkahub.ui.components.ui.TagType
 import me.rerere.rikkahub.ui.components.ui.icons.HeartIcon
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.extendColors
-import me.rerere.rikkahub.utils.toDp
-import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -748,91 +737,6 @@ private fun ModelItem(
                 tail()
             }
             dragHandle?.let { it() }
-        }
-    }
-}
-
-@Composable
-fun ModelTypeTag(model: Model) {
-    Tag(
-        type = TagType.INFO
-    ) {
-        Text(
-            text = stringResource(
-                when (model.type) {
-                    ModelType.CHAT -> Res.string.setting_provider_page_chat_model
-                    ModelType.EMBEDDING -> Res.string.setting_provider_page_embedding_model
-                    ModelType.IMAGE -> Res.string.setting_provider_page_image_model
-                }
-            )
-        )
-    }
-}
-
-@Composable
-fun ModelModalityTag(model: Model) {
-    Tag(
-        type = TagType.SUCCESS
-    ) {
-        model.inputModalities.fastForEach { modality ->
-            Icon(
-                imageVector = when (modality) {
-                    Modality.TEXT -> HugeIcons.Text
-                    Modality.IMAGE -> HugeIcons.Image03
-                },
-                contentDescription = null,
-                modifier = Modifier
-                    .size(LocalTextStyle.current.lineHeight.toDp())
-                    .padding(1.dp)
-            )
-        }
-        Icon(
-            imageVector = HugeIcons.ArrowRight01,
-            contentDescription = null,
-            modifier = Modifier.size(LocalTextStyle.current.lineHeight.toDp())
-        )
-        model.outputModalities.fastForEach { modality ->
-            Icon(
-                imageVector = when (modality) {
-                    Modality.TEXT -> HugeIcons.Text
-                    Modality.IMAGE -> HugeIcons.Image03
-                },
-                contentDescription = null,
-                modifier = Modifier
-                    .size(LocalTextStyle.current.lineHeight.toDp())
-                    .padding(1.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun ModelAbilityTag(model: Model) {
-    model.abilities.fastForEach { ability ->
-        when (ability) {
-            ModelAbility.TOOL -> {
-                Tag(
-                    type = TagType.WARNING
-                ) {
-                    Icon(
-                        imageVector = HugeIcons.Tools,
-                        contentDescription = null,
-                        modifier = Modifier.size(LocalTextStyle.current.lineHeight.toDp())
-                    )
-                }
-            }
-
-            ModelAbility.REASONING -> {
-                Tag(
-                    type = TagType.INFO
-                ) {
-                    Icon(
-                        painter = painterResource(Res.drawable.deepthink),
-                        contentDescription = null,
-                        modifier = Modifier.size(LocalTextStyle.current.lineHeight.toDp()),
-                    )
-                }
-            }
         }
     }
 }
