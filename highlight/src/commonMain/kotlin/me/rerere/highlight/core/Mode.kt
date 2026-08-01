@@ -1,13 +1,11 @@
 package me.rerere.highlight.core
 
-import java.util.regex.Pattern
-
 /**
  * A single grammar rule, mirroring `Mode` in `highlight.js` 11.11.1.
  *
  * Modes are written uncompiled by grammar authors and are turned into their compiled form in place
  * by [compileLanguage], exactly like upstream. Regular expressions are held as JavaScript flavoured
- * *sources*; [compilePattern] performs the translation to [Pattern].
+ * *sources*; [compilePattern] performs the translation to Kotlin [Regex].
  */
 internal class Mode {
     // ---- scopes -------------------------------------------------------------------------------
@@ -151,10 +149,10 @@ internal class Mode {
 
     internal var isCompiled: Boolean = false
     internal var compiledKeywords: Map<String, KeywordData>? = null
-    internal var keywordPatternRe: Pattern? = null
-    internal var beginRe: Pattern? = null
-    internal var endRe: Pattern? = null
-    internal var illegalRe: Pattern? = null
+    internal var keywordPatternRe: Regex? = null
+    internal var beginRe: Regex? = null
+    internal var endRe: Regex? = null
+    internal var illegalRe: Regex? = null
     internal var terminatorEnd: String? = null
     internal var compiledBeginScope: CompiledScope? = null
     internal var compiledEndScope: CompiledScope? = null

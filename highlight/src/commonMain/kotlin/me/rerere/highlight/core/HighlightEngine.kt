@@ -31,6 +31,7 @@ internal class HighlightEngine(languages: List<Language>) {
     }
 
     private val compiledRoots = HashMap<String, Mode>()
+    private val compiledRootsLock = HighlightLock()
 
     fun supports(language: String): Boolean =
         languagesByAlias.containsKey(language.trim().lowercase())
@@ -41,7 +42,7 @@ internal class HighlightEngine(languages: List<Language>) {
         return Run(definition).highlight(code, ignoreIllegals = true, continuation = null).tokens
     }
 
-    private fun compiledRootOf(language: Language): Mode = synchronized(compiledRoots) {
+    private fun compiledRootOf(language: Language): Mode = compiledRootsLock.withLock {
         compiledRoots.getOrPut(language.name) { ModeCompiler(language).compile() }
     }
 
@@ -151,13 +152,13 @@ internal class HighlightEngine(languages: List<Language>) {
                 return
             }
 
-            val matcher = top.mode.keywordPatternRe!!.matcher(buffer)
+            val matches = top.mode.keywordPatternRe!!.findAll(buffer)
             val pending = StringBuilder()
             var lastIndex = 0
 
-            while (matcher.find()) {
-                pending.append(buffer, lastIndex, matcher.start())
-                val matched = matcher.group()
+            for (match in matches) {
+                pending.append(buffer, lastIndex, match.range.first)
+                val matched = match.value
                 val word = if (language.caseInsensitive) matched.lowercase() else matched
                 val data = keywords[word]
                 if (data != null) {
@@ -177,7 +178,7 @@ internal class HighlightEngine(languages: List<Language>) {
                 } else {
                     pending.append(matched)
                 }
-                lastIndex = matcher.end()
+                lastIndex = match.range.last + 1
             }
             pending.append(buffer, lastIndex, buffer.length)
             emitter.addText(pending.toString())

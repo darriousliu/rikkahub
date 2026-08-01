@@ -1,7 +1,5 @@
 package me.rerere.highlight.core
 
-import java.util.regex.Pattern
-
 internal enum class MatchType { BEGIN, END, ILLEGAL }
 
 /** Metadata registered alongside a terminator regex, mirroring the `opts` object upstream. */
@@ -44,7 +42,7 @@ private class MultiRegex(
     private val regexes = mutableListOf<Pair<RuleInfo, String>>()
     private var matchAt = 1
     private var position = 0
-    private var matcherRe: Pattern? = null
+    private var matcherRe: Regex? = null
 
     var lastIndex: Int = 0
 
@@ -69,20 +67,19 @@ private class MultiRegex(
         val pattern = matcherRe ?: return null
         if (lastIndex > input.length) return null
 
-        val matcher = pattern.matcher(input)
-        if (!matcher.find(lastIndex)) return null
+        val match = pattern.find(input, lastIndex) ?: return null
 
         // Find the first group that took part in the match: it identifies the originating rule.
         var group = 1
-        while (group <= matcher.groupCount() && matcher.group(group) == null) group++
-        if (group > matcher.groupCount()) return null
+        while (group < match.groups.size && match.groups[group] == null) group++
+        if (group >= match.groups.size) return null
 
         val info = matchIndexes[group] ?: return null
         // Trim the leading groups belonging to the other rules, so index 0 is the rule's own match.
-        val groups = (group..matcher.groupCount()).map { matcher.group(it) }
+        val groups = (group until match.groups.size).map { match.groups[it]?.value }
 
         return MultiMatch(
-            index = matcher.start(),
+            index = match.range.first,
             input = input,
             groups = groups,
             rule = info.rule,

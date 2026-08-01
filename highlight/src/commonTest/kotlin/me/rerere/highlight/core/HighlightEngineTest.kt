@@ -1,10 +1,10 @@
 package me.rerere.highlight.core
 
 import me.rerere.highlight.HighlightToken
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * Behaviour of the mode stack engine itself, exercised through small purpose built grammars.

@@ -15,7 +15,7 @@ import me.rerere.highlight.core.mode
 
 /** Java, ported from `lib/languages/java.js` of `highlight.js` 11.11.1. */
 internal fun java(): Language {
-    // The `\uXXXX` escapes are left for `java.util.regex` to resolve, exactly as upstream leaves
+    // The `\uXXXX` escapes are left for the Kotlin regex engine to resolve, exactly as upstream leaves
     // them to the JavaScript engine.
     val identRe = """[\u00C0-\u02B8a-zA-Z_${'$'}][\u00C0-\u02B8a-zA-Z_${'$'}0-9]*"""
     val genericIdentRe = identRe + recurRegex(

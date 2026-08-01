@@ -1,13 +1,11 @@
 package me.rerere.highlight.core
 
-import java.util.regex.Pattern
-
 /**
  * Regular expression helpers ported from `highlight.js` 11.11.1 (`lib/core.js`).
  *
  * Grammars are written with JavaScript flavoured regular expression *sources*, exactly like
- * upstream. [compilePattern] is the single place that translates such a source into a
- * [java.util.regex.Pattern].
+ * upstream. [compilePattern] is the single place that translates such a source into a Kotlin
+ * [Regex].
  */
 
 internal fun lookahead(re: String): String = "(?=$re)"
@@ -77,9 +75,7 @@ internal fun rewriteBackreferences(regexes: List<String>, joinWith: String): Str
 }
 
 /** Number of capturing groups declared by [re]. Mirrors `countMatchGroups()` upstream. */
-internal fun countMatchGroups(re: String): Int =
-    runCatching { Pattern.compile(translateJsRegex(re)).matcher("").groupCount() }
-        .getOrElse { countMatchGroupsByScan(re) }
+internal fun countMatchGroups(re: String): Int = countMatchGroupsByScan(re)
 
 private fun countMatchGroupsByScan(re: String): Int {
     var count = 0
@@ -105,32 +101,31 @@ private fun isCapturingGroupStart(re: String, parenIndex: Int): Boolean {
 }
 
 /** Does [lexeme] start with a match of [pattern]? Mirrors `startsWith()` upstream. */
-internal fun startsWith(pattern: Pattern?, lexeme: String): Boolean =
-    pattern != null && pattern.matcher(lexeme).lookingAt()
+internal fun startsWith(pattern: Regex?, lexeme: String): Boolean =
+    pattern?.find(lexeme)?.range?.first == 0
 
 /**
- * Compiles a JavaScript flavoured regular expression source into a [Pattern].
+ * Compiles a JavaScript flavoured regular expression source into a Kotlin [Regex].
  *
- * `highlight.js` always compiles with the `m` flag, optionally adding `i` and `u`; the `g` flag has
- * no equivalent in Java and is instead expressed by the caller passing an explicit start index.
+ * `highlight.js` always compiles with the `m` flag, optionally adding `i` and `u`; the `g` flag is
+ * instead expressed by the caller passing an explicit start index.
  *
- * JavaScript's `u` flag must not be mapped to [Pattern.UNICODE_CHARACTER_CLASS]. Besides being
- * unsupported on Android, that Java flag changes `\w`, `\d`, and `\s` to Unicode character
- * classes, which JavaScript's `u` flag does not do. Unicode syntax differences are handled by
- * [translateJsRegex] instead.
+ * Kotlin's regex engines already retain JavaScript-compatible ASCII semantics for `\w`, `\d`, and
+ * `\s`; [unicode] therefore only documents the grammar flag. Unicode syntax differences are
+ * handled by [translateJsRegex].
  */
 internal fun compilePattern(
     source: String,
     caseInsensitive: Boolean = false,
     unicode: Boolean = false,
-): Pattern {
-    var flags = Pattern.MULTILINE
-    if (caseInsensitive) flags = flags or Pattern.CASE_INSENSITIVE or Pattern.UNICODE_CASE
-    return Pattern.compile(translateJsRegex(source), flags)
+): Regex {
+    val options = mutableSetOf(RegexOption.MULTILINE)
+    if (caseInsensitive) options += RegexOption.IGNORE_CASE
+    return Regex(translateJsRegex(source), options)
 }
 
 /**
- * Rewrites the handful of constructs where JavaScript and `java.util.regex` disagree.
+ * Rewrites the handful of constructs where JavaScript and Kotlin regex engines disagree.
  *
  * - `[^]` matches any character in JavaScript but is a syntax error in Java.
  * - `[]` never matches in JavaScript but is a syntax error in Java.
@@ -140,25 +135,28 @@ internal fun compilePattern(
  * - a few Unicode properties are named differently by the two flavours.
  */
 internal fun translateJsRegex(source: String): String {
-    val out = StringBuilder(source.length + 8)
+    val portableSource = source
+        .replace("""\p{XID_Start}""", """\p{L}""")
+        .replace("""\p{XID_Continue}""", """[\p{L}\p{N}\p{M}\p{Pc}]""")
+    val out = StringBuilder(portableSource.length + 8)
     var index = 0
     var inCharacterClass = false
 
-    while (index < source.length) {
-        val char = source[index]
+    while (index < portableSource.length) {
+        val char = portableSource[index]
         when {
-            char == '\\' && index + 1 < source.length -> {
-                index = appendEscape(source, index, out)
+            char == '\\' && index + 1 < portableSource.length -> {
+                index = appendEscape(portableSource, index, out)
             }
 
             !inCharacterClass && char == '[' -> {
                 when {
-                    source.startsWith("[^]", index) -> {
+                    portableSource.startsWith("[^]", index) -> {
                         out.append("[\\s\\S]")
                         index += 3
                     }
 
-                    source.startsWith("[]", index) -> {
+                    portableSource.startsWith("[]", index) -> {
                         out.append("(?!)")
                         index += 2
                     }
@@ -167,7 +165,7 @@ internal fun translateJsRegex(source: String): String {
                         inCharacterClass = true
                         out.append('[')
                         index++
-                        if (source.getOrNull(index) == '^') {
+                        if (portableSource.getOrNull(index) == '^') {
                             out.append('^')
                             index++
                         }
@@ -186,7 +184,7 @@ internal fun translateJsRegex(source: String): String {
                 index++
             }
 
-            !inCharacterClass && char == '{' && !opensQuantifier(source, index) -> {
+            !inCharacterClass && char == '{' && !opensQuantifier(portableSource, index) -> {
                 out.append("\\{")
                 index++
             }
@@ -203,7 +201,7 @@ internal fun translateJsRegex(source: String): String {
 /**
  * Appends the escape sequence starting at [index] and returns the index just past it.
  *
- * `\p{…}` and `\P{…}` are passed through under the name [java.util.regex] knows them by.
+ * `\p{…}` and `\P{…}` are passed through after portable XID properties are expanded.
  */
 private fun appendEscape(source: String, index: Int, out: StringBuilder): Int {
     val escaped = source[index + 1]
@@ -212,25 +210,13 @@ private fun appendEscape(source: String, index: Int, out: StringBuilder): Int {
         if (close != -1) {
             val name = source.substring(index + 3, close)
             out.append('\\').append(escaped).append('{')
-                .append(UNICODE_PROPERTY_NAMES[name] ?: name).append('}')
+                .append(name).append('}')
             return close + 1
         }
     }
     out.append(source[index]).append(escaped)
     return index + 2
 }
-
-/**
- * Unicode properties the two flavours spell differently.
- *
- * `java.util.regex` has no `XID_*`, but it exposes `Character.isUnicodeIdentifier*` as a property,
- * which describes the same characters bar the identifier-ignorable ones — control and format
- * characters that no source file uses inside a name anyway.
- */
-private val UNICODE_PROPERTY_NAMES = mapOf(
-    "XID_Start" to "javaUnicodeIdentifierStart",
-    "XID_Continue" to "javaUnicodeIdentifierPart",
-)
 
 /** Is the `{` at [braceIndex] the start of a `{n}`, `{n,}` or `{n,m}` quantifier? */
 private fun opensQuantifier(source: String, braceIndex: Int): Boolean {

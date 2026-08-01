@@ -1,9 +1,9 @@
 package me.rerere.highlight
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * The public entry point.
@@ -37,7 +37,7 @@ class CodeHighlighterTest {
             "diff", "patch",
             "markdown", "md", "mkdown", "mkd",
             "rust", "rs",
-        ).forEach { assertTrue(it, highlighter.supports(it)) }
+        ).forEach { assertTrue(highlighter.supports(it), it) }
     }
 
     @Test
@@ -81,8 +81,8 @@ class CodeHighlighterTest {
 
     private fun assertToken(tokens: List<HighlightToken>, content: String, type: String) {
         assertTrue(
-            "expected token '$content' of type '$type', got $tokens",
             tokens.any { it is HighlightToken.Styled && it.content == content && it.type == type },
+            "expected token '$content' of type '$type', got $tokens",
         )
     }
 }

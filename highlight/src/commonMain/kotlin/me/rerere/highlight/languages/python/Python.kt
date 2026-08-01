@@ -14,7 +14,7 @@ import me.rerere.highlight.core.variant
 /** Python, ported from `lib/languages/python.js` of `highlight.js` 11.11.1. */
 internal fun python(): Language {
     // `XID_Start` / `XID_Continue` are Unicode properties, so a name may be written in any script;
-    // `translateJsRegex` maps them onto the properties `java.util.regex` knows them by.
+    // `translateJsRegex` expands them to Unicode categories shared by Kotlin regex engines.
     val identRe = """[\p{XID_Start}_]\p{XID_Continue}*"""
 
     val reservedWords = listOf(

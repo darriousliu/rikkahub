@@ -1,7 +1,5 @@
 package me.rerere.highlight.core
 
-import java.util.regex.Pattern
-
 /**
  * Turns a [Language] into its compiled form, mirroring `compileLanguage()` in `highlight.js`.
  *
@@ -18,7 +16,7 @@ internal class ModeCompiler(private val language: Language) {
         return compileMode(language.root, parent = null)
     }
 
-    private fun langRe(source: String): Pattern = compilePattern(
+    private fun langRe(source: String): Regex = compilePattern(
         source = source,
         caseInsensitive = language.caseInsensitive,
         unicode = language.unicodeRegex,

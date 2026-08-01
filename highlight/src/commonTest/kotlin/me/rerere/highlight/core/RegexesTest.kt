@@ -1,37 +1,44 @@
 package me.rerere.highlight.core
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-/** The JavaScript to `java.util.regex` translation grammars depend on. */
+/** The JavaScript to Kotlin regex translation grammars depend on. */
 class RegexesTest {
     @Test
     fun `translates constructs java rejects`() {
         // `[^]` is "any character" in JavaScript and a syntax error in Java.
-        assertTrue(compilePattern("""a[^]b""").matcher("a\nb").matches())
+        assertTrue(compilePattern("""a[^]b""").matches("a\nb"))
         // `[]` never matches in JavaScript and is a syntax error in Java.
-        assertFalse(compilePattern("""[]""").matcher("x").find())
+        assertFalse(compilePattern("""[]""").containsMatchIn("x"))
         // `[` and `&` are literal inside a JavaScript character class, but mean nested class union
         // and class intersection in Java.
-        assertTrue(compilePattern("""[{}[\],:]""").matcher("[").matches())
-        assertTrue(compilePattern("""[a&&b]""").matcher("&").matches())
+        assertTrue(compilePattern("""[{}[\],:]""").matches("["))
+        assertTrue(compilePattern("""[a&&b]""").matches("&"))
         // A `{` that opens no quantifier is literal in JavaScript and an error in Java.
-        assertTrue(compilePattern("""\$\{|a{""").matcher("a{").find())
+        assertTrue(compilePattern("""\$\{|a{""").containsMatchIn("a{"))
         // Real quantifiers must survive untouched.
-        assertTrue(compilePattern("""[0-9]{4}(-[0-9][0-9]){0,2}""").matcher("2024-05-27").matches())
+        assertTrue(compilePattern("""[0-9]{4}(-[0-9][0-9]){0,2}""").matches("2024-05-27"))
     }
 
     @Test
     fun `unicode mode keeps javascript predefined character class semantics`() {
         val word = compilePattern("""\w""", unicode = true)
         val digit = compilePattern("""\d""", unicode = true)
+        val identifier = compilePattern(
+            """[\p{XID_Start}_]\p{XID_Continue}*""",
+            unicode = true,
+        )
 
-        assertTrue(word.matcher("a").matches())
-        assertFalse(word.matcher("中").matches())
-        assertTrue(digit.matcher("1").matches())
-        assertFalse(digit.matcher("١").matches())
+        assertTrue(word.matches("a"))
+        assertFalse(word.matches("中"))
+        assertTrue(digit.matches("1"))
+        assertFalse(digit.matches("١"))
+        assertTrue(identifier.matches("café2"))
+        assertTrue(identifier.matches("变量2"))
+        assertFalse(identifier.matches("2value"))
     }
 
     @Test
@@ -57,9 +64,9 @@ class RegexesTest {
         assertEquals("""((['"]).*?\2)|((\w)-\4)""", joined)
 
         val pattern = compilePattern(joined)
-        assertTrue(pattern.matcher("""'quoted'""").find())
-        assertTrue(pattern.matcher("a-a").find())
-        assertFalse(pattern.matcher("a-b").find())
+        assertTrue(pattern.containsMatchIn("""'quoted'"""))
+        assertTrue(pattern.containsMatchIn("a-a"))
+        assertFalse(pattern.containsMatchIn("a-b"))
     }
 
     @Test
