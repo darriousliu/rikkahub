@@ -9,20 +9,12 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
+import io.ktor.utils.io.readLine
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "QwenTTSProvider"
 
 class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
-
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.Qwen,
@@ -39,60 +31,55 @@ class QwenTTSProvider : TTSProvider<TTSProviderSetting.Qwen> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/services/aigc/multimodal-generation/generation")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("X-DashScope-SSE", "enable")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
+        val response = postRemoteTtsRequest(
+            url = "${providerSetting.baseUrl}/services/aigc/multimodal-generation/generation",
+            body = requestBody.toString(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${providerSetting.apiKey}",
+                "Content-Type" to "application/json",
+                "X-DashScope-SSE" to "enable",
+            ),
+        )
 
         if (!response.isSuccessful) {
-            val errorBody = response.body.string()
+            val errorBody = response.bodyText()
             Log.e(TAG, "Qwen TTS request failed: ${response.code} ${response.message}, body: $errorBody")
             throw Exception("Qwen TTS request failed: ${response.code} ${response.message}")
         }
 
-        val reader = response.body.byteStream().bufferedReader()
+        val channel = response.bodyChannel()
+        var currentData = StringBuilder()
+        while (!channel.isClosedForRead) {
+            val line = channel.readLine() ?: break
+            when {
+                line.startsWith("data:") -> {
+                    currentData.append(line.removePrefix("data:"))
+                }
 
-        try {
-            var currentData = StringBuilder()
-
-            reader.lineSequence().forEach { line ->
-                when {
-                    line.startsWith("data:") -> {
-                        currentData.append(line.removePrefix("data:"))
-                    }
-
-                    line.isEmpty() && currentData.isNotEmpty() -> {
-                        val result = parseSSEData(currentData.toString())
-                        if (result != null) {
-                            val (audioData, isLast) = result
-                            emit(
-                                AudioChunk(
-                                    data = audioData,
-                                    format = AudioFormat.PCM,
-                                    sampleRate = 24000,
-                                    isLast = isLast,
-                                    metadata = mapOf(
-                                        "provider" to "qwen",
-                                        "model" to providerSetting.model,
-                                        "voice" to providerSetting.voice,
-                                        "sampleRate" to "24000",
-                                        "channels" to "1",
-                                        "bitDepth" to "16"
-                                    )
+                line.isEmpty() && currentData.isNotEmpty() -> {
+                    val result = parseSSEData(currentData.toString())
+                    if (result != null) {
+                        val (audioData, isLast) = result
+                        emit(
+                            AudioChunk(
+                                data = audioData,
+                                format = AudioFormat.PCM,
+                                sampleRate = 24000,
+                                isLast = isLast,
+                                metadata = mapOf(
+                                    "provider" to "qwen",
+                                    "model" to providerSetting.model,
+                                    "voice" to providerSetting.voice,
+                                    "sampleRate" to "24000",
+                                    "channels" to "1",
+                                    "bitDepth" to "16"
                                 )
                             )
-                        }
-                        currentData = StringBuilder()
+                        )
                     }
+                    currentData = StringBuilder()
                 }
             }
-        } finally {
-            reader.close()
         }
     }
 

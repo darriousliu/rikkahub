@@ -9,20 +9,11 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "FishAudioTTSProvider"
 
 class FishAudioTTSProvider : TTSProvider<TTSProviderSetting.FishAudio> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
-
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.FishAudio,
@@ -46,24 +37,24 @@ class FishAudioTTSProvider : TTSProvider<TTSProviderSetting.FishAudio> {
 
         Log.i(TAG, "generateSpeech: model=${providerSetting.model}, referenceId=${providerSetting.referenceId}")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/v1/tts")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("model", providerSetting.model)
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
+        val response = postRemoteTtsRequest(
+            url = "${providerSetting.baseUrl}/v1/tts",
+            body = requestBody.toString(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${providerSetting.apiKey}",
+                "Content-Type" to "application/json",
+                "model" to providerSetting.model,
+            ),
+        )
 
         if (!response.isSuccessful) {
-            val errorBody = response.body?.string()
+            val errorBody = response.bodyText()
             Log.e(TAG, "generateSpeech: ${response.code} ${response.message}")
             Log.e(TAG, "generateSpeech: $errorBody")
             throw Exception("Fish Audio TTS request failed: ${response.code} ${response.message}")
         }
 
-        val audioData = response.body.bytes()
+        val audioData = response.bodyBytes()
 
         val audioFormat = when (providerSetting.format.lowercase()) {
             "mp3" -> AudioFormat.MP3

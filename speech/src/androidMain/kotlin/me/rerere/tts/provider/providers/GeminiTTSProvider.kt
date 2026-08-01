@@ -11,20 +11,12 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "GeminiTTSProvider"
 
 class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
     private val json = Json { ignoreUnknownKeys = true }
 
     @Serializable
@@ -85,20 +77,21 @@ class GeminiTTSProvider : TTSProvider<TTSProviderSetting.Gemini> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/models/${providerSetting.model}:generateContent")
-            .addHeader("x-goog-api-key", providerSetting.apiKey)
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
+        val response = postRemoteTtsRequest(
+            url = "${providerSetting.baseUrl}/models/${providerSetting.model}:generateContent",
+            body = requestBody.toString(),
+            headers = mapOf(
+                "x-goog-api-key" to providerSetting.apiKey,
+                "Content-Type" to "application/json",
+            ),
+            timeoutMillis = 30_000,
+        )
 
         if (!response.isSuccessful) {
             throw Exception("Gemini TTS request failed: ${response.code} ${response.message}")
         }
 
-        val responseJson = response.body.string()
+        val responseJson = response.bodyText()
         val geminiResponse = json.decodeFromString<GeminiTTSResponse>(responseJson)
 
         if (geminiResponse.candidates.isEmpty() ||

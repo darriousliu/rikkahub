@@ -10,20 +10,11 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "OpenAITTSProvider"
 
 class OpenAITTSProvider : TTSProvider<TTSProviderSetting.OpenAI> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
-
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.OpenAI,
@@ -38,20 +29,20 @@ class OpenAITTSProvider : TTSProvider<TTSProviderSetting.OpenAI> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/audio/speech")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
+        val response = postRemoteTtsRequest(
+            url = "${providerSetting.baseUrl}/audio/speech",
+            body = requestBody.toString(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${providerSetting.apiKey}",
+                "Content-Type" to "application/json",
+            ),
+        )
 
         if (!response.isSuccessful) {
             throw Exception("TTS request failed: ${response.code} ${response.message}")
         }
 
-        val audioData = response.body.bytes()
+        val audioData = response.bodyBytes()
 
         emit(
             AudioChunk(

@@ -9,20 +9,11 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "XAITTSProvider"
 
 class XAITTSProvider : TTSProvider<TTSProviderSetting.XAI> {
-    private val httpClient = OkHttpClient.Builder()
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
-
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.XAI,
@@ -36,23 +27,23 @@ class XAITTSProvider : TTSProvider<TTSProviderSetting.XAI> {
 
         Log.i(TAG, "generateSpeech: $requestBody")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl}/tts")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
+        val response = postRemoteTtsRequest(
+            url = "${providerSetting.baseUrl}/tts",
+            body = requestBody.toString(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${providerSetting.apiKey}",
+                "Content-Type" to "application/json",
+            ),
+        )
 
         if (!response.isSuccessful) {
-            val errorBody = response.body?.string()
+            val errorBody = response.bodyText()
             Log.e(TAG, "generateSpeech: ${response.code} ${response.message}")
             Log.e(TAG, "generateSpeech: $errorBody")
             throw Exception("xAI TTS request failed: ${response.code} ${response.message}")
         }
 
-        val audioData = response.body.bytes()
+        val audioData = response.bodyBytes()
 
         emit(
             AudioChunk(

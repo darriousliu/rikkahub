@@ -11,16 +11,8 @@ import me.rerere.tts.model.AudioFormat
 import me.rerere.tts.model.TTSRequest
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "StepTTSProvider"
-
-// StepFun /v1/audio/speech 返回的二进制格式按 responseFormat 决定
-private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
 /**
  * 阶跃星辰 Step TTS 适配器。
@@ -37,11 +29,6 @@ private val JSON_MEDIA_TYPE = "application/json".toMediaType()
  * - 开发指南: https://platform.stepfun.com/docs/zh/guides/developer/tts
  */
 class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
-    private val httpClient = OkHttpClient.Builder()
-        // 一次性合成可能比较慢 (长文本 + 高质量模型), 给足读超时
-        .readTimeout(120, TimeUnit.SECONDS)
-        .build()
-
     override fun generateSpeech(
         context: Context,
         providerSetting: TTSProviderSetting.Step,
@@ -64,25 +51,24 @@ class StepTTSProvider : TTSProvider<TTSProviderSetting.Step> {
 
         Log.i(TAG, "generateSpeech: model=${providerSetting.model} voice=${providerSetting.voice} format=${providerSetting.responseFormat}")
 
-        val httpRequest = Request.Builder()
-            .url("${providerSetting.baseUrl.trimEnd('/')}/v1/audio/speech")
-            .addHeader("Authorization", "Bearer ${providerSetting.apiKey}")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("Accept", "application/octet-stream")
-            .post(requestBody.toString().toRequestBody(JSON_MEDIA_TYPE))
-            .build()
-
-        val response = httpClient.newCall(httpRequest).execute()
+        val response = postRemoteTtsRequest(
+            url = "${providerSetting.baseUrl.trimEnd('/')}/v1/audio/speech",
+            body = requestBody.toString(),
+            headers = mapOf(
+                "Authorization" to "Bearer ${providerSetting.apiKey}",
+                "Content-Type" to "application/json",
+                "Accept" to "application/octet-stream",
+            ),
+        )
         if (!response.isSuccessful) {
             // 把错误响应体读出来方便排查 (4xx 通常返回 JSON 错误信息)
-            val errorBody = runCatching { response.body?.string() }.getOrNull().orEmpty()
+            val errorBody = runCatching { response.bodyText() }.getOrNull().orEmpty()
             throw Exception(
                 "Step TTS request failed: HTTP ${response.code} ${response.message}. body=$errorBody"
             )
         }
 
-        val audioBytes = response.body?.bytes()
-            ?: throw Exception("Step TTS returned empty body")
+        val audioBytes = response.bodyBytes()
 
         if (audioBytes.isEmpty()) {
             throw Exception("Step TTS returned 0 bytes")
