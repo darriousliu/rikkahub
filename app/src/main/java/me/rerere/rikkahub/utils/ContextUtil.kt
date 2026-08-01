@@ -19,10 +19,10 @@ import android.provider.Settings
 import me.rerere.common.logging.RikkaLog as Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import me.rerere.rikkahub.platform.AndroidExternalUriOpener
 
 import java.io.File
 import java.io.FileOutputStream
@@ -117,12 +117,7 @@ fun Context.openUsageAccessSettings() {
  */
 fun Context.openUrl(url: String) {
     Log.i(TAG, "openUrl: $url")
-    runCatching {
-        val intent = CustomTabsIntent.Builder()
-            .setShowTitle(true)
-            .build()
-        intent.launchUrl(this, url.toUri())
-    }.onFailure {
+    AndroidExternalUriOpener(this).open(url).onFailure {
         it.printStackTrace()
         Toast.makeText(this, "Failed to open URL: $url", Toast.LENGTH_SHORT).show()
     }
