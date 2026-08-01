@@ -26,6 +26,7 @@ import me.rerere.rikkahub.data.datastore.BackupReminderConfig
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.resources.stringResource
+import kotlin.time.Clock
 
 @Composable
 fun BackupReminderCard(
@@ -34,7 +35,7 @@ fun BackupReminderCard(
 ) {
     val config = settings.backupReminderConfig
     var dismissed by remember { mutableStateOf(false) }
-    val nowMillis = System.currentTimeMillis()
+    val nowMillis = Clock.System.now().toEpochMilliseconds()
 
     val reminder = calculateBackupReminder(config, nowMillis)
 
