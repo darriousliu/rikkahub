@@ -275,7 +275,6 @@ dependencies {
     implementation(project(":material3"))
     implementation(project(":workspace"))
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
-    implementation(kotlin("reflect"))
 
     // Leak Canary
     // debugImplementation(libs.leakcanary.android)

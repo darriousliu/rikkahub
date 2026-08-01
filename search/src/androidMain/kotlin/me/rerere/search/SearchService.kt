@@ -17,6 +17,7 @@ import okhttp3.internal.closeQuietly
 import okio.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resumeWithException
+import kotlin.reflect.KClass
 import kotlin.uuid.Uuid
 
 interface SearchService<T : SearchServiceOptions> {
@@ -42,29 +43,8 @@ interface SearchService<T : SearchServiceOptions> {
     ): Result<ScrapedResult>
 
     companion object {
-        @Suppress("UNCHECKED_CAST")
-        fun <T : SearchServiceOptions> getService(options: T): SearchService<T> {
-            return when (options) {
-                is SearchServiceOptions.TavilyOptions -> TavilySearchService
-                is SearchServiceOptions.ExaOptions -> ExaSearchService
-                is SearchServiceOptions.ZhipuOptions -> ZhipuSearchService
-                is SearchServiceOptions.BingLocalOptions -> BingSearchService
-                is SearchServiceOptions.SearXNGOptions -> SearXNGService
-                is SearchServiceOptions.LinkUpOptions -> LinkUpService
-                is SearchServiceOptions.BraveOptions -> BraveSearchService
-                is SearchServiceOptions.MetasoOptions -> MetasoSearchService
-                is SearchServiceOptions.OllamaOptions -> OllamaSearchService
-                is SearchServiceOptions.PerplexityOptions -> PerplexitySearchService
-                is SearchServiceOptions.FirecrawlOptions -> FirecrawlSearchService
-                is SearchServiceOptions.JinaOptions -> JinaSearchService
-                is SearchServiceOptions.BochaOptions -> BochaSearchService
-                is SearchServiceOptions.RikkaHubOptions -> RikkaHubSearchService
-                is SearchServiceOptions.GrokOptions -> GrokSearchService
-                is SearchServiceOptions.TinyfishOptions -> TinyfishSearchService
-                is SearchServiceOptions.SerperOptions -> SerperSearchService
-                is SearchServiceOptions.CustomJsOptions -> CustomJsSearchService
-            } as SearchService<T>
-        }
+        fun <T : SearchServiceOptions> getService(options: T): SearchService<T> =
+            SearchProviderRegistry.serviceFor(options)
 
         @Volatile
         internal var httpClient: OkHttpClient = OkHttpClient.Builder()
@@ -139,26 +119,7 @@ sealed class SearchServiceOptions {
     companion object {
         val DEFAULT = BingLocalOptions()
 
-        val TYPES = mapOf(
-            BingLocalOptions::class to "Bing",
-            RikkaHubOptions::class to "RikkaHub",
-            ZhipuOptions::class to "智谱",
-            TavilyOptions::class to "Tavily",
-            ExaOptions::class to "Exa",
-            SearXNGOptions::class to "SearXNG",
-            LinkUpOptions::class to "LinkUp",
-            BraveOptions::class to "Brave",
-            MetasoOptions::class to "秘塔",
-            OllamaOptions::class to "Ollama",
-            PerplexityOptions::class to "Perplexity",
-            FirecrawlOptions::class to "Firecrawl",
-            JinaOptions::class to "Jina",
-            BochaOptions::class to "博查",
-            GrokOptions::class to "Grok",
-            TinyfishOptions::class to "Tinyfish",
-            SerperOptions::class to "Serper",
-            CustomJsOptions::class to "Custom JS",
-        )
+        val TYPES: Map<KClass<out SearchServiceOptions>, String> = SearchProviderRegistry.types
     }
 
     @Serializable
