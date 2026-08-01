@@ -59,18 +59,6 @@ kotlin {
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.coroutines.test)
         }
-        androidMain.dependencies {
-            implementation(project.dependencies.platform(libs.androidx.compose.bom))
-            implementation(libs.androidx.material3)
-            implementation(libs.fleeksoft.ksoup)
-        }
-        named("androidHostTest") {
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.okhttp.mockwebserver)
-                implementation(libs.ktor.client.okhttp)
-            }
-        }
         named("androidDeviceTest") {
             dependencies {
                 implementation(libs.androidx.junit)
