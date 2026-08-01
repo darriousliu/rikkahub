@@ -12,7 +12,6 @@ import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.UIMessage
-import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
@@ -25,7 +24,7 @@ class ClaudeProviderPromptCacheTest {
 
     @Before
     fun setUp() {
-        provider = ClaudeProvider(OkHttpClient())
+        provider = claudeProviderForTest()
     }
 
     private fun buildRequest(
@@ -34,15 +33,7 @@ class ClaudeProviderPromptCacheTest {
         params: TextGenerationParams,
         stream: Boolean = false
     ): JsonObject {
-        val method = ClaudeProvider::class.java.getDeclaredMethod(
-            "buildMessageRequest",
-            ProviderSetting.Claude::class.java,
-            List::class.java,
-            TextGenerationParams::class.java,
-            Boolean::class.javaPrimitiveType!!
-        )
-        method.isAccessible = true
-        return method.invoke(provider, providerSetting, messages, params, stream) as JsonObject
+        return provider.buildMessageRequest(providerSetting, messages, params, stream)
     }
 
     private fun dummyTool(): Tool {

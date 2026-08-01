@@ -220,7 +220,7 @@ class ClaudeProvider(
         }
     }
 
-    private fun buildMessageRequest(
+    internal fun buildMessageRequest(
         providerSetting: ProviderSetting.Claude,
         messages: List<UIMessage>,
         params: TextGenerationParams,
@@ -315,7 +315,7 @@ class ClaudeProvider(
         promptCacheTtl.apiValue?.let { put("ttl", it) }
     }
 
-    private fun buildMessages(
+    internal fun buildMessages(
         messages: List<UIMessage>,
         promptCaching: Boolean,
         promptCacheTtl: ClaudePromptCacheTtl
@@ -540,7 +540,7 @@ class ClaudeProvider(
         )
     }
 
-    private fun parseTokenUsage(bodyJson: JsonObject?): TokenUsage? {
+    internal fun parseTokenUsage(bodyJson: JsonObject?): TokenUsage? {
         if (bodyJson == null) return null
 
         // 回退到标准 usage 字段
@@ -582,4 +582,4 @@ private fun SseEvent.Failure.toClaudeStreamException(): Throwable? {
     }
 }
 
-private class ClaudeStreamCompleted : CancellationException()
+private class ClaudeStreamCompleted : CancellationException("Claude stream completed")

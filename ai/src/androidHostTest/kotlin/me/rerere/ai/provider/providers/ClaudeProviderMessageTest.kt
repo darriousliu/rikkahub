@@ -8,7 +8,6 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.ClaudePromptCacheTtl
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -30,19 +29,11 @@ class ClaudeProviderMessageTest {
 
     @Before
     fun setUp() {
-        provider = ClaudeProvider(OkHttpClient())
+        provider = claudeProviderForTest()
     }
 
-    // Helper to invoke private buildMessages method via reflection
     private fun invokeBuildMessages(messages: List<UIMessage>): JsonArray {
-        val method = ClaudeProvider::class.java.getDeclaredMethod(
-            "buildMessages",
-            List::class.java,
-            Boolean::class.javaPrimitiveType,
-            ClaudePromptCacheTtl::class.java
-        )
-        method.isAccessible = true
-        return method.invoke(provider, messages, false, ClaudePromptCacheTtl.FIVE_MINUTES) as JsonArray
+        return provider.buildMessages(messages, false, ClaudePromptCacheTtl.FIVE_MINUTES)
     }
 
     @Test
