@@ -32,6 +32,7 @@ import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.NoOpMonitoring
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
+import me.rerere.rikkahub.ui.hooks.rememberSharedCustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
@@ -39,6 +40,10 @@ import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.ui.theme.UnavailableChatFontRuntime
 import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.tts.model.PlaybackState
+import me.rerere.tts.controller.PlatformAudioPlayer
+import me.rerere.tts.provider.TTSManager
+import me.rerere.tts.provider.TTSProvider
+import me.rerere.tts.provider.TTSProviderSetting
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
 import kotlin.uuid.Uuid
@@ -60,12 +65,17 @@ fun SharedProductApp(
     analyticsTracker: AnalyticsTracker = NoOpMonitoring,
     crashReporter: CrashReporter = NoOpMonitoring,
     chatNotificationPresenter: ChatNotificationPresenter? = null,
+    systemTtsProvider: TTSProvider<TTSProviderSetting.SystemTTS>? = null,
+    platformAudioPlayer: PlatformAudioPlayer? = null,
     startScreen: Screen? = null,
 ) {
     val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
     val httpClient = remember { HttpClient() }
     val providerManager = remember(httpClient) { ProviderManager(httpClient) }
+    val ttsManager = remember(httpClient, systemTtsProvider) {
+        systemTtsProvider?.let { TTSManager(httpClient = httpClient, systemProvider = it) }
+    }
     val notificationManager = remember(chatNotificationPresenter) {
         chatNotificationPresenter?.let { ChatNotificationManager() }
     }
@@ -129,13 +139,22 @@ fun SharedProductApp(
     }
 
     val initialScreen = resolvedStartScreen ?: return
+    val ttsState = if (ttsManager != null && platformAudioPlayer != null) {
+        rememberSharedCustomTtsState(
+            settingsStore = settingsStore,
+            ttsManager = ttsManager,
+            audioPlayer = platformAudioPlayer,
+        )
+    } else {
+        UnavailableCustomTtsState
+    }
 
     KoinApplication(configuration = koinConfiguration) {
         RikkahubTheme {
             RikkaHubApp {
                 ProductNavigationHost(
                     startScreen = initialScreen,
-                    ttsState = UnavailableCustomTtsState,
+                    ttsState = ttsState,
                     platformRoutes = SharedUnavailableRouteContent,
                 )
             }

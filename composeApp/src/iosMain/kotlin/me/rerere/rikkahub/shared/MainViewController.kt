@@ -13,6 +13,8 @@ import me.rerere.rikkahub.platform.IosFirebaseAnalyticsTracker
 import me.rerere.rikkahub.platform.IosFirebaseCrashReporter
 import me.rerere.rikkahub.platform.IosUserNotificationPresenter
 import me.rerere.rikkahub.web.createIosWebServerRuntime
+import me.rerere.tts.controller.IosAudioPlayer
+import me.rerere.tts.provider.providers.IosSystemTTSProvider
 import platform.UIKit.UIViewController
 
 /** UIKit bridge used by the iOS application shell. */
@@ -44,5 +46,7 @@ public fun MainViewController(): UIViewController = ComposeUIViewController {
         analyticsTracker = remember { IosFirebaseAnalyticsTracker() },
         crashReporter = remember { IosFirebaseCrashReporter() },
         chatNotificationPresenter = remember { IosUserNotificationPresenter() },
+        systemTtsProvider = remember { IosSystemTTSProvider() },
+        platformAudioPlayer = remember { IosAudioPlayer() },
     )
 }

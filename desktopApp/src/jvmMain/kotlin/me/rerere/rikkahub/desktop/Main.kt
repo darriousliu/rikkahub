@@ -24,6 +24,8 @@ import me.rerere.rikkahub.shared.capabilityMatrix
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.web.createJvmWebServerRuntime
+import me.rerere.tts.controller.JvmAudioPlayer
+import me.rerere.tts.provider.providers.JvmSystemTTSProvider
 
 internal enum class DesktopLaunchMode {
     Interactive,
@@ -98,6 +100,8 @@ fun main(args: Array<String>) {
                 analyticsTracker = monitoring,
                 crashReporter = monitoring,
                 chatNotificationPresenter = remember { JvmSystemTrayChatNotificationPresenter() },
+                systemTtsProvider = remember { JvmSystemTTSProvider() },
+                platformAudioPlayer = remember { JvmAudioPlayer() },
                 startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
             )
 

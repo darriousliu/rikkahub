@@ -40,6 +40,7 @@ kotlin {
     sourceSets {
         jvmMain.dependencies {
             implementation(project(":composeApp"))
+            implementation(project(":speech"))
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ratex)
