@@ -49,8 +49,9 @@ import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.ChainOfThoughtScope
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.modifier.shimmer
-import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.utils.extractThinkingTitle
+import me.rerere.rikkahub.utils.toFixed
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -221,7 +222,7 @@ fun ChainOfThoughtScope.ChatMessageReasoningStep(
                 Text(
                     text = stringResource(
                         Res.string.deep_thinking_seconds,
-                        state.duration.toDouble(DurationUnit.SECONDS).toFloat()
+                        state.duration.toDouble(DurationUnit.SECONDS).toFixed(1)
                     ),
                     style = MaterialTheme.typography.titleSmall.copy(fontFamily = chatFontFamily),
                     color = MaterialTheme.colorScheme.secondary,

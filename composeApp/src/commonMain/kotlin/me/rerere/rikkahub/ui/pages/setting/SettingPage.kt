@@ -75,6 +75,7 @@ import me.rerere.rikkahub.ui.hooks.rememberColorMode
 import me.rerere.rikkahub.ui.hooks.ColorMode
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import me.rerere.rikkahub.utils.toFixed
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
 import org.jetbrains.compose.resources.stringResource
@@ -270,7 +271,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                                     stringResource(
                                         Res.string.setting_page_chat_storage_desc,
                                         summary.fileCount,
-                                        summary.totalBytes / 1024 / 1024.0
+                                        (summary.totalBytes / 1024 / 1024.0).toFixed(2)
                                     )
                                 )
                             }
