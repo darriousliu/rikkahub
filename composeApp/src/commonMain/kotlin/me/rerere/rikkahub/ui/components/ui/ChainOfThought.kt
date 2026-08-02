@@ -36,7 +36,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import me.rerere.hugeicons.HugeIcons
@@ -46,7 +46,7 @@ import me.rerere.hugeicons.stroke.ArrowUp01
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Sparkles
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 private val LocalCardColor = staticCompositionLocalOf { Color.White }
 
@@ -91,9 +91,7 @@ fun <T> ChainOfThought(
             Column(
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 4.dp)
-                    .animateContentSize(
-                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec()
-                    ),
+                    .animateContentSize(),
             ) {
                 val visibleSteps = if (expanded || !canCollapse) {
                     steps
