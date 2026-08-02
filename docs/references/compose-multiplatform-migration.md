@@ -1,23 +1,23 @@
 # Compose Multiplatform 迁移边界
 
-本文档记录 RikkaHub 从 Android 向 Compose Multiplatform（Android、JVM、iOS）迁移时的平台边界、依赖方向和后续实现约束。它是后续业务迁移的执行基线，不表示这些跨平台实现已在当前阶段完成。
+本文档记录 RikkaHub 从 Android 向 Compose Multiplatform（Android、JVM、iOS）迁移时的平台边界、依赖方向和实现约束。迁移实现已经进入三端共享业务收尾阶段；最终人工验收状态见 [Compose Multiplatform 人工测试矩阵](cmp-manual-test-matrix.md)。
 
-## 当前阶段范围
+## 迁移落地范围
 
-当前阶段只完成非业务准备：
+当前分支已经从依赖准备推进到共享业务落地：
 
-1. 将可迁移模块改造成 KMP 模块，并建立 Android、JVM、iOS source sets；现有源码仅机械移动到 `androidMain`，不改变行为。
-2. 接入目标 KMP 依赖、升级工具链，并只做依赖冲突或 API 升级所必需的最小编译适配。
-3. 保留旧 Android 依赖和实现，除明确要求替换坐标的冲突项外，不在本阶段迁移调用方。
-4. 不实现业务 `expect`/`actual`、不共享页面、不迁移数据库/网络/模板等业务代码；这些工作在后续任务中逐项完成。
+1. 可迁移模块已建立 Android、JVM、iOS source sets，共享模型、数据、页面和业务运行时位于 common source set。
+2. 目标 KMP 依赖、工具链、数据库、网络、模板和平台接口已经接线，平台差异通过薄 actual 或注入实现隔离。
+3. `:app`、`:desktopApp` 和 `iosApp` 托管同一个共享入口；平台壳只保留启动、平台配置和生命周期职责。
+4. Android-only 的 `:document`、`:workspace`、Termux 等能力不进入 iOS/JVM 依赖图，并通过 capability/route 边界隐藏或降级。
 
-`:composeApp` 仅预接入 Room 3 和 Ktorfit 的 runtime/API。Room compiler、KSP target wiring、Room Gradle plugin 和 Ktorfit 代码生成插件将在真实数据库与 service 接口迁入时接线，避免本阶段为了空模型制造业务代码。BuildKonfig 当前只生成字符串型 `VERSION_NAME`、`VERSION_CODE`；`DEBUG` 和各平台 application/bundle identity 后续从平台 build info 提供。
+`:composeApp` 已接入 Room 3、bundled SQLite、Ktorfit 和各平台数据库构造；`PlatformBuildInfo` 提供版本、调试状态和平台 application/bundle identity。
 
-`:document` 和 `:workspace` 保持 Android-only。`:app` 继续作为 Android application shell；`:composeApp` 作为 Android/JVM/iOS 共享入口。`:web` 必须创建 Android、JVM、iOS targets，但当前实现仍放在 `androidMain`，`jvmMain` 和 `iosMain` 暂时为空。
+`:document` 和 `:workspace` 保持 Android-only。`:app` 是 Android application shell，`:desktopApp` 是 JVM shell，`iosApp` 是 SwiftUI/Xcode shell，`:composeApp` 是 Android/JVM/iOS 共享入口。`:web` 保持 Android、JVM、iOS targets：Android/JVM 托管 Ktor Server，iOS 明确返回 `Unavailable`。
 
 ## 平台功能矩阵
 
-下表描述后续业务迁移的目标实现。除“保留”项外，均不得在当前依赖准备阶段提前改写业务逻辑。
+下表描述当前迁移边界和目标实现。自动化验收通过不替代需要设备、权限、凭据或视觉交互的人工测试。
 
 | 能力 | Android | iOS | JVM |
 |---|---|---|---|
