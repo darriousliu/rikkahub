@@ -14,6 +14,8 @@ import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.data.db.createJvmAppDatabase
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
+import me.rerere.rikkahub.platform.JvmSentryMonitoring
+import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
 import me.rerere.rikkahub.shared.CapabilityState
 import me.rerere.rikkahub.shared.PlatformCapability
 import me.rerere.rikkahub.shared.PlatformKind
@@ -80,6 +82,7 @@ fun main(args: Array<String>) {
                 createJvmWebServerRuntime(appScope)
             }
             val database = remember { createJvmAppDatabase() }
+            val monitoring = remember { JvmSentryMonitoring() }
             SharedProductApp(
                 settingsStore = settingsStore,
                 database = database,
@@ -92,7 +95,10 @@ fun main(args: Array<String>) {
                 stringPreferenceStore = remember(settingsDataStore) {
                     DataStoreStringPreferenceStore(settingsDataStore)
                 },
-                startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else Screen.Setting,
+                analyticsTracker = monitoring,
+                crashReporter = monitoring,
+                chatNotificationPresenter = remember { JvmSystemTrayChatNotificationPresenter() },
+                startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
             )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {

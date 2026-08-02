@@ -9,6 +9,9 @@ import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createIosSettingsDataStore
 import me.rerere.rikkahub.data.db.createIosAppDatabase
 import me.rerere.rikkahub.platform.IosExternalUriOpener
+import me.rerere.rikkahub.platform.IosFirebaseAnalyticsTracker
+import me.rerere.rikkahub.platform.IosFirebaseCrashReporter
+import me.rerere.rikkahub.platform.IosUserNotificationPresenter
 import me.rerere.rikkahub.web.createIosWebServerRuntime
 import platform.UIKit.UIViewController
 
@@ -38,5 +41,8 @@ public fun MainViewController(): UIViewController = ComposeUIViewController {
         stringPreferenceStore = remember(settingsDataStore) {
             DataStoreStringPreferenceStore(settingsDataStore)
         },
+        analyticsTracker = remember { IosFirebaseAnalyticsTracker() },
+        crashReporter = remember { IosFirebaseCrashReporter() },
+        chatNotificationPresenter = remember { IosUserNotificationPresenter() },
     )
 }

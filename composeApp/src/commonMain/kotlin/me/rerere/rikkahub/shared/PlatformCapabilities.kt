@@ -70,9 +70,8 @@ public fun capabilityState(
         PlatformCapability.CHARACTER_CARD_METADATA,
         PlatformCapability.MDNS,
         PlatformCapability.FILE_IMPORT,
+        PlatformCapability.PRODUCT_UI,
         -> CapabilityState.READY
-
-        PlatformCapability.PRODUCT_UI -> CapabilityState.PENDING
 
         PlatformCapability.QR_RENDER,
         PlatformCapability.IMAGE_CROP,
@@ -98,9 +97,8 @@ public fun capabilityState(
         PlatformCapability.CHARACTER_CARD_METADATA,
         PlatformCapability.MDNS,
         PlatformCapability.FILE_IMPORT,
+        PlatformCapability.PRODUCT_UI,
         -> CapabilityState.READY
-
-        PlatformCapability.PRODUCT_UI -> CapabilityState.PENDING
 
         PlatformCapability.CAMERA_QR,
         PlatformCapability.IMAGE_CROP,

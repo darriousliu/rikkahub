@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.shared
 
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.api.SponsorAPI
@@ -27,8 +28,13 @@ import me.rerere.rikkahub.data.repository.StatsQueries
 import me.rerere.rikkahub.data.repository.StatsRepository
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
+import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.platform.AnalyticsTracker
+import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.service.ChatRuntime
 import me.rerere.rikkahub.service.ImageGenerationRuntime
+import me.rerere.rikkahub.service.SharedChatRuntime
 import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
@@ -41,6 +47,8 @@ import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.UnavailableChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
+import me.rerere.rikkahub.ui.pages.chat.ChatDrawerVM
+import me.rerere.rikkahub.ui.pages.chat.ChatVM
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
@@ -57,6 +65,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingVM
 import me.rerere.rikkahub.ui.pages.stats.StatsVM
 import me.rerere.rikkahub.ui.pages.translator.TranslatorVM
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
+import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.web.WebServerRuntime
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
@@ -75,6 +84,10 @@ internal fun sharedProductModule(
     chatStorageSummaryProvider: ChatStorageSummaryProvider,
     httpClient: HttpClient,
     providerManager: ProviderManager,
+    appScope: CoroutineScope,
+    analyticsTracker: AnalyticsTracker,
+    crashReporter: CrashReporter,
+    eventBus: AppEventBus,
 ): Module = module {
     single { settingsStore }
     single { database }
@@ -90,6 +103,10 @@ internal fun sharedProductModule(
     single { chatStorageSummaryProvider }
     single { httpClient }
     single { providerManager }
+    single { eventBus }
+    single<AnalyticsTracker> { analyticsTracker }
+    single<CrashReporter> { crashReporter }
+    single { UpdateChecker(client = httpClient, buildInfo = buildInfo) }
     single<SponsorAPI> { SponsorAPI.create(httpClient) }
 
     single { database.conversationDao() }
@@ -115,6 +132,18 @@ internal fun sharedProductModule(
     single {
         val conversationDao: ConversationDAO = get()
         FolderRepository(folderDAO = get(), clearConversationFolder = conversationDao::clearFolder)
+    }
+    single<ChatRuntime> {
+        SharedChatRuntime(
+            scope = appScope,
+            settingsStore = settingsStore,
+            conversationRepository = get(),
+            folderRepository = get(),
+            providerManager = providerManager,
+            eventBus = eventBus,
+            booleanPreferenceStore = booleanPreferenceStore,
+            stringPreferenceStore = stringPreferenceStore,
+        )
     }
     single { MemoryRepository(get()) }
     single { FavoriteRepository(get()) }
@@ -172,4 +201,16 @@ internal fun sharedProductModule(
     viewModelOf(::BackupVM)
     viewModelOf(::ImgGenVM)
     viewModelOf(::TranslatorVM)
+    viewModel<ChatVM> { parameters ->
+        ChatVM(
+            id = parameters.get(),
+            settingsStore = get(),
+            conversationRepo = get(),
+            chatService = get(),
+            updateChecker = get(),
+            analytics = get(),
+            favoriteRepository = get(),
+        )
+    }
+    viewModelOf(::ChatDrawerVM)
 }

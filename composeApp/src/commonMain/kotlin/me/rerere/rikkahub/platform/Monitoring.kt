@@ -14,3 +14,9 @@ public fun AnalyticsTracker.trackEvent(name: String) {
 public fun interface CrashReporter {
     public fun recordException(throwable: Throwable)
 }
+
+public object NoOpMonitoring : AnalyticsTracker, CrashReporter {
+    override fun trackEvent(name: String, parameters: Map<String, String>) = Unit
+
+    override fun recordException(throwable: Throwable) = Unit
+}

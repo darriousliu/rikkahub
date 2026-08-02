@@ -8,7 +8,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.ktor.client.HttpClient
@@ -21,7 +24,12 @@ import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.platform.AnalyticsTracker
+import me.rerere.rikkahub.platform.ChatNotificationManager
+import me.rerere.rikkahub.platform.ChatNotificationPresenter
+import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.platform.NoOpMonitoring
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
@@ -33,6 +41,7 @@ import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.tts.model.PlaybackState
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
+import kotlin.uuid.Uuid
 
 /**
  * Product entry used by non-Android shells while the remaining platform-only routes are migrated.
@@ -48,11 +57,25 @@ fun SharedProductApp(
     stringPreferenceStore: StringPreferenceStore,
     chatFontRuntime: ChatFontRuntime = UnavailableChatFontRuntime,
     chatStorageSummaryProvider: ChatStorageSummaryProvider = UnavailableChatStorageSummaryProvider,
-    startScreen: Screen = Screen.Setting,
+    analyticsTracker: AnalyticsTracker = NoOpMonitoring,
+    crashReporter: CrashReporter = NoOpMonitoring,
+    chatNotificationPresenter: ChatNotificationPresenter? = null,
+    startScreen: Screen? = null,
 ) {
+    val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
     val httpClient = remember { HttpClient() }
     val providerManager = remember(httpClient) { ProviderManager(httpClient) }
+    val notificationManager = remember(chatNotificationPresenter) {
+        chatNotificationPresenter?.let { ChatNotificationManager() }
+    }
+    val resolvedStartScreen by produceState<Screen?>(initialValue = startScreen, startScreen, stringPreferenceStore) {
+        if (value == null) {
+            val rememberedId = stringPreferenceStore.get(LAST_CONVERSATION_KEY)
+                ?.let { stored -> runCatching { Uuid.parse(stored) }.getOrNull() }
+            value = Screen.Chat((rememberedId ?: Uuid.random()).toString())
+        }
+    }
     val productModule = remember(
         settingsStore,
         database,
@@ -65,6 +88,8 @@ fun SharedProductApp(
         chatStorageSummaryProvider,
         eventBus,
         providerManager,
+        analyticsTracker,
+        crashReporter,
     ) {
         sharedProductModule(
             settingsStore = settingsStore,
@@ -78,9 +103,11 @@ fun SharedProductApp(
             chatStorageSummaryProvider = chatStorageSummaryProvider,
             httpClient = httpClient,
             providerManager = providerManager,
-        ).apply {
-            single { eventBus }
-        }
+            appScope = appScope,
+            analyticsTracker = analyticsTracker,
+            crashReporter = crashReporter,
+            eventBus = eventBus,
+        )
     }
     val koinConfiguration = remember(productModule) {
         koinConfiguration { modules(productModule) }
@@ -89,12 +116,25 @@ fun SharedProductApp(
     DisposableEffect(httpClient) {
         onDispose { httpClient.close() }
     }
+    DisposableEffect(notificationManager, chatNotificationPresenter, appScope, eventBus, settingsStore) {
+        if (notificationManager != null && chatNotificationPresenter != null) {
+            notificationManager.start(
+                scope = appScope,
+                eventBus = eventBus,
+                settingsStore = settingsStore,
+                presenter = chatNotificationPresenter,
+            )
+        }
+        onDispose { notificationManager?.close() }
+    }
+
+    val initialScreen = resolvedStartScreen ?: return
 
     KoinApplication(configuration = koinConfiguration) {
         RikkahubTheme {
             RikkaHubApp {
                 ProductNavigationHost(
-                    startScreen = startScreen,
+                    startScreen = initialScreen,
                     ttsState = UnavailableCustomTtsState,
                     platformRoutes = SharedUnavailableRouteContent,
                 )
@@ -102,6 +142,8 @@ fun SharedProductApp(
         }
     }
 }
+
+private const val LAST_CONVERSATION_KEY = "lastConversationId"
 
 private object SharedUnavailableRouteContent : PlatformRouteContent {
     @Composable

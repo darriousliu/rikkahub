@@ -2,8 +2,6 @@ package me.rerere.rikkahub
 
 import androidx.compose.runtime.Composable
 import me.rerere.rikkahub.shared.PlatformRouteContent
-import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
-import me.rerere.rikkahub.ui.pages.chat.ChatPage
 import me.rerere.rikkahub.ui.pages.debug.DebugPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceDetailPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceFileEditorPage
@@ -13,19 +11,11 @@ import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.workspace.WorkspaceStorageArea
-import kotlin.uuid.Uuid
 
 internal object AndroidPlatformRouteContent : PlatformRouteContent {
     @Composable
     override fun Render(screen: Screen) {
         when (screen) {
-            is Screen.Chat -> ChatPage(
-                id = Uuid.parse(screen.id),
-                text = screen.text,
-                files = screen.files,
-                nodeId = screen.nodeId?.let { Uuid.parse(it) },
-            )
-
             is Screen.ShareHandler -> ShareHandlerPage(screen.text, screen.streamUri)
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
             Screen.SettingFiles -> SettingFilesPage()

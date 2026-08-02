@@ -67,6 +67,7 @@ import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMemoryPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantRequestPage
 import me.rerere.rikkahub.ui.pages.backup.BackupPage
+import me.rerere.rikkahub.ui.pages.chat.ChatPage
 import me.rerere.rikkahub.ui.pages.extensions.ExtensionsPage
 import me.rerere.rikkahub.ui.pages.extensions.PromptPage
 import me.rerere.rikkahub.ui.pages.extensions.QuickMessagesPage
@@ -254,7 +255,14 @@ fun ProductNavigationHost(
                             slideOutHorizontally { it }
                     },
                     entryProvider = entryProvider {
-                        entry<Screen.Chat> { platformRoutes.Render(it) }
+                        entry<Screen.Chat> {
+                            ChatPage(
+                                id = Uuid.parse(it.id),
+                                text = it.text,
+                                files = it.files,
+                                nodeId = it.nodeId?.let(Uuid::parse),
+                            )
+                        }
                         entry<Screen.ShareHandler> { platformRoutes.Render(it) }
                         entry<Screen.History> { HistoryPage() }
                         entry<Screen.Favorite> { FavoritePage() }
