@@ -37,6 +37,8 @@ import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.UnavailableChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.UnavailableChatInputPlatformContent
+import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
+import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
@@ -78,6 +80,7 @@ internal fun sharedProductModule(
     single { externalUriOpener }
     single<ChatMessagePlatformActions> { UnavailableChatMessagePlatformActions }
     single<ChatInputPlatformContent> { UnavailableChatInputPlatformContent }
+    single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
     single { webServerRuntime }
     single { booleanPreferenceStore }
     single { stringPreferenceStore }

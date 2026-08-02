@@ -1,7 +1,6 @@
 package me.rerere.rikkahub
 
 import androidx.compose.runtime.Composable
-import androidx.core.net.toUri
 import me.rerere.rikkahub.shared.PlatformRouteContent
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
 import me.rerere.rikkahub.ui.pages.chat.ChatPage
@@ -23,7 +22,7 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             is Screen.Chat -> ChatPage(
                 id = Uuid.parse(screen.id),
                 text = screen.text,
-                files = screen.files.map { it.toUri() },
+                files = screen.files,
                 nodeId = screen.nodeId?.let { Uuid.parse(it) },
             )
 
