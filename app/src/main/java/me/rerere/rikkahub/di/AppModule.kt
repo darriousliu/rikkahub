@@ -36,6 +36,8 @@ import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
 import me.rerere.rikkahub.ui.components.message.AndroidChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
+import me.rerere.rikkahub.ui.components.ai.AndroidChatInputPlatformContent
+import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.shared.PlatformBuildInfo
@@ -80,6 +82,7 @@ val appModule = module {
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
     single<ChatMessagePlatformActions> { AndroidChatMessagePlatformActions(get()) }
+    single<ChatInputPlatformContent> { AndroidChatInputPlatformContent(get(), get()) }
     single<OAuthCallbackSessionFactory> {
         AndroidOAuthCallbackSessionFactory(
             appScope = get(),

@@ -1,18 +1,8 @@
 package me.rerere.rikkahub.ui.components.ai
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.content.MediaType
-import androidx.compose.foundation.content.ReceiveContentListener
-import androidx.compose.foundation.content.consume
-import androidx.compose.foundation.content.contentReceiver
-import androidx.compose.foundation.content.hasMediaType
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -51,7 +40,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,9 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
@@ -82,19 +68,16 @@ import kotlinx.coroutines.flow.collectLatest
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
-import me.rerere.asr.ASRStatus
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Add01
 import me.rerere.hugeicons.stroke.ArrowUp02
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.FullScreen
 import me.rerere.hugeicons.stroke.Zap
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.datastore.getQuickMessagesOfAssistant
-import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.QuickMessage
 import me.rerere.rikkahub.generated.resources.*
@@ -102,17 +85,11 @@ import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionContext
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionItem
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionList
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
-import me.rerere.rikkahub.ui.components.ui.KeepScreenOn
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
-import me.rerere.rikkahub.ui.components.ui.permission.PermissionRecordAudio
-import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
-import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.SoundEffectPlayer
 import org.koin.compose.koinInject
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -134,6 +111,7 @@ fun ChatInput(
     onLongSendClick: () -> Unit,
 ) {
     val toaster = LocalToaster.current
+    val platformContent = koinInject<ChatInputPlatformContent>()
     val assistant = settings.getCurrentAssistant()
     val hazeTintColor = MaterialTheme.colorScheme.surfaceContainerLow
     val inputHazeStyle = HazeMaterials.thin(containerColor = hazeTintColor)
@@ -142,14 +120,14 @@ fun ChatInput(
     val focusManager = LocalFocusManager.current
 
     // 键盘弹出时让底部两角变直角，贴合 IME
-    val imeVisible = WindowInsets.isImeVisible
+    val imeVisible = platformContent.isImeVisible()
     val containerShape = if (imeVisible) {
-        MaterialTheme.shapes.largeIncreased.copy(
+        MaterialTheme.shapes.large.copy(
             bottomStart = CornerSize(0.dp),
             bottomEnd = CornerSize(0.dp),
         )
     } else {
-        MaterialTheme.shapes.largeIncreased
+        MaterialTheme.shapes.large
     }
 
     fun sendMessage() {
@@ -162,37 +140,6 @@ fun ChatInput(
         focusManager.clearFocus(force = true)
         keyboardController?.hide()
         if (loading) onCancelClick() else onLongSendClick()
-    }
-
-    val asr = LocalASRState.current
-    val asrState by asr.state.collectAsState()
-    val hapticFeedback = LocalHapticFeedback.current
-    val soundEffectPlayer: SoundEffectPlayer = koinInject()
-    LaunchedEffect(Unit) {
-        soundEffectPlayer.preload(R.raw.asr_start, R.raw.asr_stop)
-    }
-    val asrPermission = rememberPermissionState(PermissionRecordAudio)
-    PermissionManager(permissionState = asrPermission)
-    var asrBaseText by remember { mutableStateOf("") }
-    LaunchedEffect(asrState.status) {
-        when (asrState.status) {
-            ASRStatus.Listening -> {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                soundEffectPlayer.play(R.raw.asr_start)
-            }
-
-            ASRStatus.Stopping -> {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                soundEffectPlayer.play(R.raw.asr_stop)
-            }
-
-            else -> {}
-        }
-    }
-    LaunchedEffect(asrState.errorMessage) {
-        asrState.errorMessage?.takeIf { it.isNotBlank() }?.let { message ->
-            toaster.show(message = message, type = ToastType.Error)
-        }
     }
 
     Surface(
@@ -230,11 +177,12 @@ fun ChatInput(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     if (state.messageContent.isNotEmpty()) {
-                        MediaFileInputRow(state = state)
+                        platformContent.RenderAttachments(state = state)
                     }
 
                     TextInputRow(
                         state = state,
+                        platformContent = platformContent,
                         completionProviders = completionProviders,
                         onSendMessage = { sendMessage() }
                     )
@@ -310,88 +258,71 @@ fun ChatInput(
                             )
                         }
 
-                        if (asrState.isAvailable || asrState.isRecording) {
-                            AsrButton(
-                                state = asrState,
-                                onClick = {
-                                    when (asrState.status) {
-                                        ASRStatus.Listening -> asr.stop()
-                                        ASRStatus.Idle, ASRStatus.Error -> {
-                                            if (!asrPermission.allRequiredPermissionsGranted) {
-                                                asrPermission.requestPermissions()
-                                            } else {
-                                                asrBaseText = state.textContent.text.toString()
-                                                asr.start { transcript ->
-                                                    val spacer =
-                                                        if (asrBaseText.isBlank() || transcript.isBlank()) "" else " "
-                                                    state.setMessageText(asrBaseText + spacer + transcript)
-                                                }
-                                            }
-                                        }
-
-                                        ASRStatus.Connecting, ASRStatus.Stopping -> {}
-                                    }
-                                }
+                        platformContent.RenderVoiceAndSendActions(state = state, loading = loading) {
+                            ChatSendButton(
+                                state = state,
+                                loading = loading,
+                                onClick = ::sendMessage,
+                                onLongClick = ::sendMessageWithoutAnswer,
                             )
-                        }
-
-                        AnimatedVisibility(
-                            visible = !asrState.isRecording,
-                            enter = fadeIn() + scaleIn(),
-                            exit = fadeOut() + scaleOut(),
-                        ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .testTag("chat_send_button")
-                                    .clip(CircleShape)
-                                    .combinedClickable(
-                                        enabled = loading || !state.isEmpty(),
-                                        onClick = {
-                                            sendMessage()
-                                        }, onLongClick = {
-                                            sendMessageWithoutAnswer()
-                                        }
-                                    )
-                            ) {
-                                val containerColor = when {
-                                    loading -> MaterialTheme.colorScheme.errorContainer
-                                    state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
-                                    else -> MaterialTheme.colorScheme.primary
-                                }
-                                val contentColor = when {
-                                    loading -> MaterialTheme.colorScheme.onErrorContainer
-                                    state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                    else -> MaterialTheme.colorScheme.onPrimary
-                                }
-                                Surface(
-                                    modifier = Modifier.fillMaxSize(),
-                                    shape = CircleShape,
-                                    color = containerColor,
-                                    content = {})
-                                if (loading) {
-                                    KeepScreenOn()
-                                    Icon(
-                                        imageVector = HugeIcons.Cancel01,
-                                        contentDescription = stringResource(Res.string.stop),
-                                        tint = contentColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = HugeIcons.ArrowUp02,
-                                        contentDescription = stringResource(Res.string.send),
-                                        tint = contentColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
                         }
                     }
                 }
             }
 
+        }
+    }
+}
+
+@Composable
+private fun ChatSendButton(
+    state: ChatInputState,
+    loading: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(30.dp)
+            .testTag("chat_send_button")
+            .clip(CircleShape)
+            .combinedClickable(
+                enabled = loading || !state.isEmpty(),
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
+    ) {
+        val containerColor = when {
+            loading -> MaterialTheme.colorScheme.errorContainer
+            state.isEmpty() -> MaterialTheme.colorScheme.surfaceContainerHigh
+            else -> MaterialTheme.colorScheme.primary
+        }
+        val contentColor = when {
+            loading -> MaterialTheme.colorScheme.onErrorContainer
+            state.isEmpty() -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            else -> MaterialTheme.colorScheme.onPrimary
+        }
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = CircleShape,
+            color = containerColor,
+            content = {},
+        )
+        if (loading) {
+            Icon(
+                imageVector = HugeIcons.Cancel01,
+                contentDescription = stringResource(Res.string.stop),
+                tint = contentColor,
+                modifier = Modifier.size(18.dp),
+            )
+        } else {
+            Icon(
+                imageVector = HugeIcons.ArrowUp02,
+                contentDescription = stringResource(Res.string.send),
+                tint = contentColor,
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
@@ -419,11 +350,11 @@ private fun ActionIconButton(
 @Composable
 private fun TextInputRow(
     state: ChatInputState,
+    platformContent: ChatInputPlatformContent,
     completionProviders: List<ChatCompletionProvider>,
     onSendMessage: () -> Unit,
 ) {
     val settings = LocalSettings.current
-    val filesManager: FilesManager = koinInject()
     val assistant = settings.getCurrentAssistant()
     val quickMessages = remember(settings.quickMessages, assistant.quickMessageIds) {
         settings.getQuickMessagesOfAssistant(assistant)
@@ -458,42 +389,7 @@ private fun TextInputRow(
         var isFocused by remember { mutableStateOf(false) }
         var isFullScreen by remember { mutableStateOf(false) }
         var completionList by remember { mutableStateOf<ChatCompletionList?>(null) }
-        val receiveContentListener = remember(
-            settings.displaySetting.pasteLongTextAsFile, settings.displaySetting.pasteLongTextThreshold
-        ) {
-            ReceiveContentListener { transferableContent ->
-                when {
-                    transferableContent.hasMediaType(MediaType.Image) -> {
-                        transferableContent.consume { item ->
-                            val uri = item.uri
-                            if (uri != null) {
-                                state.addImages(
-                                    filesManager.createChatFilesByContents(
-                                        listOf(uri)
-                                    ).map { it.toString() }
-                                )
-                            }
-                            uri != null
-                        }
-                    }
-
-                    settings.displaySetting.pasteLongTextAsFile && transferableContent.hasMediaType(MediaType.Text) -> {
-                        transferableContent.consume { item ->
-                            val text = item.text?.toString()
-                            if (text != null && text.length > settings.displaySetting.pasteLongTextThreshold) {
-                                val document = filesManager.createChatTextFile(text)
-                                state.addFiles(listOf(document))
-                                true
-                            } else {
-                                false
-                            }
-                        }
-                    }
-
-                    else -> transferableContent
-                }
-            }
-        }
+        val contentReceiverModifier = platformContent.contentReceiverModifier(state, settings)
 
         LaunchedEffect(completionProviders, isFocused) {
             if (!isFocused || completionProviders.isEmpty()) {
@@ -549,11 +445,11 @@ private fun TextInputRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("chat_input")
-                .contentReceiver(receiveContentListener)
+                .then(contentReceiverModifier)
                 .onFocusChanged {
                     isFocused = it.isFocused
                 },
-            shape = MaterialTheme.shapes.largeIncreased,
+            shape = MaterialTheme.shapes.large,
             placeholder = {
                 Text(stringResource(Res.string.chat_input_placeholder))
             },
@@ -734,7 +630,7 @@ private fun FullScreenEditor(
             onDone()
         },
         properties = DialogProperties(
-            usePlatformDefaultWidth = false, decorFitsSystemWindows = false
+            usePlatformDefaultWidth = false,
         ),
     ) {
         Column(

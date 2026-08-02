@@ -22,8 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,9 +52,9 @@ import me.rerere.rikkahub.ui.components.ui.ToggleSurface
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.pages.setting.SearchAbilityTagLine
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.search.SearchServiceOptions
 import org.koin.compose.koinInject
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SearchPickerButton(
@@ -109,7 +108,7 @@ fun SearchPickerButton(
     if (showSearchPicker) {
         ModalBottomSheet(
             onDismissRequest = { showSearchPicker = false },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ) {
             Column(
                 modifier = Modifier
