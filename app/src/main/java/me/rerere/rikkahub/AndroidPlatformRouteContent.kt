@@ -3,7 +3,6 @@ package me.rerere.rikkahub
 import androidx.compose.runtime.Composable
 import androidx.core.net.toUri
 import me.rerere.rikkahub.shared.PlatformRouteContent
-import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantLocalToolPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
 import me.rerere.rikkahub.ui.pages.chat.ChatPage
 import me.rerere.rikkahub.ui.pages.debug.DebugPage
@@ -31,7 +30,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
 
             is Screen.ShareHandler -> ShareHandlerPage(screen.text, screen.streamUri)
             is Screen.AssistantPrompt -> AssistantPromptPage(screen.id)
-            is Screen.AssistantLocalTool -> AssistantLocalToolPage(screen.id)
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
             Screen.SettingFiles -> SettingFilesPage()
             Screen.Debug -> DebugPage()
