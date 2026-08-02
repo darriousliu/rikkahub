@@ -123,7 +123,7 @@ val dataSourceModule = module {
     single {
         McpManager(
             settingsStore = get(),
-            appScope = get(),
+            appScope = get<AppScope>(),
             imageStore = get(),
             callbackSessionFactory = get(),
         )
