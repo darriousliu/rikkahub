@@ -5,14 +5,14 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.PresetTheme
+import org.jetbrains.compose.resources.stringResource
 
 val SakuraThemePreset by lazy {
     PresetTheme(
         id = "sakura",
         name = {
-            Text(stringResource(id = Res.string.theme_name_sakura))
+            Text(stringResource(Res.string.theme_name_sakura))
         },
         standardLight = lightScheme,
         standardDark = darkScheme,

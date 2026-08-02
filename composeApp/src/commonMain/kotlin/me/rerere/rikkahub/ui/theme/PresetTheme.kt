@@ -10,7 +10,7 @@ import me.rerere.rikkahub.ui.theme.presets.OceanThemePreset
 import me.rerere.rikkahub.ui.theme.presets.SakuraThemePreset
 import me.rerere.rikkahub.ui.theme.presets.SpringThemePreset
 
-data class PresetTheme(
+public data class PresetTheme(
     val id: String,
     val name: @Composable () -> Unit,
     val standardLight: ColorScheme,

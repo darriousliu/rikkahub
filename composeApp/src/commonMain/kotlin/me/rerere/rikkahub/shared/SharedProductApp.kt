@@ -24,6 +24,7 @@ import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.pages.setting.SettingVM
 import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
+import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.tts.model.PlaybackState
 import org.koin.compose.KoinApplication
 import org.koin.core.module.dsl.viewModelOf
@@ -71,7 +72,7 @@ fun SharedProductApp(
     }
 
     KoinApplication(configuration = koinConfiguration) {
-        MaterialTheme {
+        RikkahubTheme {
             RikkaHubApp {
                 ProductNavigationHost(
                     startScreen = startScreen,
