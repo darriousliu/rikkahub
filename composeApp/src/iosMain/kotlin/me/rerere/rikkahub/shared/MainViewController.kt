@@ -7,6 +7,7 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createIosSettingsDataStore
+import me.rerere.rikkahub.data.db.createIosAppDatabase
 import me.rerere.rikkahub.platform.IosExternalUriOpener
 import me.rerere.rikkahub.web.createIosWebServerRuntime
 import platform.UIKit.UIViewController
@@ -24,8 +25,10 @@ public fun MainViewController(): UIViewController = ComposeUIViewController {
     val webServerRuntime = remember(appScope) {
         createIosWebServerRuntime(appScope)
     }
+    val database = remember { createIosAppDatabase() }
     SharedProductApp(
         settingsStore = settingsStore,
+        database = database,
         buildInfo = currentIosPlatformBuildInfo(),
         externalUriOpener = IosExternalUriOpener(),
         webServerRuntime = webServerRuntime,

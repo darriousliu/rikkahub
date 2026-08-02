@@ -7,10 +7,12 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.awt.GraphicsEnvironment
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
+import me.rerere.rikkahub.data.db.createJvmAppDatabase
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.shared.CapabilityState
 import me.rerere.rikkahub.shared.PlatformCapability
@@ -77,8 +79,10 @@ fun main(args: Array<String>) {
             val webServerRuntime = remember(appScope) {
                 createJvmWebServerRuntime(appScope)
             }
+            val database = remember { createJvmAppDatabase() }
             SharedProductApp(
                 settingsStore = settingsStore,
+                database = database,
                 buildInfo = currentDesktopPlatformBuildInfo(),
                 externalUriOpener = JvmExternalUriOpener(),
                 webServerRuntime = webServerRuntime,
@@ -88,6 +92,7 @@ fun main(args: Array<String>) {
                 stringPreferenceStore = remember(settingsDataStore) {
                     DataStoreStringPreferenceStore(settingsDataStore)
                 },
+                startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else Screen.Setting,
             )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {

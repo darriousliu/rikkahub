@@ -16,17 +16,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
+import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
-import me.rerere.rikkahub.ui.pages.setting.SettingVM
-import me.rerere.rikkahub.ui.pages.search.SearchVM
 import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
@@ -34,9 +32,7 @@ import me.rerere.rikkahub.ui.theme.UnavailableChatFontRuntime
 import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.tts.model.PlaybackState
 import org.koin.compose.KoinApplication
-import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.koinConfiguration
-import org.koin.dsl.module
 
 /**
  * Product entry used by non-Android shells while the remaining platform-only routes are migrated.
@@ -44,6 +40,7 @@ import org.koin.dsl.module
 @Composable
 fun SharedProductApp(
     settingsStore: SettingsStore,
+    database: AppDatabase,
     buildInfo: PlatformBuildInfo,
     externalUriOpener: ExternalUriOpener,
     webServerRuntime: WebServerRuntime,
@@ -58,6 +55,7 @@ fun SharedProductApp(
     val providerManager = remember(httpClient) { ProviderManager(httpClient) }
     val productModule = remember(
         settingsStore,
+        database,
         buildInfo,
         externalUriOpener,
         webServerRuntime,
@@ -68,20 +66,20 @@ fun SharedProductApp(
         eventBus,
         providerManager,
     ) {
-        module {
-            single { settingsStore }
-            single { buildInfo }
-            single { externalUriOpener }
-            single { webServerRuntime }
-            single { booleanPreferenceStore }
-            single { stringPreferenceStore }
-            single { chatFontRuntime }
-            single { chatStorageSummaryProvider }
+        sharedProductModule(
+            settingsStore = settingsStore,
+            database = database,
+            buildInfo = buildInfo,
+            externalUriOpener = externalUriOpener,
+            webServerRuntime = webServerRuntime,
+            booleanPreferenceStore = booleanPreferenceStore,
+            stringPreferenceStore = stringPreferenceStore,
+            chatFontRuntime = chatFontRuntime,
+            chatStorageSummaryProvider = chatStorageSummaryProvider,
+            httpClient = httpClient,
+            providerManager = providerManager,
+        ).apply {
             single { eventBus }
-            single { providerManager }
-            single<SponsorAPI> { SponsorAPI.create(httpClient) }
-            viewModelOf(::SettingVM)
-            viewModelOf(::SearchVM)
         }
     }
     val koinConfiguration = remember(productModule) {
