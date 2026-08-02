@@ -8,4 +8,9 @@ public fun currentDesktopPlatformBuildInfo(
 ): PlatformBuildInfo = createPlatformBuildInfo(
     debug = debugProperty?.toBooleanStrictOrNull() ?: false,
     applicationId = DESKTOP_APPLICATION_ID,
+    systemDescription = listOfNotNull(
+        System.getProperty("os.name"),
+        System.getProperty("os.version"),
+        System.getProperty("os.arch")?.let { "($it)" },
+    ).joinToString(" "),
 )

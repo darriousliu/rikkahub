@@ -7,6 +7,7 @@ public data class PlatformBuildInfo(
     public val versionCode: String,
     public val debug: Boolean,
     public val applicationId: String,
+    public val systemDescription: String,
 )
 
 public fun createPlatformBuildInfo(
@@ -14,11 +15,13 @@ public fun createPlatformBuildInfo(
     applicationId: String,
     versionName: String = BuildKonfig.VERSION_NAME,
     versionCode: String = BuildKonfig.VERSION_CODE,
+    systemDescription: String = currentPlatformKind.displayName,
 ): PlatformBuildInfo = PlatformBuildInfo(
     versionName = versionName,
     versionCode = versionCode,
     debug = debug,
     applicationId = applicationId,
+    systemDescription = systemDescription,
 )
 
 public val PlatformBuildInfo.displayVersion: String

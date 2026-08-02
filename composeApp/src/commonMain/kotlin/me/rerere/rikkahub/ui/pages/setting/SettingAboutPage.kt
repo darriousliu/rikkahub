@@ -17,8 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,27 +36,28 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.displayVersion
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.easteregg.EmojiBurstHost
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.utils.openUrl
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 
 @Composable
-fun SettingAboutPage(buildInfo: PlatformBuildInfo) {
+fun SettingAboutPage(
+    buildInfo: PlatformBuildInfo = koinInject(),
+    externalUriOpener: ExternalUriOpener = koinInject(),
+) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val context = LocalContext.current
     val navController = LocalNavController.current
     val emojiOptions = remember {
         listOf(
@@ -71,7 +73,7 @@ fun SettingAboutPage(buildInfo: PlatformBuildInfo) {
     var logoCenterPx by remember { mutableStateOf(Offset.Zero) }
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(stringResource(Res.string.about_page_title))
                 },
@@ -103,8 +105,8 @@ fun SettingAboutPage(buildInfo: PlatformBuildInfo) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        AsyncImage(
-                            model = R.mipmap.ic_launcher,
+                        Image(
+                            painter = painterResource(Res.drawable.app_logo),
                             contentDescription = "Logo",
                             modifier = Modifier
                                 .clip(CircleShape)
@@ -147,7 +149,7 @@ fun SettingAboutPage(buildInfo: PlatformBuildInfo) {
                         item(
                             leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
                             supportingContent = {
-                                Text("${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} / Android ${android.os.Build.VERSION.RELEASE} / SDK ${android.os.Build.VERSION.SDK_INT}")
+                                Text(buildInfo.systemDescription)
                             },
                             headlineContent = { Text(stringResource(Res.string.about_page_system)) },
                         )
@@ -159,19 +161,19 @@ fun SettingAboutPage(buildInfo: PlatformBuildInfo) {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         item(
-                            onClick = { context.openUrl("https://rikka-ai.com/") },
+                            onClick = { externalUriOpener.open("https://rikka-ai.com/") },
                             leadingContent = { Icon(HugeIcons.Earth, null) },
                             supportingContent = { Text("https://rikka-ai.com") },
                             headlineContent = { Text(stringResource(Res.string.about_page_website)) },
                         )
                         item(
-                            onClick = { context.openUrl("https://github.com/rikkahub/rikkahub") },
+                            onClick = { externalUriOpener.open("https://github.com/rikkahub/rikkahub") },
                             leadingContent = { Icon(HugeIcons.Github, null) },
                             supportingContent = { Text("https://github.com/rikkahub/rikkahub") },
                             headlineContent = { Text(stringResource(Res.string.about_page_github)) },
                         )
                         item(
-                            onClick = { context.openUrl("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
+                            onClick = { externalUriOpener.open("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
                             leadingContent = { Icon(HugeIcons.File02, null) },
                             supportingContent = { Text("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
                             headlineContent = { Text(stringResource(Res.string.about_page_license)) },

@@ -2,6 +2,7 @@ package me.rerere.rikkahub.di
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.os.Build
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
@@ -51,6 +52,15 @@ val appModule = module {
         createPlatformBuildInfo(
             debug = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0,
             applicationId = context.packageName,
+            systemDescription = buildString {
+                append(Build.MANUFACTURER)
+                append(' ')
+                append(Build.MODEL)
+                append(" / Android ")
+                append(Build.VERSION.RELEASE)
+                append(" / SDK ")
+                append(Build.VERSION.SDK_INT)
+            },
         )
     }
 

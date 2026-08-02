@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
 import kotlin.math.cos
+import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -103,7 +104,7 @@ fun EmojiBurstHost(
                         val spawnCount = minOf(batchSize, request.remaining)
                         repeat(spawnCount) {
                             val emoji = emojiOptions[Random.nextInt(emojiOptions.size)]
-                            val jitterAngle = Math.toRadians(Random.nextDouble(0.0, 360.0)).toFloat()
+                            val jitterAngle = (Random.nextDouble(0.0, 360.0) * PI / 180.0).toFloat()
                             val jitterRadius = emojiRadiusPx * 1.5f * Random.nextFloat()
                             val jitter = Offset(
                                 cos(jitterAngle) * jitterRadius,
@@ -113,7 +114,7 @@ fun EmojiBurstHost(
                                 (request.center.x + jitter.x).coerceIn(request.minX, request.maxX),
                                 (request.center.y + jitter.y).coerceIn(request.minY, request.maxY)
                             )
-                            val angleRad = Math.toRadians(Random.nextDouble(220.0, 320.0)).toFloat()
+                            val angleRad = (Random.nextDouble(220.0, 320.0) * PI / 180.0).toFloat()
                             val speed = 350f + Random.nextFloat() * 250f
                             val vx = cos(angleRad) * speed
                             val vy = sin(angleRad) * speed
