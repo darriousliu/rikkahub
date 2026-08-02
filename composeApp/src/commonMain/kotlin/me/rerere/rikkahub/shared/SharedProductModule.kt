@@ -12,6 +12,7 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
+import me.rerere.rikkahub.data.files.FileKitSkillStore
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.BackupRepository
@@ -161,7 +162,7 @@ internal fun sharedProductModule(
         )
     }
 
-    single<SkillStore> { EmptySkillStore }
+    single<SkillStore> { FileKitSkillStore(settingsStore) }
     single<AssistantAssetCleaner> { AssistantAssetCleaner { } }
     single<AssistantSkillCatalog> {
         AssistantSkillCatalog {

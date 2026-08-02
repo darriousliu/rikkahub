@@ -8,9 +8,6 @@ import kotlinx.coroutines.flow.flowOf
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
-import me.rerere.rikkahub.data.files.SkillStore
-import me.rerere.rikkahub.data.files.SkillSummary
-import me.rerere.rikkahub.data.files.StoredSkillFile
 import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.ChatboxRestoreResult
 import me.rerere.rikkahub.data.sync.S3BackupItem
@@ -22,26 +19,6 @@ import kotlin.uuid.Uuid
 
 private fun unavailable(feature: String): Nothing =
     throw UnsupportedOperationException("$feature is unavailable on ${currentPlatformKind.displayName}")
-
-internal object EmptySkillStore : SkillStore {
-    override suspend fun listSkills(): List<SkillSummary> = emptyList()
-
-    override suspend fun saveSkill(name: String, content: String): Boolean = false
-
-    override suspend fun saveSkillFiles(name: String, files: Map<String, String>): Boolean = false
-
-    override suspend fun saveSkillFileBytes(name: String, files: Map<String, ByteArray>): Boolean = false
-
-    override suspend fun deleteSkill(name: String): Boolean = false
-
-    override suspend fun listSkillFiles(name: String): List<StoredSkillFile> = emptyList()
-
-    override suspend fun readSkillFile(name: String, relativePath: String): String? = null
-
-    override suspend fun saveSkillFile(name: String, relativePath: String, content: String): Boolean = false
-
-    override suspend fun deleteSkillFile(name: String, relativePath: String): Boolean = false
-}
 
 internal object UnavailableMcpRuntime : McpRuntime {
     override val syncingStatus: StateFlow<Map<Uuid, McpStatus>> = MutableStateFlow(emptyMap())
