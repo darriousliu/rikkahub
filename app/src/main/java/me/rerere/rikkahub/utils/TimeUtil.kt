@@ -6,7 +6,6 @@ import kotlinx.datetime.LocalDateTime as KotlinLocalDateTime
 import kotlinx.datetime.Month as KotlinMonth
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
-import me.rerere.common.time.today
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -17,7 +16,6 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoField
 import java.util.Locale
 import java.time.Instant as JavaInstant
-import kotlin.time.Clock
 import kotlin.time.Instant as KotlinInstant
 
 fun JavaInstant.toLocalDateTime(
@@ -50,20 +48,6 @@ fun KotlinLocalDate.toLocalString(
 fun KotlinLocalDateTime.toLocalString(
     locale: Locale = Locale.getDefault(),
 ): String = toPlatformLocalDateTime().toLocalString(locale)
-
-fun KotlinLocalDateTime.toMessageTimeString(
-    clock: Clock = Clock.System,
-    timeZone: TimeZone = TimeZone.currentSystemDefault(),
-    locale: Locale = Locale.getDefault(),
-): String {
-    return if (date == clock.today(timeZone)) {
-        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-            .withLocale(locale)
-            .format(toPlatformLocalDateTime())
-    } else {
-        toLocalString(locale)
-    }
-}
 
 fun KotlinDayOfWeek.toLocalString(
     locale: Locale = Locale.getDefault(),

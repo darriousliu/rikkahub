@@ -530,9 +530,7 @@ private fun ChatPageContent(
                         onUpdate = presentation.onUpdate,
                         isFavorite = presentation.node.isFavorite,
                         onToggleFavorite = presentation.onToggleFavorite,
-                        onTranslate = presentation.onTranslate?.let { translate ->
-                            { message, locale -> translate(message, locale.toLanguageTag()) }
-                        },
+                        onTranslate = presentation.onTranslate,
                         onClearTranslation = presentation.onClearTranslation,
                         onToolApproval = presentation.onToolApproval,
                         onToolAnswer = presentation.onToolAnswer,

@@ -2,12 +2,18 @@ package me.rerere.rikkahub.utils
 
 import kotlinx.datetime.Month
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 internal expect object SharedUiFormatter {
     fun formatDateTime(epochMillis: Long, timeZoneId: String): String
+
+    fun formatTime(epochMillis: Long, timeZoneId: String): String
 
     fun shortMonthName(monthNumber: Int): String
 
@@ -19,6 +25,19 @@ internal expect object SharedUiFormatter {
 fun Instant.toLocalizedDateTime(
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ): String = SharedUiFormatter.formatDateTime(toEpochMilliseconds(), timeZone.id)
+
+fun LocalDateTime.toLocalizedDateTime(
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): String = toInstant(timeZone).toLocalizedDateTime(timeZone)
+
+fun LocalDateTime.toMessageTimeString(
+    clock: Clock = Clock.System,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+): String = if (date == clock.now().toLocalDateTime(timeZone).date) {
+    SharedUiFormatter.formatTime(toInstant(timeZone).toEpochMilliseconds(), timeZone.id)
+} else {
+    toLocalizedDateTime(timeZone)
+}
 
 fun Month.toLocalizedShortString(): String = SharedUiFormatter.shortMonthName(number)
 

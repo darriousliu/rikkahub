@@ -31,8 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,50 +49,49 @@ import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.LanguageCircle
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
-import java.util.Locale
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LanguageSelectionDialog(
-    onLanguageSelected: (Locale) -> Unit,
+    onLanguageSelected: (String) -> Unit,
     onClearTranslation: () -> Unit = {},
     onDismissRequest: () -> Unit
 ) {
     // 支持的语言列表
     val languages = remember {
         listOf(
-            Locale.SIMPLIFIED_CHINESE,
-            Locale.ENGLISH,
-            Locale.TRADITIONAL_CHINESE,
-            Locale.JAPANESE,
-            Locale.KOREAN,
-            Locale.FRENCH,
-            Locale.GERMAN,
-            Locale("es", "ES"),
-            Locale.ITALIAN,
+            "zh-CN",
+            "en",
+            "zh-TW",
+            "ja",
+            "ko",
+            "fr",
+            "de",
+            "es-ES",
+            "it",
         )
     }
 
     // 语言名称映射函数，原有的 locale.displayName 方法无法获取 emoji
     @Composable
-    fun getLanguageDisplayName(locale: Locale): String {
-        return when (locale) {
-            Locale.SIMPLIFIED_CHINESE -> stringResource(Res.string.language_simplified_chinese)
-            Locale.ENGLISH -> stringResource(Res.string.language_english)
-            Locale.TRADITIONAL_CHINESE -> stringResource(Res.string.language_traditional_chinese)
-            Locale.JAPANESE -> stringResource(Res.string.language_japanese)
-            Locale.KOREAN -> stringResource(Res.string.language_korean)
-            Locale.FRENCH -> stringResource(Res.string.language_french)
-            Locale.GERMAN -> stringResource(Res.string.language_german)
-            Locale.ITALIAN -> stringResource(Res.string.language_italian)
-            Locale("es", "ES") -> stringResource(Res.string.language_spanish)
-            else -> locale.getDisplayLanguage(Locale.getDefault())
+    fun getLanguageDisplayName(languageTag: String): String {
+        return when (languageTag) {
+            "zh-CN" -> stringResource(Res.string.language_simplified_chinese)
+            "en" -> stringResource(Res.string.language_english)
+            "zh-TW" -> stringResource(Res.string.language_traditional_chinese)
+            "ja" -> stringResource(Res.string.language_japanese)
+            "ko" -> stringResource(Res.string.language_korean)
+            "fr" -> stringResource(Res.string.language_french)
+            "de" -> stringResource(Res.string.language_german)
+            "it" -> stringResource(Res.string.language_italian)
+            "es-ES" -> stringResource(Res.string.language_spanish)
+            else -> languageTag
         }
     }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
             modifier = Modifier

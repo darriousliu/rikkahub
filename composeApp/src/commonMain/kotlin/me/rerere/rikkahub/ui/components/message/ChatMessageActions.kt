@@ -19,8 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,7 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import me.rerere.ai.core.MessageRole
@@ -57,13 +57,11 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalTTSState
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.copyMessageToClipboard
+import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.utils.extractQuotedContentAsText
 import me.rerere.rikkahub.utils.removeBracketedContent
-import me.rerere.rikkahub.utils.toLocalString
+import me.rerere.rikkahub.utils.toLocalizedDateTime
 import me.rerere.rikkahub.utils.toMessageTimeString
-import java.util.Locale
 
 @Composable
 fun ColumnScope.ChatMessageActionButtons(
@@ -72,10 +70,10 @@ fun ColumnScope.ChatMessageActionButtons(
     onUpdate: (MessageNode) -> Unit,
     onRegenerate: () -> Unit,
     onOpenActionSheet: () -> Unit,
-    onTranslate: ((UIMessage, Locale) -> Unit)? = null,
+    onTranslate: ((UIMessage, String) -> Unit)? = null,
     onClearTranslation: (UIMessage) -> Unit = {},
 ) {
-    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val settings = LocalSettings.current
     var isPendingDelete by remember { mutableStateOf(false) }
     var showTranslateDialog by remember { mutableStateOf(false) }
@@ -99,7 +97,7 @@ fun ColumnScope.ChatMessageActionButtons(
             contentDescription = stringResource(Res.string.copy),
             modifier = Modifier
                 .clip(CircleShape)
-                .clickable { context.copyMessageToClipboard(message) }
+                .clickable { clipboard.setText(AnnotatedString(message.toText())) }
                 .padding(8.dp)
                 .size(16.dp),
             tint = actionIconColor
@@ -257,7 +255,7 @@ fun ChatMessageActionsSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
             modifier = Modifier
@@ -469,7 +467,7 @@ fun ChatMessageActionsSheet(
 
             // Message Info
             ProvideTextStyle(MaterialTheme.typography.labelSmall) {
-                Text(message.createdAt.toLocalString())
+                Text(message.createdAt.toLocalizedDateTime())
                 if (model != null) {
                     Text(model.displayName)
                 }

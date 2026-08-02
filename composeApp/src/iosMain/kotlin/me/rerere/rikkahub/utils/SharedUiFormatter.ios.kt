@@ -25,6 +25,15 @@ internal actual object SharedUiFormatter {
         }
     }
 
+    actual fun formatTime(epochMillis: Long, timeZoneId: String): String {
+        val dateTime = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.of(timeZoneId))
+        return buildString {
+            append(dateTime.hour.toString().padStart(2, '0'))
+            append(':')
+            append(dateTime.minute.toString().padStart(2, '0'))
+        }
+    }
+
     actual fun shortMonthName(monthNumber: Int): String = listOf(
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",

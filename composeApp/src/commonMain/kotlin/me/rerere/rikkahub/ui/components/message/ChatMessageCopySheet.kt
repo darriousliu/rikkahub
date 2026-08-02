@@ -18,12 +18,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -33,18 +33,17 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.copyMessageToClipboard
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ChatMessageCopySheet(
     message: UIMessage,
     onDismissRequest: () -> Unit
 ) {
-    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         sheetGesturesEnabled = false,
         dragHandle = null,
     ) {
@@ -75,7 +74,7 @@ fun ChatMessageCopySheet(
 
                 TextButton(
                     onClick = {
-                        context.copyMessageToClipboard(message)
+                        clipboard.setText(AnnotatedString(message.toText()))
                         onDismissRequest()
                     }
                 ) {

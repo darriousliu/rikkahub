@@ -17,6 +17,11 @@ internal actual object SharedUiFormatter {
             .withLocale(Locale.getDefault())
             .format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(timeZoneId)))
 
+    actual fun formatTime(epochMillis: Long, timeZoneId: String): String =
+        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+            .withLocale(Locale.getDefault())
+            .format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(timeZoneId)))
+
     actual fun shortMonthName(monthNumber: Int): String =
         Month.of(monthNumber).getDisplayName(TextStyle.SHORT, Locale.getDefault())
 
