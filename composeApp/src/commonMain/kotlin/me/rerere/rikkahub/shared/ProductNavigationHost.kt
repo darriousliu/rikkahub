@@ -82,6 +82,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
+import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
@@ -297,7 +298,7 @@ fun ProductNavigationHost(
                             entry<Screen.WorkspaceFileEditor> { platformRoutes.Render(it) }
                         }
                         entry<Screen.SkillDetail> { SkillDetailPage(it.skillName) }
-                        entry<Screen.MessageSearch> { platformRoutes.Render(it) }
+                        entry<Screen.MessageSearch> { SearchPage() }
                         entry<Screen.Stats> { StatsPage() }
                     },
                 )

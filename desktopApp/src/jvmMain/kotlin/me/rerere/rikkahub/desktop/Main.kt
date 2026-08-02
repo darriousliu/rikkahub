@@ -9,6 +9,7 @@ import androidx.compose.ui.window.application
 import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.shared.CapabilityState
@@ -83,6 +84,9 @@ fun main(args: Array<String>) {
                 webServerRuntime = webServerRuntime,
                 booleanPreferenceStore = remember(settingsDataStore) {
                     DataStoreBooleanPreferenceStore(settingsDataStore)
+                },
+                stringPreferenceStore = remember(settingsDataStore) {
+                    DataStoreStringPreferenceStore(settingsDataStore)
                 },
             )
 

@@ -19,12 +19,14 @@ import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.pages.setting.SettingVM
+import me.rerere.rikkahub.ui.pages.search.SearchVM
 import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
@@ -46,6 +48,7 @@ fun SharedProductApp(
     externalUriOpener: ExternalUriOpener,
     webServerRuntime: WebServerRuntime,
     booleanPreferenceStore: BooleanPreferenceStore,
+    stringPreferenceStore: StringPreferenceStore,
     chatFontRuntime: ChatFontRuntime = UnavailableChatFontRuntime,
     chatStorageSummaryProvider: ChatStorageSummaryProvider = UnavailableChatStorageSummaryProvider,
     startScreen: Screen = Screen.Setting,
@@ -59,6 +62,7 @@ fun SharedProductApp(
         externalUriOpener,
         webServerRuntime,
         booleanPreferenceStore,
+        stringPreferenceStore,
         chatFontRuntime,
         chatStorageSummaryProvider,
         eventBus,
@@ -70,12 +74,14 @@ fun SharedProductApp(
             single { externalUriOpener }
             single { webServerRuntime }
             single { booleanPreferenceStore }
+            single { stringPreferenceStore }
             single { chatFontRuntime }
             single { chatStorageSummaryProvider }
             single { eventBus }
             single { providerManager }
             single<SponsorAPI> { SponsorAPI.create(httpClient) }
             viewModelOf(::SettingVM)
+            viewModelOf(::SearchVM)
         }
     }
     val koinConfiguration = remember(productModule) {

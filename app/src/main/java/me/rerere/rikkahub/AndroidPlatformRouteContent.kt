@@ -13,7 +13,6 @@ import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceFileEditorPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalPage
 import me.rerere.rikkahub.ui.pages.log.LogPage
-import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
@@ -47,8 +46,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
                 area = WorkspaceStorageArea.valueOf(screen.area),
                 path = screen.path,
             )
-
-            Screen.MessageSearch -> SearchPage()
             else -> error("Route ${screen::class.simpleName} belongs to the shared navigation host")
         }
     }
