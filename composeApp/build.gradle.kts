@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.buildkonfig)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room3)
+    alias(libs.plugins.ktorfit)
 }
 
 kotlin {

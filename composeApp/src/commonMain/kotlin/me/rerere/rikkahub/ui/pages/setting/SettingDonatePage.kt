@@ -12,9 +12,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -27,22 +27,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.model.Sponsor
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.onError
 import me.rerere.rikkahub.utils.onLoading
 import me.rerere.rikkahub.utils.onSuccess
-import me.rerere.rikkahub.utils.openUrl
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
@@ -51,7 +50,7 @@ fun SettingDonatePage() {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(text = stringResource(Res.string.donate_page_title))
                 },
@@ -91,13 +90,13 @@ fun SettingDonatePage() {
 
 @Composable
 private fun DonateMethodsCardGroup() {
-    val context = LocalContext.current
+    val externalUriOpener = koinInject<ExternalUriOpener>()
     CardGroup(
         modifier = Modifier.fillMaxWidth(),
         title = { Text(stringResource(Res.string.donate_page_donation_methods)) },
     ) {
         item(
-            onClick = { context.openUrl("https://ko-fi.com/reovodev") },
+            onClick = { externalUriOpener.open("https://ko-fi.com/reovodev") },
             leadingContent = {
                 Image(
                     painter = painterResource(Res.drawable.kofi),
@@ -109,7 +108,7 @@ private fun DonateMethodsCardGroup() {
             headlineContent = { Text("Kofi") },
         )
         item(
-            onClick = { context.openUrl("https://afdian.com/a/reovo") },
+            onClick = { externalUriOpener.open("https://afdian.com/a/reovo") },
             leadingContent = {
                 Icon(
                     painter = painterResource(Res.drawable.afdian),
@@ -166,10 +165,10 @@ private fun Sponsors(modifier: Modifier = Modifier) {
                 }
             }
         }.onLoading {
-            CircularWavyProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }.onError {
             Text(
-                text = it.message ?: it.javaClass.simpleName,
+                text = it.message ?: it::class.simpleName.orEmpty(),
                 modifier = Modifier.align(Alignment.Center)
             )
         }

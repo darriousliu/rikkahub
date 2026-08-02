@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.event.AppEventBus
@@ -68,6 +69,7 @@ fun SharedProductApp(
             single { chatStorageSummaryProvider }
             single { eventBus }
             single { providerManager }
+            single<SponsorAPI> { SponsorAPI.create(httpClient) }
             viewModelOf(::SettingVM)
         }
     }

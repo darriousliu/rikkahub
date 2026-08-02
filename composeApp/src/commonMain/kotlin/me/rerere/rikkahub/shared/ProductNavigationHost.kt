@@ -73,6 +73,7 @@ import me.rerere.rikkahub.ui.pages.favorite.FavoritePage
 import me.rerere.rikkahub.ui.pages.history.HistoryPage
 import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
+import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
@@ -279,7 +280,7 @@ fun ProductNavigationHost(
                         entry<Screen.SettingSearchDetail> { SettingSearchDetailPage(Uuid.parse(it.serviceId)) }
                         entry<Screen.SettingSpeech> { SettingSpeechPage() }
                         entry<Screen.SettingMcp> { SettingMcpPage() }
-                        entry<Screen.SettingDonate> { platformRoutes.Render(it) }
+                        entry<Screen.SettingDonate> { SettingDonatePage() }
                         entry<Screen.SettingFiles> { platformRoutes.Render(it) }
                         entry<Screen.SettingWeb> { SettingWebPage() }
                         entry<Screen.Debug> { platformRoutes.Render(it) }
