@@ -51,7 +51,7 @@ class AndroidBackupLocalFileService(
             var skippedExistingConversations = 0
             val settings = backupRepository.settings.value
             val result = ChatboxImporter.importStreaming(
-                file = file,
+                file = PlatformFile(file),
                 assistantId = settings.assistantId,
                 providers = settings.providers,
                 onConversation = { conversation ->
@@ -93,7 +93,7 @@ class AndroidBackupLocalFileService(
 
     override suspend fun restoreCherryStudio(source: PlatformFile) {
         withTempFile("cherry_", ".zip", source) { file ->
-            val importedProviders = CherryStudioProviderImporter.importProviders(file)
+            val importedProviders = CherryStudioProviderImporter.importProviders(PlatformFile(file))
             require(importedProviders.isNotEmpty()) {
                 "No importable providers found in Cherry Studio backup"
             }

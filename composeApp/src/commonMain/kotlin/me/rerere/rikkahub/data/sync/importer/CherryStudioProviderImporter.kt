@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.sync.importer
 
-import kotlinx.io.asSource
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.source
 import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -16,13 +17,11 @@ import me.rerere.common.archive.PlatformZipArchive
 import me.rerere.common.archive.readText
 import me.rerere.common.http.jsonObjectOrNull
 import me.rerere.rikkahub.utils.JsonInstant
-import java.io.File
-import java.io.FileInputStream
 
 object CherryStudioProviderImporter {
-    suspend fun importProviders(file: File): List<ProviderSetting> {
+    suspend fun importProviders(file: PlatformFile): List<ProviderSetting> {
         var dataJson: String? = null
-        PlatformZipArchive.read(FileInputStream(file).asSource().buffered()) { entry ->
+        PlatformZipArchive.read(file.source().buffered()) { entry ->
             if (dataJson == null && entry.name == "data.json") {
                 dataJson = entry.readText()
             }

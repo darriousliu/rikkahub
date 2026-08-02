@@ -24,6 +24,7 @@ import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.ChatNotificationManager
 import me.rerere.rikkahub.platform.ChatNotificationPresenter
@@ -75,6 +76,7 @@ fun SharedProductApp(
     chatMessagePlatformActions: ChatMessagePlatformActions? = null,
     richTextPlatformActions: @Composable (Navigator) -> RichTextPlatformActions = { RichTextPlatformActions() },
     startScreen: Screen? = null,
+    backupFileLayout: BackupFileLayout = BackupFileLayout.create(),
 ) {
     val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
@@ -111,6 +113,7 @@ fun SharedProductApp(
         analyticsTracker,
         crashReporter,
         resolvedChatMessagePlatformActions,
+        backupFileLayout,
     ) {
         sharedProductModule(
             settingsStore = settingsStore,
@@ -129,6 +132,7 @@ fun SharedProductApp(
             crashReporter = crashReporter,
             eventBus = eventBus,
             chatMessagePlatformActions = resolvedChatMessagePlatformActions,
+            backupFileLayout = backupFileLayout,
         )
     }
     val koinConfiguration = remember(productModule) {

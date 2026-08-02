@@ -6,7 +6,7 @@ import java.io.File
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 
 fun createJvmAppDatabase(
-    file: File = File(System.getProperty("user.home"), ".rikkahub/database/rikka_hub.db"),
+    file: File = defaultJvmDatabaseFile(),
 ): AppDatabase {
     file.parentFile?.mkdirs()
     return buildAppDatabase(
@@ -18,3 +18,6 @@ fun createJvmAppDatabase(
         ftsDialect = MessageFtsDialect.UNICODE61,
     )
 }
+
+fun defaultJvmDatabaseFile(): File =
+    File(System.getProperty("user.home"), ".rikkahub/database/rikka_hub.db")

@@ -15,6 +15,7 @@ import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.files.FileKitSkillStore
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.BackupLocalFileService
+import me.rerere.rikkahub.data.repository.FileKitBackupLocalFileService
 import me.rerere.rikkahub.data.repository.BackupRepository
 import me.rerere.rikkahub.data.repository.BackupSettingsGateway
 import me.rerere.rikkahub.data.repository.ConversationFileStore
@@ -28,6 +29,10 @@ import me.rerere.rikkahub.data.repository.SettingsStoreBackupSettingsGateway
 import me.rerere.rikkahub.data.repository.StatsQueries
 import me.rerere.rikkahub.data.repository.StatsRepository
 import me.rerere.rikkahub.data.sync.S3BackupTransport
+import me.rerere.rikkahub.data.sync.BackupArchiveService
+import me.rerere.rikkahub.data.sync.BackupFileLayout
+import me.rerere.rikkahub.data.sync.SharedS3BackupTransport
+import me.rerere.rikkahub.data.sync.SharedWebDavBackupTransport
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AnalyticsTracker
@@ -69,6 +74,7 @@ import me.rerere.rikkahub.ui.pages.stats.StatsVM
 import me.rerere.rikkahub.ui.pages.translator.TranslatorVM
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.UpdateChecker
+import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.web.WebServerRuntime
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
@@ -92,6 +98,7 @@ internal fun sharedProductModule(
     crashReporter: CrashReporter,
     eventBus: AppEventBus,
     chatMessagePlatformActions: ChatMessagePlatformActions,
+    backupFileLayout: BackupFileLayout,
 ): Module = module {
     single { settingsStore }
     single { database }
@@ -180,10 +187,11 @@ internal fun sharedProductModule(
     single<TranslationRuntime> { SharedTranslationRuntime(settingsStore, providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single<BackupSettingsGateway> { SettingsStoreBackupSettingsGateway(settingsStore) }
-    single<WebDavBackupTransport> { UnavailableWebDavBackupTransport }
-    single<S3BackupTransport> { UnavailableS3BackupTransport }
+    single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }
+    single<WebDavBackupTransport> { SharedWebDavBackupTransport(httpClient, get()) }
+    single<S3BackupTransport> { SharedS3BackupTransport(httpClient, get()) }
     single { BackupRepository(get(), get(), get()) }
-    single<BackupLocalFileService> { UnavailableBackupLocalFileService }
+    single<BackupLocalFileService> { FileKitBackupLocalFileService(get(), get(), get()) }
 
     viewModelOf(::SettingVM)
     viewModelOf(::SearchVM)

@@ -3,11 +3,14 @@ package me.rerere.rikkahub.shared
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.ComposeUIViewController
+import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createIosSettingsDataStore
 import me.rerere.rikkahub.data.db.createIosAppDatabase
+import me.rerere.rikkahub.data.db.defaultIosDatabaseFilePath
+import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.IosExternalUriOpener
 import me.rerere.rikkahub.platform.IosFirebaseAnalyticsTracker
 import me.rerere.rikkahub.platform.IosFirebaseCrashReporter
@@ -48,5 +51,8 @@ public fun MainViewController(): UIViewController = ComposeUIViewController {
         chatNotificationPresenter = remember { IosUserNotificationPresenter() },
         systemTtsProvider = remember { IosSystemTTSProvider() },
         platformAudioPlayer = remember { IosAudioPlayer() },
+        backupFileLayout = remember {
+            BackupFileLayout.create(PlatformFile(defaultIosDatabaseFilePath()))
+        },
     )
 }

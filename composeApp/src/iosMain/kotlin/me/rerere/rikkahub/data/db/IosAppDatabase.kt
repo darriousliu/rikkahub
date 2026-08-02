@@ -9,7 +9,7 @@ import platform.Foundation.NSHomeDirectory
 
 @OptIn(ExperimentalForeignApi::class)
 fun createIosAppDatabase(
-    directory: String = "${NSHomeDirectory()}/Library/Application Support/RikkaHub/database",
+    directory: String = defaultIosDatabaseDirectory(),
 ): AppDatabase {
     NSFileManager.defaultManager.createDirectoryAtPath(
         path = directory,
@@ -26,3 +26,8 @@ fun createIosAppDatabase(
         ftsDialect = MessageFtsDialect.UNICODE61,
     )
 }
+
+fun defaultIosDatabaseDirectory(): String =
+    "${NSHomeDirectory()}/Library/Application Support/RikkaHub/database"
+
+fun defaultIosDatabaseFilePath(): String = "${defaultIosDatabaseDirectory()}/rikka_hub.db"

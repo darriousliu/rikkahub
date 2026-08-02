@@ -6,6 +6,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
 import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -13,6 +15,8 @@ import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.data.db.createJvmAppDatabase
+import me.rerere.rikkahub.data.db.defaultJvmDatabaseFile
+import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.platform.JvmSentryMonitoring
 import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
@@ -57,6 +61,7 @@ internal fun validatesHeadlessSharedEntry(): Boolean {
 }
 
 fun main(args: Array<String>) {
+    FileKit.init("RikkaHub")
     val policy = desktopLaunchPolicy(
         args = args,
         isHeadless = GraphicsEnvironment.isHeadless(),
@@ -86,7 +91,8 @@ fun main(args: Array<String>) {
             val webServerRuntime = remember(appScope) {
                 createJvmWebServerRuntime(appScope)
             }
-            val database = remember { createJvmAppDatabase() }
+            val databaseFile = remember { defaultJvmDatabaseFile() }
+            val database = remember(databaseFile) { createJvmAppDatabase(databaseFile) }
             val monitoring = remember { JvmSentryMonitoring() }
             val externalUriOpener = remember { JvmExternalUriOpener() }
             SharedProductApp(
@@ -112,6 +118,9 @@ fun main(args: Array<String>) {
                 },
                 richTextPlatformActions = { navigator -> rememberJvmRichTextPlatformActions(navigator) },
                 startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
+                backupFileLayout = remember(databaseFile) {
+                    BackupFileLayout.create(PlatformFile(databaseFile))
+                },
             )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {

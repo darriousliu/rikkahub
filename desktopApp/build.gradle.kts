@@ -43,6 +43,7 @@ kotlin {
             implementation(project(":speech"))
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
+            implementation(libs.filekit.core)
             implementation(libs.ratex)
             runtimeOnly("io.github.darriousliu:ratex-native-$ratexNativeTarget:${libs.versions.ratex.get()}")
         }
