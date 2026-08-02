@@ -1,17 +1,13 @@
 package me.rerere.rikkahub.shared
 
-import androidx.paging.PagingData
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
-import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.files.SkillSummary
 import me.rerere.rikkahub.data.files.StoredSkillFile
@@ -22,10 +18,6 @@ import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
 import me.rerere.rikkahub.data.sync.s3.S3Config
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
-import me.rerere.rikkahub.service.ImageGenerationRequest
-import me.rerere.rikkahub.service.ImageGenerationRuntime
-import me.rerere.rikkahub.service.ImageGenerationUpdate
-import me.rerere.rikkahub.ui.pages.imggen.GeneratedImage
 import kotlin.uuid.Uuid
 
 private fun unavailable(feature: String): Nothing =
@@ -108,27 +100,4 @@ internal object UnavailableBackupLocalFileService : BackupLocalFileService {
     override suspend fun restoreChatbox(source: PlatformFile): ChatboxRestoreResult = unavailable("Local backup")
 
     override suspend fun restoreCherryStudio(source: PlatformFile) = unavailable("Local backup")
-}
-
-internal class UnavailableImageGenerationRuntime(
-    private val settingsStore: SettingsStore,
-) : ImageGenerationRuntime {
-    override val settingsFlow: StateFlow<Settings> = settingsStore.settingsFlow
-
-    override fun generatedImages(): Flow<PagingData<GeneratedImage>> = flowOf(PagingData.empty())
-
-    override suspend fun updateSettings(settings: Settings) = settingsStore.update(settings)
-
-    override suspend fun importReferenceImages(files: List<PlatformFile>): List<String> =
-        unavailable("Image generation")
-
-    override suspend fun deleteTemporaryFiles(paths: List<String>) = Unit
-
-    override fun generateImage(request: ImageGenerationRequest): Flow<ImageGenerationUpdate> =
-        flow { unavailable("Image generation") }
-
-    override fun editImage(request: ImageGenerationRequest): Flow<ImageGenerationUpdate> =
-        flow { unavailable("Image generation") }
-
-    override suspend fun deleteImage(image: GeneratedImage) = unavailable("Image generation")
 }
