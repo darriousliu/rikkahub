@@ -1,15 +1,20 @@
 package me.rerere.rikkahub.desktop
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.awt.GraphicsEnvironment
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.shared.CapabilityState
 import me.rerere.rikkahub.shared.PlatformCapability
 import me.rerere.rikkahub.shared.PlatformKind
-import me.rerere.rikkahub.shared.RikkaHubApp
+import me.rerere.rikkahub.shared.SharedProductApp
 import me.rerere.rikkahub.shared.capabilityMatrix
+import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.shared.currentPlatformKind
 
 internal enum class DesktopLaunchMode {
@@ -57,7 +62,17 @@ fun main(args: Array<String>) {
             onCloseRequest = ::exitApplication,
             title = "RikkaHub",
         ) {
-            RikkaHubApp()
+            val appScope = rememberCoroutineScope()
+            val settingsStore = remember(appScope) {
+                SettingsStore(
+                    dataStore = createJvmSettingsDataStore(appScope),
+                    scope = appScope,
+                )
+            }
+            SharedProductApp(
+                settingsStore = settingsStore,
+                buildInfo = currentDesktopPlatformBuildInfo(),
+            )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {
                 LaunchedEffect(Unit) {
