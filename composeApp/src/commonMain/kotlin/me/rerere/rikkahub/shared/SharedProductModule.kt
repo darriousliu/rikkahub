@@ -36,6 +36,7 @@ import me.rerere.rikkahub.service.ChatRuntime
 import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.service.SharedChatRuntime
+import me.rerere.rikkahub.service.SharedTranslationRuntime
 import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
@@ -173,7 +174,7 @@ internal fun sharedProductModule(
     }
     single<AssistantPromptPreviewRuntime> { CommonAssistantPromptPreviewRuntime }
     single<McpRuntime> { UnavailableMcpRuntime }
-    single<TranslationRuntime> { UnavailableTranslationRuntime(settingsStore) }
+    single<TranslationRuntime> { SharedTranslationRuntime(settingsStore, providerManager) }
     single<ImageGenerationRuntime> { UnavailableImageGenerationRuntime(settingsStore) }
     single<BackupSettingsGateway> { SettingsStoreBackupSettingsGateway(settingsStore) }
     single<WebDavBackupTransport> { UnavailableWebDavBackupTransport }

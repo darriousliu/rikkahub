@@ -25,9 +25,7 @@ import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import me.rerere.rikkahub.service.ImageGenerationRequest
 import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.ImageGenerationUpdate
-import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.imggen.GeneratedImage
-import me.rerere.rikkahub.ui.pages.translator.TranslationLanguage
 import kotlin.uuid.Uuid
 
 private fun unavailable(feature: String): Nothing =
@@ -110,21 +108,6 @@ internal object UnavailableBackupLocalFileService : BackupLocalFileService {
     override suspend fun restoreChatbox(source: PlatformFile): ChatboxRestoreResult = unavailable("Local backup")
 
     override suspend fun restoreCherryStudio(source: PlatformFile) = unavailable("Local backup")
-}
-
-internal class UnavailableTranslationRuntime(
-    private val settingsStore: SettingsStore,
-) : TranslationRuntime {
-    override val settingsFlow: Flow<Settings> = settingsStore.settingsFlow
-
-    override suspend fun updateSettings(settings: Settings) = settingsStore.update(settings)
-
-    override fun translateText(
-        settings: Settings,
-        sourceText: String,
-        targetLanguage: TranslationLanguage,
-        onStreamUpdate: (String) -> Unit,
-    ): Flow<String> = flow { unavailable("Translation") }
 }
 
 internal class UnavailableImageGenerationRuntime(
