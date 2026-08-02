@@ -17,6 +17,7 @@ import me.rerere.rikkahub.shared.SharedProductApp
 import me.rerere.rikkahub.shared.capabilityMatrix
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.web.createJvmWebServerRuntime
 
 internal enum class DesktopLaunchMode {
     Interactive,
@@ -70,10 +71,14 @@ fun main(args: Array<String>) {
                     scope = appScope,
                 )
             }
+            val webServerRuntime = remember(appScope) {
+                createJvmWebServerRuntime(appScope)
+            }
             SharedProductApp(
                 settingsStore = settingsStore,
                 buildInfo = currentDesktopPlatformBuildInfo(),
                 externalUriOpener = JvmExternalUriOpener(),
+                webServerRuntime = webServerRuntime,
             )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {

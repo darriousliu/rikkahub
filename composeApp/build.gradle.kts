@@ -81,6 +81,7 @@ kotlin {
             implementation(project(":material3"))
             implementation(project(":search"))
             implementation(project(":speech"))
+            implementation(project(":web"))
             api(libs.androidx.datastore.preferences)
             implementation(compose.runtime)
             implementation(compose.foundation)
