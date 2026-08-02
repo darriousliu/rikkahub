@@ -4,6 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.context.Navigator
 
 /** Platform operations used by the shared chat message renderer. */
@@ -33,6 +34,26 @@ object UnavailableChatMessagePlatformActions : ChatMessagePlatformActions {
         colorScheme: ColorScheme,
         navigator: Navigator,
     ): Result<Unit> = Result.failure(UnsupportedOperationException("Markdown WebView preview is unavailable"))
+
+    @Composable
+    override fun RenderEditedFiles(
+        parts: List<UIMessagePart>,
+        assistant: Assistant?,
+    ) = Unit
+}
+
+internal class SharedChatMessagePlatformActions(
+    private val externalUriOpener: ExternalUriOpener,
+) : ChatMessagePlatformActions {
+    override fun openAttachment(uri: String): Result<Unit> = externalUriOpener.open(uri)
+
+    override fun openMarkdownPreview(
+        markdown: String,
+        colorScheme: ColorScheme,
+        navigator: Navigator,
+    ): Result<Unit> = Result.failure(
+        UnsupportedOperationException("Markdown WebView preview is unavailable on this platform"),
+    )
 
     @Composable
     override fun RenderEditedFiles(

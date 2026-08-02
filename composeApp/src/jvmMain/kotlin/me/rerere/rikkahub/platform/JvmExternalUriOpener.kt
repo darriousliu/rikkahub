@@ -2,6 +2,7 @@ package me.rerere.rikkahub.platform
 
 import java.awt.Desktop
 import java.awt.GraphicsEnvironment
+import java.io.File
 import java.net.URI
 
 public class JvmExternalUriOpener : ExternalUriOpener {
@@ -10,7 +11,13 @@ public class JvmExternalUriOpener : ExternalUriOpener {
         check(Desktop.isDesktopSupported()) { "Desktop integration is unavailable" }
 
         val desktop = Desktop.getDesktop()
-        check(desktop.isSupported(Desktop.Action.BROWSE)) { "Desktop URI browsing is unavailable" }
-        desktop.browse(URI(uri))
+        val target = URI(uri)
+        if (target.scheme.equals("file", ignoreCase = true)) {
+            check(desktop.isSupported(Desktop.Action.OPEN)) { "Desktop file opening is unavailable" }
+            desktop.open(File(target))
+        } else {
+            check(desktop.isSupported(Desktop.Action.BROWSE)) { "Desktop URI browsing is unavailable" }
+            desktop.browse(target)
+        }
     }
 }

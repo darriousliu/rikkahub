@@ -56,6 +56,7 @@ internal class SharedChatRuntime(
     private val eventBus: AppEventBus,
     private val booleanPreferenceStore: BooleanPreferenceStore,
     private val stringPreferenceStore: StringPreferenceStore,
+    private val attachmentStore: SharedChatAttachmentStore,
 ) : ChatRuntime {
     private val conversations = mutableMapOf<Uuid, MutableStateFlow<Conversation>>()
     private val processingStatuses = mutableMapOf<Uuid, MutableStateFlow<String?>>()
@@ -118,7 +119,9 @@ internal class SharedChatRuntime(
     override fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
         createNewConversationOnStart.value
 
-    override fun deleteChatFiles(urls: List<String>) = Unit
+    override fun deleteChatFiles(urls: List<String>) {
+        scope.launch { attachmentStore.delete(urls) }
+    }
 
     override fun addError(
         error: Throwable,

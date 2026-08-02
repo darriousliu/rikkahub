@@ -34,6 +34,7 @@ import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.service.ChatRuntime
 import me.rerere.rikkahub.service.ImageGenerationRuntime
+import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.service.SharedChatRuntime
 import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
@@ -42,11 +43,11 @@ import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.pages.assistant.detail.CommonAssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
-import me.rerere.rikkahub.ui.components.message.UnavailableChatMessagePlatformActions
+import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
-import me.rerere.rikkahub.ui.components.ai.UnavailableChatInputPlatformContent
+import me.rerere.rikkahub.ui.components.ai.SharedChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
-import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
+import me.rerere.rikkahub.ui.pages.chat.SharedChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatDrawerVM
 import me.rerere.rikkahub.ui.pages.chat.ChatVM
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
@@ -93,9 +94,10 @@ internal fun sharedProductModule(
     single { database }
     single { buildInfo }
     single { externalUriOpener }
-    single<ChatMessagePlatformActions> { UnavailableChatMessagePlatformActions }
-    single<ChatInputPlatformContent> { UnavailableChatInputPlatformContent }
-    single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
+    single { SharedChatAttachmentStore() }
+    single<ChatMessagePlatformActions> { SharedChatMessagePlatformActions(externalUriOpener) }
+    single<ChatInputPlatformContent> { SharedChatInputPlatformContent(get()) }
+    single<ChatPagePlatformContent> { SharedChatPagePlatformContent(get()) }
     single { webServerRuntime }
     single { booleanPreferenceStore }
     single { stringPreferenceStore }
@@ -143,6 +145,7 @@ internal fun sharedProductModule(
             eventBus = eventBus,
             booleanPreferenceStore = booleanPreferenceStore,
             stringPreferenceStore = stringPreferenceStore,
+            attachmentStore = get(),
         )
     }
     single { MemoryRepository(get()) }
