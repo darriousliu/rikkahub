@@ -18,9 +18,12 @@ import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
+import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.pages.setting.SettingVM
+import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
 import me.rerere.tts.model.PlaybackState
 import org.koin.compose.KoinApplication
 import org.koin.core.module.dsl.viewModelOf
@@ -34,15 +37,26 @@ import org.koin.dsl.module
 fun SharedProductApp(
     settingsStore: SettingsStore,
     buildInfo: PlatformBuildInfo,
-    startScreen: Screen = Screen.SettingProvider,
+    externalUriOpener: ExternalUriOpener,
+    chatStorageSummaryProvider: ChatStorageSummaryProvider = UnavailableChatStorageSummaryProvider,
+    startScreen: Screen = Screen.Setting,
 ) {
     val eventBus = remember { AppEventBus() }
     val httpClient = remember { HttpClient() }
     val providerManager = remember(httpClient) { ProviderManager(httpClient) }
-    val productModule = remember(settingsStore, buildInfo, eventBus, providerManager) {
+    val productModule = remember(
+        settingsStore,
+        buildInfo,
+        externalUriOpener,
+        chatStorageSummaryProvider,
+        eventBus,
+        providerManager,
+    ) {
         module {
             single { settingsStore }
             single { buildInfo }
+            single { externalUriOpener }
+            single { chatStorageSummaryProvider }
             single { eventBus }
             single { providerManager }
             viewModelOf(::SettingVM)

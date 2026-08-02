@@ -45,7 +45,7 @@ import me.rerere.rikkahub.R
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.ui.theme.ColorMode
+import me.rerere.rikkahub.ui.hooks.ColorMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive

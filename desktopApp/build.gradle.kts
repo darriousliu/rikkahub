@@ -41,6 +41,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(project(":composeApp"))
             implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ratex)
             runtimeOnly("io.github.darriousliu:ratex-native-$ratexNativeTarget:${libs.versions.ratex.get()}")
         }

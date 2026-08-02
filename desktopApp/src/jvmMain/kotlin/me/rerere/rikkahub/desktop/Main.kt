@@ -9,6 +9,7 @@ import androidx.compose.ui.window.application
 import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
+import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.shared.CapabilityState
 import me.rerere.rikkahub.shared.PlatformCapability
 import me.rerere.rikkahub.shared.PlatformKind
@@ -72,6 +73,7 @@ fun main(args: Array<String>) {
             SharedProductApp(
                 settingsStore = settingsStore,
                 buildInfo = currentDesktopPlatformBuildInfo(),
+                externalUriOpener = JvmExternalUriOpener(),
             )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {

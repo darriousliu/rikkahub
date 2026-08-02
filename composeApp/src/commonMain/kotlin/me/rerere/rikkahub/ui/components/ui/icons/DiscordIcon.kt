@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val DiscordIcon: ImageVector
+public val DiscordIcon: ImageVector
     get() {
         if (_DiscordIcon != null) {
             return _DiscordIcon!!

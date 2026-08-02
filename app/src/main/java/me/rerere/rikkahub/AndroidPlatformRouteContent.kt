@@ -19,7 +19,6 @@ import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
@@ -45,7 +44,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             is Screen.AssistantPrompt -> AssistantPromptPage(screen.id)
             is Screen.AssistantLocalTool -> AssistantLocalToolPage(screen.id)
             is Screen.AssistantInjections -> AssistantExtensionsPage(screen.id)
-            Screen.Setting -> SettingPage()
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
             Screen.SettingTheme -> SettingThemePage()
             Screen.SettingPreferencesTheme -> SettingPreferencesThemePage()

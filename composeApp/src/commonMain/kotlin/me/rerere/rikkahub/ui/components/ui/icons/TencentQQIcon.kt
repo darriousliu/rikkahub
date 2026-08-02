@@ -11,10 +11,10 @@ import androidx.compose.ui.unit.dp
 
 public val TencentQQIcon: ImageVector
     get() {
-        if (_tencentQQ != null) {
-            return _tencentQQ!!
+        if (_tencentQQIcon != null) {
+            return _tencentQQIcon!!
         }
-        _tencentQQ = ImageVector.Builder(
+        _tencentQQIcon = ImageVector.Builder(
             name = "TencentQq",
             defaultWidth = 16.dp,
             defaultHeight = 16.dp,
@@ -126,7 +126,7 @@ public val TencentQQIcon: ImageVector
                 curveToRelative(-0.054f, -0.9f, 0f, -1.663f, 0.097f, -2.285f)
             }
         }.build()
-        return _tencentQQ!!
+        return _tencentQQIcon!!
     }
 
-private var _tencentQQ: ImageVector? = null
+private var _tencentQQIcon: ImageVector? = null

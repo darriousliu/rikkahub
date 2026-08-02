@@ -73,6 +73,7 @@ import me.rerere.rikkahub.ui.pages.favorite.FavoritePage
 import me.rerere.rikkahub.ui.pages.history.HistoryPage
 import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
+import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
@@ -255,7 +256,7 @@ fun ProductNavigationHost(
                         entry<Screen.AssistantLocalTool> { platformRoutes.Render(it) }
                         entry<Screen.AssistantInjections> { platformRoutes.Render(it) }
                         entry<Screen.Translator> { TranslatorPage() }
-                        entry<Screen.Setting> { platformRoutes.Render(it) }
+                        entry<Screen.Setting> { SettingPage() }
                         entry<Screen.Backup> { BackupPage() }
                         entry<Screen.ImageGen> { ImageGenPage() }
                         entry<Screen.WebView> { platformRoutes.Render(it) }

@@ -31,6 +31,8 @@ import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.S3Sync
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
+import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummary
+import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.workspace.ProotShellRunner
 import me.rerere.workspace.RootfsInstaller
 import me.rerere.workspace.WorkspaceBindMount
@@ -131,6 +133,14 @@ val repositoryModule = module {
 
     single {
         FilesManager(get(), get(), get())
+    }
+
+    single<ChatStorageSummaryProvider> {
+        val filesManager = get<FilesManager>()
+        ChatStorageSummaryProvider {
+            val (fileCount, totalBytes) = filesManager.countChatFiles()
+            ChatStorageSummary(fileCount = fileCount, totalBytes = totalBytes)
+        }
     }
 
     single {
