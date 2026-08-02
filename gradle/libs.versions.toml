@@ -65,6 +65,8 @@ ksoupEntities = "0.6.0"
 korlibsTemplate = "6.1.0"
 fastKotlinDiff = "1.0.0"
 filekit = "0.14.2"
+cache4k = "0.14.0"
+composeWebView = "1.0.0-beta-02"
 kotlinxIo = "0.9.1"
 ktorfit = "2.7.5"
 firebaseApple = "12.17.0"
@@ -190,6 +192,8 @@ fast-kotlin-diff-core = { module = "io.github.bernaferrari:fast-kotlin-diff-core
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
+cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
+composewebview-jvm = { module = "io.github.kdroidfilter:composewebview-jvm", version.ref = "composeWebView" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
 ktorfit-lib-light = { module = "de.jensklingenberg.ktorfit:ktorfit-lib-light", version.ref = "ktorfit" }
 ktorfit-lib = { module = "de.jensklingenberg.ktorfit:ktorfit-lib", version.ref = "ktorfit" }

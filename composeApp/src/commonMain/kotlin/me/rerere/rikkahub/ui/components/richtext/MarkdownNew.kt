@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
@@ -73,6 +74,7 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Tick01
 import me.rerere.rikkahub.ui.components.table.DataTable
 import me.rerere.rikkahub.ui.context.LocalSettings
+import me.rerere.rikkahub.utils.toCssHex
 import me.rerere.rikkahub.utils.toDp
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
@@ -110,6 +112,45 @@ private fun generateMarkdownHtml(content: String): String {
     val preprocessed = preProcess(content)
     val tree = parser.buildMarkdownTreeFromString(preprocessed)
     return HtmlGenerator(preprocessed, tree, flavour).generateHtml()
+}
+
+internal fun buildSharedMarkdownPreviewHtml(
+    markdown: String,
+    colorScheme: ColorScheme,
+): String {
+    val renderedMarkdown = generateMarkdownHtml(markdown)
+    return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            :root { color-scheme: light dark; }
+            body {
+              margin: 0;
+              padding: 24px;
+              background: ${colorScheme.background.toCssHex()};
+              color: ${colorScheme.onBackground.toCssHex()};
+              font-family: system-ui, sans-serif;
+              line-height: 1.6;
+            }
+            pre, code { font-family: ui-monospace, monospace; }
+            pre {
+              overflow-x: auto;
+              padding: 16px;
+              border-radius: 8px;
+              background: ${colorScheme.surfaceVariant.toCssHex()};
+            }
+            a { color: ${colorScheme.primary.toCssHex()}; }
+            img { max-width: 100%; height: auto; }
+            table { border-collapse: collapse; max-width: 100%; }
+            th, td { border: 1px solid ${colorScheme.outlineVariant.toCssHex()}; padding: 8px; }
+          </style>
+        </head>
+        <body>$renderedMarkdown</body>
+        </html>
+    """.trimIndent()
 }
 
 // ---- Main composable ----

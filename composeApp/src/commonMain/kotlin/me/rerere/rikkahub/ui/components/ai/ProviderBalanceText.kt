@@ -15,16 +15,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import io.github.reactivecircus.cache4k.Cache
 import kotlin.time.Duration.Companion.minutes
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.MoneyBag02
-import me.rerere.rikkahub.utils.SimpleCache
 import me.rerere.rikkahub.utils.toDp
 import org.koin.compose.koinInject
 
-private val providerBalanceCache = SimpleCache.builder<String, String>()
+private val providerBalanceCache = Cache.Builder<String, String>()
     .expireAfterWrite(2.minutes)
     .build()
 
@@ -42,7 +42,7 @@ fun ProviderBalanceText(
     val providerManager = koinInject<ProviderManager>()
     val balance = produceState(initialValue = "~", providerSetting.id, providerSetting.balanceOption) {
         val cacheKey = "${providerSetting.id},${providerSetting.balanceOption.hashCode()}"
-        value = providerBalanceCache.getIfPresent(cacheKey) ?: runCatching {
+        value = providerBalanceCache.get(cacheKey) ?: runCatching {
             providerManager.getProviderByType(providerSetting).getBalance(providerSetting)
         }.onSuccess {
             providerBalanceCache.put(cacheKey, it)

@@ -114,6 +114,7 @@ kotlin {
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
             implementation(libs.filekit.dialogs.compose)
+            implementation(libs.cache4k)
             implementation(libs.reorderable)
             implementation(libs.sonner)
             implementation(libs.kotlinx.io.core)
@@ -156,6 +157,7 @@ kotlin {
             }
         }
         jvmMain.dependencies {
+            implementation(libs.composewebview.jvm)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.cio)

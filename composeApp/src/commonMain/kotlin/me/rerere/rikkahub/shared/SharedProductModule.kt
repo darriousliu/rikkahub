@@ -45,7 +45,6 @@ import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.pages.assistant.detail.CommonAssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
-import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.SharedChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
@@ -91,13 +90,14 @@ internal fun sharedProductModule(
     analyticsTracker: AnalyticsTracker,
     crashReporter: CrashReporter,
     eventBus: AppEventBus,
+    chatMessagePlatformActions: ChatMessagePlatformActions,
 ): Module = module {
     single { settingsStore }
     single { database }
     single { buildInfo }
     single { externalUriOpener }
     single { SharedChatAttachmentStore() }
-    single<ChatMessagePlatformActions> { SharedChatMessagePlatformActions(externalUriOpener) }
+    single<ChatMessagePlatformActions> { chatMessagePlatformActions }
     single<ChatInputPlatformContent> { SharedChatInputPlatformContent(get()) }
     single<ChatPagePlatformContent> { SharedChatPagePlatformContent(get()) }
     single { webServerRuntime }

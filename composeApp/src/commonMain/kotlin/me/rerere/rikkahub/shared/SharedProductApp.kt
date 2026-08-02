@@ -30,7 +30,11 @@ import me.rerere.rikkahub.platform.ChatNotificationPresenter
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.NoOpMonitoring
+import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
+import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.nav.BackButton
+import me.rerere.rikkahub.ui.components.richtext.RichTextPlatformActions
+import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.hooks.rememberSharedCustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
@@ -67,6 +71,9 @@ fun SharedProductApp(
     chatNotificationPresenter: ChatNotificationPresenter? = null,
     systemTtsProvider: TTSProvider<TTSProviderSetting.SystemTTS>? = null,
     platformAudioPlayer: PlatformAudioPlayer? = null,
+    platformRoutes: PlatformRouteContent = SharedUnavailableRouteContent,
+    chatMessagePlatformActions: ChatMessagePlatformActions? = null,
+    richTextPlatformActions: @Composable (Navigator) -> RichTextPlatformActions = { RichTextPlatformActions() },
     startScreen: Screen? = null,
 ) {
     val appScope = rememberCoroutineScope()
@@ -78,6 +85,9 @@ fun SharedProductApp(
     }
     val notificationManager = remember(chatNotificationPresenter) {
         chatNotificationPresenter?.let { ChatNotificationManager() }
+    }
+    val resolvedChatMessagePlatformActions = remember(externalUriOpener, chatMessagePlatformActions) {
+        chatMessagePlatformActions ?: SharedChatMessagePlatformActions(externalUriOpener)
     }
     val resolvedStartScreen by produceState<Screen?>(initialValue = startScreen, startScreen, stringPreferenceStore) {
         if (value == null) {
@@ -100,6 +110,7 @@ fun SharedProductApp(
         providerManager,
         analyticsTracker,
         crashReporter,
+        resolvedChatMessagePlatformActions,
     ) {
         sharedProductModule(
             settingsStore = settingsStore,
@@ -117,6 +128,7 @@ fun SharedProductApp(
             analyticsTracker = analyticsTracker,
             crashReporter = crashReporter,
             eventBus = eventBus,
+            chatMessagePlatformActions = resolvedChatMessagePlatformActions,
         )
     }
     val koinConfiguration = remember(productModule) {
@@ -155,7 +167,8 @@ fun SharedProductApp(
                 ProductNavigationHost(
                     startScreen = initialScreen,
                     ttsState = ttsState,
-                    platformRoutes = SharedUnavailableRouteContent,
+                    platformRoutes = platformRoutes,
+                    richTextPlatformActions = richTextPlatformActions,
                 )
             }
         }

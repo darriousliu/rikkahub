@@ -17,12 +17,15 @@ import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.platform.JvmSentryMonitoring
 import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
 import me.rerere.rikkahub.shared.CapabilityState
+import me.rerere.rikkahub.shared.JvmPlatformRouteContent
 import me.rerere.rikkahub.shared.PlatformCapability
 import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.SharedProductApp
 import me.rerere.rikkahub.shared.capabilityMatrix
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.ui.components.message.JvmChatMessagePlatformActions
+import me.rerere.rikkahub.ui.components.richtext.rememberJvmRichTextPlatformActions
 import me.rerere.rikkahub.web.createJvmWebServerRuntime
 import me.rerere.tts.controller.JvmAudioPlayer
 import me.rerere.tts.provider.providers.JvmSystemTTSProvider
@@ -85,11 +88,12 @@ fun main(args: Array<String>) {
             }
             val database = remember { createJvmAppDatabase() }
             val monitoring = remember { JvmSentryMonitoring() }
+            val externalUriOpener = remember { JvmExternalUriOpener() }
             SharedProductApp(
                 settingsStore = settingsStore,
                 database = database,
                 buildInfo = currentDesktopPlatformBuildInfo(),
-                externalUriOpener = JvmExternalUriOpener(),
+                externalUriOpener = externalUriOpener,
                 webServerRuntime = webServerRuntime,
                 booleanPreferenceStore = remember(settingsDataStore) {
                     DataStoreBooleanPreferenceStore(settingsDataStore)
@@ -102,6 +106,11 @@ fun main(args: Array<String>) {
                 chatNotificationPresenter = remember { JvmSystemTrayChatNotificationPresenter() },
                 systemTtsProvider = remember { JvmSystemTTSProvider() },
                 platformAudioPlayer = remember { JvmAudioPlayer() },
+                platformRoutes = JvmPlatformRouteContent,
+                chatMessagePlatformActions = remember(externalUriOpener) {
+                    JvmChatMessagePlatformActions(externalUriOpener)
+                },
+                richTextPlatformActions = { navigator -> rememberJvmRichTextPlatformActions(navigator) },
                 startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
             )
 

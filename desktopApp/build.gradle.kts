@@ -56,6 +56,7 @@ compose.desktop {
     application {
         mainClass = "me.rerere.rikkahub.desktop.MainKt"
         javaHome = desktopRuntime.get().metadata.installationPath.asFile.absolutePath
+        jvmArgs("--enable-native-access=ALL-UNNAMED")
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
