@@ -21,16 +21,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.composables.icons.lucide.ExternalLink
-import com.composables.icons.lucide.Lucide
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Link01
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
 import me.rerere.rikkahub.data.model.QuickMessage
-import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.extension_content_manage
+import me.rerere.rikkahub.generated.resources.extension_content_unnamed
+import me.rerere.rikkahub.generated.resources.extension_content_unnamed_lorebook
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ModeInjectionsContent(
@@ -198,7 +199,7 @@ private fun ManageButton(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.End,
     ) {
         TextButton(onClick = onClick) {
-            Icon(Lucide.ExternalLink, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(HugeIcons.Link01, contentDescription = null, modifier = Modifier.size(16.dp))
             Text(
                 text = stringResource(Res.string.extension_content_manage),
                 modifier = Modifier.padding(start = 4.dp),

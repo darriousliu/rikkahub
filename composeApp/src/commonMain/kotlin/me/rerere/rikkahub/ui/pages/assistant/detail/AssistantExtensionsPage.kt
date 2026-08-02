@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
@@ -22,7 +22,18 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_empty_lorebooks
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_empty_mode_injections
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_empty_quick_messages
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_empty_skills
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_goto_extensions
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_goto_prompts
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_tab_lorebooks
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_tab_mode_injections
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_tab_quick_messages
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_tab_skills
+import me.rerere.rikkahub.generated.resources.assistant_extensions_page_title
 import me.rerere.rikkahub.ui.components.ai.ExtensionEmptyState
 import me.rerere.rikkahub.ui.components.ai.LorebooksContent
 import me.rerere.rikkahub.ui.components.ai.ModeInjectionsContent
@@ -30,10 +41,10 @@ import me.rerere.rikkahub.ui.components.ai.QuickMessagesContent
 import me.rerere.rikkahub.ui.components.ai.SkillsContent
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalNavController
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AssistantExtensionsPage(id: String) {
@@ -48,7 +59,7 @@ fun AssistantExtensionsPage(id: String) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(Res.string.assistant_extensions_page_title)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,

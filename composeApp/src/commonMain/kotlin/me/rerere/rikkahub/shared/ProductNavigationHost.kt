@@ -60,6 +60,7 @@ import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.pages.assistant.AssistantPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantBasicPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailPage
+import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantExtensionsPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMcpPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMemoryPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantRequestPage
@@ -262,7 +263,7 @@ fun ProductNavigationHost(
                         entry<Screen.AssistantRequest> { AssistantRequestPage(it.id) }
                         entry<Screen.AssistantMcp> { AssistantMcpPage(it.id) }
                         entry<Screen.AssistantLocalTool> { platformRoutes.Render(it) }
-                        entry<Screen.AssistantInjections> { platformRoutes.Render(it) }
+                        entry<Screen.AssistantInjections> { AssistantExtensionsPage(it.id) }
                         entry<Screen.Translator> { TranslatorPage() }
                         entry<Screen.Setting> { SettingPage() }
                         entry<Screen.Backup> { BackupPage() }
