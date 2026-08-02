@@ -18,9 +18,6 @@ import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
 import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
@@ -46,10 +43,7 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             is Screen.AssistantInjections -> AssistantExtensionsPage(screen.id)
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
             Screen.SettingTheme -> SettingThemePage()
-            Screen.SettingPreferencesTheme -> SettingPreferencesThemePage()
-            Screen.SettingPreferencesGeneral -> SettingPreferencesGeneralPage()
             Screen.SettingPreferencesUI -> SettingPreferencesUIPage()
-            Screen.SettingModels -> SettingModelPage()
             Screen.SettingAbout -> SettingAboutPage(koinInject<PlatformBuildInfo>())
             Screen.SettingDonate -> SettingDonatePage()
             Screen.SettingFiles -> SettingFilesPage()

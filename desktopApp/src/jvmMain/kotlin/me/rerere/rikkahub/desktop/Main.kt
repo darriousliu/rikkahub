@@ -8,6 +8,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.shared.CapabilityState
@@ -65,9 +66,10 @@ fun main(args: Array<String>) {
             title = "RikkaHub",
         ) {
             val appScope = rememberCoroutineScope()
-            val settingsStore = remember(appScope) {
+            val settingsDataStore = remember(appScope) { createJvmSettingsDataStore(appScope) }
+            val settingsStore = remember(appScope, settingsDataStore) {
                 SettingsStore(
-                    dataStore = createJvmSettingsDataStore(appScope),
+                    dataStore = settingsDataStore,
                     scope = appScope,
                 )
             }
@@ -79,6 +81,9 @@ fun main(args: Array<String>) {
                 buildInfo = currentDesktopPlatformBuildInfo(),
                 externalUriOpener = JvmExternalUriOpener(),
                 webServerRuntime = webServerRuntime,
+                booleanPreferenceStore = remember(settingsDataStore) {
+                    DataStoreBooleanPreferenceStore(settingsDataStore)
+                },
             )
 
             if (policy.mode == DesktopLaunchMode.Smoke) {

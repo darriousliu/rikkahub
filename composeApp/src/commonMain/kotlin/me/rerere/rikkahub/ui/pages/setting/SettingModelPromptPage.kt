@@ -34,8 +34,8 @@ import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ai.ReasoningButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun PromptSettingsPage(settings: Settings, vm: SettingVM, contentPadding: PaddingValues) {

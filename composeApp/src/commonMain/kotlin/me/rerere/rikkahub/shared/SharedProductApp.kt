@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -41,6 +42,7 @@ fun SharedProductApp(
     buildInfo: PlatformBuildInfo,
     externalUriOpener: ExternalUriOpener,
     webServerRuntime: WebServerRuntime,
+    booleanPreferenceStore: BooleanPreferenceStore,
     chatStorageSummaryProvider: ChatStorageSummaryProvider = UnavailableChatStorageSummaryProvider,
     startScreen: Screen = Screen.Setting,
 ) {
@@ -52,6 +54,7 @@ fun SharedProductApp(
         buildInfo,
         externalUriOpener,
         webServerRuntime,
+        booleanPreferenceStore,
         chatStorageSummaryProvider,
         eventBus,
         providerManager,
@@ -61,6 +64,7 @@ fun SharedProductApp(
             single { buildInfo }
             single { externalUriOpener }
             single { webServerRuntime }
+            single { booleanPreferenceStore }
             single { chatStorageSummaryProvider }
             single { eventBus }
             single { providerManager }

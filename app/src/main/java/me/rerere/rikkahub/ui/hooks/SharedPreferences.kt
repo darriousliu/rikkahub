@@ -42,33 +42,6 @@ fun rememberSharedPreferenceString(
     }
 }
 
-@Composable
-fun rememberSharedPreferenceBoolean(
-    keyForBoolean: String,
-    defaultValue: Boolean = false
-): MutableState<Boolean> {
-    val context = LocalContext.current
-    val prefs = remember {
-        context.getSharedPreferences("rikkahub.preferences", Context.MODE_PRIVATE)
-    }
-    val stateFlow =
-        remember(keyForBoolean, defaultValue) { prefs.getBooleanFlowForKey(keyForBoolean, defaultValue) }
-    val state by stateFlow.collectAsStateWithLifecycle(prefs.getBoolean(keyForBoolean, defaultValue))
-    val currentState = rememberUpdatedState(state)
-    return remember {
-        object : MutableState<Boolean> {
-            override var value: Boolean
-                get() = currentState.value
-                set(value) {
-                    prefs.edit { putBoolean(keyForBoolean, value) }
-                }
-
-            override fun component1(): Boolean = value
-            override fun component2(): (Boolean) -> Unit = { value = it }
-        }
-    }
-}
-
 fun Context.writeStringPreference(key: String, value: String?) {
     getSharedPreferences("rikkahub.preferences", Context.MODE_PRIVATE).edit {
         putString(key, value)

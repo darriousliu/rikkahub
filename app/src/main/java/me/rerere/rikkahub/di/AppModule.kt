@@ -7,6 +7,8 @@ import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
 import kotlinx.serialization.json.Json
 import me.rerere.rikkahub.AppScope
+import me.rerere.rikkahub.data.datastore.AndroidBooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AndroidExternalUriOpener
@@ -53,6 +55,7 @@ val appModule = module {
     }
 
     single<Json> { JsonInstant }
+    single<BooleanPreferenceStore> { AndroidBooleanPreferenceStore(get()) }
 
     single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
     single<AssistantSkillCatalog> { AndroidAssistantSkillCatalog(get()) }

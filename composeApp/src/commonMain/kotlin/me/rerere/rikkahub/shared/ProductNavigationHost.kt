@@ -74,8 +74,11 @@ import me.rerere.rikkahub.ui.pages.history.HistoryPage
 import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPage
+import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
+import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
+import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
@@ -262,13 +265,13 @@ fun ProductNavigationHost(
                         entry<Screen.WebView> { platformRoutes.Render(it) }
                         entry<Screen.SettingTheme> { platformRoutes.Render(it) }
                         entry<Screen.SettingPreferences> { SettingPreferencesPage() }
-                        entry<Screen.SettingPreferencesTheme> { platformRoutes.Render(it) }
+                        entry<Screen.SettingPreferencesTheme> { SettingPreferencesThemePage() }
                         entry<Screen.SettingPreferencesNotification> { SettingPreferencesNotificationPage() }
-                        entry<Screen.SettingPreferencesGeneral> { platformRoutes.Render(it) }
+                        entry<Screen.SettingPreferencesGeneral> { SettingPreferencesGeneralPage() }
                         entry<Screen.SettingPreferencesUI> { platformRoutes.Render(it) }
                         entry<Screen.SettingProvider> { SettingProviderPage() }
                         entry<Screen.SettingProviderDetail> { SettingProviderDetailPage(Uuid.parse(it.providerId)) }
-                        entry<Screen.SettingModels> { platformRoutes.Render(it) }
+                        entry<Screen.SettingModels> { SettingModelPage() }
                         entry<Screen.SettingAbout> { platformRoutes.Render(it) }
                         entry<Screen.SettingSearch> { SettingSearchPage() }
                         entry<Screen.SettingSearchDetail> { SettingSearchDetailPage(Uuid.parse(it.serviceId)) }
