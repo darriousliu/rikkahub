@@ -10,7 +10,6 @@ import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceDetailPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceFileEditorPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalPage
-import me.rerere.rikkahub.ui.pages.log.LogPage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
@@ -33,7 +32,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
             Screen.SettingFiles -> SettingFilesPage()
             Screen.Debug -> DebugPage()
-            Screen.Log -> LogPage()
             Screen.Workspaces -> WorkspacePage()
             is Screen.WorkspaceDetail -> WorkspaceDetailPage(screen.id)
             is Screen.WorkspaceTerminal -> WorkspaceTerminalPage(screen.id)

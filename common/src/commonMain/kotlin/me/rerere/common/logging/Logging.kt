@@ -1,6 +1,10 @@
-package me.rerere.common.android
+package me.rerere.common.logging
 
 import kotlinx.serialization.Serializable
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
 private const val MAX_RECENT_LOGS = 100
@@ -14,15 +18,15 @@ sealed class LogEntry {
     @Serializable
     data class TextLog(
         override val id: Uuid = Uuid.random(),
-        override val timestamp: Long = System.currentTimeMillis(),
+        override val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
         override val tag: String,
-        val message: String
+        val message: String,
     ) : LogEntry()
 
     @Serializable
     data class RequestLog(
         override val id: Uuid = Uuid.random(),
-        override val timestamp: Long = System.currentTimeMillis(),
+        override val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
         override val tag: String,
         val url: String,
         val method: String,
@@ -31,63 +35,57 @@ sealed class LogEntry {
         val responseCode: Int? = null,
         val responseHeaders: Map<String, String> = emptyMap(),
         val durationMs: Long? = null,
-        val error: String? = null
+        val error: String? = null,
     ) : LogEntry()
 }
 
+@OptIn(ExperimentalAtomicApi::class)
 internal class RecentLogStore(
-    private val capacity: Int = MAX_RECENT_LOGS
+    private val capacity: Int = MAX_RECENT_LOGS,
 ) {
-    private val recentLogs = arrayListOf<LogEntry>()
-
-    @Volatile
-    private var requestLoggingEnabled = false
+    private val recentLogs = AtomicReference<List<LogEntry>>(emptyList())
+    private val requestLoggingEnabled = AtomicBoolean(false)
 
     fun log(tag: String, message: String) {
         addLog(LogEntry.TextLog(tag = tag, message = message))
     }
 
     fun logRequest(entry: LogEntry.RequestLog) {
-        if (!requestLoggingEnabled) return
+        if (!requestLoggingEnabled.load()) return
         addLog(entry)
     }
 
-    fun isRequestLoggingEnabled(): Boolean = requestLoggingEnabled
+    fun isRequestLoggingEnabled(): Boolean = requestLoggingEnabled.load()
 
     fun setRequestLoggingEnabled(enabled: Boolean) {
-        requestLoggingEnabled = enabled
+        requestLoggingEnabled.store(enabled)
     }
 
     private fun addLog(entry: LogEntry) {
-        synchronized(recentLogs) {
-            recentLogs.add(0, entry)
-            if (recentLogs.size > capacity) {
-                recentLogs.removeLastOrNull()
+        while (true) {
+            val snapshot = recentLogs.load()
+            val updated = if (capacity <= 0) {
+                emptyList()
+            } else {
+                buildList(minOf(capacity, snapshot.size + 1)) {
+                    add(entry)
+                    addAll(snapshot.take(capacity - 1))
+                }
             }
+            if (recentLogs.compareAndSet(snapshot, updated)) return
         }
     }
 
-    fun getRecentLogs(): List<LogEntry> {
-        synchronized(recentLogs) {
-            return recentLogs.toList()
-        }
-    }
+    fun getRecentLogs(): List<LogEntry> = recentLogs.load()
 
-    fun getTextLogs(): List<LogEntry.TextLog> {
-        synchronized(recentLogs) {
-            return recentLogs.filterIsInstance<LogEntry.TextLog>()
-        }
-    }
+    fun getTextLogs(): List<LogEntry.TextLog> = recentLogs.load().filterIsInstance<LogEntry.TextLog>()
 
-    fun getRequestLogs(): List<LogEntry.RequestLog> {
-        synchronized(recentLogs) {
-            return recentLogs.filterIsInstance<LogEntry.RequestLog>()
-        }
-    }
+    fun getRequestLogs(): List<LogEntry.RequestLog> = recentLogs.load().filterIsInstance<LogEntry.RequestLog>()
 
     fun clear() {
-        synchronized(recentLogs) {
-            recentLogs.clear()
+        while (true) {
+            val snapshot = recentLogs.load()
+            if (snapshot.isEmpty() || recentLogs.compareAndSet(snapshot, emptyList())) return
         }
     }
 }

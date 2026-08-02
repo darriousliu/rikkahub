@@ -16,8 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +40,7 @@ import kotlinx.serialization.json.longOrNull
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowDown01
 import me.rerere.hugeicons.stroke.ArrowRight01
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import me.rerere.rikkahub.ui.theme.jetbrainsMonoFontFamily
 
 @Composable
 fun JsonTree(
@@ -64,11 +63,11 @@ fun JsonTree(
     selectedString?.let { content ->
         ModalBottomSheet(
             onDismissRequest = { selectedString = null },
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
             Text(
                 text = content,
-                fontFamily = JetbrainsMono,
+                fontFamily = jetbrainsMonoFontFamily(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
@@ -123,11 +122,11 @@ private fun JsonObjectNode(
             )
             if (key != null) {
                 KeyText(key)
-                Text(": ", fontFamily = JetbrainsMono)
+                Text(": ", fontFamily = jetbrainsMonoFontFamily())
             }
             Text(
                 text = if (expanded) "{" else "{ ... } (${entries.size})",
-                fontFamily = JetbrainsMono,
+                fontFamily = jetbrainsMonoFontFamily(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -150,7 +149,7 @@ private fun JsonObjectNode(
                 Row(modifier = Modifier.padding(start = (depth * 16 + 14).dp)) {
                     Text(
                         text = "}",
-                        fontFamily = JetbrainsMono,
+                        fontFamily = jetbrainsMonoFontFamily(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -186,11 +185,11 @@ private fun JsonArrayNode(
             )
             if (key != null) {
                 KeyText(key)
-                Text(": ", fontFamily = JetbrainsMono)
+                Text(": ", fontFamily = jetbrainsMonoFontFamily())
             }
             Text(
                 text = if (expanded) "[" else "[ ... ] (${array.size})",
-                fontFamily = JetbrainsMono,
+                fontFamily = jetbrainsMonoFontFamily(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -213,7 +212,7 @@ private fun JsonArrayNode(
                 Row(modifier = Modifier.padding(start = (depth * 16 + 14).dp)) {
                     Text(
                         text = "]",
-                        fontFamily = JetbrainsMono,
+                        fontFamily = jetbrainsMonoFontFamily(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -235,7 +234,7 @@ private fun JsonPrimitiveNode(
     ) {
         if (key != null) {
             KeyText(key)
-            Text(": ", fontFamily = JetbrainsMono)
+            Text(": ", fontFamily = jetbrainsMonoFontFamily())
         }
         ValueText(
             primitive = primitive,
@@ -257,11 +256,11 @@ private fun JsonNullNode(
     ) {
         if (key != null) {
             KeyText(key)
-            Text(": ", fontFamily = JetbrainsMono)
+            Text(": ", fontFamily = jetbrainsMonoFontFamily())
         }
         Text(
             text = "null",
-            fontFamily = JetbrainsMono,
+            fontFamily = jetbrainsMonoFontFamily(),
             color = MaterialTheme.colorScheme.outline
         )
     }
@@ -271,7 +270,7 @@ private fun JsonNullNode(
 private fun KeyText(key: String) {
     Text(
         text = "\"$key\"",
-        fontFamily = JetbrainsMono,
+        fontFamily = jetbrainsMonoFontFamily(),
         color = MaterialTheme.colorScheme.primary
     )
 }
@@ -303,7 +302,7 @@ private fun ValueText(primitive: JsonPrimitive, onClick: (() -> Unit)? = null) {
 
     Text(
         text = text,
-        fontFamily = JetbrainsMono,
+        fontFamily = jetbrainsMonoFontFamily(),
         color = color,
         textDecoration = if (onClick != null) TextDecoration.Underline else null,
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier

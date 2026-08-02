@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.ai
 
-import me.rerere.common.android.LogEntry
-import me.rerere.common.android.Logging
+import me.rerere.common.logging.LogEntry
+import me.rerere.common.logging.Logging
 import okhttp3.Interceptor
 import okhttp3.Response
 import okio.Buffer

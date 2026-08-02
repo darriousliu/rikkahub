@@ -17,15 +17,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,19 +35,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.coroutines.launch
-import me.rerere.common.android.LogEntry
-import me.rerere.common.android.Logging
-import me.rerere.rikkahub.generated.resources.*
+import me.rerere.common.logging.LogEntry
+import me.rerere.common.logging.Logging
+import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.log_page_record_requests
+import me.rerere.rikkahub.generated.resources.log_page_record_requests_desc
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.JsonTree
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import me.rerere.rikkahub.ui.theme.jetbrainsMonoFontFamily
 import me.rerere.rikkahub.utils.JsonInstantPretty
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 
 @Composable
 fun LogPage() {
@@ -58,7 +60,7 @@ fun LogPage() {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = { Text("Logs") },
                 navigationIcon = { BackButton() },
                 actions = {
@@ -100,7 +102,7 @@ private fun UnifiedLogList(
     modifier: Modifier = Modifier
 ) {
     var selectedLog by remember { mutableStateOf<LogEntry.RequestLog?>(null) }
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     val sortedLogs = remember(logs) { logs.sortedByDescending { it.timestamp } }
 
@@ -116,7 +118,16 @@ private fun UnifiedLogList(
             )
         }
 
-        items(sortedLogs, key = { it.id }, contentType = { it.javaClass.simpleName }) { log ->
+        items(
+            items = sortedLogs,
+            key = { it.id },
+            contentType = {
+                when (it) {
+                    is LogEntry.RequestLog -> "request"
+                    is LogEntry.TextLog -> "text"
+                }
+            },
+        ) { log ->
             when (log) {
                 is LogEntry.RequestLog -> RequestLogCard(
                     log = log,
@@ -178,8 +189,6 @@ private fun RequestLoggingSwitchCard(
 
 @Composable
 private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
-    val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -201,7 +210,7 @@ private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = dateFormat.format(Date(log.timestamp)),
+                    text = log.timestamp.toLogTimeString(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -210,7 +219,7 @@ private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
             Text(
                 text = log.url,
                 style = MaterialTheme.typography.bodySmall,
-                fontFamily = JetbrainsMono,
+                fontFamily = jetbrainsMonoFontFamily(),
                 maxLines = 2
             )
 
@@ -250,8 +259,6 @@ private fun RequestLogCard(log: LogEntry.RequestLog, onClick: () -> Unit) {
 
 @Composable
 private fun RequestLogDetail(log: LogEntry.RequestLog) {
-    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()) }
-
     SelectionContainer {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
@@ -267,7 +274,7 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
             }
 
             item {
-                DetailSection("Time", dateFormat.format(Date(log.timestamp)))
+                DetailSection("Time", log.timestamp.toLogTimeString(includeDate = true))
             }
 
             item {
@@ -334,7 +341,7 @@ private fun RequestLogDetail(log: LogEntry.RequestLog) {
                     } else {
                         Text(
                             text = body,
-                            fontFamily = JetbrainsMono,
+                            fontFamily = jetbrainsMonoFontFamily(),
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
@@ -372,7 +379,7 @@ private fun DetailSection(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            fontFamily = JetbrainsMono
+            fontFamily = jetbrainsMonoFontFamily()
         )
     }
 }
@@ -388,15 +395,13 @@ private fun HeaderItem(key: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            fontFamily = JetbrainsMono
+            fontFamily = jetbrainsMonoFontFamily()
         )
     }
 }
 
 @Composable
 private fun TextLogCard(log: LogEntry.TextLog) {
-    val dateFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CustomColors.cardColorsOnSurfaceContainer,
@@ -414,7 +419,7 @@ private fun TextLogCard(log: LogEntry.TextLog) {
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = dateFormat.format(Date(log.timestamp)),
+                        text = log.timestamp.toLogTimeString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -422,9 +427,32 @@ private fun TextLogCard(log: LogEntry.TextLog) {
                 Text(
                     text = log.message,
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = JetbrainsMono
+                    fontFamily = jetbrainsMonoFontFamily()
                 )
             }
+        }
+    }
+}
+
+private fun Long.toLogTimeString(includeDate: Boolean = false): String {
+    val dateTime = Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.currentSystemDefault())
+    return buildString {
+        if (includeDate) {
+            append(dateTime.year)
+            append('-')
+            append(dateTime.month.number.toString().padStart(2, '0'))
+            append('-')
+            append(dateTime.day.toString().padStart(2, '0'))
+            append(' ')
+        }
+        append(dateTime.hour.toString().padStart(2, '0'))
+        append(':')
+        append(dateTime.minute.toString().padStart(2, '0'))
+        append(':')
+        append(dateTime.second.toString().padStart(2, '0'))
+        if (includeDate) {
+            append('.')
+            append((dateTime.nanosecond / 1_000_000).toString().padStart(3, '0'))
         }
     }
 }

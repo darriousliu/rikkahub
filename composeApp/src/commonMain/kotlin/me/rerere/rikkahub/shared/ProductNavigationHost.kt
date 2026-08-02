@@ -74,6 +74,7 @@ import me.rerere.rikkahub.ui.pages.extensions.skills.SkillsPage
 import me.rerere.rikkahub.ui.pages.favorite.FavoritePage
 import me.rerere.rikkahub.ui.pages.history.HistoryPage
 import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
+import me.rerere.rikkahub.ui.pages.log.LogPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
@@ -288,7 +289,7 @@ fun ProductNavigationHost(
                         entry<Screen.SettingFiles> { platformRoutes.Render(it) }
                         entry<Screen.SettingWeb> { SettingWebPage() }
                         entry<Screen.Debug> { platformRoutes.Render(it) }
-                        entry<Screen.Log> { platformRoutes.Render(it) }
+                        entry<Screen.Log> { LogPage() }
                         entry<Screen.Extensions> { ExtensionsPage() }
                         entry<Screen.QuickMessages> { QuickMessagesPage() }
                         entry<Screen.Prompts> { PromptPage() }

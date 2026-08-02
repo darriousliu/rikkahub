@@ -40,7 +40,7 @@ import me.rerere.ai.ui.canResumeToolExecution
 import me.rerere.ai.ui.finishPendingTools
 import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.isEmptyInputMessage
-import me.rerere.common.android.Logging
+import me.rerere.common.logging.Logging
 import me.rerere.common.concurrent.AtomicSnapshotMap
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.R
