@@ -15,7 +15,6 @@ import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalPage
 import me.rerere.rikkahub.ui.pages.log.LogPage
 import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.workspace.WorkspaceStorageArea
@@ -37,7 +36,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             is Screen.AssistantLocalTool -> AssistantLocalToolPage(screen.id)
             is Screen.AssistantInjections -> AssistantExtensionsPage(screen.id)
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
-            Screen.SettingPreferencesUI -> SettingPreferencesUIPage()
             Screen.SettingFiles -> SettingFilesPage()
             Screen.Debug -> DebugPage()
             Screen.Log -> LogPage()

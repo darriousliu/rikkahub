@@ -81,6 +81,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
+import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
@@ -271,7 +272,7 @@ fun ProductNavigationHost(
                         entry<Screen.SettingPreferencesTheme> { SettingPreferencesThemePage() }
                         entry<Screen.SettingPreferencesNotification> { SettingPreferencesNotificationPage() }
                         entry<Screen.SettingPreferencesGeneral> { SettingPreferencesGeneralPage() }
-                        entry<Screen.SettingPreferencesUI> { platformRoutes.Render(it) }
+                        entry<Screen.SettingPreferencesUI> { SettingPreferencesUIPage() }
                         entry<Screen.SettingProvider> { SettingProviderPage() }
                         entry<Screen.SettingProviderDetail> { SettingProviderDetailPage(Uuid.parse(it.providerId)) }
                         entry<Screen.SettingModels> { SettingModelPage() }

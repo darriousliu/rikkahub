@@ -27,6 +27,8 @@ import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.pages.setting.SettingVM
 import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
+import me.rerere.rikkahub.ui.theme.ChatFontRuntime
+import me.rerere.rikkahub.ui.theme.UnavailableChatFontRuntime
 import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.tts.model.PlaybackState
 import org.koin.compose.KoinApplication
@@ -44,6 +46,7 @@ fun SharedProductApp(
     externalUriOpener: ExternalUriOpener,
     webServerRuntime: WebServerRuntime,
     booleanPreferenceStore: BooleanPreferenceStore,
+    chatFontRuntime: ChatFontRuntime = UnavailableChatFontRuntime,
     chatStorageSummaryProvider: ChatStorageSummaryProvider = UnavailableChatStorageSummaryProvider,
     startScreen: Screen = Screen.Setting,
 ) {
@@ -56,6 +59,7 @@ fun SharedProductApp(
         externalUriOpener,
         webServerRuntime,
         booleanPreferenceStore,
+        chatFontRuntime,
         chatStorageSummaryProvider,
         eventBus,
         providerManager,
@@ -66,6 +70,7 @@ fun SharedProductApp(
             single { externalUriOpener }
             single { webServerRuntime }
             single { booleanPreferenceStore }
+            single { chatFontRuntime }
             single { chatStorageSummaryProvider }
             single { eventBus }
             single { providerManager }

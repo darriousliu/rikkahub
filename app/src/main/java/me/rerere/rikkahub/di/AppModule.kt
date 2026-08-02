@@ -32,6 +32,8 @@ import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
+import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
+import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.createPlatformBuildInfo
 import me.rerere.rikkahub.utils.EmojiData
@@ -66,6 +68,7 @@ val appModule = module {
 
     single<Json> { JsonInstant }
     single<BooleanPreferenceStore> { AndroidBooleanPreferenceStore(get()) }
+    single<ChatFontRuntime> { AndroidChatFontRuntime(get()) }
 
     single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
     single<AssistantSkillCatalog> { AndroidAssistantSkillCatalog(get()) }
