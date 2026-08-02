@@ -33,6 +33,8 @@ import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
+import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
+import me.rerere.rikkahub.ui.components.message.UnavailableChatMessagePlatformActions
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
 import me.rerere.rikkahub.ui.pages.backup.BackupVM
@@ -72,6 +74,7 @@ internal fun sharedProductModule(
     single { database }
     single { buildInfo }
     single { externalUriOpener }
+    single<ChatMessagePlatformActions> { UnavailableChatMessagePlatformActions }
     single { webServerRuntime }
     single { booleanPreferenceStore }
     single { stringPreferenceStore }
