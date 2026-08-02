@@ -14,13 +14,21 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import me.rerere.ai.core.MessageRole
+import me.rerere.ai.core.Tool
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.ai.ui.ToolApprovalState
+import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.handleMessageChunk
 import me.rerere.ai.ui.isEmptyInputMessage
+import me.rerere.ai.ui.limitContext
+import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
@@ -57,6 +65,7 @@ internal class SharedChatRuntime(
     private val booleanPreferenceStore: BooleanPreferenceStore,
     private val stringPreferenceStore: StringPreferenceStore,
     private val attachmentStore: SharedChatAttachmentStore,
+    private val mcpRuntime: McpRuntime,
 ) : ChatRuntime {
     private val conversations = mutableMapOf<Uuid, MutableStateFlow<Conversation>>()
     private val processingStatuses = mutableMapOf<Uuid, MutableStateFlow<String?>>()
@@ -284,10 +293,37 @@ internal class SharedChatRuntime(
         reason: String,
         answer: String?,
     ) {
-        addError(
-            UnsupportedOperationException("Tool execution is not available on this platform"),
-            conversationId = conversationId,
-        )
+        startGeneration(conversationId) {
+            val conversation = conversationState(conversationId).value
+            val approvalState = when {
+                answer != null -> ToolApprovalState.Answered(answer)
+                approved -> ToolApprovalState.Approved
+                else -> ToolApprovalState.Denied(reason)
+            }
+            val updated = conversation.copy(
+                messageNodes = conversation.messageNodes.map { node ->
+                    node.copy(
+                        messages = node.messages.map { message ->
+                            message.copy(
+                                parts = message.parts.map { part ->
+                                    if (part is UIMessagePart.Tool && part.toolCallId == toolCallId) {
+                                        part.copy(approvalState = approvalState)
+                                    } else {
+                                        part
+                                    }
+                                },
+                            )
+                        },
+                    )
+                },
+                updateAt = Clock.System.now(),
+            )
+            saveConversation(conversationId, updated)
+            val stillPending = updated.currentMessages.any { message ->
+                message.getTools().any { tool -> tool.isPending }
+            }
+            if (!stillPending) completeConversation(conversationId)
+        }
     }
 
     override suspend fun stopGeneration(conversationId: Uuid) {
@@ -426,41 +462,85 @@ internal class SharedChatRuntime(
         val systemPrompt = conversation.customSystemPrompt
             ?.takeIf { assistant.allowConversationSystemPrompt && it.isNotBlank() }
             ?: assistant.systemPrompt
-        val history = conversation.currentMessages.let { messages ->
-            if (assistant.contextMessageLimit > 0) messages.takeLast(assistant.contextMessageLimit) else messages
-        }
-        val requestMessages = buildList {
-            if (systemPrompt.isNotBlank()) add(UIMessage.system(systemPrompt))
-            addAll(history)
-        }
+        val tools = buildMcpTools()
         val params = TextGenerationParams(
             model = model,
             temperature = assistant.temperature,
             topP = assistant.topP,
             maxTokens = assistant.maxTokens,
+            tools = tools,
             reasoningLevel = assistant.reasoningLevel,
             customHeaders = assistant.customHeaders + model.customHeaders,
             customBody = assistant.customBodies + model.customBodies,
         )
 
-        status.value = "Generating"
-        if (assistant.streamOutput) {
-            provider.streamText(providerSetting, requestMessages, params).collect { chunk ->
-                val updatedMessages = state.value.currentMessages.handleMessageChunk(chunk, model)
-                state.value = state.value
-                    .updateCurrentMessages(updatedMessages)
-                    .copy(updateAt = Clock.System.now())
-                updatedMessages.lastOrNull()?.let { message ->
-                    eventBus.tryEmit(AppEvent.ChatGenerationUpdate(conversationId, message, senderName))
+        var completed = false
+        var stepCount = 0
+        while (stepCount < MAX_GENERATION_STEPS) {
+            stepCount++
+            val pendingTools = state.value.currentMessages.lastOrNull()
+                ?.getTools()
+                ?.filterNot { tool -> tool.isExecuted }
+                .orEmpty()
+            if (pendingTools.isNotEmpty()) {
+                val preparedTools = pendingTools.map { tool ->
+                    val definition = tools.find { candidate -> candidate.name == tool.toolName }
+                    if (tool.approvalState is ToolApprovalState.Auto &&
+                        definition?.needsApproval(tool.inputAsJson()) == true
+                    ) {
+                        tool.copy(approvalState = ToolApprovalState.Pending)
+                    } else {
+                        tool
+                    }
                 }
+                updateLastTools(state, preparedTools)
+                saveConversation(conversationId, state.value)
+                if (preparedTools.any { tool -> tool.isPending }) {
+                    eventBus.tryEmit(AppEvent.ChatGenerationEnded(conversationId, senderName, null))
+                    return@completeConversation
+                }
+
+                status.value = "Executing tool"
+                val executedTools = preparedTools.map { tool -> executeTool(tool, tools) }
+                updateLastTools(state, executedTools)
+                saveConversation(conversationId, state.value)
+                continue
             }
-        } else {
-            val chunk = provider.generateText(providerSetting, requestMessages, params)
-            state.value = state.value
-                .updateCurrentMessages(state.value.currentMessages.handleMessageChunk(chunk, model))
-                .copy(updateAt = Clock.System.now())
+
+            val requestMessages = buildList {
+                if (systemPrompt.isNotBlank()) add(UIMessage.system(systemPrompt))
+                addAll(state.value.currentMessages.limitContext(assistant.contextMessageLimit))
+            }
+            status.value = "Generating"
+            if (assistant.streamOutput) {
+                provider.streamText(providerSetting, requestMessages, params).collect { chunk ->
+                    val updatedMessages = state.value.currentMessages.handleMessageChunk(chunk, model)
+                    state.value = state.value
+                        .updateCurrentMessages(updatedMessages)
+                        .copy(updateAt = Clock.System.now())
+                    updatedMessages.lastOrNull()?.let { message ->
+                        eventBus.tryEmit(AppEvent.ChatGenerationUpdate(conversationId, message, senderName))
+                    }
+                }
+            } else {
+                val chunk = provider.generateText(providerSetting, requestMessages, params)
+                state.value = state.value
+                    .updateCurrentMessages(state.value.currentMessages.handleMessageChunk(chunk, model))
+                    .copy(updateAt = Clock.System.now())
+            }
+            val finishedMessages = state.value.currentMessages.let { messages ->
+                if (messages.isEmpty()) messages else messages.dropLast(1) + messages.last().finishReasoning()
+            }
+            state.value = state.value.updateCurrentMessages(finishedMessages)
+            saveConversation(conversationId, state.value)
+            if (finishedMessages.lastOrNull()?.getTools()?.any { tool -> !tool.isExecuted } != true) {
+                completed = true
+                break
+            }
         }
-        saveConversation(conversationId, state.value)
+        check(completed) {
+            "MCP tool execution exceeded $MAX_GENERATION_STEPS steps"
+        }
         eventBus.tryEmit(
             AppEvent.ChatGenerationEnded(
                 conversationId = conversationId,
@@ -468,12 +548,79 @@ internal class SharedChatRuntime(
                 contentPreview = state.value.currentMessages.lastOrNull()?.toText()?.trim()?.take(50),
             ),
         )
-        generateTitle(conversationId, state.value)
+        if (completed) generateTitle(conversationId, state.value)
+    }
+
+    private fun buildMcpTools(): List<Tool> = mcpRuntime.getAllAvailableTools().also { available ->
+        val invalidNames = available.map { it.second }.distinct().filter { name ->
+            name.isEmpty() || !name.all { character ->
+                character in 'a'..'z' || character in 'A'..'Z' || character in '0'..'9'
+            }
+        }
+        require(invalidNames.isEmpty()) {
+            "MCP server names must contain only letters and digits: ${invalidNames.joinToString()}"
+        }
+    }.map { (serverId, serverName, tool) ->
+        Tool(
+            name = "mcp__${serverName}__${tool.name}",
+            description = tool.description.orEmpty(),
+            parameters = { tool.inputSchema },
+            needsApproval = { tool.needsApproval },
+            execute = { input -> mcpRuntime.callTool(serverId, tool.name, input.jsonObject) },
+        )
+    }
+
+    private suspend fun executeTool(
+        tool: UIMessagePart.Tool,
+        definitions: List<Tool>,
+    ): UIMessagePart.Tool = when (val approval = tool.approvalState) {
+        is ToolApprovalState.Denied -> tool.copy(
+            output = listOf(errorToolOutput("Tool execution denied by user: ${approval.reason}")),
+        )
+
+        is ToolApprovalState.Answered -> tool.copy(output = listOf(UIMessagePart.Text(approval.answer)))
+        ToolApprovalState.Pending -> tool
+        ToolApprovalState.Auto,
+        ToolApprovalState.Approved,
+            -> try {
+                val definition = definitions.find { candidate -> candidate.name == tool.toolName }
+                    ?: error("Tool ${tool.toolName} not found")
+                tool.copy(output = definition.execute(tool.inputAsJson()))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                tool.copy(output = listOf(errorToolOutput(error.message ?: "Tool execution failed")))
+            }
+    }
+
+    private fun errorToolOutput(message: String): UIMessagePart.Text = UIMessagePart.Text(
+        buildJsonObject { put("error", message) }.toString(),
+    )
+
+    private fun updateLastTools(
+        state: MutableStateFlow<Conversation>,
+        tools: List<UIMessagePart.Tool>,
+    ) {
+        val messages = state.value.currentMessages
+        val last = messages.lastOrNull() ?: return
+        val updatedLast = last.copy(
+            parts = last.parts.map { part ->
+                if (part is UIMessagePart.Tool) {
+                    tools.find { tool -> tool.toolCallId == part.toolCallId } ?: part
+                } else {
+                    part
+                }
+            },
+        )
+        state.value = state.value
+            .updateCurrentMessages(messages.dropLast(1) + updatedLast)
+            .copy(updateAt = Clock.System.now())
     }
 
     private companion object {
         const val CREATE_NEW_CONVERSATION_KEY = "create_new_conversation_on_start"
         const val LAST_CONVERSATION_KEY = "lastConversationId"
         const val TITLE_MAX_LENGTH = 80
+        const val MAX_GENERATION_STEPS = 32
     }
 }

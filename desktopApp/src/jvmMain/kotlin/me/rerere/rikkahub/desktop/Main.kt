@@ -18,6 +18,7 @@ import me.rerere.rikkahub.data.db.createJvmAppDatabase
 import me.rerere.rikkahub.data.db.defaultJvmDatabaseFile
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
+import me.rerere.rikkahub.platform.JvmOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.JvmSentryMonitoring
 import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
 import me.rerere.rikkahub.shared.CapabilityState
@@ -120,6 +121,9 @@ fun main(args: Array<String>) {
                 startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
                 backupFileLayout = remember(databaseFile) {
                     BackupFileLayout.create(PlatformFile(databaseFile))
+                },
+                oauthCallbackSessionFactory = remember(externalUriOpener) {
+                    JvmOAuthCallbackSessionFactory(externalUriOpener)
                 },
             )
 

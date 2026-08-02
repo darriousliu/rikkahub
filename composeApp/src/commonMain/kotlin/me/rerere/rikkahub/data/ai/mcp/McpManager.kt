@@ -1,15 +1,18 @@
 package me.rerere.rikkahub.data.ai.mcp
 
-import androidx.core.net.toUri
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.serialization.kotlinx.json.json
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.types.ImageContent
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.BlobResourceContents
+import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -18,58 +21,33 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.AppScope
+import me.rerere.common.crypto.PlatformSecureRandom
+import me.rerere.common.crypto.PlatformSha256Crypto
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.files.FilesManager
-import me.rerere.rikkahub.data.files.saveUploadFromBytes
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.utils.JsonInstant
-import java.security.SecureRandom
-import java.util.concurrent.TimeUnit
 import kotlin.io.encoding.Base64
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
-/**
- * MCP 子系统的公共入口。
- *
- * 这里仅协调配置、OAuth、连接注册表与 UI 内容转换；单个服务器的连接状态机由
- * [McpSessionRegistry] 管理，OAuth 协议细节由 [McpOAuthCoordinator] 管理。
- */
+/** Shared MCP runtime used by Android, iOS and Desktop. */
 class McpManager(
     private val settingsStore: SettingsStore,
-    private val appScope: AppScope,
-    private val filesManager: FilesManager,
+    private val appScope: CoroutineScope,
+    private val imageStore: McpImageStore,
     callbackSessionFactory: OAuthCallbackSessionFactory,
+    private val httpClient: HttpClient = createMcpHttpClient(),
 ) : McpRuntime {
-    private val httpClient = HttpClient(OkHttp) {
-        engine {
-            config {
-                connectTimeout(20, TimeUnit.SECONDS)
-                readTimeout(10, TimeUnit.MINUTES)
-                writeTimeout(120, TimeUnit.SECONDS)
-                followSslRedirects(true)
-                followRedirects(true)
-            }
-        }
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-            })
-        }
-        install(SSE)
-    }
-
     private val statusStore = McpStatusStore()
-    private val secureRandom = SecureRandom()
     private val oauthCoordinator = McpOAuthCoordinator(
         settingsStore = settingsStore,
         appScope = appScope,
         oauthClient = McpOAuthClient(
             httpClient = httpClient,
-            sha256 = JdkMcpSha256Digest,
-            randomBytes = { size -> ByteArray(size).also(secureRandom::nextBytes) },
+            sha256 = PlatformSha256Crypto,
+            randomBytes = PlatformSecureRandom::nextBytes,
         ),
         callbackSessionFactory = callbackSessionFactory,
         updateStatus = statusStore::update,
@@ -83,6 +61,7 @@ class McpManager(
     )
 
     init {
+        appScope.coroutineContext[Job]?.invokeOnCompletion { httpClient.close() }
         appScope.launch {
             settingsStore.settingsFlow
                 .map { settings -> settings.mcpServers }
@@ -100,7 +79,7 @@ class McpManager(
 
     override fun hasClient(config: McpServerConfig): Boolean = getClient(config) != null
 
-    fun getAllAvailableTools(): List<Triple<Uuid, String, McpTool>> {
+    override fun getAllAvailableTools(): List<Triple<Uuid, String, McpTool>> {
         val settings = settingsStore.settingsFlow.value
         val assistant = settings.getCurrentAssistant()
         return settings.mcpServers
@@ -112,22 +91,64 @@ class McpManager(
             }
     }
 
-    suspend fun callTool(serverId: Uuid, toolName: String, args: JsonObject): List<UIMessagePart> {
+    override suspend fun callTool(
+        serverId: Uuid,
+        toolName: String,
+        args: JsonObject,
+    ): List<UIMessagePart> {
         val result = try {
             sessionRegistry.callTool(serverId, toolName, args)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: McpClientUnavailableException) {
-            return listOf(UIMessagePart.Text("Failed to execute MCP tool: ${e.message ?: e.javaClass.name}"))
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: McpClientUnavailableException) {
+            return listOf(UIMessagePart.Text("Failed to execute MCP tool: ${error.message.orEmpty()}"))
         }
         return result.content.map { content ->
             when (content) {
                 is TextContent -> UIMessagePart.Text(content.text)
-                is ImageContent -> convertImageContentToFilePart(content)
+                is ImageContent -> imageStore.save(Base64.decode(content.data), content.mimeType)
                 else -> UIMessagePart.Text(JsonInstant.encodeToString(content))
             }
         }
     }
+
+    override suspend fun listResources(serverId: Uuid): List<McpResource> {
+        val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == serverId }
+            ?: throw McpClientUnavailableException("No MCP configuration for server $serverId")
+        return sessionRegistry.listResources(serverId).map { resource ->
+            McpResource(
+                serverId = serverId,
+                serverName = config.commonOptions.name,
+                uri = resource.uri,
+                name = resource.name,
+                description = resource.description,
+                mimeType = resource.mimeType,
+                size = resource.size,
+            )
+        }
+    }
+
+    override suspend fun readResource(serverId: Uuid, uri: String): List<McpResourceContent> =
+        sessionRegistry.readResource(serverId, uri).map { content ->
+            when (content) {
+                is TextResourceContents -> McpResourceContent.Text(
+                    uri = content.uri,
+                    mimeType = content.mimeType,
+                    text = content.text,
+                )
+
+                is BlobResourceContents -> McpResourceContent.Blob(
+                    uri = content.uri,
+                    mimeType = content.mimeType,
+                    bytes = Base64.decode(content.blob),
+                )
+
+                else -> McpResourceContent.Unknown(
+                    uri = content.uri,
+                    mimeType = content.mimeType,
+                )
+            }
+        }
 
     suspend fun addClient(config: McpServerConfig) = sessionRegistry.addClient(config)
 
@@ -147,16 +168,21 @@ class McpManager(
         val freshConfig = oauthCoordinator.clearAuthorization(config)
         sessionRegistry.addClient(freshConfig)
     }
+}
 
-    private suspend fun convertImageContentToFilePart(image: ImageContent): UIMessagePart.Image {
-        val bytes = Base64.decode(image.data)
-        val extension = android.webkit.MimeTypeMap.getSingleton()
-            .getExtensionFromMimeType(image.mimeType) ?: "bin"
-        val entity = filesManager.saveUploadFromBytes(
-            bytes = bytes,
-            displayName = "mcp_image.$extension",
-            mimeType = image.mimeType,
-        )
-        return UIMessagePart.Image(url = filesManager.getFile(entity).toUri().toString())
+private fun createMcpHttpClient(): HttpClient = HttpClient {
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = true
+            isLenient = true
+            ignoreUnknownKeys = true
+        })
     }
+    install(SSE)
+    install(HttpTimeout) {
+        connectTimeoutMillis = 20.seconds.inWholeMilliseconds
+        socketTimeoutMillis = 10.minutes.inWholeMilliseconds
+        requestTimeoutMillis = 10.minutes.inWholeMilliseconds
+    }
+    followRedirects = true
 }

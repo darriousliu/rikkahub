@@ -31,6 +31,7 @@ import me.rerere.rikkahub.platform.ChatNotificationPresenter
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.NoOpMonitoring
+import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -77,6 +78,7 @@ fun SharedProductApp(
     richTextPlatformActions: @Composable (Navigator) -> RichTextPlatformActions = { RichTextPlatformActions() },
     startScreen: Screen? = null,
     backupFileLayout: BackupFileLayout = BackupFileLayout.create(),
+    oauthCallbackSessionFactory: OAuthCallbackSessionFactory,
 ) {
     val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
@@ -114,6 +116,7 @@ fun SharedProductApp(
         crashReporter,
         resolvedChatMessagePlatformActions,
         backupFileLayout,
+        oauthCallbackSessionFactory,
     ) {
         sharedProductModule(
             settingsStore = settingsStore,
@@ -133,6 +136,7 @@ fun SharedProductApp(
             eventBus = eventBus,
             chatMessagePlatformActions = resolvedChatMessagePlatformActions,
             backupFileLayout = backupFileLayout,
+            oauthCallbackSessionFactory = oauthCallbackSessionFactory,
         )
     }
     val koinConfiguration = remember(productModule) {

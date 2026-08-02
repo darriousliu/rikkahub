@@ -4,6 +4,9 @@ import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
+import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
+import me.rerere.rikkahub.data.ai.mcp.McpImageStore
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -38,6 +41,7 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.ChatRuntime
 import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
@@ -99,6 +103,7 @@ internal fun sharedProductModule(
     eventBus: AppEventBus,
     chatMessagePlatformActions: ChatMessagePlatformActions,
     backupFileLayout: BackupFileLayout,
+    oauthCallbackSessionFactory: OAuthCallbackSessionFactory,
 ): Module = module {
     single { settingsStore }
     single { database }
@@ -116,6 +121,15 @@ internal fun sharedProductModule(
     single { httpClient }
     single { providerManager }
     single { eventBus }
+    single<McpImageStore> { FileKitMcpImageStore() }
+    single<McpRuntime> {
+        McpManager(
+            settingsStore = settingsStore,
+            appScope = appScope,
+            imageStore = get(),
+            callbackSessionFactory = oauthCallbackSessionFactory,
+        )
+    }
     single<AnalyticsTracker> { analyticsTracker }
     single<CrashReporter> { crashReporter }
     single { UpdateChecker(client = httpClient, buildInfo = buildInfo) }
@@ -157,6 +171,7 @@ internal fun sharedProductModule(
             booleanPreferenceStore = booleanPreferenceStore,
             stringPreferenceStore = stringPreferenceStore,
             attachmentStore = get(),
+            mcpRuntime = get(),
         )
     }
     single { MemoryRepository(get()) }
@@ -183,7 +198,6 @@ internal fun sharedProductModule(
         }
     }
     single<AssistantPromptPreviewRuntime> { CommonAssistantPromptPreviewRuntime }
-    single<McpRuntime> { UnavailableMcpRuntime }
     single<TranslationRuntime> { SharedTranslationRuntime(settingsStore, providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single<BackupSettingsGateway> { SettingsStoreBackupSettingsGateway(settingsStore) }

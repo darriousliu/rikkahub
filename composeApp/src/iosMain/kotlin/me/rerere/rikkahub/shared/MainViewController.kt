@@ -14,6 +14,7 @@ import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.IosExternalUriOpener
 import me.rerere.rikkahub.platform.IosFirebaseAnalyticsTracker
 import me.rerere.rikkahub.platform.IosFirebaseCrashReporter
+import me.rerere.rikkahub.platform.IosOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.IosUserNotificationPresenter
 import me.rerere.rikkahub.web.createIosWebServerRuntime
 import me.rerere.tts.controller.IosAudioPlayer
@@ -54,5 +55,6 @@ public fun MainViewController(): UIViewController = ComposeUIViewController {
         backupFileLayout = remember {
             BackupFileLayout.create(PlatformFile(defaultIosDatabaseFilePath()))
         },
+        oauthCallbackSessionFactory = remember { IosOAuthCallbackSessionFactory() },
     )
 }

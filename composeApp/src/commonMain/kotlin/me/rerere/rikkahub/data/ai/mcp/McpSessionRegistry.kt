@@ -13,6 +13,12 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequestParams
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.ListResourcesRequest
+import io.modelcontextprotocol.kotlin.sdk.types.PaginatedRequestParams
+import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceRequest
+import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceRequestParams
+import io.modelcontextprotocol.kotlin.sdk.types.Resource
+import io.modelcontextprotocol.kotlin.sdk.types.ResourceContents
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.CancellationException
@@ -138,6 +144,51 @@ class McpSessionRegistry(
     }
 
     suspend fun callTool(serverId: Uuid, toolName: String, args: JsonObject): CallToolResult {
+        val (sdkClient, config) = readyClient(serverId)
+        Log.i(TAG, "Calling tool $toolName on $serverId (${config.commonOptions.name})")
+        return executeRequest(config) {
+            sdkClient.callTool(
+                request = CallToolRequest(
+                    params = CallToolRequestParams(name = toolName, arguments = args),
+                ),
+                options = RequestOptions(timeout = 120.seconds),
+            )
+        }
+    }
+
+    suspend fun listResources(serverId: Uuid): List<Resource> {
+        val (sdkClient, config) = readyClient(serverId)
+        return executeRequest(config) {
+            buildList {
+                var cursor: String? = null
+                val seenCursors = mutableSetOf<String>()
+                do {
+                    val result = sdkClient.listResources(
+                        request = ListResourcesRequest(
+                            params = cursor?.let { PaginatedRequestParams(cursor = it) },
+                        ),
+                        options = RequestOptions(timeout = 120.seconds),
+                    )
+                    addAll(result.resources)
+                    cursor = result.nextCursor?.also { nextCursor ->
+                        check(seenCursors.add(nextCursor)) { "MCP server repeated resource cursor: $nextCursor" }
+                    }
+                } while (cursor != null)
+            }
+        }
+    }
+
+    suspend fun readResource(serverId: Uuid, uri: String): List<ResourceContents> {
+        val (sdkClient, config) = readyClient(serverId)
+        return executeRequest(config) {
+            sdkClient.readResource(
+                request = ReadResourceRequest(ReadResourceRequestParams(uri = uri)),
+                options = RequestOptions(timeout = 120.seconds),
+            ).contents
+        }
+    }
+
+    private suspend fun readyClient(serverId: Uuid): Pair<Client, McpServerConfig> {
         val session = sessions[serverId]
             ?: throw McpClientUnavailableException("No MCP session for server $serverId")
         val freshConfig = oauthCoordinator.ensureFreshToken(session.config)
@@ -145,26 +196,23 @@ class McpSessionRegistry(
             session.config = freshConfig
             addClient(freshConfig)
         }
-
         val sdkClient = session.client
             ?: throw McpClientUnavailableException("MCP client $serverId is not connected")
-        val config = session.connectedConfig ?: session.config
-        Log.i(TAG, "Calling tool $toolName on $serverId (${config.commonOptions.name})")
-        return try {
-            sdkClient.callTool(
-                request = CallToolRequest(
-                    params = CallToolRequestParams(name = toolName, arguments = args),
-                ),
-                options = RequestOptions(timeout = 120.seconds),
-            )
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            if (oauthCoordinator.needsAuthorization(config, e)) {
-                statusStore.update(config.id, McpStatus.NeedsAuthorization)
-            }
-            throw e
+        return sdkClient to (session.connectedConfig ?: session.config)
+    }
+
+    private suspend fun <T> executeRequest(
+        config: McpServerConfig,
+        block: suspend () -> T,
+    ): T = try {
+        block()
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        if (oauthCoordinator.needsAuthorization(config, error)) {
+            statusStore.update(config.id, McpStatus.NeedsAuthorization)
         }
+        throw error
     }
 
     suspend fun addClient(configInput: McpServerConfig) {

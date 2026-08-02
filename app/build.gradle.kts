@@ -192,7 +192,6 @@ dependencies {
     // ktor client
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
     implementation(libs.androidx.exifinterface)
@@ -229,10 +228,6 @@ dependencies {
 
     // LaTeX
     implementation(libs.ratex)
-
-    // mcp
-    implementation(libs.modelcontextprotocol.kotlin.sdk.client)
-    implementation(libs.modelcontextprotocol.kotlin.sdk.core)
 
     // modules
     implementation(project(":ai"))
