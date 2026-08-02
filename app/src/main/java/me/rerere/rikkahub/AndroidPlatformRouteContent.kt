@@ -19,7 +19,6 @@ import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
-import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.workspace.WorkspaceStorageArea
@@ -42,7 +41,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             is Screen.AssistantLocalTool -> AssistantLocalToolPage(screen.id)
             is Screen.AssistantInjections -> AssistantExtensionsPage(screen.id)
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
-            Screen.SettingTheme -> SettingThemePage()
             Screen.SettingPreferencesUI -> SettingPreferencesUIPage()
             Screen.SettingAbout -> SettingAboutPage(koinInject<PlatformBuildInfo>())
             Screen.SettingDonate -> SettingDonatePage()

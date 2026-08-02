@@ -84,6 +84,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSpeechPage
+import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingWebPage
 import me.rerere.rikkahub.ui.pages.stats.StatsPage
 import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
@@ -263,7 +264,7 @@ fun ProductNavigationHost(
                         entry<Screen.Backup> { BackupPage() }
                         entry<Screen.ImageGen> { ImageGenPage() }
                         entry<Screen.WebView> { platformRoutes.Render(it) }
-                        entry<Screen.SettingTheme> { platformRoutes.Render(it) }
+                        entry<Screen.SettingTheme> { SettingThemePage() }
                         entry<Screen.SettingPreferences> { SettingPreferencesPage() }
                         entry<Screen.SettingPreferencesTheme> { SettingPreferencesThemePage() }
                         entry<Screen.SettingPreferencesNotification> { SettingPreferencesNotificationPage() }

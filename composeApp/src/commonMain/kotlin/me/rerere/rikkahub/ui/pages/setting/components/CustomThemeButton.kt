@@ -67,7 +67,7 @@ private fun CustomThemeButton(
     theme: CustomTheme,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val darkMode = LocalDarkMode.current
     val scheme = theme.generateColorScheme(darkMode)

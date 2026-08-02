@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.content.ClipData
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,7 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -38,14 +37,12 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,14 +51,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.res.stringResource as androidStringResource
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
-import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import me.rerere.hugeicons.HugeIcons
@@ -76,12 +70,14 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.pages.setting.components.PresetThemeButtonGroup
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.CustomTheme
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
+import me.rerere.rikkahub.ui.theme.colorFromHsl
 import me.rerere.rikkahub.ui.theme.generateColorScheme
+import me.rerere.rikkahub.ui.theme.toHsl
 import me.rerere.rikkahub.utils.plus
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.roundToInt
 import kotlin.uuid.Uuid
@@ -96,9 +92,8 @@ private val themeJson = Json {
 fun SettingThemePage(vm: SettingVM = koinViewModel()) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val clipboardManager = LocalClipboard.current
+    val clipboardManager = LocalClipboardManager.current
     val toaster = LocalToaster.current
-    val scope = rememberCoroutineScope()
     val exportSuccessMsg = stringResource(Res.string.setting_theme_page_export_success)
     val importSuccessMsg = stringResource(Res.string.setting_theme_page_import_success)
 
@@ -109,7 +104,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = { Text(stringResource(Res.string.setting_page_theme_setting)) },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
@@ -230,11 +225,7 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
                         },
                         onExport = {
                             val json = themeJson.encodeToString(theme)
-                            scope.launch {
-                                clipboardManager.setClipEntry(
-                                    ClipEntry(ClipData.newPlainText("theme", json))
-                                )
-                            }
+                            clipboardManager.setText(AnnotatedString(json))
                             toaster.show(exportSuccessMsg, type = ToastType.Success)
                         },
                         onEdit = {
@@ -291,8 +282,8 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
     RikkaConfirmDialog(
         show = deletingTheme != null,
         title = stringResource(Res.string.setting_theme_page_delete_theme_title),
-        confirmText = androidStringResource(android.R.string.ok),
-        dismissText = androidStringResource(android.R.string.cancel),
+        confirmText = stringResource(Res.string.common_confirm),
+        dismissText = stringResource(Res.string.common_cancel),
         onConfirm = {
             deletingTheme?.let { theme ->
                 val newThemes = settings.customThemes.filter { it.id != theme.id }
@@ -388,7 +379,7 @@ private fun CustomThemeEditSheet(
     onDismiss: () -> Unit,
     onSave: (CustomTheme) -> Unit,
 ) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var currentTheme by remember {
         mutableStateOf(theme ?: CustomTheme())
     }
@@ -477,7 +468,7 @@ private fun CustomThemeEditSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text(androidStringResource(android.R.string.cancel))
+                    Text(stringResource(Res.string.common_cancel))
                 }
                 Spacer(Modifier.width(8.dp))
                 Button(
@@ -536,7 +527,7 @@ private fun ImportThemeDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(androidStringResource(android.R.string.cancel))
+                Text(stringResource(Res.string.common_cancel))
             }
         }
     )
@@ -548,7 +539,7 @@ private fun ColorPickerRow(
     onColorChange: (Color) -> Unit,
 ) {
     val hsl = remember(color) {
-        FloatArray(3).also { ColorUtils.colorToHSL(color.toArgb(), it) }
+        color.toHsl()
     }
     var hue by remember(color) { mutableFloatStateOf(hsl[0]) }
     var saturation by remember(color) { mutableFloatStateOf(hsl[1]) }
@@ -562,7 +553,7 @@ private fun ColorPickerRow(
         lightness = newLightness
         hslCode = formatHslCode(newHue, newSaturation, newLightness)
         hslCodeError = false
-        onColorChange(Color(ColorUtils.HSLToColor(floatArrayOf(newHue, newSaturation, newLightness))))
+        onColorChange(colorFromHsl(floatArrayOf(newHue, newSaturation, newLightness)))
     }
 
     Column(
@@ -626,7 +617,7 @@ private fun ColorPickerRow(
                     hue = parsedHsl[0]
                     saturation = parsedHsl[1]
                     lightness = parsedHsl[2]
-                    onColorChange(Color(ColorUtils.HSLToColor(parsedHsl)))
+                    onColorChange(colorFromHsl(parsedHsl))
                 }
             },
             label = { Text("HSL") },
