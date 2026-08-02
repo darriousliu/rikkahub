@@ -32,8 +32,10 @@ import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantSkillCatalog
+import me.rerere.rikkahub.ui.pages.assistant.detail.AndroidAssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
+import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.components.message.AndroidChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.AndroidChatInputPlatformContent
@@ -81,6 +83,7 @@ val appModule = module {
 
     single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
     single<AssistantSkillCatalog> { AndroidAssistantSkillCatalog(get()) }
+    single<AssistantPromptPreviewRuntime> { AndroidAssistantPromptPreviewRuntime(get(), get()) }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
     single<ChatMessagePlatformActions> { AndroidChatMessagePlatformActions(get()) }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,7 +32,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -53,9 +54,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -64,12 +65,8 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.ai.core.MessageRole
-import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.data.ai.transformers.DefaultPlaceholderProvider
-import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
-import me.rerere.rikkahub.data.ai.transformers.TransformerContext
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantAffectScope
@@ -82,11 +79,8 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.Select
 import me.rerere.rikkahub.ui.components.ui.Tag
-import me.rerere.rikkahub.ui.components.ui.TextArea
-import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.ChatFontProvider
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.insertAtCursor
 import me.rerere.rikkahub.utils.onError
@@ -94,7 +88,23 @@ import me.rerere.rikkahub.utils.onSuccess
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
+
+private val systemPromptPlaceholders: List<Pair<String, StringResource>> = listOf(
+    "cur_date" to Res.string.placeholder_current_date,
+    "model_id" to Res.string.placeholder_model_id,
+    "model_name" to Res.string.placeholder_model_name,
+    "locale" to Res.string.placeholder_locale,
+    "timezone" to Res.string.placeholder_timezone,
+    "system_version" to Res.string.placeholder_system_version,
+    "device_info" to Res.string.placeholder_device_info,
+    "battery_level" to Res.string.placeholder_battery_level,
+    "nickname" to Res.string.placeholder_nickname,
+    "char" to Res.string.placeholder_char,
+    "user" to Res.string.placeholder_user,
+)
 
 @Composable
 fun AssistantPromptPage(id: String) {
@@ -109,7 +119,7 @@ fun AssistantPromptPage(id: String) {
 
     Scaffold(
         topBar = {
-            LargeFlexibleTopAppBar(
+            LargeTopAppBar(
                 title = {
                     Text(stringResource(Res.string.assistant_page_tab_prompt))
                 },
@@ -139,8 +149,7 @@ private fun AssistantPromptContent(
     settings: Settings,
     onUpdate: (Assistant) -> Unit
 ) {
-    val context = LocalContext.current
-    val templateTransformer = koinInject<TemplateTransformer>()
+    val previewRuntime = koinInject<AssistantPromptPreviewRuntime>()
 
     Column(
         modifier = Modifier
@@ -171,11 +180,11 @@ private fun AssistantPromptContent(
                     }
                 }
 
-                TextArea(
+                OutlinedTextField(
                     state = systemPromptValue,
-                    label = stringResource(Res.string.assistant_page_system_prompt),
-                    minLines = 5,
-                    maxLines = 10
+                    label = { Text(stringResource(Res.string.assistant_page_system_prompt)) },
+                    lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 5, maxHeightInLines = 10),
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Column {
@@ -187,14 +196,14 @@ private fun AssistantPromptContent(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        DefaultPlaceholderProvider.placeholders.forEach { (k, info) ->
+                        systemPromptPlaceholders.forEach { (key, label) ->
                             Tag(
                                 onClick = {
-                                    systemPromptValue.insertAtCursor("{{$k}}")
+                                    systemPromptValue.insertAtCursor("{{$key}}")
                                 }
                             ) {
-                                info.displayName()
-                                Text(": {{$k}}")
+                                Text(stringResource(label))
+                                Text(": {{$key}}")
                             }
                         }
                     }
@@ -298,7 +307,7 @@ private fun AssistantPromptContent(
                         } else null,
                         textStyle = LocalTextStyle.current.copy(
                             fontSize = 12.sp,
-                            fontFamily = JetbrainsMono,
+                            fontFamily = FontFamily.Monospace,
                             lineHeight = 16.sp
                         )
                     )
@@ -356,13 +365,9 @@ private fun AssistantPromptContent(
                 ) {
                     value = runCatching {
                         UiState.Success(
-                            templateTransformer.transform(
-                                ctx = TransformerContext(
-                                    context = context,
-                                    model = Model(modelId = "gpt-4o", displayName = "GPT-4o"),
-                                    assistant = assistant,
-                                    settings = settings
-                                ),
+                            previewRuntime.transform(
+                                assistant = assistant,
+                                settings = settings,
                                 messages = rawMessages
                             )
                         )
@@ -372,7 +377,7 @@ private fun AssistantPromptContent(
                 }
                 preview.onError {
                     Text(
-                        text = it.message ?: it.javaClass.name,
+                        text = it.message ?: it::class.simpleName.orEmpty(),
                         color = MaterialTheme.colorScheme.error
                     )
                 }

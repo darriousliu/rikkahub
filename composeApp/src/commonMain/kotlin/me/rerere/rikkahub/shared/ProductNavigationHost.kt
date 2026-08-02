@@ -64,6 +64,7 @@ import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantExtensionsPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantLocalToolPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMcpPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantMemoryPage
+import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantRequestPage
 import me.rerere.rikkahub.ui.pages.backup.BackupPage
 import me.rerere.rikkahub.ui.pages.extensions.ExtensionsPage
@@ -260,7 +261,7 @@ fun ProductNavigationHost(
                         entry<Screen.Assistant> { AssistantPage() }
                         entry<Screen.AssistantDetail> { AssistantDetailPage(it.id) }
                         entry<Screen.AssistantBasic> { AssistantBasicPage(it.id) }
-                        entry<Screen.AssistantPrompt> { platformRoutes.Render(it) }
+                        entry<Screen.AssistantPrompt> { AssistantPromptPage(it.id) }
                         entry<Screen.AssistantMemory> { AssistantMemoryPage(it.id) }
                         entry<Screen.AssistantRequest> { AssistantRequestPage(it.id) }
                         entry<Screen.AssistantMcp> { AssistantMcpPage(it.id) }

@@ -33,6 +33,8 @@ import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
+import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPreviewRuntime
+import me.rerere.rikkahub.ui.pages.assistant.detail.CommonAssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.UnavailableChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
@@ -137,6 +139,7 @@ internal fun sharedProductModule(
             }
         }
     }
+    single<AssistantPromptPreviewRuntime> { CommonAssistantPromptPreviewRuntime }
     single<McpRuntime> { UnavailableMcpRuntime }
     single<TranslationRuntime> { UnavailableTranslationRuntime(settingsStore) }
     single<ImageGenerationRuntime> { UnavailableImageGenerationRuntime(settingsStore) }

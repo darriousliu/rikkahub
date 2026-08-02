@@ -27,7 +27,6 @@ internal object AndroidPlatformRouteContent : PlatformRouteContent {
             )
 
             is Screen.ShareHandler -> ShareHandlerPage(screen.text, screen.streamUri)
-            is Screen.AssistantPrompt -> AssistantPromptPage(screen.id)
             is Screen.WebView -> WebViewPage(screen.url, screen.contentId)
             Screen.SettingFiles -> SettingFilesPage()
             Screen.Debug -> DebugPage()
