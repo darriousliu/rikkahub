@@ -51,8 +51,6 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
-            implementation(libs.ktor.client.mock)
-            implementation(libs.kotlinx.coroutines.test)
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
@@ -67,8 +65,6 @@ kotlin {
         named("androidHostTest") {
             dependencies {
                 implementation(libs.junit)
-                implementation(libs.ktor.client.okhttp)
-                implementation(libs.okhttp.mockwebserver)
             }
         }
         named("androidDeviceTest") {

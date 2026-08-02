@@ -168,9 +168,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
-            implementation(libs.androidx.room3.testing)
             implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.ktor.client.mock)
         }
     }
 }
