@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,14 +66,14 @@ import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.ui.Favicon
 import me.rerere.rikkahub.ui.components.ui.FaviconRow
 import me.rerere.rikkahub.ui.modifier.shimmer
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
-import me.rerere.rikkahub.utils.openUrl
 import org.koin.compose.koinInject
 
 /**
@@ -666,7 +665,7 @@ private fun SearchWebPreview(
     arguments: JsonElement,
     content: JsonElement,
 ) {
-    val context = LocalContext.current
+    val externalUriOpener = koinInject<ExternalUriOpener>()
     val items = content.jsonObject["items"]?.jsonArray ?: emptyList()
     val answer = content.getStringContent("answer")
     val query = arguments.getStringContent("query") ?: ""
@@ -718,7 +717,7 @@ private fun SearchWebPreview(
                                 .height(120.dp)
                                 .width(160.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable { context.openUrl(imageUrl) },
+                                .clickable { externalUriOpener.open(imageUrl) },
                         )
                     }
                 }
@@ -732,7 +731,7 @@ private fun SearchWebPreview(
                 val text = item.getStringContent("text") ?: return@items
 
                 Card(
-                    onClick = { context.openUrl(url) },
+                    onClick = { externalUriOpener.open(url) },
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     )
