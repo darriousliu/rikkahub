@@ -13,7 +13,7 @@ import io.ktor.utils.io.readLine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 
 sealed class SseEvent {
     data object Open : SseEvent()
@@ -40,13 +40,15 @@ data class SseResponse(
 fun HttpClient.sseFlow(
     url: String,
     configure: HttpRequestBuilder.() -> Unit = {},
-): Flow<SseEvent> = flow {
+): Flow<SseEvent> = channelFlow {
+    // On Native, Ktor runs execute's response block on the engine dispatcher. Channel sends remain safe across that
+    // context boundary, unlike FlowCollector.emit from a regular flow builder.
     prepareRequest(url) {
         accept(ContentType.Text.EventStream)
         configure()
     }.execute { response ->
         if (!response.status.isSuccess()) {
-            emit(
+            send(
                 SseEvent.Failure(
                     throwable = null,
                     response = SseResponse(
@@ -60,7 +62,7 @@ fun HttpClient.sseFlow(
 
         val contentType = response.headers[HttpHeaders.ContentType]?.let(ContentType::parse)
         if (contentType?.contentType != "text" || contentType.contentSubtype != "event-stream") {
-            emit(
+            send(
                 SseEvent.Failure(
                     throwable = IllegalStateException("Invalid content-type: $contentType"),
                     response = SseResponse(response.status.value),
@@ -69,7 +71,7 @@ fun HttpClient.sseFlow(
             return@execute
         }
 
-        emit(SseEvent.Open)
+        send(SseEvent.Open)
         val channel = response.bodyAsChannel()
         var id: String? = null
         var type: String? = null
@@ -77,7 +79,7 @@ fun HttpClient.sseFlow(
 
         suspend fun dispatch() {
             if (data.isNotEmpty()) {
-                emit(SseEvent.Event(id = id, type = type, data = data.joinToString("\n")))
+                send(SseEvent.Event(id = id, type = type, data = data.joinToString("\n")))
             }
             id = null
             type = null
@@ -103,7 +105,7 @@ fun HttpClient.sseFlow(
             }
         }
         dispatch()
-        emit(SseEvent.Closed)
+        send(SseEvent.Closed)
     }
 }.catch { error ->
     if (error is CancellationException) throw error
