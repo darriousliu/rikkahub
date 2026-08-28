@@ -46,7 +46,6 @@ import me.rerere.rikkahub.data.sync.S3Sync
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 val dataSourceModule = module {
@@ -74,10 +73,7 @@ val dataSourceModule = module {
     }
 
     single {
-        DefaultMessageTemplateRenderer(
-            templateSource = get(),
-            locale = Locale.getDefault(),
-        )
+        DefaultMessageTemplateRenderer(templateSource = get())
     }
 
     single<MessageTemplateRenderer> { get<DefaultMessageTemplateRenderer>() }

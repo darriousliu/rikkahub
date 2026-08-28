@@ -9,9 +9,8 @@ import me.rerere.rikkahub.shared.template.MessageTemplate
 import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
 import me.rerere.rikkahub.shared.template.MessageTemplateSource
 import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
-import me.rerere.rikkahub.utils.toLocalDate
-import me.rerere.rikkahub.utils.toLocalTime
-import java.util.Locale
+import me.rerere.rikkahub.utils.toLocalizedDate
+import me.rerere.rikkahub.utils.toLocalizedTime
 
 class TemplateTransformer(
     private val renderer: MessageTemplateRenderer,
@@ -42,30 +41,27 @@ class TemplateTransformer(
 
 class MessageTemplateContextFactory(
     private val timeZoneProvider: () -> TimeZone = { TimeZone.currentSystemDefault() },
-    private val localeProvider: () -> Locale = { Locale.getDefault() },
 ) {
     fun create(message: UIMessage, text: String): Map<String, Any?> {
         // 使用消息本身的发送时间而不是当前时间, 保证多次请求时渲染结果稳定, 不破坏 prompt 缓存
         val timeZone = timeZoneProvider()
         val createdAt = message.createdAt.toInstant(timeZone)
-        val locale = localeProvider()
         return mapOf(
             "message" to text,
             "role" to message.role.name.lowercase(),
-            "time" to createdAt.toLocalTime(timeZone, locale),
-            "date" to createdAt.toLocalDate(timeZone, locale),
+            "time" to createdAt.toLocalizedTime(timeZone, includeSeconds = true),
+            "date" to createdAt.toLocalizedDate(timeZone),
         )
     }
 }
 
 class DefaultMessageTemplateRenderer(
     templateSource: MessageTemplateSource,
-    locale: Locale = Locale.getDefault(),
 ) : MessageTemplateRenderer, TemplateCacheInvalidator {
     private val delegate = KorteMessageTemplateRenderer(
         templateSource = templateSource,
-        uppercase = { it.uppercase(locale) },
-        lowercase = { it.lowercase(locale) },
+        uppercase = String::uppercase,
+        lowercase = String::lowercase,
     )
 
     override suspend fun get(templateName: String): MessageTemplate = delegate.get(templateName)

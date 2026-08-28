@@ -41,7 +41,9 @@ import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.PromptInjectionTransformer
 import me.rerere.rikkahub.data.ai.transformers.RegexOutputTransformer
+import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.ai.transformers.ThinkTagTransformer
+import me.rerere.rikkahub.data.ai.transformers.TimeReminderTransformer
 import me.rerere.rikkahub.data.ai.transformers.onGenerationFinish
 import me.rerere.rikkahub.data.ai.transformers.transforms
 import me.rerere.rikkahub.data.ai.transformers.visualTransforms
@@ -74,7 +76,12 @@ internal class SharedChatRuntime(
     private val stringPreferenceStore: StringPreferenceStore,
     private val attachmentStore: SharedChatAttachmentStore,
     private val mcpRuntime: McpRuntime,
+    private val templateTransformer: TemplateTransformer,
 ) : ChatRuntime {
+    // Keeps the Android ordering: shared statics first, then the injected template transformer.
+    private val inputTransformers: List<InputMessageTransformer> =
+        SHARED_INPUT_TRANSFORMERS + templateTransformer
+
     private val conversations = mutableMapOf<Uuid, MutableStateFlow<Conversation>>()
     private val processingStatuses = mutableMapOf<Uuid, MutableStateFlow<String?>>()
     private val generationVersions = mutableMapOf<Uuid, Long>()
@@ -519,7 +526,7 @@ internal class SharedChatRuntime(
                 if (systemPrompt.isNotBlank()) add(UIMessage.system(systemPrompt))
                 addAll(state.value.currentMessages.limitContext(assistant.contextMessageLimit))
             }.transforms(
-                transformers = INPUT_TRANSFORMERS,
+                transformers = inputTransformers,
                 model = model,
                 assistant = assistant,
                 settings = settings,
@@ -646,7 +653,8 @@ internal class SharedChatRuntime(
          * Transformers that only need shared code. Placeholder, OCR, document and workspace
          * transformers stay behind the Android runtime because they depend on platform APIs.
          */
-        private val INPUT_TRANSFORMERS: List<InputMessageTransformer> = listOf(
+        private val SHARED_INPUT_TRANSFORMERS: List<InputMessageTransformer> = listOf(
+            TimeReminderTransformer,
             PromptInjectionTransformer,
         )
 

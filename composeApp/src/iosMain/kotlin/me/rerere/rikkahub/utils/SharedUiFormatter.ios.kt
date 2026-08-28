@@ -25,12 +25,16 @@ internal actual object SharedUiFormatter {
         }
     }
 
-    actual fun formatTime(epochMillis: Long, timeZoneId: String): String {
+    actual fun formatTime(epochMillis: Long, timeZoneId: String, includeSeconds: Boolean): String {
         val dateTime = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.of(timeZoneId))
         return buildString {
             append(dateTime.hour.toString().padStart(2, '0'))
             append(':')
             append(dateTime.minute.toString().padStart(2, '0'))
+            if (includeSeconds) {
+                append(':')
+                append(dateTime.second.toString().padStart(2, '0'))
+            }
         }
     }
 
@@ -38,6 +42,10 @@ internal actual object SharedUiFormatter {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
     ).getOrElse(monthNumber - 1) { monthNumber.toString() }
+
+    actual fun dayOfWeekName(isoDayNumber: Int): String = listOf(
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+    ).getOrElse(isoDayNumber - 1) { isoDayNumber.toString() }
 
     actual fun formatDecimal(value: Double, fractionDigits: Int): String {
         val factor = when (fractionDigits) {

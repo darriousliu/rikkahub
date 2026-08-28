@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.utils
 
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.Month
 import java.time.LocalDate
@@ -17,13 +18,16 @@ internal actual object SharedUiFormatter {
             .withLocale(Locale.getDefault())
             .format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(timeZoneId)))
 
-    actual fun formatTime(epochMillis: Long, timeZoneId: String): String =
-        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+    actual fun formatTime(epochMillis: Long, timeZoneId: String, includeSeconds: Boolean): String =
+        DateTimeFormatter.ofLocalizedTime(if (includeSeconds) FormatStyle.MEDIUM else FormatStyle.SHORT)
             .withLocale(Locale.getDefault())
             .format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(timeZoneId)))
 
     actual fun shortMonthName(monthNumber: Int): String =
         Month.of(monthNumber).getDisplayName(TextStyle.SHORT, Locale.getDefault())
+
+    actual fun dayOfWeekName(isoDayNumber: Int): String =
+        DayOfWeek.of(isoDayNumber).getDisplayName(TextStyle.FULL, Locale.getDefault())
 
     actual fun formatDecimal(value: Double, fractionDigits: Int): String =
         String.format(Locale.getDefault(), "%.${fractionDigits}f", value)
