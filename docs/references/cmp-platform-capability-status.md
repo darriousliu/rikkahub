@@ -48,8 +48,8 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 
 | 能力 | Android | iOS | Desktop | 实现位置 |
 |---|:--:|:--:|:--:|---|
-| 聊天主流程（流式 / 分支 / 工具调用） | ✅ | ✅ | ✅ | `SharedChatRuntime` |
-| 助手 / 会话 / 历史 / 收藏 / 统计 / 消息搜索 | ✅ | ✅ | ✅ | `commonMain` 页面与 VM |
+| 聊天主流程（流式 / 分支 / MCP 工具调用） | ✅ | ✅ | ✅ | `SharedChatRuntime` |
+| 助手配置 / 会话 / 历史 / 收藏 / 统计 / 消息搜索 | ✅ | ✅ | ✅ | `commonMain` 页面与 VM（部分助手配置在非 Android 端没有运行时，见下表） |
 | Provider 与模型管理、搜索服务 SDK | ✅ | ✅ | ✅ | `:ai` / `:search` |
 | Room 3 + bundled SQLite | ✅ | ✅ | ✅ | `AppDatabase` expect/actual |
 | DataStore 设置 | ✅ | ✅ | ✅ | `SettingsStore` |
@@ -84,6 +84,8 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 
 | 能力 | Android | iOS | Desktop | 说明 |
 |---|:--:|:--:|:--:|---|
+| Message Transformer 流水线 | ✅ | ❌ | ❌ | `Transformer.kt` 与 10 个实现都在 `:app`，`commonMain` 零引用。模板变量、think 标签、正则输出、提示词注入、时间提醒、占位符在 iOS/Desktop 全部不生效 |
+| 内置 AI 工具（搜索 / 记忆 / 会话 / 技能 / JS / AskUser / 时间） | ✅ | ❌ | ❌ | `SharedChatRuntime.buildMcpTools()` 只建 MCP 工具，工具实现都在 `:app` |
 | 内嵌 Web Server | ✅ | ❌ | ✅ | iOS 是 `UnavailableWebServerHost`，按迁移边界明确 unavailable |
 | Workspace 沙箱 + 终端 | ✅ | ❌ | ❌ | `:workspace` 含 CMake/native，Android-only |
 | 文档解析 PDF/DOCX/PPTX/EPUB | ✅ | ❌ | ❌ | `:document` 是纯 Android library |
@@ -109,7 +111,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 项 | 现象 | 处理建议 |
 |---|---|---|
 | `PlatformCapabilities.kt` 的 `QR_RENDER` | iOS 被标为 `UNAVAILABLE`，但 `IosQrCodeRenderer` 已是完整 CoreImage 实现 | 声明矩阵落后于代码。当前 `hasCapability` 只被 `WORKSPACE` 用于收起入口，不影响功能，但应同步 |
-| Desktop 扫码方案 | 迁移边界写"FileKit 选图 + KScan 解析"，实际 `JvmQrScanner` 直接返回 `null`，桌面端扫码入口完全不出现 | 需确认是设计意图还是待办 |
+| 助手配置与运行时不匹配 | 正则替换、提示词注入的配置 UI 在共享助手页面，但对应 transformer 只在 Android 的 `ChatService` 接线；iOS 的 `platformLocalToolOptions` 声明支持 JavascriptEngine/TimeInfo/Clipboard/AskUser，开关可打开但不会执行 | 属于静默失效，比明确标记不支持更糟。下沉 transformer 与本地工具，或先把入口收起来止血 |
 
 ## 维护方式
 
