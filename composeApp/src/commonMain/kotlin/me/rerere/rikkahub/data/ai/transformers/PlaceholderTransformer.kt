@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import android.content.Context
-import android.os.BatteryManager
-import android.os.Build
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import me.rerere.common.time.today
@@ -13,16 +10,14 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.utils.toLocalString
+import me.rerere.rikkahub.platform.PlatformDeviceInfo
+import me.rerere.rikkahub.utils.toLocalizedString
+import org.jetbrains.compose.resources.stringResource
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import java.util.Locale
-import java.util.TimeZone
 import kotlin.time.Clock
 
 data class PlaceholderCtx(
-    val context: Context,
     val settingsStore: SettingsStore,
     val model: Model,
     val assistant: Assistant,
@@ -58,7 +53,7 @@ fun buildPlaceholders(block: PlaceholderBuilder.() -> Unit): Map<String, Placeho
 object DefaultPlaceholderProvider : PlaceholderProvider {
     override val placeholders: Map<String, PlaceholderInfo> = buildPlaceholders {
         placeholder("cur_date", { Text(stringResource(Res.string.placeholder_current_date)) }) {
-            Clock.System.today().toLocalString(includeYear = true)
+            Clock.System.today().toLocalizedString(includeYear = true)
         }
 
         placeholder("model_id", { Text(stringResource(Res.string.placeholder_model_id)) }) {
@@ -70,23 +65,23 @@ object DefaultPlaceholderProvider : PlaceholderProvider {
         }
 
         placeholder("locale", { Text(stringResource(Res.string.placeholder_locale)) }) {
-            Locale.getDefault().displayName
+            PlatformDeviceInfo.localeName
         }
 
         placeholder("timezone", { Text(stringResource(Res.string.placeholder_timezone)) }) {
-            TimeZone.getDefault().displayName
+            PlatformDeviceInfo.timeZoneName
         }
 
         placeholder("system_version", { Text(stringResource(Res.string.placeholder_system_version)) }) {
-            "Android SDK v${Build.VERSION.SDK_INT} (${Build.VERSION.RELEASE})"
+            PlatformDeviceInfo.systemVersion
         }
 
         placeholder("device_info", { Text(stringResource(Res.string.placeholder_device_info)) }) {
-            "${Build.BRAND} ${Build.MODEL}"
+            PlatformDeviceInfo.deviceName
         }
 
         placeholder("battery_level", { Text(stringResource(Res.string.placeholder_battery_level)) }) {
-            it.context.batteryLevel().toString()
+            PlatformDeviceInfo.batteryLevel()?.toString() ?: "unknown"
         }
 
         placeholder("nickname", { Text(stringResource(Res.string.placeholder_nickname)) }) {
@@ -100,11 +95,6 @@ object DefaultPlaceholderProvider : PlaceholderProvider {
         placeholder("user", { Text(stringResource(Res.string.placeholder_user)) }) {
             it.settingsStore.settingsFlow.value.displaySetting.userNickname.ifBlank { "user" }
         }
-    }
-
-    private fun Context.batteryLevel(): Int {
-        val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-        return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
     }
 }
 
@@ -139,7 +129,6 @@ object PlaceholderTransformer : InputMessageTransformer, KoinComponent {
         var result = text
 
         val ctx = PlaceholderCtx(
-            context = get<Context>(),
             settingsStore = settingsStore,
             model = ctx.model,
             assistant = ctx.assistant
