@@ -1,11 +1,8 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.json.Json
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.Model
@@ -13,36 +10,16 @@ import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.common.cache.LruCache
-import me.rerere.common.cache.SingleFileCacheStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import java.io.File
-import kotlin.time.Duration.Companion.days
 
 private const val TAG = "OcrTransformer"
 
 object OcrTransformer : InputMessageTransformer, KoinComponent {
-    private val cache by lazy {
-        val context = get<Context>()
-        val json = Json { allowStructuredMapKeys = true }
-        val store = SingleFileCacheStore(
-            file = File(context.cacheDir, "ocr_cache.json"),
-            keySerializer = String.serializer(),
-            valueSerializer = String.serializer(),
-            json = json
-        )
-        LruCache(
-            capacity = 64,
-            store = store,
-            deleteOnEvict = true,
-            preloadFromStore = true,
-            expireAfterWriteMillis = 3.days.inWholeMilliseconds,
-        )
-    }
+    private val cache by lazy { OcrResultCache() }
 
     override suspend fun transform(
         ctx: TransformerContext,
@@ -57,7 +34,7 @@ object OcrTransformer : InputMessageTransformer, KoinComponent {
         }
         if (!hasImages) return messages
 
-        return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.Default) {
             try {
                 ctx.processingStatus.value = "正在识别图片..."
                 messages.map { message ->
