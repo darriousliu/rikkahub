@@ -41,7 +41,6 @@ internal fun PermissionRationaleDialog(
     permanentlyDeniedPermissions: List<PermissionInfo>,
     onProceed: () -> Unit,
     onCancel: () -> Unit,
-    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Dialog(
@@ -128,7 +127,8 @@ internal fun PermissionRationaleDialog(
                         }
 
                         Button(
-                            onClick = onProceed, // 这里会跳转到设置
+                            // 永久拒绝时由各平台的 proceedFromRationale() 负责跳转到系统设置
+                            onClick = onProceed,
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(stringResource(Res.string.permission_go_to_settings))
