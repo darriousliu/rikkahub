@@ -131,7 +131,6 @@ class GenerationHandler(
                     onUpdateMessages = {
                         messages = it.transforms(
                             transformers = outputTransformers,
-                            context = context,
                             model = model,
                             assistant = assistant,
                             settings = settings
@@ -140,7 +139,6 @@ class GenerationHandler(
                             GenerationChunk.Messages(
                                 messages.visualTransforms(
                                     transformers = outputTransformers,
-                                    context = context,
                                     model = model,
                                     assistant = assistant,
                                     settings = settings
@@ -163,14 +161,12 @@ class GenerationHandler(
                 )
                 messages = messages.visualTransforms(
                     transformers = outputTransformers,
-                    context = context,
                     model = model,
                     assistant = assistant,
                     settings = settings
                 )
                 messages = messages.onGenerationFinish(
                     transformers = outputTransformers,
-                    context = context,
                     model = model,
                     assistant = assistant,
                     settings = settings
@@ -331,7 +327,6 @@ class GenerationHandler(
                 GenerationChunk.Messages(
                     messages.transforms(
                         transformers = outputTransformers,
-                        context = context,
                         model = model,
                         assistant = assistant,
                         settings = settings
@@ -387,7 +382,6 @@ class GenerationHandler(
             addAll(messages.limitContext(assistant.contextMessageLimit))
         }.transforms(
             transformers = transformers,
-            context = context,
             model = model,
             assistant = assistant,
             settings = settings,

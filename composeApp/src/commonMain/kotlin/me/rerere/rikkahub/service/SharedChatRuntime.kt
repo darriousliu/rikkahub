@@ -37,6 +37,14 @@ import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getAssistantById
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.event.AppEvent
+import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
+import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
+import me.rerere.rikkahub.data.ai.transformers.PromptInjectionTransformer
+import me.rerere.rikkahub.data.ai.transformers.RegexOutputTransformer
+import me.rerere.rikkahub.data.ai.transformers.ThinkTagTransformer
+import me.rerere.rikkahub.data.ai.transformers.onGenerationFinish
+import me.rerere.rikkahub.data.ai.transformers.transforms
+import me.rerere.rikkahub.data.ai.transformers.visualTransforms
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.Conversation
@@ -510,7 +518,15 @@ internal class SharedChatRuntime(
             val requestMessages = buildList {
                 if (systemPrompt.isNotBlank()) add(UIMessage.system(systemPrompt))
                 addAll(state.value.currentMessages.limitContext(assistant.contextMessageLimit))
-            }
+            }.transforms(
+                transformers = INPUT_TRANSFORMERS,
+                model = model,
+                assistant = assistant,
+                settings = settings,
+                conversationModeInjectionIds = conversation.modeInjectionIds,
+                conversationLorebookIds = conversation.lorebookIds,
+                processingStatus = status,
+            )
             status.value = "Generating"
             if (assistant.streamOutput) {
                 provider.streamText(providerSetting, requestMessages, params).collect { chunk ->
@@ -528,9 +544,12 @@ internal class SharedChatRuntime(
                     .updateCurrentMessages(state.value.currentMessages.handleMessageChunk(chunk, model))
                     .copy(updateAt = Clock.System.now())
             }
-            val finishedMessages = state.value.currentMessages.let { messages ->
-                if (messages.isEmpty()) messages else messages.dropLast(1) + messages.last().finishReasoning()
-            }
+            val finishedMessages = state.value.currentMessages
+                .let { messages ->
+                    if (messages.isEmpty()) messages else messages.dropLast(1) + messages.last().finishReasoning()
+                }
+                .visualTransforms(OUTPUT_TRANSFORMERS, model, assistant, settings)
+                .onGenerationFinish(OUTPUT_TRANSFORMERS, model, assistant, settings)
             state.value = state.value.updateCurrentMessages(finishedMessages)
             saveConversation(conversationId, state.value)
             if (finishedMessages.lastOrNull()?.getTools()?.any { tool -> !tool.isExecuted } != true) {
@@ -622,5 +641,18 @@ internal class SharedChatRuntime(
         const val LAST_CONVERSATION_KEY = "lastConversationId"
         const val TITLE_MAX_LENGTH = 80
         const val MAX_GENERATION_STEPS = 32
+
+        /**
+         * Transformers that only need shared code. Placeholder, OCR, document and workspace
+         * transformers stay behind the Android runtime because they depend on platform APIs.
+         */
+        private val INPUT_TRANSFORMERS: List<InputMessageTransformer> = listOf(
+            PromptInjectionTransformer,
+        )
+
+        private val OUTPUT_TRANSFORMERS: List<OutputMessageTransformer> = listOf(
+            ThinkTagTransformer,
+            RegexOutputTransformer,
+        )
     }
 }

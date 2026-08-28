@@ -83,7 +83,7 @@ val appModule = module {
 
     single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
     single<AssistantSkillCatalog> { AndroidAssistantSkillCatalog(get()) }
-    single<AssistantPromptPreviewRuntime> { AndroidAssistantPromptPreviewRuntime(get(), get()) }
+    single<AssistantPromptPreviewRuntime> { AndroidAssistantPromptPreviewRuntime(get()) }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
     single<ChatMessagePlatformActions> { AndroidChatMessagePlatformActions(get()) }

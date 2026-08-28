@@ -5,9 +5,8 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.replaceRegexes
-import org.koin.core.component.KoinComponent
 
-object RegexOutputTransformer : OutputMessageTransformer, KoinComponent {
+object RegexOutputTransformer : OutputMessageTransformer {
     override suspend fun visualTransform(
         ctx: TransformerContext,
         messages: List<UIMessage>,
