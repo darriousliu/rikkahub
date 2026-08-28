@@ -12,6 +12,16 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.permission_camera
+import me.rerere.rikkahub.generated.resources.permission_camera_desc
+import me.rerere.rikkahub.generated.resources.permission_local_network
+import me.rerere.rikkahub.generated.resources.permission_local_network_desc
+import me.rerere.rikkahub.generated.resources.permission_microphone
+import me.rerere.rikkahub.generated.resources.permission_microphone_desc
+import me.rerere.rikkahub.generated.resources.permission_notification
+import me.rerere.rikkahub.generated.resources.permission_notification_desc
+import org.jetbrains.compose.resources.stringResource
 import platform.AVFoundation.AVAuthorizationStatusAuthorized
 import platform.AVFoundation.AVAuthorizationStatusNotDetermined
 import platform.AVFoundation.AVCaptureDevice
@@ -27,34 +37,40 @@ import platform.UIKit.UIApplicationDidBecomeActiveNotification
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import kotlin.coroutines.resume
 
-private const val CAMERA_PERMISSION = "camera"
-private const val RECORD_AUDIO_PERMISSION = "record_audio"
+private const val NOTIFICATION_PERMISSION = "notifications"
+private const val LOCAL_NETWORK_PERMISSION = "local_network"
 
 actual val PermissionCamera: PermissionInfo = PermissionInfo(
-    permission = CAMERA_PERMISSION,
-    displayName = { Text("Camera") },
-    usage = { Text("Used to scan QR codes") },
+    permission = MediaPermission.Camera.id,
+    displayName = { Text(stringResource(Res.string.permission_camera)) },
+    usage = { Text(stringResource(Res.string.permission_camera_desc)) },
     required = true,
 )
 
 actual val PermissionRecordAudio: PermissionInfo = PermissionInfo(
-    permission = RECORD_AUDIO_PERMISSION,
-    displayName = { Text("Microphone") },
-    usage = { Text("Used to record voice input") },
+    permission = MediaPermission.Microphone.id,
+    displayName = { Text(stringResource(Res.string.permission_microphone)) },
+    usage = { Text(stringResource(Res.string.permission_microphone_desc)) },
     required = true,
 )
 
-actual val PermissionNotification: PermissionInfo = passivePermission("notifications", "Notifications")
+actual val PermissionNotification: PermissionInfo = PermissionInfo(
+    permission = NOTIFICATION_PERMISSION,
+    displayName = { Text(stringResource(Res.string.permission_notification)) },
+    usage = { Text(stringResource(Res.string.permission_notification_desc)) },
+    required = true,
+)
+
 actual val RuntimeNotificationPermissionRequired: Boolean = false
-actual val PermissionLocalNetwork: PermissionInfo = passivePermission("local_network", "Local network")
-actual val RuntimeLocalNetworkPermissionRequired: Boolean = false
 
-private fun passivePermission(id: String, label: String): PermissionInfo = PermissionInfo(
-    permission = id,
-    displayName = { Text(label) },
-    usage = { Text("Managed by iOS") },
+actual val PermissionLocalNetwork: PermissionInfo = PermissionInfo(
+    permission = LOCAL_NETWORK_PERMISSION,
+    displayName = { Text(stringResource(Res.string.permission_local_network)) },
+    usage = { Text(stringResource(Res.string.permission_local_network_desc)) },
     required = true,
 )
+
+actual val RuntimeLocalNetworkPermissionRequired: Boolean = false
 
 @Composable
 actual fun rememberPermissionState(permissions: Set<PermissionInfo>): PermissionState {
@@ -78,9 +94,9 @@ actual fun rememberPermissionState(permissions: Set<PermissionInfo>): Permission
  * Media capture is the only permission family iOS lets us query and request directly.
  * Notifications and local network stay passive: iOS asks for them on first use.
  */
-private enum class MediaPermission {
-    Camera,
-    Microphone;
+private enum class MediaPermission(val id: String) {
+    Camera("camera"),
+    Microphone("record_audio");
 
     fun status(): PermissionStatus {
         val status = when (this) {
@@ -106,11 +122,8 @@ private enum class MediaPermission {
     }
 }
 
-private fun PermissionInfo.mediaPermission(): MediaPermission? = when (permission) {
-    CAMERA_PERMISSION -> MediaPermission.Camera
-    RECORD_AUDIO_PERMISSION -> MediaPermission.Microphone
-    else -> null
-}
+private fun PermissionInfo.mediaPermission(): MediaPermission? =
+    MediaPermission.entries.firstOrNull { it.id == permission }
 
 @Stable
 private class IosPermissionState(
@@ -155,28 +168,41 @@ private class IosPermissionState(
             showRationaleDialog = true
             return
         }
-        scope.launch {
-            pending.forEach { (_, media) -> media.requestAccess() }
-            refresh()
+        requestAccess(pending.map { (_, media) -> media })
+    }
+
+    /**
+     * The rationale dialog routes its confirm button here, including the "go to settings" variant,
+     * so this has to branch on permanent denial the same way the Android state does.
+     */
+    override fun proceedFromRationale() {
+        showRationaleDialog = false
+        val requested = currentRationalePermissions
+        currentRationalePermissions = emptyList()
+        if (requested.any { statuses[it.permission] == PermissionStatus.DeniedPermanently }) {
+            openAppSettings()
+        } else {
+            requestAccess(requested.mapNotNull { it.mediaPermission() })
         }
     }
 
-    override fun proceedFromRationale() {
-        dismissRationale()
-    }
-
     override fun cancelPermissionRequest() {
-        dismissRationale()
+        showRationaleDialog = false
+        currentRationalePermissions = emptyList()
     }
 
     override fun openAppSettings() {
         val url = NSURL.URLWithString(UIApplicationOpenSettingsURLString) ?: return
-        UIApplication.sharedApplication.openURL(url)
+        // The deprecated synchronous openURL: does not reliably open app-settings: on current iOS.
+        UIApplication.sharedApplication.openURL(url, emptyMap<Any?, Any>(), null)
     }
 
-    private fun dismissRationale() {
-        showRationaleDialog = false
-        currentRationalePermissions = emptyList()
+    private fun requestAccess(media: List<MediaPermission>) {
+        if (media.isEmpty()) return
+        scope.launch {
+            media.forEach { it.requestAccess() }
+            refresh()
+        }
     }
 
     private fun readStatuses(): Map<String, PermissionStatus> =
