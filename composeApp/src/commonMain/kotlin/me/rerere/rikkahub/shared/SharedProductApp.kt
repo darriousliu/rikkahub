@@ -15,6 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.ktor.client.HttpClient
+import me.rerere.common.logging.RequestLoggingPlugin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.provider.ProviderManager
@@ -82,7 +83,7 @@ fun SharedProductApp(
 ) {
     val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
-    val httpClient = remember { HttpClient() }
+    val httpClient = remember { HttpClient { install(RequestLoggingPlugin) } }
     val providerManager = remember(httpClient) { ProviderManager(httpClient) }
     val ttsManager = remember(httpClient, systemTtsProvider) {
         systemTtsProvider?.let { TTSManager(httpClient = httpClient, systemProvider = it) }
