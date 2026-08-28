@@ -12,7 +12,7 @@
 
 ## 基线
 
-- 快照提交：`10b59768a`（分支 `feature/cmp-migrate`）
+- 快照提交：`d85b3c5e8`（分支 `feature/cmp-migrate`）
 - 更新日期：2026-08-28
 - 结论来源：直接读源码（`expect`/`actual` 配对、平台 source set 内容、DI 注入点、`PlatformRouteContent` 路由分发），不以能否编译代替能力判断。
 - 编译验证：`:composeApp:compileKotlinIosSimulatorArm64`、`compileKotlinIosArm64`、`compileKotlinJvm`、`compileAndroidMain` 均通过。
@@ -110,7 +110,6 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 |---|---|---|
 | `PlatformCapabilities.kt` 的 `QR_RENDER` | iOS 被标为 `UNAVAILABLE`，但 `IosQrCodeRenderer` 已是完整 CoreImage 实现 | 声明矩阵落后于代码。当前 `hasCapability` 只被 `WORKSPACE` 用于收起入口，不影响功能，但应同步 |
 | Desktop 扫码方案 | 迁移边界写"FileKit 选图 + KScan 解析"，实际 `JvmQrScanner` 直接返回 `null`，桌面端扫码入口完全不出现 | 需确认是设计意图还是待办 |
-| `PermissionRationaleDialog` 的 `onOpenSettings` | 参数声明后从未被调用，"前往设置"按钮走的是 `onProceed`；`PermissionManager` 传入的 `onOpenSettings` 是死代码 | 三端 `proceedFromRationale()` 都必须自行处理永久拒绝跳设置。建议要么让对话框真正调用 `onOpenSettings`，要么删除该参数 |
 
 ## 维护方式
 
