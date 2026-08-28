@@ -12,7 +12,7 @@
 
 ## 基线
 
-- 快照提交：`7a6b9c6fe`（分支 `feature/cmp-migrate`）
+- 快照提交：`0a3fc399d`（分支 `feature/cmp-migrate`）
 - 更新日期：2026-08-28
 - 结论来源：直接读源码（`expect`/`actual` 配对、平台 source set 内容、DI 注入点、`PlatformRouteContent` 路由分发），不以能否编译代替能力判断。
 - 编译验证：`:composeApp:compileKotlinIosSimulatorArm64`、`compileKotlinIosArm64`、`compileKotlinJvm`、`compileAndroidMain` 均通过。
@@ -84,11 +84,11 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 
 | 能力 | Android | iOS | Desktop | 说明 |
 |---|:--:|:--:|:--:|---|
-| Message Transformer：提示词注入 / think 标签 / 正则输出 | ✅ | ✅ | ✅ | 契约与三个实现已在 `commonMain`，由 `SharedChatRuntime` 接线 |
-| Message Transformer：时间提醒 / 模板变量 | ✅ | ❌ | ❌ | 依赖 `:app` 的 `TimeUtil`（`java.util.Locale`），需先补 `SharedUiFormatter` |
-| Message Transformer：占位符 / OCR / 文档转文本 / Workspace 提醒 / base64 图片落地 | ✅ | ❌ | ❌ | 依赖 BatteryManager、`:document`、`:workspace`、`FilesManager` 等平台 API |
+| Message Transformer 流水线（10/11） | ✅ | ✅ | ✅ | 契约与十个实现在 `commonMain`，由 `SharedChatRuntime` 接线；平台差异收敛到 `DocumentTextExtractor`、`Base64ImageStore`、`PlatformDeviceInfo`、`encodeImageToPng` 四个注入点 |
+| 二进制文档解析 PDF/DOCX/PPTX/EPUB | ✅ | ❌ | ❌ | `DocumentTextExtractor` 在非 Android 端返回 null，纯文本附件三端可读 |
+| Message Transformer：Workspace 提醒 | ✅ | ❌ | ❌ | 依赖 Android-only 的 `:workspace`；非 Android 端 `workspaceId` 恒为空，transformer 直接返回 |
 | 流式过程中的 visualTransform | ✅ | ❌ | ❌ | `SharedChatRuntime` 的状态即显示源，没有显示/存储分流，think 标签要等生成结束才转成推理块 |
-| 内置 AI 工具（搜索 / 记忆 / 会话 / 技能 / JS / AskUser / 时间） | ✅ | ❌ | ❌ | `SharedChatRuntime.buildMcpTools()` 只建 MCP 工具，工具实现都在 `:app` |
+| 内置 AI 工具（搜索 / 记忆 / 会话 / 技能 / JS / AskUser / 时间） | ✅ | ❌ | ❌ | `SharedChatRuntime.buildMcpTools()` 只建 MCP 工具，工具实现都在 `:app`。这是当前最大的剩余缺口 |
 | 内嵌 Web Server | ✅ | ❌ | ✅ | iOS 是 `UnavailableWebServerHost`，按迁移边界明确 unavailable |
 | Workspace 沙箱 + 终端 | ✅ | ❌ | ❌ | `:workspace` 含 CMake/native，Android-only |
 | 文档解析 PDF/DOCX/PPTX/EPUB | ✅ | ❌ | ❌ | `:document` 是纯 Android library |
