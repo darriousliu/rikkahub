@@ -12,7 +12,7 @@
 
 ## 基线
 
-- 快照提交：`d85b3c5e8`（分支 `feature/cmp-migrate`）
+- 快照提交：`7a6b9c6fe`（分支 `feature/cmp-migrate`）
 - 更新日期：2026-08-28
 - 结论来源：直接读源码（`expect`/`actual` 配对、平台 source set 内容、DI 注入点、`PlatformRouteContent` 路由分发），不以能否编译代替能力判断。
 - 编译验证：`:composeApp:compileKotlinIosSimulatorArm64`、`compileKotlinIosArm64`、`compileKotlinJvm`、`compileAndroidMain` 均通过。
@@ -84,7 +84,10 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 
 | 能力 | Android | iOS | Desktop | 说明 |
 |---|:--:|:--:|:--:|---|
-| Message Transformer 流水线 | ✅ | ❌ | ❌ | `Transformer.kt` 与 10 个实现都在 `:app`，`commonMain` 零引用。模板变量、think 标签、正则输出、提示词注入、时间提醒、占位符在 iOS/Desktop 全部不生效 |
+| Message Transformer：提示词注入 / think 标签 / 正则输出 | ✅ | ✅ | ✅ | 契约与三个实现已在 `commonMain`，由 `SharedChatRuntime` 接线 |
+| Message Transformer：时间提醒 / 模板变量 | ✅ | ❌ | ❌ | 依赖 `:app` 的 `TimeUtil`（`java.util.Locale`），需先补 `SharedUiFormatter` |
+| Message Transformer：占位符 / OCR / 文档转文本 / Workspace 提醒 / base64 图片落地 | ✅ | ❌ | ❌ | 依赖 BatteryManager、`:document`、`:workspace`、`FilesManager` 等平台 API |
+| 流式过程中的 visualTransform | ✅ | ❌ | ❌ | `SharedChatRuntime` 的状态即显示源，没有显示/存储分流，think 标签要等生成结束才转成推理块 |
 | 内置 AI 工具（搜索 / 记忆 / 会话 / 技能 / JS / AskUser / 时间） | ✅ | ❌ | ❌ | `SharedChatRuntime.buildMcpTools()` 只建 MCP 工具，工具实现都在 `:app` |
 | 内嵌 Web Server | ✅ | ❌ | ✅ | iOS 是 `UnavailableWebServerHost`，按迁移边界明确 unavailable |
 | Workspace 沙箱 + 终端 | ✅ | ❌ | ❌ | `:workspace` 含 CMake/native，Android-only |
@@ -111,7 +114,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 项 | 现象 | 处理建议 |
 |---|---|---|
 | `PlatformCapabilities.kt` 的 `QR_RENDER` | iOS 被标为 `UNAVAILABLE`，但 `IosQrCodeRenderer` 已是完整 CoreImage 实现 | 声明矩阵落后于代码。当前 `hasCapability` 只被 `WORKSPACE` 用于收起入口，不影响功能，但应同步 |
-| 助手配置与运行时不匹配 | 正则替换、提示词注入的配置 UI 在共享助手页面，但对应 transformer 只在 Android 的 `ChatService` 接线；iOS 的 `platformLocalToolOptions` 声明支持 JavascriptEngine/TimeInfo/Clipboard/AskUser，开关可打开但不会执行 | 属于静默失效，比明确标记不支持更糟。下沉 transformer 与本地工具，或先把入口收起来止血 |
+| iOS 的 `platformLocalToolOptions` | 声明支持 JavascriptEngine/TimeInfo/Clipboard/AskUser，助手设置里开关可打开，但工具实现都在 `:app`，`SharedChatRuntime` 只建 MCP 工具，运行时不会执行 | 属于静默失效。下沉本地工具，或先收成空集止血 |
 
 ## 维护方式
 
