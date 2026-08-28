@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.logging.Logging
 import me.rerere.rikkahub.AppScope
@@ -170,36 +169,6 @@ class FilesManager(
         }
         return newUris
     }
-
-    @OptIn(ExperimentalEncodingApi::class)
-    suspend fun convertBase64ImagePartToLocalFile(message: UIMessage): UIMessage =
-        withContext(Dispatchers.IO) {
-            message.copy(
-                parts = message.parts.map { part ->
-                    when (part) {
-                        is UIMessagePart.Image -> {
-                            if (part.url.startsWith("data:image")) {
-                                val sourceByteArray = Base64.decode(part.url.substringAfter("base64,").toByteArray())
-                                val bitmap = BitmapFactory.decodeByteArray(sourceByteArray, 0, sourceByteArray.size)
-                                val byteArray = FileUtils.compressBitmapToPng(bitmap)
-                                val urls = createChatFilesByByteArrays(listOf(byteArray))
-                                Log.i(
-                                    TAG,
-                                    "convertBase64ImagePartToLocalFile: convert base64 img to ${urls.joinToString(", ")}"
-                                )
-                                part.copy(
-                                    url = urls.first().toString(),
-                                )
-                            } else {
-                                part
-                            }
-                        }
-
-                        else -> part
-                    }
-                }
-            )
-        }
 
     fun deleteChatFiles(uris: List<Uri>) {
         val relativePaths = mutableSetOf<String>()

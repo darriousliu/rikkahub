@@ -8,6 +8,7 @@ import io.github.vinceglb.filekit.delete
 import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.size
+import io.github.vinceglb.filekit.write
 import io.github.vinceglb.filekit.div
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.CancellationException
@@ -27,9 +28,16 @@ public data class StoredPlatformFile(
     val size: Long,
 )
 
-public fun interface PlatformFileStore {
+public interface PlatformFileStore {
     public suspend fun copyIntoSandbox(
         source: PlatformFile,
+        area: FileStoreArea,
+    ): Result<StoredPlatformFile>
+
+    /** Persists [bytes] under [area] using [fileName] as the display name. */
+    public suspend fun writeIntoSandbox(
+        bytes: ByteArray,
+        fileName: String,
         area: FileStoreArea,
     ): Result<StoredPlatformFile>
 }
@@ -37,19 +45,31 @@ public fun interface PlatformFileStore {
 public class FileKitPlatformFileStore(
     private val rootDirectory: PlatformFile = FileKit.filesDir / STORE_DIRECTORY,
 ) : PlatformFileStore {
+    override suspend fun writeIntoSandbox(
+        bytes: ByteArray,
+        fileName: String,
+        area: FileStoreArea,
+    ): Result<StoredPlatformFile> = store(area, fileName) { destination -> destination.write(bytes) }
+
     override suspend fun copyIntoSandbox(
         source: PlatformFile,
         area: FileStoreArea,
+    ): Result<StoredPlatformFile> = store(area, source.name) { destination -> source.copyTo(destination) }
+
+    private suspend fun store(
+        area: FileStoreArea,
+        name: String,
+        write: suspend (PlatformFile) -> Unit,
     ): Result<StoredPlatformFile> {
         var destination: PlatformFile? = null
         try {
             val id = Uuid.random()
-            val originalName = source.name.ifBlank { FALLBACK_FILE_NAME }
+            val originalName = name.ifBlank { FALLBACK_FILE_NAME }
             val storedName = "$id-${originalName.toSafeFileName()}"
             val areaDirectory = rootDirectory / area.directoryName
             areaDirectory.createDirectories()
             destination = areaDirectory / storedName
-            source.copyTo(destination)
+            write(destination)
             return Result.success(
                 StoredPlatformFile(
                     id = id,

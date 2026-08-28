@@ -7,7 +7,11 @@ import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
+import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
+import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
+import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
@@ -165,6 +169,8 @@ internal fun sharedProductModule(
         val conversationDao: ConversationDAO = get()
         FolderRepository(folderDAO = get(), clearConversationFolder = conversationDao::clearFolder)
     }
+    single<Base64ImageStore> { SharedBase64ImageStore() }
+    single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
     single<MessageTemplateSource> {
         MessageTemplateSource { templateName ->
             settingsStore.settingsFlow.value.assistants

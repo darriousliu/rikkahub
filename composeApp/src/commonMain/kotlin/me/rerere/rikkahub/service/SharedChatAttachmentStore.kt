@@ -54,9 +54,9 @@ internal class SharedChatAttachmentStore(
     }
 }
 
-private fun PlatformFile.toFileUri(): String = "file://${absolutePath().encodeURLPath()}"
+internal fun PlatformFile.toFileUri(): String = "file://${absolutePath().encodeURLPath()}"
 
-private fun String.toLocalFilePath(): String = removePrefix("file://").decodeURLPart()
+internal fun String.toLocalFilePath(): String = removePrefix("file://").decodeURLPart()
 
 private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase()) {
     "png" -> "image/png"

@@ -32,6 +32,10 @@ import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantSkillCatalog
+import me.rerere.rikkahub.data.ai.transformers.AndroidBase64ImageStore
+import me.rerere.rikkahub.data.ai.transformers.AndroidDocumentTextExtractor
+import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
+import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.ui.pages.assistant.detail.AndroidAssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
@@ -84,6 +88,8 @@ val appModule = module {
     single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
     single<AssistantSkillCatalog> { AndroidAssistantSkillCatalog(get()) }
     single<AssistantPromptPreviewRuntime> { AndroidAssistantPromptPreviewRuntime(get()) }
+    single<DocumentTextExtractor> { AndroidDocumentTextExtractor }
+    single<Base64ImageStore> { AndroidBase64ImageStore(get()) }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
     single<ChatMessagePlatformActions> { AndroidChatMessagePlatformActions(get()) }

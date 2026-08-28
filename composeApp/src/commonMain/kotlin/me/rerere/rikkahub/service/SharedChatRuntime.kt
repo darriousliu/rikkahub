@@ -39,6 +39,8 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
+import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
+import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
 import me.rerere.rikkahub.data.ai.transformers.OcrTransformer
 import me.rerere.rikkahub.data.ai.transformers.PlaceholderTransformer
 import me.rerere.rikkahub.data.ai.transformers.PromptInjectionTransformer
@@ -659,11 +661,13 @@ internal class SharedChatRuntime(
             TimeReminderTransformer,
             PromptInjectionTransformer,
             PlaceholderTransformer,
+            DocumentAsPromptTransformer,
             OcrTransformer,
         )
 
         private val OUTPUT_TRANSFORMERS: List<OutputMessageTransformer> = listOf(
             ThinkTagTransformer,
+            Base64ImageToLocalFileTransformer,
             RegexOutputTransformer,
         )
     }
