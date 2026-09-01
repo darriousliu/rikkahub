@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1F0CA11000000000000000B0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1F0CA11000000000000000A0 /* InfoPlist.strings */; };
 		25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05595FD5C7727F5CBFBF8295 /* ContentView.swift */; };
 		73482863C362D67EBAA72DD8 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89C95284DD0819285255FEC3 /* iOSApp.swift */; };
 		CA7FFAADAC6E2F230FB531FF /* KotlinMultiplatformLinkedPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 2111C1D106A86FDBC8498D42 /* KotlinMultiplatformLinkedPackage */; };
@@ -15,6 +16,12 @@
 /* Begin PBXFileReference section */
 		05595FD5C7727F5CBFBF8295 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6DF3FFE105BE40D48018739F /* RikkaHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RikkaHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F0CA11000000000000000C1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1F0CA11000000000000000C2 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1F0CA11000000000000000C3 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1F0CA11000000000000000C4 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1F0CA11000000000000000C5 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "ko.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1F0CA11000000000000000C6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ru"; path = "ru.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Signing.xcconfig; sourceTree = "<group>"; };
 		89C95284DD0819285255FEC3 /* iOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -36,6 +43,7 @@
 			children = (
 				89C95284DD0819285255FEC3 /* iOSApp.swift */,
 				05595FD5C7727F5CBFBF8295 /* ContentView.swift */,
+				1F0CA11000000000000000A0 /* InfoPlist.strings */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -97,6 +105,11 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
+				"zh-Hant",
+				ja,
+				ko,
+				ru,
 			);
 			mainGroup = EA5AC93861530F345CE58808;
 			packageReferences = (
@@ -111,11 +124,28 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXVariantGroup section */
+		1F0CA11000000000000000A0 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1F0CA11000000000000000C1 /* en */,
+				1F0CA11000000000000000C2 /* zh-Hans */,
+				1F0CA11000000000000000C3 /* zh-Hant */,
+				1F0CA11000000000000000C4 /* ja */,
+				1F0CA11000000000000000C5 /* ko */,
+				1F0CA11000000000000000C6 /* ru */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin PBXResourcesBuildPhase section */
 		DCB56637C41495CD44053AFC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F0CA11000000000000000B0 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

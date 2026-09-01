@@ -1,0 +1,2 @@
+"NSCameraUsageDescription" = "RikkaHub использует камеру для сканирования QR-кодов с конфигурацией поставщика.";
+"NSLocalNetworkUsageDescription" = "RikkaHub использует локальную сеть, чтобы веб-сервер был доступен устройствам в той же сети.";

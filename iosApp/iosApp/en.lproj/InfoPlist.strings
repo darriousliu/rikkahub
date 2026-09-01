@@ -1,0 +1,2 @@
+"NSCameraUsageDescription" = "RikkaHub uses the camera to scan provider configuration QR codes.";
+"NSLocalNetworkUsageDescription" = "RikkaHub uses the local network to advertise its web service.";
