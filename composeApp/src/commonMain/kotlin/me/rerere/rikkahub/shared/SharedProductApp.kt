@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.ktor.client.HttpClient
 import me.rerere.common.logging.RequestLoggingPlugin
+import me.rerere.search.SearchService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.provider.ProviderManager
@@ -83,7 +84,13 @@ fun SharedProductApp(
 ) {
     val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
-    val httpClient = remember { HttpClient { install(RequestLoggingPlugin) } }
+    val httpClient = remember {
+        HttpClient { install(RequestLoggingPlugin) }.also { client ->
+            // 搜索服务是全局单例，未初始化时 SearchService.httpClient 会直接抛错。
+            // 持久化的 LRU key 轮换目前只有 Android 实现，这里退回默认轮换。
+            SearchService.init(client = client)
+        }
+    }
     val providerManager = remember(httpClient) { ProviderManager(httpClient) }
     val ttsManager = remember(httpClient, systemTtsProvider) {
         systemTtsProvider?.let { TTSManager(httpClient = httpClient, systemProvider = it) }

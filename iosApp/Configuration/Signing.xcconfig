@@ -1,0 +1,6 @@
+// 共享签名配置。个人的开发团队 ID 写在 Signing.local.xcconfig（已 gitignore），
+// 该文件在此之后引入，因此本地值会覆盖下面的默认值。
+DEVELOPMENT_TEAM =
+CODE_SIGN_STYLE = Automatic
+
+#include? "Signing.local.xcconfig"
