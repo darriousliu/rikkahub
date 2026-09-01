@@ -13,18 +13,18 @@ import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.webview.SharedWebViewPage
 
-object JvmPlatformRouteContent : PlatformRouteContent {
+object IosPlatformRouteContent : PlatformRouteContent {
     @Composable
     override fun Render(screen: Screen) {
         when (screen) {
             is Screen.WebView -> SharedWebViewPage(screen)
-            else -> UnavailableRoute(screen, platform = "Desktop")
+            else -> UnavailableRoute(screen)
         }
     }
 }
 
 @Composable
-internal fun UnavailableRoute(screen: Screen, platform: String) {
+private fun UnavailableRoute(screen: Screen) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -37,7 +37,7 @@ internal fun UnavailableRoute(screen: Screen, platform: String) {
             style = MaterialTheme.typography.headlineSmall,
         )
         Text(
-            text = "This feature is not available on $platform yet.",
+            text = "This feature is not available on iOS yet.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

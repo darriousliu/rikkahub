@@ -3,14 +3,14 @@ package me.rerere.rikkahub.ui.components.richtext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.ui.components.webview.JvmWebViewContentStore
+import me.rerere.rikkahub.ui.components.webview.WebViewContentStore
 import me.rerere.rikkahub.ui.context.Navigator
 
 @Composable
-fun rememberJvmRichTextPlatformActions(navigator: Navigator): RichTextPlatformActions = remember(navigator) {
+fun rememberSharedRichTextPlatformActions(navigator: Navigator): RichTextPlatformActions = remember(navigator) {
     RichTextPlatformActions(
         openCodePreview = { code, language ->
-            val contentId = JvmWebViewContentStore.store(buildCodePreviewHtml(code, language))
+            val contentId = WebViewContentStore.store(buildCodePreviewHtml(code, language))
             navigator.navigate(Screen.WebView(contentId = contentId))
         },
     )

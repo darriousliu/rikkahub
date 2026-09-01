@@ -4,7 +4,10 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.ui.components.richtext.buildSharedMarkdownPreviewHtml
+import me.rerere.rikkahub.ui.components.webview.WebViewContentStore
 import me.rerere.rikkahub.ui.context.Navigator
 
 /** Platform operations used by the shared chat message renderer. */
@@ -51,9 +54,10 @@ internal class SharedChatMessagePlatformActions(
         markdown: String,
         colorScheme: ColorScheme,
         navigator: Navigator,
-    ): Result<Unit> = Result.failure(
-        UnsupportedOperationException("Markdown WebView preview is unavailable on this platform"),
-    )
+    ): Result<Unit> = runCatching {
+        val contentId = WebViewContentStore.store(buildSharedMarkdownPreviewHtml(markdown, colorScheme))
+        navigator.navigate(Screen.WebView(contentId = contentId))
+    }
 
     @Composable
     override fun RenderEditedFiles(

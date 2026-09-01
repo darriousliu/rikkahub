@@ -4,7 +4,8 @@ import io.github.reactivecircus.cache4k.Cache
 import kotlin.time.Duration.Companion.days
 import kotlin.uuid.Uuid
 
-internal object JvmWebViewContentStore {
+/** 在内存里暂存要在 WebView 中展示的 HTML，避免把整段内容塞进导航参数。 */
+internal object WebViewContentStore {
     private val content = Cache.Builder<String, String>()
         .expireAfterWrite(7.days)
         .maximumCacheSize(64)

@@ -29,8 +29,7 @@ import me.rerere.rikkahub.shared.SharedProductApp
 import me.rerere.rikkahub.shared.capabilityMatrix
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.shared.currentPlatformKind
-import me.rerere.rikkahub.ui.components.message.JvmChatMessagePlatformActions
-import me.rerere.rikkahub.ui.components.richtext.rememberJvmRichTextPlatformActions
+import me.rerere.rikkahub.ui.components.richtext.rememberSharedRichTextPlatformActions
 import me.rerere.rikkahub.web.createJvmWebServerRuntime
 import me.rerere.tts.controller.JvmAudioPlayer
 import me.rerere.tts.provider.providers.JvmSystemTTSProvider
@@ -114,10 +113,7 @@ fun main(args: Array<String>) {
                 systemTtsProvider = remember { JvmSystemTTSProvider() },
                 platformAudioPlayer = remember { JvmAudioPlayer() },
                 platformRoutes = JvmPlatformRouteContent,
-                chatMessagePlatformActions = remember(externalUriOpener) {
-                    JvmChatMessagePlatformActions(externalUriOpener)
-                },
-                richTextPlatformActions = { navigator -> rememberJvmRichTextPlatformActions(navigator) },
+                richTextPlatformActions = { navigator -> rememberSharedRichTextPlatformActions(navigator) },
                 startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
                 backupFileLayout = remember(databaseFile) {
                     BackupFileLayout.create(PlatformFile(databaseFile))

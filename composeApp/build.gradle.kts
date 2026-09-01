@@ -118,6 +118,7 @@ kotlin {
             implementation(libs.reorderable)
             implementation(libs.sonner)
             implementation(libs.kotlinx.io.core)
+            implementation(libs.composewebview)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.modelcontextprotocol.kotlin.sdk.client)
             implementation(libs.modelcontextprotocol.kotlin.sdk.core)
@@ -157,7 +158,6 @@ kotlin {
             }
         }
         jvmMain.dependencies {
-            implementation(libs.composewebview.jvm)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.cio)
