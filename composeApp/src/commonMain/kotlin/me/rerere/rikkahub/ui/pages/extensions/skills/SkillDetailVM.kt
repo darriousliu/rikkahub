@@ -31,23 +31,28 @@ class SkillDetailVM(
     private val _tree = MutableStateFlow<List<SkillFileNode>>(emptyList())
     val tree = _tree.asStateFlow()
 
-    private var skillName = ""
+    /** frontmatter 里的显示名，导航传进来的就是它 */
+    private var displayName = ""
+
+    /** 技能所在目录名，所有文件操作都以它为准 */
+    private var directoryName: String? = null
 
     fun init(name: String) {
-        if (skillName == name) return
-        skillName = name
+        if (displayName == name) return
+        displayName = name
+        directoryName = null
         loadFiles()
     }
 
     fun loadFiles() {
         viewModelScope.launch {
-            _tree.value = buildTree(skillStore.listSkillFiles(skillName))
+            _tree.value = buildTree(skillStore.listSkillFiles(resolveDirectory()))
         }
     }
 
     fun readFile(skillFile: SkillFile, onResult: (String?) -> Unit) {
         viewModelScope.launch {
-            onResult(skillStore.readSkillFile(skillName, skillFile.relativePath))
+            onResult(skillStore.readSkillFile(resolveDirectory(), skillFile.relativePath))
         }
     }
 
@@ -55,12 +60,12 @@ class SkillDetailVM(
         viewModelScope.launch {
             if (relativePath == "SKILL.md") {
                 val name = SkillFrontmatterParser.parse(content)["name"]
-                if (name != skillName) {
-                    onResult("不允许修改技能名称（name 字段必须为 \"$skillName\"）")
+                if (name != displayName) {
+                    onResult("不允许修改技能名称（name 字段必须为 \"$displayName\"）")
                     return@launch
                 }
             }
-            val success = skillStore.saveSkillFile(skillName, relativePath, content)
+            val success = skillStore.saveSkillFile(resolveDirectory(), relativePath, content)
             loadFiles()
             onResult(if (success) null else "保存失败")
         }
@@ -68,10 +73,24 @@ class SkillDetailVM(
 
     fun deleteFile(skillFile: SkillFile, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val success = skillStore.deleteSkillFile(skillName, skillFile.relativePath)
+            val success = skillStore.deleteSkillFile(resolveDirectory(), skillFile.relativePath)
             if (success) loadFiles()
             onResult(success)
         }
+    }
+
+    /**
+     * 导航只带显示名，而显示名可能与目录名不同。解析一次并缓存；找不到时退回显示名，
+     * 与修复前的行为一致。
+     */
+    private suspend fun resolveDirectory(): String {
+        directoryName?.let { return it }
+        val resolved = skillStore.listSkills()
+            .firstOrNull { summary -> summary.name == displayName }
+            ?.directoryName
+            ?: displayName
+        directoryName = resolved
+        return resolved
     }
 
     private fun buildTree(entries: List<StoredSkillFile>, parentPath: String = ""): List<SkillFileNode> {
