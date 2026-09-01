@@ -11,6 +11,7 @@ class AndroidSkillStore(
         skillManager.listSkills().map { skill ->
             SkillSummary(
                 name = skill.name,
+                directoryName = skill.skillDir.name,
                 description = skill.description,
                 compatibility = skill.compatibility,
                 allowedTools = skill.allowedTools,

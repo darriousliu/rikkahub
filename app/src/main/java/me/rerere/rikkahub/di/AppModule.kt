@@ -170,7 +170,7 @@ val appModule = module {
             localTools = get(),
             mcpManager = get(),
             filesManager = get(),
-            skillManager = get(),
+            skillStore = get(),
             workspaceRepository = get(),
             folderRepository = get()
         )

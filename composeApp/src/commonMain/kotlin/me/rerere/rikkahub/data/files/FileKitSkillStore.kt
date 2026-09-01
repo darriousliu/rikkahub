@@ -30,7 +30,7 @@ class FileKitSkillStore(
         return buildList {
             root.list().forEach { directory ->
                 if (directory.isDirectory()) {
-                    parseSkill(directory / SKILL_FILE_NAME)?.let(::add)
+                    parseSkill(directory)?.let(::add)
                 }
             }
         }.sortedBy(SkillSummary::name)
@@ -140,7 +140,8 @@ class FileKitSkillStore(
         root.createDirectories()
     }
 
-    private suspend fun parseSkill(skillFile: PlatformFile): SkillSummary? {
+    private suspend fun parseSkill(directory: PlatformFile): SkillSummary? {
+        val skillFile = directory / SKILL_FILE_NAME
         if (!skillFile.isRegularFile()) return null
         return runCatching {
             val frontmatter = SkillFrontmatterParser.parse(skillFile.readString())
@@ -148,6 +149,7 @@ class FileKitSkillStore(
             val description = frontmatter["description"]?.takeIf(String::isNotBlank) ?: return null
             SkillSummary(
                 name = name,
+                directoryName = directory.name,
                 description = description,
                 compatibility = frontmatter["compatibility"],
                 allowedTools = frontmatter["allowed-tools"]

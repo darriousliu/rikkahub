@@ -1,7 +1,10 @@
 package me.rerere.rikkahub.data.files
 
 data class SkillSummary(
+    /** frontmatter 里的显示名，可能与所在目录名不同 */
     val name: String,
+    /** 技能所在目录名，文件读写一律以它为准 */
+    val directoryName: String,
     val description: String,
     val compatibility: String? = null,
     val allowedTools: List<String> = emptyList(),

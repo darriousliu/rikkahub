@@ -8,12 +8,15 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
-import me.rerere.rikkahub.data.files.SkillMetadata
-import me.rerere.rikkahub.data.files.SkillPaths
+import me.rerere.rikkahub.data.files.SkillStore
+import me.rerere.rikkahub.data.files.SkillSummary
+
+private const val SKILL_FILE_NAME = "SKILL.md"
 
 fun createSkillTools(
     enabledSkills: Set<String>,
-    allSkills: List<SkillMetadata>,
+    allSkills: List<SkillSummary>,
+    skillStore: SkillStore,
 ): List<Tool> {
     val available = allSkills.filter { it.name in enabledSkills }
     if (available.isEmpty()) return emptyList()
@@ -65,13 +68,13 @@ fun createSkillTools(
                     ?: error("Skill '$name' is not available. Available skills: ${available.joinToString { it.name }}")
                 val path = it.jsonObject["path"]?.jsonPrimitive?.content
                 val content = if (path.isNullOrBlank()) {
-                    require(skill.skillFile.exists()) { "Skill '$name' not found" }
-                    SkillFrontmatterParser.extractBody(skill.skillFile.readText())
+                    val instructions = skillStore.readSkillFile(skill.directoryName, SKILL_FILE_NAME)
+                        ?: error("Skill '$name' not found")
+                    SkillFrontmatterParser.extractBody(instructions)
                 } else {
-                    val target = SkillPaths.resolveSkillFile(skill.skillDir, path)
-                        ?: error("Path '$path' is outside the skill directory")
-                    require(target.exists()) { "File '$path' not found in skill '$name'" }
-                    target.readText()
+                    // readSkillFile 拒绝越界路径，与不存在一样返回 null
+                    skillStore.readSkillFile(skill.directoryName, path)
+                        ?: error("File '$path' not found in skill '$name'")
                 }
                 listOf(UIMessagePart.Text(content))
             }

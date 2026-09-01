@@ -201,6 +201,7 @@ internal fun sharedProductModule(
             templateTransformer = get(),
             localTools = get(),
             memoryRepository = get(),
+            skillStore = get(),
         )
     }
     single { MemoryRepository(get()) }

@@ -43,6 +43,7 @@ import me.rerere.rikkahub.data.ai.buildMemoryPrompt
 import me.rerere.rikkahub.data.ai.tools.buildMemoryTools
 import me.rerere.rikkahub.data.ai.tools.createConversationTools
 import me.rerere.rikkahub.data.ai.tools.createSearchTools
+import me.rerere.rikkahub.data.ai.tools.createSkillTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
 import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
@@ -63,6 +64,7 @@ import me.rerere.rikkahub.data.model.replaceRegexes
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
+import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import kotlin.time.Clock
@@ -90,6 +92,7 @@ internal class SharedChatRuntime(
     private val templateTransformer: TemplateTransformer,
     private val localTools: LocalTools,
     private val memoryRepository: MemoryRepository,
+    private val skillStore: SkillStore,
 ) : ChatRuntime {
     // Keeps the Android ordering: shared statics first, then the injected template transformer.
     private val inputTransformers: List<InputMessageTransformer> =
@@ -514,6 +517,15 @@ internal class SharedChatRuntime(
                         onCreation = { content -> memoryRepository.addMemory(memoryAssistantId, content) },
                         onUpdate = { id, content -> memoryRepository.updateContent(id, content) },
                         onDelete = { id -> memoryRepository.deleteMemory(id) },
+                    ),
+                )
+            }
+            if (assistant.enabledSkills.isNotEmpty()) {
+                addAll(
+                    createSkillTools(
+                        enabledSkills = assistant.enabledSkills,
+                        allSkills = skillStore.listSkills(),
+                        skillStore = skillStore,
                     ),
                 )
             }
