@@ -7,6 +7,7 @@ import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
@@ -89,6 +90,7 @@ import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.web.WebServerRuntime
+import me.rerere.tts.provider.TTSManager
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -113,6 +115,7 @@ internal fun sharedProductModule(
     chatMessagePlatformActions: ChatMessagePlatformActions,
     backupFileLayout: BackupFileLayout,
     oauthCallbackSessionFactory: OAuthCallbackSessionFactory,
+    ttsManager: TTSManager?,
 ): Module = module {
     single { settingsStore }
     single { database }
@@ -170,6 +173,7 @@ internal fun sharedProductModule(
         FolderRepository(folderDAO = get(), clearConversationFolder = conversationDao::clearFolder)
     }
     single<Base64ImageStore> { SharedBase64ImageStore() }
+    single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
     single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
     single<MessageTemplateSource> {
         MessageTemplateSource { templateName ->
@@ -195,6 +199,7 @@ internal fun sharedProductModule(
             attachmentStore = get(),
             mcpRuntime = get(),
             templateTransformer = get(),
+            localTools = get(),
         )
     }
     single { MemoryRepository(get()) }

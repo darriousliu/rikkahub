@@ -12,6 +12,7 @@ import me.rerere.rikkahub.data.datastore.AndroidBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.AndroidStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
+import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AndroidExternalUriOpener
@@ -108,7 +109,12 @@ val appModule = module {
     }
 
     single {
-        LocalTools(get(), get(), get(), get())
+        LocalTools(
+            eventBus = get(),
+            settingsStore = get(),
+            ttsManager = get(),
+            platformTools = AndroidLocalTools(context = get(), eventBus = get()),
+        )
     }
 
     single {

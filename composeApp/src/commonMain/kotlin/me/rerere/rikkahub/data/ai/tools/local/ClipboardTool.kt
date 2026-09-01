@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.data.ai.tools.local
 
-import android.content.Context
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -11,10 +10,9 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.utils.readClipboardText
-import me.rerere.rikkahub.utils.writeClipboardText
+import me.rerere.rikkahub.platform.PlatformClipboard
 
-internal fun buildClipboardTool(context: Context): Tool = Tool(
+internal fun buildClipboardTool(): Tool = Tool(
     name = "clipboard_tool",
     description = """
         Read or write plain text from the device clipboard.
@@ -49,14 +47,14 @@ internal fun buildClipboardTool(context: Context): Tool = Tool(
         when (action) {
             "read" -> {
                 val payload = buildJsonObject {
-                    put("text", context.readClipboardText())
+                    put("text", PlatformClipboard.readText())
                 }
                 listOf(UIMessagePart.Text(payload.toString()))
             }
 
             "write" -> {
                 val text = params["text"]?.jsonPrimitive?.contentOrNull ?: error("text is required")
-                context.writeClipboardText(text)
+                PlatformClipboard.writeText(text)
                 val payload = buildJsonObject {
                     put("success", true)
                     put("text", text)

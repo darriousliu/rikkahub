@@ -9,6 +9,7 @@ internal actual val platformLocalToolOptions: Set<LocalToolOption> = setOf(
     LocalToolOption.TimeInfo,
     LocalToolOption.Clipboard,
     LocalToolOption.AskUser,
+    LocalToolOption.Tts,
 )
 
 @Composable

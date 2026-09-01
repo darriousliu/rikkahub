@@ -11,15 +11,13 @@ import kotlinx.serialization.json.put
 import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.utils.toLocalString
-import java.util.Locale
+import me.rerere.rikkahub.utils.toLocalizedName
 import kotlin.time.Clock
 import kotlin.time.Instant
 
 internal fun buildTimeInfoTool(
     clock: Clock = Clock.System,
     timeZoneProvider: () -> TimeZone = { TimeZone.currentSystemDefault() },
-    localeProvider: () -> Locale = { Locale.getDefault() },
 ): Tool = Tool(
     name = "get_time_info",
     description = """
@@ -35,7 +33,6 @@ internal fun buildTimeInfoTool(
         val payload = buildTimeInfoPayload(
             instant = clock.now(),
             timeZone = timeZoneProvider(),
-            locale = localeProvider(),
         )
         listOf(UIMessagePart.Text(payload.toString()))
     }
@@ -44,7 +41,6 @@ internal fun buildTimeInfoTool(
 internal fun buildTimeInfoPayload(
     instant: Instant,
     timeZone: TimeZone,
-    locale: Locale,
 ) = instant.toLocalDateTime(timeZone).let { now ->
     val date = now.date
     val time = LocalTime(now.hour, now.minute, now.second)
@@ -56,8 +52,8 @@ internal fun buildTimeInfoPayload(
         put("year", date.year)
         put("month", date.month.number)
         put("day", date.day)
-        put("weekday", weekday.toLocalString(locale))
-        put("weekday_en", weekday.toLocalString(Locale.ENGLISH))
+        put("weekday", weekday.toLocalizedName())
+        put("weekday_en", weekday.name.lowercase().replaceFirstChar { it.uppercase() })
         put("weekday_index", weekday.ordinal + 1)
         put("date", date.toString())
         put("time", time.toString())

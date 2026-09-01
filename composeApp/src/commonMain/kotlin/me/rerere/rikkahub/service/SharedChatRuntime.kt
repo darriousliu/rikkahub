@@ -39,6 +39,7 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
+import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
 import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
 import me.rerere.rikkahub.data.ai.transformers.OcrTransformer
@@ -65,9 +66,9 @@ import kotlin.uuid.Uuid
  * Portable chat runtime used by the iOS and Desktop product shells.
  *
  * Android keeps its feature-complete [ChatService]. This implementation owns the common core:
- * persisted conversation state, provider requests, streaming updates, cancellation and basic
- * message/folder operations. Android-only workspace, local-tool and attachment cleanup remain
- * behind the Android runtime and platform UI adapters.
+ * persisted conversation state, provider requests, streaming updates, cancellation, the shared
+ * transformer pipeline and local tools. Android-only workspace tools, search tools and attachment
+ * cleanup remain behind the Android runtime and platform UI adapters.
  */
 internal class SharedChatRuntime(
     private val scope: CoroutineScope,
@@ -81,6 +82,7 @@ internal class SharedChatRuntime(
     private val attachmentStore: SharedChatAttachmentStore,
     private val mcpRuntime: McpRuntime,
     private val templateTransformer: TemplateTransformer,
+    private val localTools: LocalTools,
 ) : ChatRuntime {
     // Keeps the Android ordering: shared statics first, then the injected template transformer.
     private val inputTransformers: List<InputMessageTransformer> =
@@ -481,7 +483,11 @@ internal class SharedChatRuntime(
         val systemPrompt = conversation.customSystemPrompt
             ?.takeIf { assistant.allowConversationSystemPrompt && it.isNotBlank() }
             ?: assistant.systemPrompt
-        val tools = buildMcpTools()
+        val tools = buildList {
+            // 与 Android 的 ChatService 顺序一致：本地工具在前，MCP 工具在后
+            addAll(localTools.getTools(assistant.localTools))
+            addAll(buildMcpTools())
+        }
         val params = TextGenerationParams(
             model = model,
             temperature = assistant.temperature,

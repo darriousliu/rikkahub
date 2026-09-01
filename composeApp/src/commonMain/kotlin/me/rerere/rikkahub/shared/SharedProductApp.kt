@@ -138,6 +138,7 @@ fun SharedProductApp(
             chatMessagePlatformActions = resolvedChatMessagePlatformActions,
             backupFileLayout = backupFileLayout,
             oauthCallbackSessionFactory = oauthCallbackSessionFactory,
+            ttsManager = ttsManager,
         )
     }
     val koinConfiguration = remember(productModule) {
