@@ -12,8 +12,8 @@
 
 ## 基线
 
-- 快照提交：`0a3fc399d`（分支 `feature/cmp-migrate`）
-- 更新日期：2026-08-28
+- 快照提交：`3a6b115c7`（分支 `feature/cmp-migrate`）
+- 更新日期：2026-09-01
 - 结论来源：直接读源码（`expect`/`actual` 配对、平台 source set 内容、DI 注入点、`PlatformRouteContent` 路由分发），不以能否编译代替能力判断。
 - 编译验证：`:composeApp:compileKotlinIosSimulatorArm64`、`compileKotlinIosArm64`、`compileKotlinJvm`、`compileAndroidMain` 均通过。
 
@@ -21,22 +21,22 @@
 
 | 位置 | 文件数 | Kotlin 行数 |
 |---|---:|---:|
-| 共享模块 `commonMain` | 499 | **84,970** |
-| `androidMain` | 51 | 4,491 |
-| `iosMain` | 39 | 2,010 |
-| `jvmMain` | 42 | 1,349 |
+| 共享模块 `commonMain` | 526 | **87,279** |
+| `androidMain` | 47 | 4,160 |
+| `iosMain` | 42 | 2,137 |
+| `jvmMain` | 45 | 1,449 |
 | `androidJvmMain` | 2 | 85 |
 | `mobileMain`（Android + iOS） | 1 | 28 |
 | `nativeMain` | 1 | 8 |
-| `:app`（Android application shell） | 154 | **24,774** |
+| `:app`（Android application shell） | 136 | **22,926** |
 | `:document`（Android-only） | 4 | 1,053 |
 | `:workspace`（Android-only） | 7 | 1,401 |
 | `:desktopApp`（JVM shell） | 1 | 138 |
 
 统计范围：8 个共享 KMP 模块（`composeApp`、`common`、`ai`、`search`、`speech`、`highlight`、`web`、`material3`）加三个平台壳，不含测试源集。
 
-- 共享模块内 `commonMain` 占比 **91.4%**（84,970 / 92,941），平台适配层只占 8.6%。
-- 全仓主源码 `commonMain` 占比 **70.6%**（84,970 / 120,307）。剩余主体是 `:app` 里还没迁出的 Android-only 功能。
+- 共享模块内 `commonMain` 占比 **91.7%**（87,279 / 95,146），平台适配层只占 8.3%。
+- 全仓主源码 `commonMain` 占比 **72.3%**（87,279 / 120,664）。`:app` 从 24,774 行降到 22,926 行。
 
 复现命令：
 
@@ -63,6 +63,8 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 云端 TTS（OpenAI / Gemini / MiniMax 等） | ✅ | ✅ | ✅ | `speech/commonMain` |
 | FileKit 文件选择与沙箱导入 | ✅ | ✅ | ✅ | `SharedChatAttachmentStore` |
 | 更新检查 | ✅ | ✅ | ✅ | `UpdateChecker` |
+| Message Transformer 流水线 | ✅ | ✅ | ✅ | 契约与十个实现在 `commonMain`，平台差异收敛到四个注入点 |
+| 内置 AI 工具（搜索 / 会话 / 记忆 / 技能 / JS / AskUser / 时间 / 剪贴板 / TTS） | ✅ | ✅ | ✅ | `LocalTools` + `SharedChatRuntime`，平台专有工具经 `PlatformLocalTools` 注入 |
 
 ## 平台适配（三端各自实现）
 
@@ -79,19 +81,20 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 角色卡元数据读取 | ✅ | ✅ | ✅ |
 | 相机权限 | ✅ 运行时请求 | ✅ AVFoundation 授权 | 🟡 恒为 granted |
 | 通知 / 局域网权限 | ✅ 运行时请求 | 🟡 恒为 granted（系统首次使用时弹） | 🟡 恒为 granted |
+| 请求日志采集 | ✅ OkHttp 拦截器 | ✅ Ktor 插件 | ✅ Ktor 插件 |
+| 日期时间与数字本地化 | ✅ `java.time` | ✅ NSDateFormatter | ✅ `java.time` |
+| 剪贴板读写 | ✅ ClipboardManager | ✅ UIPasteboard | ✅ AWT Toolkit |
 
 ## 平台差异（当前缺口）
 
 | 能力 | Android | iOS | Desktop | 说明 |
 |---|:--:|:--:|:--:|---|
-| Message Transformer 流水线（10/11） | ✅ | ✅ | ✅ | 契约与十个实现在 `commonMain`，由 `SharedChatRuntime` 接线；平台差异收敛到 `DocumentTextExtractor`、`Base64ImageStore`、`PlatformDeviceInfo`、`encodeImageToPng` 四个注入点 |
-| 二进制文档解析 PDF/DOCX/PPTX/EPUB | ✅ | ❌ | ❌ | `DocumentTextExtractor` 在非 Android 端返回 null，纯文本附件三端可读 |
+| 二进制文档解析 PDF/DOCX/PPTX/EPUB | ✅ | ❌ | ❌ | 解析器在 Android-only 的 `:document`，`DocumentTextExtractor` 在其余端返回 null；纯文本附件三端可读 |
 | Message Transformer：Workspace 提醒 | ✅ | ❌ | ❌ | 依赖 Android-only 的 `:workspace`；非 Android 端 `workspaceId` 恒为空，transformer 直接返回 |
 | 流式过程中的 visualTransform | ✅ | ❌ | ❌ | `SharedChatRuntime` 的状态即显示源，没有显示/存储分流，think 标签要等生成结束才转成推理块 |
-| 内置 AI 工具（搜索 / 记忆 / 会话 / 技能 / JS / AskUser / 时间） | ✅ | ❌ | ❌ | `SharedChatRuntime.buildMcpTools()` 只建 MCP 工具，工具实现都在 `:app`。这是当前最大的剩余缺口 |
+| 日历 / 屏幕使用时间工具 | ✅ | ❌ | ❌ | 依赖 Android 专有 API，经 `PlatformLocalTools` 注入，其余端为空实现 |
 | 内嵌 Web Server | ✅ | ❌ | ✅ | iOS 是 `UnavailableWebServerHost`，按迁移边界明确 unavailable |
 | Workspace 沙箱 + 终端 | ✅ | ❌ | ❌ | `:workspace` 含 CMake/native，Android-only |
-| 文档解析 PDF/DOCX/PPTX/EPUB | ✅ | ❌ | ❌ | `:document` 是纯 Android library |
 | ASR 语音输入 | ✅ | ❌ | ❌ | 5 个 Controller 全在 `speech/androidMain`，只有设置页共享 |
 | 相机扫码 | ✅ | ✅ | ❌ | Android/iOS 共享 `mobileMain` 的 KScan；`JvmQrScanner` 返回 `null` |
 | WebView 页面 | ✅ | ❌ | ✅ | Desktop 用 kdroidfilter WebView |
@@ -114,7 +117,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 项 | 现象 | 处理建议 |
 |---|---|---|
 | `PlatformCapabilities.kt` 的 `QR_RENDER` | iOS 被标为 `UNAVAILABLE`，但 `IosQrCodeRenderer` 已是完整 CoreImage 实现 | 声明矩阵落后于代码。当前 `hasCapability` 只被 `WORKSPACE` 用于收起入口，不影响功能，但应同步 |
-| iOS 的 `platformLocalToolOptions` | 声明支持 JavascriptEngine/TimeInfo/Clipboard/AskUser，助手设置里开关可打开，但工具实现都在 `:app`，`SharedChatRuntime` 只建 MCP 工具，运行时不会执行 | 属于静默失效。下沉本地工具，或先收成空集止血 |
+| `SkillStore` 的 name 参数语义 | `listSkills()` 返回 frontmatter 显示名，而 `readSkillFile` 等方法把参数当目录名解析。`SkillSummary.directoryName` 已补齐，`SkillsTools` 与 `SkillDetailVM` 已改用它，但 `SkillsVM` 的保存路径仍以显示名建目录 | 建议把 `SkillStore` 的参数明确改名为 `directoryName`，让语义写在签名里 |
 
 ## 维护方式
 
