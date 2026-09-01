@@ -13,7 +13,7 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.db.fts.MessageSearchSort
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.utils.JsonInstantPretty
-import me.rerere.rikkahub.utils.toLocalDate
+import me.rerere.rikkahub.utils.toLocalizedDate
 import kotlin.uuid.Uuid
 
 /**
@@ -56,7 +56,7 @@ fun createConversationTools(
                     add(buildJsonObject {
                         put("id", conversation.id.toString())
                         put("title", conversation.title.ifBlank { "Untitled" })
-                        put("last_chat", conversation.updateAt.toLocalDate())
+                        put("last_chat", conversation.updateAt.toLocalizedDate())
                     })
                 }
             }
@@ -101,7 +101,7 @@ fun createConversationTools(
                         put("conversation_id", result.conversationId)
                         put("title", result.title.ifBlank { "Untitled" })
                         put("snippet", result.snippet)
-                        put("date", result.updateAt.toLocalDate())
+                        put("date", result.updateAt.toLocalizedDate())
                     })
                 }
             }

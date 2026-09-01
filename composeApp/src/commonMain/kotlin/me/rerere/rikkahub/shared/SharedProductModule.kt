@@ -200,6 +200,7 @@ internal fun sharedProductModule(
             mcpRuntime = get(),
             templateTransformer = get(),
             localTools = get(),
+            memoryRepository = get(),
         )
     }
     single { MemoryRepository(get()) }

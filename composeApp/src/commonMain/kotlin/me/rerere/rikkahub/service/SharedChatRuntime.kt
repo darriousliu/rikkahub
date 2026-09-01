@@ -39,6 +39,10 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
+import me.rerere.rikkahub.data.ai.buildMemoryPrompt
+import me.rerere.rikkahub.data.ai.tools.buildMemoryTools
+import me.rerere.rikkahub.data.ai.tools.createConversationTools
+import me.rerere.rikkahub.data.ai.tools.createSearchTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
 import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
@@ -59,6 +63,8 @@ import me.rerere.rikkahub.data.model.replaceRegexes
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
+import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.utils.JsonInstantPretty
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -83,6 +89,7 @@ internal class SharedChatRuntime(
     private val mcpRuntime: McpRuntime,
     private val templateTransformer: TemplateTransformer,
     private val localTools: LocalTools,
+    private val memoryRepository: MemoryRepository,
 ) : ChatRuntime {
     // Keeps the Android ordering: shared statics first, then the injected template transformer.
     private val inputTransformers: List<InputMessageTransformer> =
@@ -483,9 +490,33 @@ internal class SharedChatRuntime(
         val systemPrompt = conversation.customSystemPrompt
             ?.takeIf { assistant.allowConversationSystemPrompt && it.isNotBlank() }
             ?: assistant.systemPrompt
+        val memoryAssistantId = if (assistant.useGlobalMemory) {
+            MemoryRepository.GLOBAL_MEMORY_ID
+        } else {
+            assistant.id.toString()
+        }
+        val memories = if (assistant.enableMemory) {
+            memoryRepository.getMemoriesOfAssistant(memoryAssistantId)
+        } else {
+            emptyList()
+        }
+        // 顺序与 Android 的 ChatService 保持一致
         val tools = buildList {
-            // 与 Android 的 ChatService 顺序一致：本地工具在前，MCP 工具在后
+            if (assistant.enableWebSearch) addAll(createSearchTools(settings))
             addAll(localTools.getTools(assistant.localTools))
+            if (assistant.enableRecentChatsReference) {
+                addAll(createConversationTools(conversationRepository, assistant.id))
+            }
+            if (assistant.enableMemory) {
+                addAll(
+                    buildMemoryTools(
+                        json = JsonInstantPretty,
+                        onCreation = { content -> memoryRepository.addMemory(memoryAssistantId, content) },
+                        onUpdate = { id, content -> memoryRepository.updateContent(id, content) },
+                        onDelete = { id -> memoryRepository.deleteMemory(id) },
+                    ),
+                )
+            }
             addAll(buildMcpTools())
         }
         val params = TextGenerationParams(
@@ -532,9 +563,21 @@ internal class SharedChatRuntime(
                 continue
             }
 
+            val currentMessages = state.value.currentMessages
             val requestMessages = buildList {
-                if (systemPrompt.isNotBlank()) add(UIMessage.system(systemPrompt))
-                addAll(state.value.currentMessages.limitContext(assistant.contextMessageLimit))
+                val system = buildString {
+                    if (systemPrompt.isNotBlank()) append(systemPrompt)
+                    if (assistant.enableMemory) {
+                        appendLine()
+                        append(buildMemoryPrompt(memories))
+                    }
+                    tools.forEach { tool ->
+                        appendLine()
+                        append(tool.systemPrompt(model, currentMessages))
+                    }
+                }
+                if (system.isNotBlank()) add(UIMessage.system(system))
+                addAll(currentMessages.limitContext(assistant.contextMessageLimit))
             }.transforms(
                 transformers = inputTransformers,
                 model = model,
