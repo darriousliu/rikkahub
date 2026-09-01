@@ -15,6 +15,7 @@
 /* Begin PBXFileReference section */
 		05595FD5C7727F5CBFBF8295 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6DF3FFE105BE40D48018739F /* RikkaHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RikkaHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Signing.xcconfig; sourceTree = "<group>"; };
 		89C95284DD0819285255FEC3 /* iOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -42,6 +43,7 @@
 		EA5AC93861530F345CE58808 = {
 			isa = PBXGroup;
 			children = (
+				7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */,
 				F314196457A06B495FA325FF /* Products */,
 				0D03B36F28C12D0220BE39FC /* iosApp */,
 			);
@@ -211,12 +213,12 @@
 		};
 		14562A630B2ED314AD9C7676 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 172;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
@@ -317,12 +319,12 @@
 		};
 		939482F6A5E708E27C124C55 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 172;
-				DEVELOPMENT_TEAM = J669KBG846;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;

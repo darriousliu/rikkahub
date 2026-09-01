@@ -1,3 +1,4 @@
 DerivedData/
 *.xcuserstate
 xcuserdata/
+/Configuration/Signing.local.xcconfig
