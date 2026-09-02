@@ -25,8 +25,8 @@ private const val LOCAL_CONTENT_BASE_URL = "https://rikkahub.local"
 /**
  * WebView 页面，iOS 与 Desktop 共用。
  *
- * 用 Column 而不是 Scaffold 的 contentPadding 布局：WebView 在 iOS 上是原生 interop 视图，
- * 让它的 frame 严格落在标题栏之下，避免与标题栏发生任何重叠或事件争抢。
+ * 标题栏用 Material3 TopAppBar 以获得系统 insets 处理；WebView 在 iOS 上是原生 interop 视图，
+ * 靠 Scaffold 的 contentPadding 让它落在标题栏之下。
  *
  * Android 仍走 `:app` 里基于 WebViewAssetLoader 的实现，因为它还要服务 Mermaid 的本地资源。
  */

@@ -1,19 +1,46 @@
 package me.rerere.rikkahub.ui.components.richtext
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.writeString
+import kotlinx.coroutines.launch
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.webview.WebViewContentStore
 import me.rerere.rikkahub.ui.context.Navigator
 
 @Composable
-fun rememberSharedRichTextPlatformActions(navigator: Navigator): RichTextPlatformActions = remember(navigator) {
-    RichTextPlatformActions(
-        openCodePreview = { code, language ->
-            val contentId = WebViewContentStore.store(buildCodePreviewHtml(code, language))
-            navigator.navigate(Screen.WebView(contentId = contentId))
-        },
-    )
+fun rememberSharedRichTextPlatformActions(navigator: Navigator): RichTextPlatformActions {
+    val scope = rememberCoroutineScope()
+    // 系统保存对话框是异步的，先把内容暂存下来，等用户选好目标再写入。
+    val pendingCode = remember { mutableStateOf<String?>(null) }
+    val saveLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault(),
+    ) { target ->
+        val code = pendingCode.value
+        if (target != null && code != null) {
+            scope.launch { target.writeString(code) }
+        }
+        pendingCode.value = null
+    }
+    return remember(navigator, saveLauncher) {
+        RichTextPlatformActions(
+            saveCode = { suggestedName, code ->
+                pendingCode.value = code
+                saveLauncher.launch(
+                    suggestedName = suggestedName.substringBeforeLast('.'),
+                    extension = suggestedName.substringAfterLast('.', missingDelimiterValue = "txt"),
+                )
+            },
+            openCodePreview = { code, language ->
+                val contentId = WebViewContentStore.store(buildCodePreviewHtml(code, language))
+                navigator.navigate(Screen.WebView(contentId = contentId))
+            },
+        )
+    }
 }
 
 private fun buildCodePreviewHtml(code: String, language: String): String = if (language == "svg") {
