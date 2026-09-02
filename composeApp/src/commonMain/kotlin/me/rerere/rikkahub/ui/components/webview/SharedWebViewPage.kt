@@ -1,18 +1,17 @@
 package me.rerere.rikkahub.ui.components.webview
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.kdroidfilter.webview.web.WebView
 import io.github.kdroidfilter.webview.web.WebViewState
@@ -26,34 +25,26 @@ private const val LOCAL_CONTENT_BASE_URL = "https://rikkahub.local"
 /**
  * WebView 页面，iOS 与 Desktop 共用。
  *
+ * 用 Column 而不是 Scaffold 的 contentPadding 布局：WebView 在 iOS 上是原生 interop 视图，
+ * 让它的 frame 严格落在标题栏之下，避免与标题栏发生任何重叠或事件争抢。
+ *
  * Android 仍走 `:app` 里基于 WebViewAssetLoader 的实现，因为它还要服务 Mermaid 的本地资源。
  */
 @Composable
 fun SharedWebViewPage(screen: Screen.WebView) {
     val html = WebViewContentStore.load(screen.contentId)
-    Scaffold(
-        topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                BackButton()
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = {
                 Text(
                     text = if (html != null) "Preview" else screen.url,
                     maxLines = 1,
-                    style = MaterialTheme.typography.titleMedium,
+                    overflow = TextOverflow.Ellipsis,
                 )
-            }
-        },
-    ) { contentPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
-        ) {
+            },
+            navigationIcon = { BackButton(modifier = Modifier.padding(horizontal = 8.dp)) },
+        )
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             when {
                 html != null -> WebViewWithProgress(
                     state = rememberWebViewStateWithHTMLData(
@@ -61,13 +52,9 @@ fun SharedWebViewPage(screen: Screen.WebView) {
                         baseUrl = LOCAL_CONTENT_BASE_URL,
                         mimeType = "text/html",
                     ),
-                    modifier = Modifier.fillMaxSize(),
                 )
 
-                screen.url.isNotBlank() -> WebViewWithProgress(
-                    state = rememberWebViewState(screen.url),
-                    modifier = Modifier.fillMaxSize(),
-                )
+                screen.url.isNotBlank() -> WebViewWithProgress(state = rememberWebViewState(screen.url))
 
                 else -> Text(
                     text = "Web content is no longer available.",
@@ -80,8 +67,8 @@ fun SharedWebViewPage(screen: Screen.WebView) {
 }
 
 @Composable
-private fun WebViewWithProgress(state: WebViewState, modifier: Modifier = Modifier) {
-    Box(modifier = modifier) {
+private fun WebViewWithProgress(state: WebViewState) {
+    Box(modifier = Modifier.fillMaxSize()) {
         WebView(
             state = state,
             modifier = Modifier.fillMaxSize(),
