@@ -14,12 +14,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.ktor.client.HttpClient
 import me.rerere.common.logging.RequestLoggingPlugin
 import me.rerere.search.SearchService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.provider.ProviderManager
+import me.rerere.ai.util.KeyRoulette
+import me.rerere.ai.util.persistentLru
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
@@ -84,14 +90,16 @@ fun SharedProductApp(
 ) {
     val appScope = rememberCoroutineScope()
     val eventBus = remember { AppEventBus() }
-    val httpClient = remember {
+    val keyRoulette = remember {
+        KeyRoulette.persistentLru((FileKit.cacheDir / "lru_key_roulette.json").toKotlinxIoPath())
+    }
+    val httpClient = remember(keyRoulette) {
         HttpClient { install(RequestLoggingPlugin) }.also { client ->
             // 搜索服务是全局单例，未初始化时 SearchService.httpClient 会直接抛错。
-            // 持久化的 LRU key 轮换目前只有 Android 实现，这里退回默认轮换。
-            SearchService.init(client = client)
+            SearchService.init(client = client, keyRoulette = keyRoulette)
         }
     }
-    val providerManager = remember(httpClient) { ProviderManager(httpClient) }
+    val providerManager = remember(httpClient, keyRoulette) { ProviderManager(httpClient, keyRoulette) }
     val ttsManager = remember(httpClient, systemTtsProvider) {
         systemTtsProvider?.let { TTSManager(httpClient = httpClient, systemProvider = it) }
     }

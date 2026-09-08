@@ -17,6 +17,8 @@
 - 结论来源：直接读源码（`expect`/`actual` 配对、平台 source set 内容、DI 注入点、`PlatformRouteContent` 路由分发），不以能否编译代替能力判断。
 - 编译验证：`:composeApp:compileKotlinIosSimulatorArm64`、`compileKotlinIosArm64`、`compileKotlinJvm`、`compileAndroidMain` 均通过。
 
+增量记录：2026-09-08 已补齐搜索与模型 Provider 的持久化 LRU Key 轮换，Android 保留旧缓存格式，iOS/Desktop 接入共享存储。9 项契约测试在 Android/JVM/iOS Simulator 均通过，步骤和预期见 [逐项迁移记录](cmp-migration-progress.md)。下方代码分布及其他能力仍保留原快照口径，未在本次重新审计。
+
 ## 代码分布
 
 | 位置 | 文件数 | Kotlin 行数 |
@@ -51,6 +53,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 聊天主流程（流式 / 分支 / MCP 工具调用） | ✅ | ✅ | ✅ | `SharedChatRuntime` |
 | 助手配置 / 会话 / 历史 / 收藏 / 统计 / 消息搜索 | ✅ | ✅ | ✅ | `commonMain` 页面与 VM（部分助手配置在非 Android 端没有运行时，见下表） |
 | Provider 与模型管理、搜索服务 SDK | ✅ | ✅ | ✅ | `:ai` / `:search` |
+| 搜索与模型 Provider 的持久化 LRU Key 轮换 | ✅ | ✅ | ✅ | `KeyRoulette.persistentLru`；2026-09-08 增量，三端真实文件契约测试通过 |
 | Room 3 + bundled SQLite | ✅ | ✅ | ✅ | `AppDatabase` expect/actual |
 | DataStore 设置 | ✅ | ✅ | ✅ | `SettingsStore` |
 | MCP 运行时 | ✅ | ✅ | ✅ | `McpManager` |
