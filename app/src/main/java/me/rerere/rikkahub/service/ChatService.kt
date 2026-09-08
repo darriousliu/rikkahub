@@ -138,6 +138,30 @@ class ChatService(
         },
     )
 
+    private val suggestionGenerator = ConversationSuggestionGenerator(
+        providerManager = providerManager,
+        getSettings = { settingsStore.settingsFlow.first() },
+        getConversation = { id -> sessions[id]?.state?.value ?: conversationRepo.getConversationById(id) },
+        clearSuggestions = { id, expectedMessages ->
+            if (conversationRepo.updateConversationSuggestions(id, expectedMessages, emptyList())) {
+                updateConversationState(id) { current ->
+                    if (current.currentMessages == expectedMessages) {
+                        current.copy(chatSuggestions = emptyList())
+                    } else current
+                }
+            }
+        },
+        saveSuggestions = { id, expectedMessages, suggestions ->
+            if (conversationRepo.updateConversationSuggestions(id, expectedMessages, suggestions)) {
+                updateConversationState(id) { current ->
+                    if (current.currentMessages == expectedMessages) {
+                        current.copy(chatSuggestions = suggestions)
+                    } else current
+                }
+            }
+        },
+    )
+
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
 
@@ -752,49 +776,12 @@ class ChatService(
     // ---- 生成建议 ----
 
     override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
-        runCatching {
-            val settings = settingsStore.settingsFlow.first()
-            if (!settings.enableSuggestion) return
-            val model = settings.findModelById(settings.suggestionModelId, fallback = settings.fastModelId) ?: return
-            val provider = model.findProvider(settings.providers) ?: return
-
-            sessions[conversationId]?.let { session ->
-                updateConversation(
-                    conversationId,
-                    session.state.value.copy(chatSuggestions = emptyList())
-                )
-            }
-
-            val providerHandler = providerManager.getProviderByType(provider)
-            val result = providerHandler.generateText(
-                providerSetting = provider,
-                messages = listOf(
-                    UIMessage.user(
-                        settings.suggestionPrompt.applyPlaceholders(
-                            "locale" to Locale.getDefault().displayName,
-                            "content" to conversation.currentMessages
-                                .takeLast(8).joinToString("\n\n") { it.summaryAsText(maxLength = 500) }),
-                    )
-                ),
-                params = backgroundTextGenerationParams(model),
-            )
-            val suggestions =
-                result.choices[0].message?.toText()?.split("\n")?.map { it.trim() }
-                    ?.filter { it.isNotBlank() } ?: emptyList()
-
-            val latestConversation = conversationRepo.getConversationById(conversationId)
-                ?: sessions[conversationId]?.state?.value
-                ?: conversation
-            saveConversation(
-                conversationId,
-                latestConversation.copy(
-                    chatSuggestions = suggestions.take(
-                        10
-                    )
-                )
-            )
-        }.onFailure {
-            it.printStackTrace()
+        try {
+            suggestionGenerator.generate(conversationId, conversation)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w(TAG, "Suggestion generation failed", error)
         }
     }
 

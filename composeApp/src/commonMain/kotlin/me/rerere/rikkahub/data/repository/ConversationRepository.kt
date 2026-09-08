@@ -335,6 +335,20 @@ class ConversationRepository(
         updated > 0
     }
 
+    suspend fun updateConversationSuggestions(
+        conversationId: Uuid,
+        expectedMessages: List<UIMessage>,
+        suggestions: List<String>,
+    ): Boolean = database.withWriteTransaction {
+        val currentConversation = getConversationById(conversationId) ?: return@withWriteTransaction false
+        if (currentConversation.currentMessages != expectedMessages) return@withWriteTransaction false
+
+        conversationDAO.updateSuggestions(
+            id = conversationId.toString(),
+            suggestions = JsonInstant.encodeToString(suggestions),
+        ) > 0
+    }
+
     suspend fun deleteConversation(conversation: Conversation) {
         // 获取完整的 Conversation（包含 messageNodes）以正确清理文件
         val fullConversation = if (conversation.messageNodes.isEmpty()) {

@@ -179,3 +179,91 @@ Mock Provider 用例位于 `composeApp/src/commonTest/kotlin/me/rerere/rikkahub/
 标题条件更新保护本次写入；整个应用其他字段仍沿用既有会话保存方式，不声称解决了所有交错写入情形。本项没有新增临时生产日志，测试代码永久保留。
 
 下一项建议：AI 追问建议生成（中低难度）。`SharedChatRuntime.generateSuggestion` 当前为空实现，可复用本项的后台请求参数，通过 Mock Provider 验证开关、模型回退、响应解析和保存规则。
+
+## 2026-09-09：AI 追问建议
+
+状态：本项实现及自动化验证完成。迁移前基线为 `d1b187b9b`。本项难度：中低，主要是共享请求、后台触发和建议字段持久化。
+
+### 配置与范围
+
+| 项目 | 本项选择 |
+|---|---|
+| 策略与适用性 | `PRESERVE` / `SUPPORTED`，保持现有模块、DI、`ChatRuntime.generateSuggestion` 调用方式 |
+| 目标与工具链 | Android、Desktop JVM、iOS arm64、iOS Simulator arm64；沿用前两项工具链，无依赖或版本变更 |
+| 迁移单位 | 回复成功后的自动追问建议，以及既有生成建议接口 |
+| UI 与设置 | 复用共享的建议列表、点击填入输入框行为和现有 DataStore 键/默认值 |
+| 验证协作 | gpt-5.6-sol 子 agent 分别编写契约测试、真实数据库测试和独立审查；主 agent 实现接线并执行验证 |
+
+### 实现与兼容性
+
+- 新增 `ConversationSuggestionGenerator` 到 `composeApp/commonMain`，Android `ChatService` 与 iOS/Desktop `SharedChatRuntime` 共用。
+- 保留 `enableSuggestion` 开关；优先使用 `suggestionModelId`，未配置或找不到时回退 `fastModelId`。开关关闭或无可用模型时不请求、不修改已有建议。
+- 提示词仍使用 `suggestionPrompt`，替换 `{locale}` 和 `{content}`。内容为当前选中分支的最近 8 条消息，每条 `summaryAsText(maxLength = 500)`；超长摘要附加 `...`。
+- 复用 `backgroundTextGenerationParams`，保留 `AUTO`、模型自定义 headers/body 和 Provider override。语言信息沿用现有 `PlatformDeviceInfo`，Android/JVM 使用 display name，iOS 使用 locale identifier。
+- 响应取首 choice 的文本，按换行分割、逐行 trim、过滤空白，最多保存 10 条；保留顺序、重复项和模型输出的编号，不额外去重或移除 Markdown。空 choices、无消息或空文本统一保存空列表。
+- iOS/Desktop 在新回复开始时清空内存建议，并在回复完整成功、保存消息后，独立启动建议任务，与标题任务并行。建议请求不延长聊天 job 的生成状态。
+- 开始请求前通过消息快照校验，持久化清空建议，再同步内存。Provider 失败、取消或生成期间关闭开关时，重新读取数据库也不会恢复本次已清空的旧建议。
+- 每个会话的请求使用独立 ID；同会话较旧请求的延迟响应被丢弃，不同会话可并行请求。清空和保存操作使用短时互斥锁保持顺序，不锁住模型网络请求。
+- 返回前检查最新开关和当前消息；发送新消息、编辑同 ID 内容、切换分支或删除会话后，旧结果不保存。数据库写事务内再次校验选中消息，仅更新 `suggestions` 字段；不改变标题、消息、时间、置顶、文件夹或 FTS 内容。内存也仅合并建议字段。
+- 取消异常继续传播；普通失败沿用 Android 的静默降级，仅记录常规错误日志，不转为主聊天错误。
+
+新增公开 API：`ConversationSuggestionGenerator` 和 `ConversationRepository.updateConversationSuggestions(conversationId, expectedMessages, suggestions)`。数据库建议仍使用既有 JSON 字符串格式，仅增加字段更新查询，无 schema 变更。
+
+| 台账类别 | 技术处理 | 结果 |
+|---|---|---|
+| `REQUIRED_FOR_KMP`：共享模型请求与解析 | `REWRITEABLE` | 已共享，保留 Android 解析规则与参数 |
+| `REQUIRED_FOR_KMP`：iOS/Desktop 自动触发 | `REWRITEABLE` | 已接入回复成功后的独立后台任务 |
+| `REQUIRED_FOR_KMP`：语言、日志与显示 | `ANDROID_ONLY`（复用现有平台适配边界） | 已复用 locale、日志和共享 UI，无新平台 API |
+| `RECOMMENDED`：字段隔离与旧响应保护 | `REWRITEABLE` | 已加入消息快照校验、请求 ID 和字段级保存 |
+| `RECOMMENDED`：失败后旧建议重现 | `REWRITEABLE` | 已将生成前的清空操作持久化 |
+| `ARCHITECTURAL_OPTIMIZATION` | — | 未改造全部消息编辑入口或会话状态架构 |
+
+### 代码验证步骤与预期结果
+
+生成器用例位于 `composeApp/src/commonTest/kotlin/me/rerere/rikkahub/service/ConversationSuggestionGeneratorTest.kt`；数据库及集成用例位于 `composeApp/src/jvmTest/kotlin/me/rerere/rikkahub/service/ConversationSuggestionPersistenceTest.kt`。
+
+| 验证内容 | 步骤 | 预期结果 |
+|---|---|---|
+| 开关与模型 | 关闭开关；分别配置建议模型、空/无效建议模型和无效快速模型 | 关闭时不请求；优先建议模型，回退快速模型，两者无效则跳过 |
+| 提示词与参数 | 输入多于 8 条消息、长文本、多个分支，并配置模型 override/headers/body | 只取最近 8 条选中消息，摘要截断且 locale 替换，保留后台参数 |
+| 响应解析 | 返回含空白、重复、编号及超过 10 行的文本 | 保序、保重复、保编号，过滤空白后最多 10 条 |
+| 空响应 | 返回空 choices、无消息或空白文本 | 建议为空，不越界或恢复旧值 |
+| 请求失败与取消 | 先存旧建议，再令 Provider 失败或取消 | 不保存生成结果，重新读取数据库仍为空建议 |
+| 中途关闭开关 | 请求期间关闭建议开关，再返回结果 | 不写入返回的建议，已清空的旧建议不恢复 |
+| 过期请求 | 同会话同时生成两次，令旧请求最后返回 | 只采用新请求；不同会话各自保存 |
+| 保存交错 | 暂停旧请求的保存，再启动新请求 | 清空和保存顺序受保护，最终为新建议 |
+| 消息变化 | 请求期间追加消息、编辑同 ID 文本或切换分支 | 旧消息快照无法写入建议 |
+| 字段隔离 | 请求期间改名、改置顶/文件夹，再保存建议 | 保留全部消息、标题和元数据，FTS 查询结果不变 |
+| 删除与持久化格式 | 删除会话后更新；写入空列表和含特殊字符的建议 | 不重建会话，JSON 正确往返，空列表正常清除 |
+
+执行命令：
+
+```bash
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test
+./gradlew :composeApp:compileCommonMainKotlinMetadata \
+  :composeApp:compileAndroidMain :composeApp:compileKotlinJvm \
+  :composeApp:compileKotlinIosArm64 :composeApp:compileKotlinIosSimulatorArm64 \
+  :app:compileDebugKotlin \
+  :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest
+```
+
+| 验证对象 | 结果 |
+|---|---|
+| 迁移前 composeApp 基线 | Android 83、JVM 86、iOS Simulator 83 项通过 |
+| 迁移后 composeApp 测试 | Android 97、JVM 107、iOS Simulator 97 项通过；无失败、错误或跳过 |
+| 新增生成器契约 | 14 项在三个目标各执行一次，共 42 次通过 |
+| 新增真实 SQLite / 生成器持久化集成 | JVM 7 项通过，覆盖字段隔离、消息变化、删除、JSON 往返及请求失败后的重新读取 |
+| 原 Android 请求参数回归 | `ChatServiceTest` 1 项通过 |
+| Android 应用及共享 Android/JVM/iOS arm64/iOS Simulator arm64 编译 | 全部通过 |
+| composeApp common metadata | 通过 |
+| diff 格式、公共层平台 import、临时日志检查 | 通过，无临时验证日志 |
+
+首次 Native 测试编译发现测试断言的集合类型推断差异，显式标注 `List<Mutation>` 后，所有目标通过；未更改生产语义。HTTP 客户端和测试数据库均在用例结束后关闭。
+
+### 验证范围与下一项
+
+本项沿用已有共享 UI；点击建议只填入输入框，不自动发送。代码测试验证请求、状态回调及持久化；不评判真实模型建议的语言质量。iOS Simulator 执行 Kotlin/Native 测试，真实 Room/Bundled SQLite 用例在 JVM 执行；未做完整应用 GUI 回归。
+
+保留既有 Android 行为：关闭开关不会删除已显示的建议；不触发回复的纯编辑、删消息或分支切换入口没有统一清空策略。本项保护这些变化期间仍在运行的旧请求，不重构所有消息操作。无临时验证日志，常规失败日志和永久测试保留。
+
+下一项建议：聊天消息翻译（中低难度）。`SharedChatRuntime.translateMessage` 当前仍返回不可用错误，可复用已有共享翻译请求，实现流式译文、错误清理和消息保存，并优先用 Mock Provider 验证。

@@ -23,6 +23,8 @@
 - 已共享 AI 自动会话标题生成，iOS/Desktop 从首条文本截断升级为标题模型/快速模型生成。三端复用同一模型选择、提示词和请求参数逻辑，标题独立于回复后台生成，保存仅更新标题字段。
 - 下方代码分布及其他能力仍保留原快照口径，未在本次重新审计。
 
+2026-09-09 增量：已共享 AI 追问建议生成，三端共用开关、模型回退、提示词和逐行解析规则；iOS/Desktop 在回复完成后自动后台生成。建议字段单独持久化，消息已变化或请求已过期时丢弃旧结果，详情见 [迁移与验证记录](cmp-migration-progress.md)。
+
 ## 代码分布
 
 | 位置 | 文件数 | Kotlin 行数 |
@@ -59,6 +61,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | Provider 与模型管理、搜索服务 SDK | ✅ | ✅ | ✅ | `:ai` / `:search` |
 | 搜索与模型 Provider 的持久化 LRU Key 轮换 | ✅ | ✅ | ✅ | `KeyRoulette.persistentLru`；2026-09-08 增量，三端真实文件契约测试通过 |
 | AI 自动会话标题 | ✅ | ✅ | ✅ | `ConversationTitleGenerator`；2026-09-08 增量，Android `ChatService` 与 iOS/Desktop `SharedChatRuntime` 共用 |
+| AI 追问建议 | ✅ | ✅ | ✅ | `ConversationSuggestionGenerator`；2026-09-09 增量，三端共用，现有共享 UI 显示建议并支持点击填入输入框 |
 | Room 3 + bundled SQLite | ✅ | ✅ | ✅ | `AppDatabase` expect/actual |
 | DataStore 设置 | ✅ | ✅ | ✅ | `SettingsStore` |
 | MCP 运行时 | ✅ | ✅ | ✅ | `McpManager` |

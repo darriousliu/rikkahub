@@ -28,6 +28,7 @@ import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.handleMessageChunk
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.ai.ui.limitContext
+import me.rerere.common.logging.RikkaLog
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -105,6 +106,30 @@ internal class SharedChatRuntime(
             if (conversationRepository.updateConversationTitle(id, expectedTitle, title)) {
                 updateConversationState(id) { current ->
                     if (current.title == expectedTitle) current.copy(title = title) else current
+                }
+            }
+        },
+    )
+
+    private val suggestionGenerator = ConversationSuggestionGenerator(
+        providerManager = providerManager,
+        getSettings = { settingsStore.settingsFlow.first() },
+        getConversation = { id -> conversations[id]?.value ?: conversationRepository.getConversationById(id) },
+        clearSuggestions = { id, expectedMessages ->
+            if (conversationRepository.updateConversationSuggestions(id, expectedMessages, emptyList())) {
+                updateConversationState(id) { current ->
+                    if (current.currentMessages == expectedMessages) {
+                        current.copy(chatSuggestions = emptyList())
+                    } else current
+                }
+            }
+        },
+        saveSuggestions = { id, expectedMessages, suggestions ->
+            if (conversationRepository.updateConversationSuggestions(id, expectedMessages, suggestions)) {
+                updateConversationState(id) { current ->
+                    if (current.currentMessages == expectedMessages) {
+                        current.copy(chatSuggestions = suggestions)
+                    } else current
                 }
             }
         },
@@ -424,7 +449,15 @@ internal class SharedChatRuntime(
         }
     }
 
-    override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) = Unit
+    override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
+        try {
+            suggestionGenerator.generate(conversationId, conversation)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            RikkaLog.w("SharedChatRuntime", "Suggestion generation failed", error)
+        }
+    }
 
     override fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
         updateConversationState(conversationId) { conversation ->
@@ -506,6 +539,7 @@ internal class SharedChatRuntime(
         val providerSetting = model.findProvider(settings.providers)
             ?: error("No provider is configured for ${model.displayName}")
         val provider = providerManager.getProviderByType(providerSetting)
+        state.update { it.copy(chatSuggestions = emptyList()) }
         val status = processingStatuses.getOrPut(conversationId) { MutableStateFlow(null) }
         val senderName = assistant.name.ifBlank { model.displayName }
         val systemPrompt = conversation.customSystemPrompt
@@ -660,6 +694,7 @@ internal class SharedChatRuntime(
         if (completed) {
             val finalConversation = state.value
             scope.launch { generateTitle(conversationId, finalConversation) }
+            scope.launch { generateSuggestion(conversationId, finalConversation) }
         }
     }
 

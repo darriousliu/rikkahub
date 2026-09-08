@@ -69,6 +69,9 @@ interface ConversationDAO {
     )
     suspend fun updateTitleIfUnchanged(id: String, expectedTitle: String, title: String): Int
 
+    @Query("UPDATE conversationentity SET suggestions=:suggestions WHERE id=:id")
+    suspend fun updateSuggestions(id: String, suggestions: String): Int
+
     @Delete
     suspend fun delete(conversation: ConversationEntity)
 
