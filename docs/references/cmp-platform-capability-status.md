@@ -17,7 +17,11 @@
 - 结论来源：直接读源码（`expect`/`actual` 配对、平台 source set 内容、DI 注入点、`PlatformRouteContent` 路由分发），不以能否编译代替能力判断。
 - 编译验证：`:composeApp:compileKotlinIosSimulatorArm64`、`compileKotlinIosArm64`、`compileKotlinJvm`、`compileAndroidMain` 均通过。
 
-增量记录：2026-09-08 已补齐搜索与模型 Provider 的持久化 LRU Key 轮换，Android 保留旧缓存格式，iOS/Desktop 接入共享存储。9 项契约测试在 Android/JVM/iOS Simulator 均通过，步骤和预期见 [逐项迁移记录](cmp-migration-progress.md)。下方代码分布及其他能力仍保留原快照口径，未在本次重新审计。
+增量记录（2026-09-08，逐项详情见 [迁移与验证记录](cmp-migration-progress.md)）：
+
+- 已补齐搜索与模型 Provider 的持久化 LRU Key 轮换，Android 保留旧缓存格式，iOS/Desktop 接入共享存储；9 项契约测试在三端通过。
+- 已共享 AI 自动会话标题生成，iOS/Desktop 从首条文本截断升级为标题模型/快速模型生成。三端复用同一模型选择、提示词和请求参数逻辑，标题独立于回复后台生成，保存仅更新标题字段。
+- 下方代码分布及其他能力仍保留原快照口径，未在本次重新审计。
 
 ## 代码分布
 
@@ -54,6 +58,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 助手配置 / 会话 / 历史 / 收藏 / 统计 / 消息搜索 | ✅ | ✅ | ✅ | `commonMain` 页面与 VM（部分助手配置在非 Android 端没有运行时，见下表） |
 | Provider 与模型管理、搜索服务 SDK | ✅ | ✅ | ✅ | `:ai` / `:search` |
 | 搜索与模型 Provider 的持久化 LRU Key 轮换 | ✅ | ✅ | ✅ | `KeyRoulette.persistentLru`；2026-09-08 增量，三端真实文件契约测试通过 |
+| AI 自动会话标题 | ✅ | ✅ | ✅ | `ConversationTitleGenerator`；2026-09-08 增量，Android `ChatService` 与 iOS/Desktop `SharedChatRuntime` 共用 |
 | Room 3 + bundled SQLite | ✅ | ✅ | ✅ | `AppDatabase` expect/actual |
 | DataStore 设置 | ✅ | ✅ | ✅ | `SettingsStore` |
 | MCP 运行时 | ✅ | ✅ | ✅ | `McpManager` |

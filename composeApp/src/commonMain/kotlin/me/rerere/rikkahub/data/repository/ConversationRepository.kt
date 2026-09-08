@@ -318,6 +318,23 @@ class ConversationRepository(
         messageFtsManager.indexConversation(conversation)
     }
 
+    suspend fun updateConversationTitle(
+        conversationId: Uuid,
+        expectedTitle: String,
+        title: String,
+    ): Boolean = database.withWriteTransaction {
+        val id = conversationId.toString()
+        val updated = conversationDAO.updateTitleIfUnchanged(
+            id = id,
+            expectedTitle = expectedTitle,
+            title = title,
+        )
+        if (updated > 0) {
+            messageFtsManager.updateConversationTitle(id, title)
+        }
+        updated > 0
+    }
+
     suspend fun deleteConversation(conversation: Conversation) {
         // 获取完整的 Conversation（包含 messageNodes）以正确清理文件
         val fullConversation = if (conversation.messageNodes.isEmpty()) {

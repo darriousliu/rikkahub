@@ -66,7 +66,10 @@ import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.error_title_generate_title
 import me.rerere.rikkahub.utils.JsonInstantPretty
+import org.jetbrains.compose.resources.getString
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -94,6 +97,19 @@ internal class SharedChatRuntime(
     private val memoryRepository: MemoryRepository,
     private val skillStore: SkillStore,
 ) : ChatRuntime {
+    private val titleGenerator = ConversationTitleGenerator(
+        providerManager = providerManager,
+        getSettings = { settingsStore.settingsFlow.first() },
+        getConversation = conversationRepository::getConversationById,
+        saveTitle = { id, expectedTitle, title ->
+            if (conversationRepository.updateConversationTitle(id, expectedTitle, title)) {
+                updateConversationState(id) { current ->
+                    if (current.title == expectedTitle) current.copy(title = title) else current
+                }
+            }
+        },
+    )
+
     // Keeps the Android ordering: shared statics first, then the injected template transformer.
     private val inputTransformers: List<InputMessageTransformer> =
         SHARED_INPUT_TRANSFORMERS + templateTransformer
@@ -394,16 +410,18 @@ internal class SharedChatRuntime(
         conversation: Conversation,
         force: Boolean,
     ) {
-        if (!force && conversation.title.isNotBlank()) return
-        val title = conversation.currentMessages
-            .firstOrNull { it.role == MessageRole.USER }
-            ?.toText()
-            ?.lineSequence()
-            ?.firstOrNull()
-            ?.trim()
-            ?.take(TITLE_MAX_LENGTH)
-            .orEmpty()
-        if (title.isNotBlank()) saveConversation(conversationId, conversation.copy(title = title))
+        try {
+            titleGenerator.generate(conversationId, conversation, force)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            addError(
+                error = error,
+                conversationId = conversationId,
+                title = getString(Res.string.error_title_generate_title),
+                solution = ChatErrorSolution.CheckTitleModelSettings,
+            )
+        }
     }
 
     override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) = Unit
@@ -639,7 +657,10 @@ internal class SharedChatRuntime(
                 contentPreview = state.value.currentMessages.lastOrNull()?.toText()?.trim()?.take(50),
             ),
         )
-        if (completed) generateTitle(conversationId, state.value)
+        if (completed) {
+            val finalConversation = state.value
+            scope.launch { generateTitle(conversationId, finalConversation) }
+        }
     }
 
     private fun buildMcpTools(): List<Tool> = mcpRuntime.getAllAvailableTools().also { available ->
@@ -711,7 +732,6 @@ internal class SharedChatRuntime(
     private companion object {
         const val CREATE_NEW_CONVERSATION_KEY = "create_new_conversation_on_start"
         const val LAST_CONVERSATION_KEY = "lastConversationId"
-        const val TITLE_MAX_LENGTH = 80
         const val MAX_GENERATION_STEPS = 32
 
         /**

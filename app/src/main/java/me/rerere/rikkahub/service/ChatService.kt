@@ -27,12 +27,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.jsonObject
 import me.rerere.ai.core.MessageRole
-import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.Tool
-import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderManager
-import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
@@ -93,16 +90,6 @@ import kotlin.uuid.Uuid
 
 private const val TAG = "ChatService"
 
-internal fun backgroundTextGenerationParams(
-    model: Model,
-    reasoningLevel: ReasoningLevel = ReasoningLevel.AUTO,
-): TextGenerationParams = TextGenerationParams(
-    model = model,
-    reasoningLevel = reasoningLevel,
-    customHeaders = model.customHeaders,
-    customBody = model.customBodies,
-)
-
 private val inputTransformers by lazy {
     listOf(
         TimeReminderTransformer,
@@ -138,6 +125,19 @@ class ChatService(
     private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
 ) : ChatRuntime {
+    private val titleGenerator = ConversationTitleGenerator(
+        providerManager = providerManager,
+        getSettings = { settingsStore.settingsFlow.first() },
+        getConversation = conversationRepo::getConversationById,
+        saveTitle = { id, expectedTitle, title ->
+            if (conversationRepo.updateConversationTitle(id, expectedTitle, title)) {
+                updateConversationState(id) { current ->
+                    if (current.title == expectedTitle) current.copy(title = title) else current
+                }
+            }
+        },
+    )
+
     // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
     private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
 
@@ -735,43 +735,13 @@ class ChatService(
         conversation: Conversation,
         force: Boolean,
     ) {
-        val shouldGenerate = when {
-            force -> true
-            conversation.title.isBlank() -> true
-            else -> false
-        }
-        if (!shouldGenerate) return
-
-        runCatching {
-            val settings = settingsStore.settingsFlow.first()
-            val model = settings.findModelById(settings.titleModelId, fallback = settings.fastModelId) ?: return
-            val provider = model.findProvider(settings.providers) ?: return
-
-            val providerHandler = providerManager.getProviderByType(provider)
-            val result = providerHandler.generateText(
-                providerSetting = provider,
-                messages = listOf(
-                    UIMessage.user(
-                        prompt = settings.titlePrompt.applyPlaceholders(
-                            "locale" to Locale.getDefault().displayName,
-                            "content" to conversation.currentMessages
-                                .takeLast(4).joinToString("\n\n") { it.summaryAsText(maxLength = 500) })
-                    ),
-                ),
-                params = backgroundTextGenerationParams(model),
-            )
-
-            // 生成完，conversation可能不是最新了，因此需要重新获取
-            conversationRepo.getConversationById(conversation.id)?.let {
-                saveConversation(
-                    conversationId,
-                    it.copy(title = result.choices[0].message?.toText()?.trim() ?: "")
-                )
-            }
-        }.onFailure {
-            it.printStackTrace()
+        try {
+            titleGenerator.generate(conversationId, conversation, force)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
             addError(
-                error = it,
+                error = error,
                 conversationId = conversationId,
                 title = context.getString(R.string.error_title_generate_title),
                 solution = ChatErrorSolution.CheckTitleModelSettings,
