@@ -141,6 +141,9 @@ adb -s emulator-5560 shell am instrument -w -r \
 
 ## 2026-09-09：聊天消息翻译
 
+本节为 `1d55ce6d5` / `db93b1a79` 的历史实测。后续[最小迁移审查](cmp-session-migration-audit.md)
+已撤回翻译清除立即落盘等额外逻辑；当前清除只改内存，不能将本节的清空重启结果外推到审查后版本。
+
 状态：`Pass`（Desktop 限定范围 GUI 回归，修复原生包启动问题后通过）；代码测试通过，详见
 [迁移与验证记录](cmp-migration-progress.md#2026-09-09聊天消息翻译)及
 [自动化结果](evidence/cmp-translation-2026-09-09/code-tests.txt)。

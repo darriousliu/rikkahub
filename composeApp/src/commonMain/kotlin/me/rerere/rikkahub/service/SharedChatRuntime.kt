@@ -30,7 +30,6 @@ import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.handleMessageChunk
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.ai.ui.limitContext
-import me.rerere.common.logging.RikkaLog
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -108,37 +107,24 @@ internal class SharedChatRuntime(
         providerManager = providerManager,
         getSettings = { settingsStore.settingsFlow.first() },
         getConversation = conversationRepository::getConversationById,
-        saveTitle = { id, expectedTitle, title ->
-            if (conversationRepository.updateConversationTitle(id, expectedTitle, title)) {
-                updateConversationState(id) { current ->
-                    if (current.title == expectedTitle) current.copy(title = title) else current
-                }
-            }
+        saveConversation = ::saveConversation,
+        onError = { id, error ->
+            addError(
+                error = error,
+                conversationId = id,
+                title = getString(Res.string.error_title_generate_title),
+                solution = ChatErrorSolution.CheckTitleModelSettings,
+            )
         },
     )
 
     private val suggestionGenerator = ConversationSuggestionGenerator(
         providerManager = providerManager,
         getSettings = { settingsStore.settingsFlow.first() },
-        getConversation = { id -> conversations[id]?.value ?: conversationRepository.getConversationById(id) },
-        clearSuggestions = { id, expectedMessages ->
-            if (conversationRepository.updateConversationSuggestions(id, expectedMessages, emptyList())) {
-                updateConversationState(id) { current ->
-                    if (current.currentMessages == expectedMessages) {
-                        current.copy(chatSuggestions = emptyList())
-                    } else current
-                }
-            }
-        },
-        saveSuggestions = { id, expectedMessages, suggestions ->
-            if (conversationRepository.updateConversationSuggestions(id, expectedMessages, suggestions)) {
-                updateConversationState(id) { current ->
-                    if (current.currentMessages == expectedMessages) {
-                        current.copy(chatSuggestions = suggestions)
-                    } else current
-                }
-            }
-        },
+        getConversation = conversationRepository::getConversationById,
+        getLoadedConversation = { id -> conversations[id]?.value },
+        updateConversation = { id, conversation -> conversationState(id).value = conversation },
+        saveConversation = ::saveConversation,
     )
 
     private val conversationCompressor = ConversationCompressor(
@@ -152,14 +138,12 @@ internal class SharedChatRuntime(
     private val messageTranslator = MessageTranslationManager(
         scope = scope,
         getSettings = { settingsStore.settingsFlow.first() },
-        translateText = { settings, source, code, name ->
-            textTranslator.translateText(settings, source, code, name).flowOn(Dispatchers.Default)
+        translateText = { settings, source, code, name, onStreamUpdate ->
+            textTranslator.translateText(settings, source, code, name, onStreamUpdate).flowOn(Dispatchers.Default)
         },
-        getConversation = { conversations[it]?.value },
-        updateTranslation = { id, message, translation ->
-            conversations[id]?.update { it.withMessageTranslation(message, translation) }
-        },
-        saveTranslation = conversationRepository::updateMessageTranslation,
+        getConversation = { getConversationFlow(it).value },
+        updateConversation = { id, conversation -> conversationState(id).value = conversation },
+        saveConversation = ::saveConversation,
         getLoadingText = { getString(Res.string.translating) },
         onError = { id, error ->
             addError(error, id, title = getString(Res.string.error_title_translate_message))
@@ -458,21 +442,11 @@ internal class SharedChatRuntime(
         val language = TranslationLanguage.entries.firstOrNull {
             it.languageTag.equals(targetLanguageTag, ignoreCase = true)
         }
-        if (language == null) {
-            scope.launch {
-                addError(
-                    IllegalArgumentException("Unsupported translation language: $targetLanguageTag"),
-                    conversationId,
-                    title = getString(Res.string.error_title_translate_message),
-                )
-            }
-            return
-        }
         messageTranslator.translate(
             conversationId = conversationId,
             message = message,
-            targetLanguageCode = language.promptCode,
-            targetLanguageName = language.apiName,
+            targetLanguageCode = language?.promptCode ?: targetLanguageTag.replace('-', '_'),
+            targetLanguageName = language?.apiName ?: targetLanguageTag,
         )
     }
 
@@ -481,28 +455,11 @@ internal class SharedChatRuntime(
         conversation: Conversation,
         force: Boolean,
     ) {
-        try {
-            titleGenerator.generate(conversationId, conversation, force)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            addError(
-                error = error,
-                conversationId = conversationId,
-                title = getString(Res.string.error_title_generate_title),
-                solution = ChatErrorSolution.CheckTitleModelSettings,
-            )
-        }
+        titleGenerator.generate(conversationId, conversation, force)
     }
 
     override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
-        try {
-            suggestionGenerator.generate(conversationId, conversation)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            RikkaLog.w("SharedChatRuntime", "Suggestion generation failed", error)
-        }
+        suggestionGenerator.generate(conversationId, conversation)
     }
 
     override fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
@@ -575,7 +532,6 @@ internal class SharedChatRuntime(
         val providerSetting = model.findProvider(settings.providers)
             ?: error("No provider is configured for ${model.displayName}")
         val provider = providerManager.getProviderByType(providerSetting)
-        state.update { it.copy(chatSuggestions = emptyList()) }
         val status = processingStatuses.getOrPut(conversationId) { MutableStateFlow(null) }
         val senderName = assistant.name.ifBlank { model.displayName }
         val systemPrompt = conversation.customSystemPrompt

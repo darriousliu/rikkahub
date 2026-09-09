@@ -81,14 +81,6 @@ class MessageFtsManager(
         }
     }
 
-    suspend fun updateConversationTitle(conversationId: String, title: String) =
-        database.useWriterConnection { connection ->
-            connection.execute("UPDATE message_fts SET title = ? WHERE conversation_id = ?") {
-                bindText(1, title)
-                bindText(2, conversationId)
-            }
-        }
-
     suspend fun deleteAll() = database.useWriterConnection { connection ->
         connection.execute("DELETE FROM message_fts")
     }

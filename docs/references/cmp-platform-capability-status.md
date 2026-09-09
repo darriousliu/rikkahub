@@ -20,14 +20,15 @@
 增量记录（2026-09-08，逐项详情见 [迁移与验证记录](cmp-migration-progress.md)）：
 
 - 已补齐搜索与模型 Provider 的持久化 LRU Key 轮换，Android 保留旧缓存格式，iOS/Desktop 接入共享存储；9 项契约测试在三端通过。
-- 已共享 AI 自动会话标题生成，iOS/Desktop 从首条文本截断升级为标题模型/快速模型生成。三端复用同一模型选择、提示词和请求参数逻辑，标题独立于回复后台生成，保存仅更新标题字段。
+- 已共享 AI 自动会话标题生成，iOS/Desktop 从首条文本截断升级为标题模型/快速模型生成。三端复用同一模型选择、提示词和请求参数逻辑，标题独立于回复后台生成，按原 Android 流程重读数据库后保存会话。
 - 下方代码分布及其他能力仍保留原快照口径，未在本次重新审计。
 
-2026-09-09 增量：已共享 AI 追问建议生成，三端共用开关、模型回退、提示词和逐行解析规则；iOS/Desktop 在回复完成后自动后台生成。建议字段单独持久化，消息已变化或请求已过期时丢弃旧结果，详情见 [迁移与验证记录](cmp-migration-progress.md)。
+2026-09-09 增量：已共享 AI 追问建议生成，三端共用开关、模型回退、提示词和逐行解析规则；iOS/Desktop 在回复完成后自动后台生成。内存清空、数据库重读及保存均沿用原 Android 流程，详情见[最小迁移审查](cmp-session-migration-audit.md)。
 
-2026-09-09 后续增量：已补齐聊天消息翻译，三端共用普通流式/Qwen MT 请求、译文状态管理和字段级保存；
-清除译文会落盘，空响应、取消和旧请求竞争有代码测试。Desktop 的真实翻译、折叠/展开、保留及清空后重启均已通过
-[GUI 回归](cmp-gui-regression.md#2026-09-09聊天消息翻译)，并修复原生包读取保存设置所需的 JDK 模块缺失。
+2026-09-09 后续增量：已补齐聊天消息翻译，三端共用原普通流式/Qwen MT 请求和消息翻译流程。
+完成后保存当前会话，清除/失败只更新内存，后续普通保存才落盘，详见[最小迁移审查](cmp-session-migration-audit.md)。
+Desktop 在原迁移提交上的真实翻译、折叠/展开、保留及清空后重启已通过
+[GUI 回归](cmp-gui-regression.md#2026-09-09聊天消息翻译)，并修复原生包读取保存设置所需的 JDK 模块缺失；其中清除立即落盘的额外逻辑在本次审查中已撤回。
 会话上下文压缩现已原样抽取至 commonMain，并接入 iOS/Desktop 更多菜单。模型回退、递归分块、保留最近消息、
 异常和保存规则沿用原 Android 实现；三端代码测试及编译通过，详见[压缩迁移记录](cmp-migration-progress.md#2026-09-09会话上下文压缩)。
 
@@ -68,7 +69,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | 搜索与模型 Provider 的持久化 LRU Key 轮换 | ✅ | ✅ | ✅ | `KeyRoulette.persistentLru`；2026-09-08 增量，三端真实文件契约测试通过 |
 | AI 自动会话标题 | ✅ | ✅ | ✅ | `ConversationTitleGenerator`；2026-09-08 增量，Android `ChatService` 与 iOS/Desktop `SharedChatRuntime` 共用 |
 | AI 追问建议 | ✅ | ✅ | ✅ | `ConversationSuggestionGenerator`；2026-09-09 增量，三端共用，现有共享 UI 显示建议并支持点击填入输入框 |
-| 聊天消息翻译 | ✅ | ✅ | ✅ | `TextTranslationGenerator` / `MessageTranslationManager`；2026-09-09 增量，普通流式/Qwen MT、译文清除和持久化共用 |
+| 聊天消息翻译 | ✅ | ✅ | ✅ | `TextTranslationGenerator` / `MessageTranslationManager`；2026-09-09 增量，原普通流式/Qwen MT、译文清除及整会话保存流程共用 |
 | 会话上下文压缩 | ✅ | ✅ | ✅ | `ConversationCompressor` / `SharedCompressContextDialog`；原 Android 逻辑抽取，继续使用各 runtime 的既有保存流程 |
 | Room 3 + bundled SQLite | ✅ | ✅ | ✅ | `AppDatabase` expect/actual |
 | DataStore 设置 | ✅ | ✅ | ✅ | `SettingsStore` |

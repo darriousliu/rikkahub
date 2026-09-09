@@ -26,6 +26,14 @@
 
 命名习惯：模块名为小写目录（如 `ai/`、`speech/`），Kotlin 类遵循 PascalCase，测试类以 `*Test` 结尾。
 
+## CMP Migration Constraints
+
+- 优先直接移动原文件或方法体，仅适配 common 中不可用的 Java/Android API 和必要的平台接线。
+- 保持原有判断、请求参数、异常、取消、并发和持久化行为；禁止借迁移大量改写业务逻辑。
+- 不顺带添加参数校验、空响应保护、请求状态机、锁或数据库条件更新等功能改进。
+- 优先用代码测试验证迁移前后等价；每项记录验证步骤、预期结果和实际覆盖范围。
+- 历史改动的收敛依据见 `docs/references/cmp-session-migration-audit.md`。
+
 ## Testing Guidelines
 
 测试框架以 JUnit/AndroidX Test 为主。未设定强制覆盖率门槛，但新逻辑应配套新增/更新测试。测试文件命名建议：

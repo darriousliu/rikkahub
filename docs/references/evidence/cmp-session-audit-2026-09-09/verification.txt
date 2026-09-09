@@ -1,0 +1,40 @@
+本 session 最小迁移审查验证（2026-09-09）
+审查范围：66e8370c1..d8ab61c8；回归针对收敛后的工作树。
+
+生产编译：
+./gradlew :composeApp:compileCommonMainKotlinMetadata :composeApp:compileKotlinIosArm64 :app:compileDebugKotlin --console=plain
+BUILD SUCCESSFUL in 25s，退出码0。JVM/iOS Simulator 生产编译另由测试依赖执行。
+
+代码测试：
+./gradlew :ai:jvmTest :ai:testAndroidHostTest :ai:iosSimulatorArm64Test :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest --console=plain
+BUILD SUCCESSFUL in 20s，退出码0。
+ai:testAndroidHostTest: {'tests': 130, 'failures': 0, 'errors': 0, 'skipped': 0}
+ai:jvmTest: {'tests': 80, 'failures': 0, 'errors': 0, 'skipped': 0}
+ai:iosSimulatorArm64Test: {'tests': 80, 'failures': 0, 'errors': 0, 'skipped': 0}
+composeApp:testAndroidHostTest: {'tests': 110, 'failures': 0, 'errors': 0, 'skipped': 0}
+composeApp:jvmTest: {'tests': 114, 'failures': 0, 'errors': 0, 'skipped': 0}
+composeApp:iosSimulatorArm64Test: {'tests': 110, 'failures': 0, 'errors': 0, 'skipped': 0}
+app:ChatServiceTest: {'tests': '1', 'failures': '0', 'errors': '0', 'skipped': '0'}
+TEST-me.rerere.rikkahub.service.MessageTranslationPersistenceTest: 2 tests
+TEST-me.rerere.rikkahub.service.ConversationSuggestionGeneratorTest: 9 tests
+TEST-me.rerere.rikkahub.service.MessageTranslationManagerTest: 8 tests
+TEST-me.rerere.rikkahub.service.ConversationCompressorTest: 8 tests
+TEST-me.rerere.rikkahub.service.ConversationCompressionPersistenceTest: 2 tests
+TEST-me.rerere.rikkahub.service.ConversationTitleGeneratorTest: 8 tests
+TEST-me.rerere.rikkahub.service.TextTranslationGeneratorTest: 8 tests
+
+所有Provider使用Fake/MockEngine；AI文件测试使用临时文件，composeApp JVM含真实Room/BundledSQLite。
+审查阶段没有真实模型请求。此前本次压缩GUI使用一次DeepSeek V4 Flash，结果见cmp-compression-2026-09-09。
+归一化静态比较：TextTranslationGenerator.translateText与66e8370c1 GenerationHandler一致，仅flowOn保留包装层。
+ConversationDAO、MessageFtsManager、ConversationRepository与66e8370c1字节内容一致。
+新增条件更新与翻译source匹配扩展的生产/测试引用为0。
+审查中修正了测试参数/重复注解，以及恢复原空chunk行为的断言；没有据测试失败添加生产保护逻辑。
+
+最终共享入口复核：移除非 Android 语言白名单拒绝分支，已有 UI 语言映射保留，未知标签传给模型。
+最终命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test :composeApp:compileCommonMainKotlinMetadata :composeApp:compileKotlinIosArm64 :app:compileDebugKotlin :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest --console=plain
+BUILD SUCCESSFUL in 42s，退出码0。
+composeApp:testAndroidHostTest: {'tests': 110, 'failures': 0, 'errors': 0, 'skipped': 0}
+composeApp:jvmTest: {'tests': 114, 'failures': 0, 'errors': 0, 'skipped': 0}
+composeApp:iosSimulatorArm64Test: {'tests': 110, 'failures': 0, 'errors': 0, 'skipped': 0}
+原生/iOS模拟器、JVM、Android、common metadata 生产编译均成功。

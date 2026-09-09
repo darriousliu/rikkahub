@@ -7,14 +7,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.ReasoningLevel
-import me.rerere.ai.core.TokenUsage
-import me.rerere.ai.provider.CustomBody
-import me.rerere.ai.provider.CustomHeader
 import me.rerere.ai.provider.EmbeddingGenerationParams
 import me.rerere.ai.provider.EmbeddingGenerationResult
 import me.rerere.ai.provider.Model
@@ -46,11 +41,9 @@ class TextTranslationGeneratorTest {
     }
 
     @Test
-    fun `regular translation substitutes prompt and preserves model request settings`() = runTest {
-        val headers = listOf(CustomHeader("X-Test", "header"))
-        val bodies = listOf(CustomBody("max_tokens", JsonPrimitive(99)))
+    fun `regular translation substitutes prompt and uses original request parameters`() = runTest {
         val fixture = fixture(
-            model = Model("regular", "Regular", customHeaders = headers, customBodies = bodies),
+            model = Model("regular", "Regular"),
             streamResponses = listOf(response(delta = "translated")),
             prompt = "text={source_text}; target={target_lang}",
             thinkingBudget = 4096,
@@ -61,12 +54,10 @@ class TextTranslationGeneratorTest {
         assertEquals(listOf("translated"), result)
         assertEquals("text=original; target=zh", fixture.provider.lastMessages.single().toText())
         assertEquals(ReasoningLevel.fromBudgetTokens(4096), fixture.provider.lastParams?.reasoningLevel)
-        assertEquals(headers, fixture.provider.lastParams?.customHeaders)
-        assertEquals(bodies, fixture.provider.lastParams?.customBody)
     }
 
     @Test
-    fun `streaming accumulates deltas and skips empty chunks`() = runTest {
+    fun `streaming keeps original empty chunk handling and accumulates deltas`() = runTest {
         val fixture = fixture(
             streamResponses = listOf(
                 response(),
@@ -78,39 +69,17 @@ class TextTranslationGeneratorTest {
 
         val result = fixture.translate(onStreamUpdate = callbacks::add).toList()
 
-        assertEquals(listOf("one", "one two"), result)
+        assertEquals(listOf("original -> zh", "one", "one two"), result)
         assertEquals(result, callbacks)
     }
 
     @Test
-    fun `non assistant chunks never emit the source prompt before a translation delta`() = runTest {
-        val fixture = fixture(
-            streamResponses = listOf(
-                response(),
-                usageResponse(),
-                response(delta = UIMessage(role = MessageRole.ASSISTANT, parts = emptyList())),
-                response(delta = UIMessage(
-                    role = MessageRole.ASSISTANT,
-                    parts = listOf(UIMessagePart.Reasoning("thinking")),
-                )),
-                response(delta = "translated"),
-            ),
-        )
-        val callbacks = mutableListOf<String>()
-
-        val result = fixture.translate(onStreamUpdate = callbacks::add).toList()
-
-        assertEquals(1, result.size)
-        assertTrue(result.single().endsWith("translated"), result.single())
-        assertTrue("original" !in result.single(), result.single())
-        assertEquals(result, callbacks)
-    }
-
-    @Test
-    fun `regular blank output and empty choices emit nothing`() = runTest {
+    fun `regular blank output is skipped while initial empty choices retain the latest message`() = runTest {
         val fixture = fixture(streamResponses = listOf(response(), response(delta = "   ")))
 
-        assertEquals(emptyList(), fixture.translate().toList())
+        assertEquals(listOf("original -> zh"), fixture.translate().toList())
+        val blankOnly = fixture(streamResponses = listOf(response(delta = "   ")))
+        assertEquals(emptyList(), blankOnly.translate().toList())
     }
 
     @Test
@@ -145,14 +114,9 @@ class TextTranslationGeneratorTest {
     }
 
     @Test
-    fun `qwen mt uses non streaming translation options after custom body`() = runTest {
-        val customBodies = listOf(
-            CustomBody("translation_options", JsonPrimitive("wrong")),
-            CustomBody("thinking", JsonPrimitive(false)),
-        )
-        val headers = listOf(CustomHeader("X-Test", "header"))
+    fun `qwen mt uses original non streaming translation options`() = runTest {
         val fixture = fixture(
-            model = Model("qwen-mt-turbo", "Qwen MT", customHeaders = headers, customBodies = customBodies),
+            model = Model("qwen-mt-turbo", "Qwen MT"),
             generatedResponse = response(message = "翻译"),
         )
 
@@ -163,12 +127,8 @@ class TextTranslationGeneratorTest {
         assertEquals(1, fixture.provider.generateCalls)
         assertEquals(0.3f, fixture.provider.lastParams?.temperature)
         assertEquals(0.95f, fixture.provider.lastParams?.topP)
-        assertEquals(headers, fixture.provider.lastParams?.customHeaders)
-        assertEquals(
-            customBodies + fixture.provider.lastParams!!.customBody.last(),
-            fixture.provider.lastParams?.customBody,
-        )
-        val options = fixture.provider.lastParams!!.customBody.last().value.jsonObject
+        assertEquals(1, fixture.provider.lastParams?.customBody?.size)
+        val options = fixture.provider.lastParams!!.customBody.single().value.jsonObject
         assertEquals("auto", options["source_lang"]?.jsonPrimitive?.content)
         assertEquals("Chinese", options["target_lang"]?.jsonPrimitive?.content)
         assertEquals("original", fixture.provider.lastMessages.single().toText())
@@ -279,19 +239,6 @@ class TextTranslationGeneratorTest {
                 )
                 else -> emptyList()
             },
-        )
-
-        fun response(delta: UIMessage): MessageChunk = MessageChunk(
-            id = "response",
-            model = "fake",
-            choices = listOf(UIMessageChoice(0, delta, null, "stop")),
-        )
-
-        fun usageResponse(): MessageChunk = MessageChunk(
-            id = "response",
-            model = "fake",
-            choices = emptyList(),
-            usage = TokenUsage(completionTokens = 1),
         )
     }
 }

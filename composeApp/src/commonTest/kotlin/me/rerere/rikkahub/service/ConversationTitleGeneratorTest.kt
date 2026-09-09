@@ -27,8 +27,6 @@ import me.rerere.rikkahub.data.model.toMessageNode
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
@@ -43,278 +41,169 @@ class ConversationTitleGeneratorTest {
     }
 
     @Test
-    fun `uses title model and saves trimmed title`() = runTest {
+    fun `blank title uses selected model prompt and saves trimmed response`() = runTest {
         val fixture = fixture(response = response("  Generated title  "))
-
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
-        assertSame(fixture.titleModel, fixture.provider.lastParams?.model)
-        assertEquals("Generated title", fixture.saved?.title)
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertSame(fixture.model, fixture.provider.params!!.model)
+        assertTrue("Question" in fixture.provider.messages.single().toText())
+        assertEquals("Generated title", fixture.saved.single().title)
     }
 
     @Test
-    fun `falls back to fast model when title model is missing`() = runTest {
-        listOf(null, Uuid.random()).forEach { titleModelId ->
-            val fixture = fixture(titleModelId = titleModelId)
-
-            fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
-            assertSame(fixture.fastModel, fixture.provider.lastParams?.model)
-            assertEquals(1, fixture.provider.calls)
-        }
-    }
-
-    @Test
-    fun `returns without a request when neither selected model exists`() = runTest {
-        val fixture = fixture(
-            titleModelId = Uuid.random(),
-            fastModelId = Uuid.random(),
-        )
-
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
+    fun `existing title only generates when forced`() = runTest {
+        val fixture = fixture(snapshot = conversation(title = "Existing"))
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
         assertEquals(0, fixture.provider.calls)
-        assertNull(fixture.saved)
-    }
-
-    @Test
-    fun `existing title skips generation unless forced`() = runTest {
-        val conversation = conversation(title = "Existing")
-        val fixture = fixture(conversation = conversation)
-
-        fixture.generator.generate(conversation.id, conversation)
-        assertEquals(0, fixture.settingsReads)
-        assertEquals(0, fixture.provider.calls)
-
-        fixture.generator.generate(conversation.id, conversation, force = true)
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot, force = true)
         assertEquals(1, fixture.provider.calls)
-        assertEquals("New title", fixture.saved?.title)
     }
 
     @Test
-    fun `prompt substitutes locale and summaries of only the latest four messages`() = runTest {
-        val messages = listOf(
-            UIMessage.user("excluded"),
-            UIMessage.assistant("one"),
-            UIMessage.user("two"),
-            UIMessage.assistant("three"),
-            UIMessage.user("x".repeat(600)),
-        )
-        val fixture = fixture(
-            conversation = conversation(messages = messages),
-            titlePrompt = "locale={locale}\ncontent={content}",
-            localeName = "Test Locale",
-        )
+    fun `falls back to fast model and skips when no model is available`() = runTest {
+        val fallback = fixture(titleModelId = Uuid.random())
+        fallback.generator.generate(fallback.snapshot.id, fallback.snapshot)
+        assertSame(fallback.fastModel, fallback.provider.params!!.model)
 
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
-        val prompt = fixture.provider.lastMessages.single().toText()
-        assertTrue(prompt.startsWith("locale=Test Locale\ncontent=[ASSISTANT]: one"), prompt)
-        assertTrue("[USER]: two" in prompt, prompt)
-        assertTrue("[ASSISTANT]: three" in prompt, prompt)
-        assertTrue("[USER]: ${"x".repeat(492)}..." in prompt, prompt)
-        assertTrue("excluded" !in prompt, prompt)
+        val missing = fixture(titleModelId = Uuid.random(), fastModelId = Uuid.random())
+        missing.generator.generate(missing.snapshot.id, missing.snapshot)
+        assertEquals(0, missing.provider.calls)
     }
 
     @Test
-    fun `passes background params with auto reasoning and model customizations`() = runTest {
+    fun `uses provider override and background model parameters`() = runTest {
         val headers = listOf(CustomHeader("X-Test", "header"))
         val bodies = listOf(CustomBody("test", JsonPrimitive("body")))
-        val titleModel = Model(
-            modelId = "title",
-            displayName = "Title",
-            customHeaders = headers,
-            customBodies = bodies,
-        )
-        val fixture = fixture(titleModel = titleModel)
-
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
-        val params = fixture.provider.lastParams
-        assertEquals(ReasoningLevel.AUTO, params?.reasoningLevel)
-        assertEquals(headers, params?.customHeaders)
-        assertEquals(bodies, params?.customBody)
-    }
-
-    @Test
-    fun `uses model provider override`() = runTest {
         val override = ProviderSetting.OpenAI(name = "Override", baseUrl = "https://override.invalid")
-        val titleModel = Model(modelId = "title", displayName = "Title", providerOverwrite = override)
-        val fixture = fixture(titleModel = titleModel)
-
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
-        assertEquals("Override", fixture.provider.lastSetting?.name)
-        assertEquals("https://override.invalid", fixture.provider.lastSetting?.baseUrl)
-        assertTrue(fixture.provider.lastSetting?.models?.isEmpty() == true)
-    }
-
-    @Test
-    fun `blank or absent response does not save`() = runTest {
-        val responses = listOf(
-            response("   "),
-            response(message = null),
-            MessageChunk(id = "response", model = "fake", choices = emptyList()),
+        val model = Model(
+            "title", "Title", customHeaders = headers, customBodies = bodies, providerOverwrite = override,
         )
-
-        responses.forEach { response ->
-            val fixture = fixture(conversation = conversation(title = "Keep title"), response = response)
-            fixture.generator.generate(fixture.conversation.id, fixture.conversation, force = true)
-            assertNull(fixture.saved)
-            assertEquals("Keep title", fixture.latest?.title)
-        }
+        val fixture = fixture(model = model)
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertEquals(ReasoningLevel.AUTO, fixture.provider.params!!.reasoningLevel)
+        assertEquals(headers, fixture.provider.params!!.customHeaders)
+        assertEquals(bodies, fixture.provider.params!!.customBody)
+        assertEquals("Override", fixture.provider.setting!!.name)
     }
 
     @Test
-    fun `provider failure propagates without saving`() = runTest {
-        val expected = IllegalStateException("provider failed")
-        val fixture = fixture(providerFailure = expected)
-
-        val actual = runCatching {
-            fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-        }.exceptionOrNull()
-
-        assertSame(expected, actual)
-        assertNull(fixture.saved)
-    }
-
-    @Test
-    fun `cancellation propagates without saving`() = runTest {
-        val fixture = fixture(providerFailure = CancellationException("cancelled"))
-
-        val actual = runCatching {
-            fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-        }.exceptionOrNull()
-
-        assertIs<CancellationException>(actual)
-        assertNull(fixture.saved)
-    }
-
-    @Test
-    fun `storage failure propagates`() = runTest {
-        val expected = IllegalStateException("storage failed")
-        val fixture = fixture(saveFailure = expected)
-
-        val actual = runCatching {
-            fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-        }.exceptionOrNull()
-
-        assertSame(expected, actual)
-        assertNull(fixture.saved)
-    }
-
-    @Test
-    fun `prompt includes only the selected message branch`() = runTest {
-        val conversation = conversation().copy(
-            messageNodes = listOf(
-                MessageNode(
-                    messages = listOf(UIMessage.assistant("discarded branch"), UIMessage.assistant("selected branch")),
-                    selectIndex = 1,
-                ),
+    fun `uses selected latest four messages and truncates summaries`() = runTest {
+        val nodes = listOf(
+            UIMessage.user("excluded").toMessageNode(),
+            MessageNode(
+                messages = listOf(UIMessage.assistant("discarded"), UIMessage.assistant("one")),
+                selectIndex = 1,
             ),
+            UIMessage.user("two").toMessageNode(),
+            UIMessage.assistant("three").toMessageNode(),
+            UIMessage.user("x".repeat(600)).toMessageNode(),
         )
-        val fixture = fixture(conversation = conversation)
-
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
-
-        val prompt = fixture.provider.lastMessages.single().toText()
-        assertTrue("selected branch" in prompt, prompt)
-        assertTrue("discarded branch" !in prompt, prompt)
+        val fixture = fixture(snapshot = Conversation.ofId(Uuid.random(), messages = nodes))
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        val prompt = fixture.provider.messages.single().toText()
+        assertTrue("excluded" !in prompt)
+        assertTrue("discarded" !in prompt)
+        assertTrue(prompt.startsWith("Test Locale\n[ASSISTANT]: one"))
+        assertTrue("[USER]: ${"x".repeat(492)}..." in prompt)
     }
 
     @Test
-    fun `does not overwrite title changed during request even when forced`() = runTest {
-        val conversation = conversation(title = "Old title")
-        val fixture = fixture(conversation = conversation)
-        fixture.provider.beforeResponse = {
-            fixture.latest = fixture.latest?.copy(title = "User rename")
-        }
-
-        fixture.generator.generate(conversation.id, conversation, force = true)
-
-        assertNull(fixture.saved)
-        assertEquals("User rename", fixture.latest?.title)
+    fun `blank response and rename during request are saved as original behavior`() = runTest {
+        val fixture = fixture(snapshot = conversation(title = "Old"), response = response("   "))
+        fixture.provider.beforeResponse = { fixture.database = fixture.database?.copy(title = "User rename") }
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot, force = true)
+        assertEquals("", fixture.saved.single().title)
     }
 
     @Test
-    fun `does not recreate conversation deleted during request`() = runTest {
-        val fixture = fixture()
-        fixture.provider.beforeResponse = { fixture.latest = null }
+    fun `failure invokes error callback and deletion skips save`() = runTest {
+        val failure = IllegalStateException("failed")
+        val failed = fixture(failure = failure)
+        failed.generator.generate(failed.snapshot.id, failed.snapshot)
+        assertSame(failure, failed.error)
 
-        fixture.generator.generate(fixture.conversation.id, fixture.conversation)
+        val deleted = fixture()
+        deleted.provider.beforeResponse = { deleted.database = null }
+        deleted.generator.generate(deleted.snapshot.id, deleted.snapshot)
+        assertTrue(deleted.saved.isEmpty())
+    }
 
-        assertNull(fixture.saved)
+    @Test
+    fun `empty choices and save failures report errors while null message saves empty title`() = runTest {
+        val choices = fixture(response = MessageChunk(id = "response", model = "fake", choices = emptyList()))
+        choices.generator.generate(choices.snapshot.id, choices.snapshot)
+        assertTrue(choices.error is IndexOutOfBoundsException)
+        assertTrue(choices.saved.isEmpty())
+
+        val nullMessage = fixture(response = response(null))
+        nullMessage.generator.generate(nullMessage.snapshot.id, nullMessage.snapshot)
+        assertEquals("", nullMessage.saved.single().title)
+
+        val saveFailure = fixture(onSave = { error("Save failed") })
+        saveFailure.generator.generate(saveFailure.snapshot.id, saveFailure.snapshot)
+        assertEquals("Save failed", saveFailure.error?.message)
+        assertTrue(saveFailure.saved.isEmpty())
+
+        val cancelled = fixture(failure = CancellationException("Cancelled"))
+        cancelled.generator.generate(cancelled.snapshot.id, cancelled.snapshot)
+        assertTrue(cancelled.error is CancellationException)
+        assertTrue(cancelled.saved.isEmpty())
     }
 
     private fun fixture(
-        conversation: Conversation = conversation(),
-        titleModel: Model = Model(modelId = "title", displayName = "Title"),
-        fastModel: Model = Model(modelId = "fast", displayName = "Fast"),
-        titleModelId: Uuid? = titleModel.id,
-        fastModelId: Uuid = fastModel.id,
-        titlePrompt: String = "{locale}\n{content}",
-        localeName: String = "English (Test)",
+        snapshot: Conversation = conversation(),
         response: MessageChunk = response("New title"),
-        providerFailure: Throwable? = null,
-        saveFailure: Throwable? = null,
+        failure: Throwable? = null,
+        model: Model = Model(modelId = "title", displayName = "Title"),
+        titleModelId: Uuid? = model.id,
+        fastModelId: Uuid? = null,
+        onSave: suspend (Conversation) -> Unit = {},
     ): Fixture {
-        val provider = FakeProvider(response, providerFailure)
-        val providerSetting = ProviderSetting.OpenAI(models = listOf(titleModel, fastModel))
-        val settings = Settings(
-            titleModelId = titleModelId,
-            fastModelId = fastModelId,
-            titlePrompt = titlePrompt,
-            providers = listOf(providerSetting),
-        )
+        val fastModel = Model(modelId = "fast", displayName = "Fast")
+        val provider = FakeProvider(response, failure)
         val client = HttpClient(MockEngine { error("Unexpected HTTP request") }).also { clients += it }
-        val manager = ProviderManager(client).apply {
-            registerProvider("openai", provider)
-        }
-        val fixture = Fixture(
-            conversation = conversation,
-            titleModel = titleModel,
-            fastModel = fastModel,
-            provider = provider,
-            latest = conversation,
-        )
+        val manager = ProviderManager(client).apply { registerProvider("openai", provider) }
+        val fixture = Fixture(snapshot, model, fastModel, provider)
         fixture.generator = ConversationTitleGenerator(
             providerManager = manager,
             getSettings = {
-                fixture.settingsReads++
-                settings
+                Settings(
+                    titleModelId = titleModelId,
+                    fastModelId = fastModelId ?: fastModel.id,
+                    titlePrompt = "{locale}\n{content}",
+                    providers = listOf(ProviderSetting.OpenAI(models = listOf(model, fastModel))),
+                )
             },
-            getConversation = { fixture.latest },
-            saveTitle = { id, expectedTitle, title ->
-                assertEquals(conversation.id, id)
-                assertEquals(fixture.latest?.title, expectedTitle)
-                saveFailure?.let { throw it }
-                fixture.saved = fixture.latest?.copy(title = title)
+            getConversation = { fixture.database },
+            saveConversation = { _, conversation ->
+                onSave(conversation)
+                fixture.saved += conversation
             },
-            getLocaleName = { localeName },
+            onError = { _, error -> fixture.error = error },
+            getLocaleName = { "Test Locale" },
         )
         return fixture
     }
 
     private class Fixture(
-        val conversation: Conversation,
-        val titleModel: Model,
+        val snapshot: Conversation,
+        val model: Model,
         val fastModel: Model,
         val provider: FakeProvider,
-        var latest: Conversation?,
     ) {
         lateinit var generator: ConversationTitleGenerator
-        var saved: Conversation? = null
-        var settingsReads: Int = 0
+        var database: Conversation? = snapshot
+        val saved = mutableListOf<Conversation>()
+        var error: Throwable? = null
     }
 
     private class FakeProvider(
         private val response: MessageChunk,
         private val failure: Throwable?,
     ) : Provider<ProviderSetting.OpenAI> {
-        var calls: Int = 0
-        var lastSetting: ProviderSetting.OpenAI? = null
-        var lastMessages: List<UIMessage> = emptyList()
-        var lastParams: TextGenerationParams? = null
+        var calls = 0
+        var params: TextGenerationParams? = null
+        var setting: ProviderSetting.OpenAI? = null
+        var messages = emptyList<UIMessage>()
         var beforeResponse: () -> Unit = {}
 
         override suspend fun listModels(providerSetting: ProviderSetting.OpenAI): List<Model> = emptyList()
@@ -325,9 +214,9 @@ class ConversationTitleGeneratorTest {
             params: TextGenerationParams,
         ): MessageChunk {
             calls++
-            lastSetting = providerSetting
-            lastMessages = messages
-            lastParams = params
+            setting = providerSetting
+            this.messages = messages
+            this.params = params
             beforeResponse()
             failure?.let { throw it }
             return response
@@ -346,15 +235,15 @@ class ConversationTitleGeneratorTest {
     }
 
     private companion object {
-        fun conversation(
-            title: String = "",
-            messages: List<UIMessage> = listOf(UIMessage.user("Question"), UIMessage.assistant("Answer")),
-        ): Conversation = Conversation.ofId(
-            id = Uuid.random(),
-            messages = messages.map(UIMessage::toMessageNode),
+        fun conversation(title: String = "") = Conversation.ofId(
+            Uuid.random(),
+            messages = listOf(
+                UIMessage.user("Question").toMessageNode(),
+                UIMessage.assistant("Answer").toMessageNode(),
+            ),
         ).copy(title = title)
 
-        fun response(message: String?): MessageChunk = MessageChunk(
+        fun response(message: String?) = MessageChunk(
             id = "response",
             model = "fake",
             choices = listOf(

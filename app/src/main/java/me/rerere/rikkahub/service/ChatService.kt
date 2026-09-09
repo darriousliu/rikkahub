@@ -124,37 +124,24 @@ class ChatService(
         providerManager = providerManager,
         getSettings = { settingsStore.settingsFlow.first() },
         getConversation = conversationRepo::getConversationById,
-        saveTitle = { id, expectedTitle, title ->
-            if (conversationRepo.updateConversationTitle(id, expectedTitle, title)) {
-                updateConversationState(id) { current ->
-                    if (current.title == expectedTitle) current.copy(title = title) else current
-                }
-            }
+        saveConversation = ::saveConversation,
+        onError = { id, error ->
+            addError(
+                error = error,
+                conversationId = id,
+                title = context.getString(R.string.error_title_generate_title),
+                solution = ChatErrorSolution.CheckTitleModelSettings,
+            )
         },
     )
 
     private val suggestionGenerator = ConversationSuggestionGenerator(
         providerManager = providerManager,
         getSettings = { settingsStore.settingsFlow.first() },
-        getConversation = { id -> sessions[id]?.state?.value ?: conversationRepo.getConversationById(id) },
-        clearSuggestions = { id, expectedMessages ->
-            if (conversationRepo.updateConversationSuggestions(id, expectedMessages, emptyList())) {
-                updateConversationState(id) { current ->
-                    if (current.currentMessages == expectedMessages) {
-                        current.copy(chatSuggestions = emptyList())
-                    } else current
-                }
-            }
-        },
-        saveSuggestions = { id, expectedMessages, suggestions ->
-            if (conversationRepo.updateConversationSuggestions(id, expectedMessages, suggestions)) {
-                updateConversationState(id) { current ->
-                    if (current.currentMessages == expectedMessages) {
-                        current.copy(chatSuggestions = suggestions)
-                    } else current
-                }
-            }
-        },
+        getConversation = conversationRepo::getConversationById,
+        getLoadedConversation = { id -> sessions[id]?.state?.value },
+        updateConversation = ::updateConversation,
+        saveConversation = ::saveConversation,
     )
 
     private val conversationCompressor = ConversationCompressor(
@@ -167,14 +154,12 @@ class ChatService(
     private val messageTranslator = MessageTranslationManager(
         scope = CoroutineScope(appScope.coroutineContext + Dispatchers.IO),
         getSettings = { settingsStore.settingsFlow.first() },
-        translateText = { settings, source, code, name ->
-            generationHandler.translateText(settings, source, code, name)
+        translateText = { settings, source, code, name, onStreamUpdate ->
+            generationHandler.translateText(settings, source, code, name, onStreamUpdate)
         },
-        getConversation = { sessions[it]?.state?.value },
-        updateTranslation = { id, message, translation ->
-            sessions[id]?.state?.update { it.withMessageTranslation(message, translation) }
-        },
-        saveTranslation = conversationRepo::updateMessageTranslation,
+        getConversation = { getConversationFlow(it).value },
+        updateConversation = ::updateConversation,
+        saveConversation = ::saveConversation,
         getLoadingText = { context.getString(R.string.translating) },
         onError = { id, error ->
             addError(error, id, title = context.getString(R.string.error_title_translate_message))
@@ -784,30 +769,13 @@ class ChatService(
         conversation: Conversation,
         force: Boolean,
     ) {
-        try {
-            titleGenerator.generate(conversationId, conversation, force)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            addError(
-                error = error,
-                conversationId = conversationId,
-                title = context.getString(R.string.error_title_generate_title),
-                solution = ChatErrorSolution.CheckTitleModelSettings,
-            )
-        }
+        titleGenerator.generate(conversationId, conversation, force)
     }
 
     // ---- 生成建议 ----
 
     override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
-        try {
-            suggestionGenerator.generate(conversationId, conversation)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            Log.w(TAG, "Suggestion generation failed", error)
-        }
+        suggestionGenerator.generate(conversationId, conversation)
     }
 
     // ---- 压缩对话历史 ----

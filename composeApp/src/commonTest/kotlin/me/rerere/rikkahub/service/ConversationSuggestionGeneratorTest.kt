@@ -3,12 +3,8 @@ package me.rerere.rikkahub.service
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.ai.core.ReasoningLevel
@@ -31,7 +27,6 @@ import me.rerere.rikkahub.data.model.toMessageNode
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
@@ -46,439 +41,193 @@ class ConversationSuggestionGeneratorTest {
     }
 
     @Test
-    fun `disabled suggestions do not clear request or save`() = runTest {
-        val conversation = conversation(suggestions = listOf("Old"))
-        val fixture = fixture(conversation, enabled = false)
-
-        fixture.generator.generate(conversation.id, conversation)
-
-        assertEquals(0, fixture.provider.calls.size)
-        assertTrue(fixture.clears.isEmpty())
-        assertTrue(fixture.saves.isEmpty())
-        assertEquals(listOf("Old"), fixture.latest(conversation.id)?.chatSuggestions)
-    }
-
-    @Test
-    fun `missing or invalid suggestion model falls back to fast model`() = runTest {
-        listOf(null, Uuid.random()).forEach { suggestionModelId ->
-            val conversation = conversation()
-            val fixture = fixture(conversation, suggestionModelId = suggestionModelId)
-
-            fixture.generator.generate(conversation.id, conversation)
-
-            assertSame(fixture.fastModel, fixture.provider.calls.single().params.model)
-        }
-    }
-
-    @Test
-    fun `no selected or fallback model skips generation`() = runTest {
-        val conversation = conversation(suggestions = listOf("Old"))
-        val fixture = fixture(
-            conversation,
-            suggestionModelId = Uuid.random(),
-            fastModelId = Uuid.random(),
-        )
-
-        fixture.generator.generate(conversation.id, conversation)
-
+    fun `disabled setting does not update or request`() = runTest {
+        val fixture = fixture(enabled = false)
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
         assertTrue(fixture.provider.calls.isEmpty())
-        assertTrue(fixture.clears.isEmpty())
-        assertTrue(fixture.saves.isEmpty())
+        assertTrue(fixture.updated.isEmpty())
+        assertTrue(fixture.saved.isEmpty())
     }
 
     @Test
-    fun `prompt uses locale selected branches and at most eight 500 character summaries`() = runTest {
-        val nodes = buildList {
-            add(UIMessage.user("excluded").toMessageNode())
-            add(UIMessage.assistant("also excluded").toMessageNode())
-            add(UIMessage.user("one").toMessageNode())
-            add(UIMessage.assistant("two").toMessageNode())
-            add(UIMessage.user("three").toMessageNode())
-            add(UIMessage.assistant("four").toMessageNode())
-            add(UIMessage.user("five").toMessageNode())
-            add(UIMessage.assistant("six").toMessageNode())
-            add(UIMessage.user("x".repeat(600)).toMessageNode())
-            add(
-                MessageNode(
-                    messages = listOf(
-                        UIMessage.assistant("discarded branch"),
-                        UIMessage.assistant("selected branch"),
-                    ),
-                    selectIndex = 1,
-                ),
-            )
-        }
-        val conversation = conversation().copy(messageNodes = nodes)
+    fun `uses fallback model prompt and saves parsed suggestions limited to ten`() = runTest {
         val fixture = fixture(
-            conversation,
-            prompt = "locale={locale}\ncontent={content}",
-            localeName = "Test Locale",
+            suggestionModelId = Uuid.random(),
+            response = response((1..12).joinToString("\n") { " Item $it " }),
+        )
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+
+        assertSame(fixture.fastModel, fixture.provider.calls.single().params.model)
+        assertTrue("Question" in fixture.provider.calls.single().messages.single().toText())
+        assertEquals(emptyList(), fixture.updated.single().chatSuggestions)
+        assertEquals((1..10).map { "Item $it" }, fixture.saved.single().chatSuggestions)
+    }
+
+    @Test
+    fun `uses passed snapshot content rather than later database content`() = runTest {
+        val snapshot = conversation(messages = listOf(UIMessage.user("original")))
+        val fixture = fixture(snapshot = snapshot)
+        fixture.database = snapshot.copy(messageNodes = listOf(UIMessage.user("newer").toMessageNode()))
+        fixture.generator.generate(snapshot.id, snapshot)
+        val prompt = fixture.provider.calls.single().messages.single().toText()
+        assertTrue("original" in prompt)
+        assertTrue("newer" !in prompt)
+    }
+
+    @Test
+    fun `empty response saves empty suggestions`() = runTest {
+        val fixture = fixture(response = response(null))
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertEquals(emptyList(), fixture.saved.single().chatSuggestions)
+    }
+
+    @Test
+    fun `failure clears only loaded conversation and preserves database suggestions`() = runTest {
+        val fixture = fixture(
+            snapshot = conversation(suggestions = listOf("Old")),
+            handler = { _, _, _ -> throw IllegalStateException("failed") },
+        )
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertEquals(emptyList(), fixture.loaded?.chatSuggestions)
+        assertEquals(listOf("Old"), fixture.database?.chatSuggestions)
+        assertTrue(fixture.saved.isEmpty())
+    }
+
+    @Test
+    fun `save uses database then loaded then snapshot`() = runTest {
+        val fixture = fixture()
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertEquals(
+            fixture.database,
+            fixture.saved.single().copy(chatSuggestions = fixture.database!!.chatSuggestions),
         )
 
-        fixture.generator.generate(conversation.id, conversation)
+        fixture.database = null
+        fixture.loaded = fixture.snapshot.copy(title = "Loaded")
+        fixture.saved.clear()
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertEquals("Loaded", fixture.saved.single().title)
 
-        val prompt = fixture.provider.calls.single().messages.single().toText()
-        assertTrue(prompt.startsWith("locale=Test Locale\ncontent=[USER]: one"), prompt)
-        assertTrue("excluded" !in prompt, prompt)
-        assertTrue("also excluded" !in prompt, prompt)
-        assertTrue("[USER]: ${"x".repeat(492)}..." in prompt, prompt)
-        assertTrue("selected branch" in prompt, prompt)
-        assertTrue("discarded branch" !in prompt, prompt)
+        fixture.loaded = null
+        fixture.saved.clear()
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+        assertEquals(fixture.snapshot.title, fixture.saved.single().title)
     }
 
     @Test
-    fun `passes background params and model provider override`() = runTest {
-        val headers = listOf(CustomHeader("X-Test", "header"))
-        val bodies = listOf(CustomBody("test", JsonPrimitive("body")))
-        val override = ProviderSetting.OpenAI(name = "Override", baseUrl = "https://override.invalid")
+    fun `selected model keeps override parameters and unavailable models skip all work`() = runTest {
         val model = Model(
             modelId = "suggestion",
-            displayName = "Suggestion",
-            customHeaders = headers,
-            customBodies = bodies,
-            providerOverwrite = override,
+            customHeaders = listOf(CustomHeader("X-Test", "header")),
+            customBodies = listOf(CustomBody("test", JsonPrimitive("body"))),
+            providerOverwrite = ProviderSetting.OpenAI(name = "Override"),
         )
-        val conversation = conversation()
-        val fixture = fixture(conversation, suggestionModel = model)
-
-        fixture.generator.generate(conversation.id, conversation)
-
+        val fixture = fixture(model = model)
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
         val call = fixture.provider.calls.single()
-        assertSame(model, call.params.model)
+        assertEquals(model, call.params.model)
         assertEquals(ReasoningLevel.AUTO, call.params.reasoningLevel)
-        assertEquals(headers, call.params.customHeaders)
-        assertEquals(bodies, call.params.customBody)
+        assertEquals(model.customHeaders, call.params.customHeaders)
+        assertEquals(model.customBodies, call.params.customBody)
         assertEquals("Override", call.setting.name)
-        assertEquals("https://override.invalid", call.setting.baseUrl)
-        assertTrue(call.setting.models.isEmpty())
-    }
 
-    @Test
-    fun `parses lines preserving duplicates numbering and order with a ten item limit`() = runTest {
-        val lines = listOf("  1. First  ", "Duplicate", "", "Duplicate") + (4..13).map { "Item $it" }
-        val conversation = conversation()
-        val fixture = fixture(conversation, response = response(lines.joinToString("\n")))
-
-        fixture.generator.generate(conversation.id, conversation)
-
-        assertEquals(
-            listOf("1. First", "Duplicate", "Duplicate") + (4..10).map { "Item $it" },
-            fixture.saves.single().suggestions,
-        )
-    }
-
-    @Test
-    fun `empty choices absent message and blank text clear old suggestions and save empty`() = runTest {
-        val responses = listOf(
-            MessageChunk(id = "response", model = "fake", choices = emptyList()),
-            response(message = null),
-            response(" \n  "),
-        )
-
-        responses.forEach { response ->
-            val conversation = conversation(suggestions = listOf("Old"))
-            val fixture = fixture(conversation, response = response)
-
-            fixture.generator.generate(conversation.id, conversation)
-
-            assertEquals(1, fixture.clears.size)
-            assertEquals(emptyList(), fixture.saves.single().suggestions)
-            assertEquals(emptyList(), fixture.latest(conversation.id)?.chatSuggestions)
-        }
-    }
-
-    @Test
-    fun `provider failure and cancellation clear old suggestions but do not save`() = runTest {
-        listOf(IllegalStateException("failed"), CancellationException("cancelled")).forEach { failure ->
-            val conversation = conversation(suggestions = listOf("Old"))
-            val fixture = fixture(conversation, handler = { _, _, _ -> throw failure })
-
-            val actual = runCatching {
-                fixture.generator.generate(conversation.id, conversation)
-            }.exceptionOrNull()
-
-            if (failure is CancellationException) {
-                assertIs<CancellationException>(actual)
-            } else {
-                assertSame(failure, actual)
-            }
-            assertEquals(1, fixture.clears.size)
-            assertTrue(fixture.saves.isEmpty())
-            assertEquals(emptyList(), fixture.latest(conversation.id)?.chatSuggestions)
-        }
-    }
-
-    @Test
-    fun `clear persistence failure propagates before provider request`() = runTest {
-        val failure = IllegalStateException("clear failed")
-        val conversation = conversation(suggestions = listOf("Old"))
-        val fixture = fixture(conversation)
-        fixture.clearFailure = failure
-
-        val actual = runCatching {
-            fixture.generator.generate(conversation.id, conversation)
-        }.exceptionOrNull()
-
-        assertSame(failure, actual)
-        assertEquals(1, fixture.clears.size)
-        assertTrue(fixture.provider.calls.isEmpty())
-        assertTrue(fixture.saves.isEmpty())
-        assertEquals(listOf("Old"), fixture.latest(conversation.id)?.chatSuggestions)
-    }
-
-    @Test
-    fun `message changes or deletion during generation prevent saving`() = runTest {
-        listOf(false, true).forEach { delete ->
-            val conversation = conversation(suggestions = listOf("Old"))
-            lateinit var fixture: Fixture
-            fixture = fixture(conversation, handler = { _, _, _ ->
-                if (delete) {
-                    fixture.conversations[conversation.id] = null
-                } else {
-                    fixture.conversations[conversation.id] = fixture.latest(conversation.id)?.copy(
-                        messageNodes = listOf(UIMessage.user("New message").toMessageNode()),
-                    )
-                }
-                response("Stale")
-            })
-
-            fixture.generator.generate(conversation.id, conversation)
-
-            assertEquals(1, fixture.clears.size)
-            assertTrue(fixture.saves.isEmpty())
-        }
-    }
-
-    @Test
-    fun `disabling suggestions during generation prevents saving`() = runTest {
-        val conversation = conversation(suggestions = listOf("Old"))
-        lateinit var fixture: Fixture
-        fixture = fixture(conversation, handler = { _, _, _ ->
-            fixture.settings = fixture.settings.copy(enableSuggestion = false)
-            response("Stale")
-        })
-
-        fixture.generator.generate(conversation.id, conversation)
-
-        assertEquals(1, fixture.clears.size)
-        assertTrue(fixture.saves.isEmpty())
-        assertEquals(emptyList(), fixture.latest(conversation.id)?.chatSuggestions)
-    }
-
-    @Test
-    fun `newer request for same conversation wins when older request returns last`() = runTest {
-        val firstStarted = CompletableDeferred<Unit>()
-        val secondStarted = CompletableDeferred<Unit>()
-        val releaseFirst = CompletableDeferred<Unit>()
-        val releaseSecond = CompletableDeferred<Unit>()
-        var callIndex = 0
-        val conversation = conversation(suggestions = listOf("Old"))
-        val fixture = fixture(conversation, handler = { _, _, _ ->
-            when (++callIndex) {
-                1 -> {
-                    firstStarted.complete(Unit)
-                    releaseFirst.await()
-                    response("Older")
-                }
-
-                2 -> {
-                    secondStarted.complete(Unit)
-                    releaseSecond.await()
-                    response("Newer")
-                }
-
-                else -> error("Unexpected request")
-            }
-        })
-
-        val older = async { fixture.generator.generate(conversation.id, conversation) }
-        firstStarted.await()
-        val newer = async { fixture.generator.generate(conversation.id, conversation) }
-        secondStarted.await()
-        releaseSecond.complete(Unit)
-        newer.await()
-        releaseFirst.complete(Unit)
-        older.await()
-
-        assertEquals(listOf(listOf("Newer")), fixture.saves.map { it.suggestions })
-        assertEquals(listOf("Newer"), fixture.latest(conversation.id)?.chatSuggestions)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Test
-    fun `new request clears only after an older in progress save and keeps the new result`() = runTest {
-        val olderSaveStarted = CompletableDeferred<Unit>()
-        val releaseOlderSave = CompletableDeferred<Unit>()
-        var callIndex = 0
-        val conversation = conversation(suggestions = listOf("Old"))
-        val fixture = fixture(conversation, handler = { _, _, _ ->
-            when (++callIndex) {
-                1 -> response("Older")
-                2 -> response("Newer")
-                else -> error("Unexpected request")
-            }
-        })
-        fixture.onSave = { call ->
-            if (call.suggestions == listOf("Older")) {
-                olderSaveStarted.complete(Unit)
-                releaseOlderSave.await()
-            }
-        }
-
-        val older = async { fixture.generator.generate(conversation.id, conversation) }
-        olderSaveStarted.await()
-        val newer = async { fixture.generator.generate(conversation.id, conversation) }
-        runCurrent()
-        assertEquals(1, fixture.clears.size)
+        fixture.settings = fixture.settings.copy(suggestionModelId = Uuid.random(), fastModelId = Uuid.random())
+        fixture.saved.clear()
+        fixture.updated.clear()
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
         assertEquals(1, fixture.provider.calls.size)
-        assertEquals(listOf<Mutation>(Mutation.Clear), fixture.mutations)
-
-        releaseOlderSave.complete(Unit)
-        older.await()
-        newer.await()
-
-        assertEquals(
-            listOf(
-                Mutation.Clear,
-                Mutation.Save(listOf("Older")),
-                Mutation.Clear,
-                Mutation.Save(listOf("Newer")),
-            ),
-            fixture.mutations,
-        )
-        assertEquals(listOf("Newer"), fixture.latest(conversation.id)?.chatSuggestions)
+        assertTrue(fixture.saved.isEmpty())
+        assertTrue(fixture.updated.isEmpty())
     }
 
     @Test
-    fun `requests for different conversations do not supersede each other`() = runTest {
-        val firstStarted = CompletableDeferred<Unit>()
-        val secondStarted = CompletableDeferred<Unit>()
-        val releaseFirst = CompletableDeferred<Unit>()
-        val releaseSecond = CompletableDeferred<Unit>()
-        val first = conversation(messages = listOf(UIMessage.user("First conversation")))
-        val second = conversation(messages = listOf(UIMessage.user("Second conversation")))
-        val fixture = fixture(first, additionalConversations = listOf(second), handler = { _, messages, _ ->
-            when {
-                "First conversation" in messages.single().toText() -> {
-                    firstStarted.complete(Unit)
-                    releaseFirst.await()
-                    response("First result")
-                }
+    fun `prompt uses selected latest eight messages with original truncation`() = runTest {
+        val nodes = (1..9).map { UIMessage.user("message-$it").toMessageNode() }.toMutableList()
+        nodes[1] = MessageNode(
+            messages = listOf(UIMessage.user("discarded"), UIMessage.user("selected")),
+            selectIndex = 1,
+        )
+        nodes[8] = UIMessage.user("x".repeat(600)).toMessageNode()
+        val fixture = fixture(snapshot = Conversation.ofId(Uuid.random(), messages = nodes))
+        fixture.provider.beforeResponse = { fixture.settings = fixture.settings.copy(enableSuggestion = false) }
+        fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
 
-                else -> {
-                    secondStarted.complete(Unit)
-                    releaseSecond.await()
-                    response("Second result")
-                }
-            }
-        })
+        val prompt = fixture.provider.calls.single().messages.single().toText()
+        assertTrue(prompt.startsWith("Test Locale\n[USER]: selected"))
+        assertTrue("message-1" !in prompt)
+        assertTrue("discarded" !in prompt)
+        assertTrue("[USER]: ${"x".repeat(492)}..." in prompt)
+        assertEquals(listOf("First", "Second"), fixture.saved.single().chatSuggestions)
+    }
 
-        val firstRequest = async { fixture.generator.generate(first.id, first) }
-        val secondRequest = async { fixture.generator.generate(second.id, second) }
-        firstStarted.await()
-        secondStarted.await()
-        releaseSecond.complete(Unit)
-        secondRequest.await()
-        releaseFirst.complete(Unit)
-        firstRequest.await()
-
-        assertEquals(listOf("First result"), fixture.latest(first.id)?.chatSuggestions)
-        assertEquals(listOf("Second result"), fixture.latest(second.id)?.chatSuggestions)
-        assertEquals(setOf(first.id, second.id), fixture.saves.map { it.id }.toSet())
+    @Test
+    fun `empty choices cancellation and save failure retain original error handling`() = runTest {
+        val failures = listOf(
+            fixture(response = MessageChunk(id = "empty", model = "fake", choices = emptyList())),
+            fixture(handler = { _, _, _ -> throw CancellationException("cancelled") }),
+            fixture(onSave = { error("save failed") }),
+        )
+        failures.forEach { fixture ->
+            fixture.generator.generate(fixture.snapshot.id, fixture.snapshot)
+            assertEquals(emptyList(), fixture.loaded?.chatSuggestions)
+            assertTrue(fixture.saved.isEmpty())
+        }
     }
 
     private fun fixture(
-        conversation: Conversation,
-        additionalConversations: List<Conversation> = emptyList(),
+        snapshot: Conversation = conversation(),
         enabled: Boolean = true,
-        suggestionModel: Model = Model(modelId = "suggestion", displayName = "Suggestion"),
-        fastModel: Model = Model(modelId = "fast", displayName = "Fast"),
-        suggestionModelId: Uuid? = suggestionModel.id,
-        fastModelId: Uuid = fastModel.id,
-        prompt: String = "{locale}\n{content}",
-        localeName: String = "English (Test)",
-        response: MessageChunk = response("New suggestion"),
+        suggestionModelId: Uuid? = null,
+        response: MessageChunk = response("First\nSecond"),
+        model: Model = Model(modelId = "suggestion", displayName = "Suggestion"),
+        onSave: suspend (Conversation) -> Unit = {},
         handler: (suspend (ProviderSetting.OpenAI, List<UIMessage>, TextGenerationParams) -> MessageChunk)? = null,
     ): Fixture {
+        val fast = Model(modelId = "fast", displayName = "Fast")
         val provider = FakeProvider(handler ?: { _, _, _ -> response })
-        val providerSetting = ProviderSetting.OpenAI(models = listOf(suggestionModel, fastModel))
         val client = HttpClient(MockEngine { error("Unexpected HTTP request") }).also { clients += it }
         val manager = ProviderManager(client).apply { registerProvider("openai", provider) }
-        val fixture = Fixture(
-            settings = Settings(
-                enableSuggestion = enabled,
-                suggestionModelId = suggestionModelId,
-                fastModelId = fastModelId,
-                suggestionPrompt = prompt,
-                providers = listOf(providerSetting),
-            ),
-            suggestionModel = suggestionModel,
-            fastModel = fastModel,
-            provider = provider,
-            conversations = mutableMapOf<Uuid, Conversation?>().apply {
-                (listOf(conversation) + additionalConversations).forEach { put(it.id, it) }
-            },
+        val fixture = Fixture(snapshot, model, fast, provider)
+        fixture.settings = Settings(
+            enableSuggestion = enabled,
+            suggestionModelId = suggestionModelId ?: model.id,
+            fastModelId = fast.id,
+            suggestionPrompt = "{locale}\n{content}",
+            providers = listOf(ProviderSetting.OpenAI(models = listOf(model, fast))),
         )
         fixture.generator = ConversationSuggestionGenerator(
             providerManager = manager,
             getSettings = { fixture.settings },
-            getConversation = { id -> fixture.latest(id) },
-            clearSuggestions = { id, expectedMessages ->
-                fixture.clears += ClearCall(id, expectedMessages)
-                fixture.clearFailure?.let { throw it }
-                fixture.latest(id)?.takeIf { it.currentMessages == expectedMessages }?.let { latest ->
-                    fixture.conversations[id] = latest.copy(chatSuggestions = emptyList())
-                    fixture.mutations += Mutation.Clear
-                }
+            getConversation = { fixture.database },
+            getLoadedConversation = { fixture.loaded },
+            updateConversation = { _, conversation ->
+                fixture.updated += conversation
+                fixture.loaded = conversation
             },
-            saveSuggestions = { id, expectedMessages, suggestions ->
-                val call = SaveCall(id, expectedMessages, suggestions)
-                fixture.onSave(call)
-                fixture.latest(id)?.takeIf { it.currentMessages == expectedMessages }?.let { latest ->
-                    fixture.saves += call
-                    fixture.conversations[id] = latest.copy(chatSuggestions = suggestions)
-                    fixture.mutations += Mutation.Save(suggestions)
-                }
+            saveConversation = { _, conversation ->
+                onSave(conversation)
+                fixture.saved += conversation
             },
-            getLocaleName = { localeName },
+            getLocaleName = { "Test Locale" },
         )
         return fixture
     }
 
     private class Fixture(
-        var settings: Settings,
-        val suggestionModel: Model,
+        val snapshot: Conversation,
+        val model: Model,
         val fastModel: Model,
         val provider: FakeProvider,
-        val conversations: MutableMap<Uuid, Conversation?>,
     ) {
         lateinit var generator: ConversationSuggestionGenerator
-        val clears = mutableListOf<ClearCall>()
-        val saves = mutableListOf<SaveCall>()
-        val mutations = mutableListOf<Mutation>()
-        var clearFailure: Throwable? = null
-        var onSave: suspend (SaveCall) -> Unit = {}
-
-        fun latest(id: Uuid): Conversation? = conversations[id]
+        lateinit var settings: Settings
+        var database: Conversation? = snapshot
+        var loaded: Conversation? = snapshot
+        val updated = mutableListOf<Conversation>()
+        val saved = mutableListOf<Conversation>()
     }
 
-    private data class ClearCall(
-        val id: Uuid,
-        val expectedMessages: List<UIMessage>,
-    )
-
-    private data class SaveCall(
-        val id: Uuid,
-        val expectedMessages: List<UIMessage>,
-        val suggestions: List<String>,
-    )
-
-    private sealed interface Mutation {
-        data object Clear : Mutation
-        data class Save(val suggestions: List<String>) : Mutation
-    }
-
-    private data class ProviderCall(
+    private data class Call(
         val setting: ProviderSetting.OpenAI,
         val messages: List<UIMessage>,
         val params: TextGenerationParams,
@@ -487,7 +236,8 @@ class ConversationSuggestionGeneratorTest {
     private class FakeProvider(
         private val handler: suspend (ProviderSetting.OpenAI, List<UIMessage>, TextGenerationParams) -> MessageChunk,
     ) : Provider<ProviderSetting.OpenAI> {
-        val calls = mutableListOf<ProviderCall>()
+        val calls = mutableListOf<Call>()
+        var beforeResponse: () -> Unit = {}
 
         override suspend fun listModels(providerSetting: ProviderSetting.OpenAI): List<Model> = emptyList()
 
@@ -496,7 +246,8 @@ class ConversationSuggestionGeneratorTest {
             messages: List<UIMessage>,
             params: TextGenerationParams,
         ): MessageChunk {
-            calls += ProviderCall(providerSetting, messages, params)
+            calls += Call(providerSetting, messages, params)
+            beforeResponse()
             return handler(providerSetting, messages, params)
         }
 
@@ -516,12 +267,12 @@ class ConversationSuggestionGeneratorTest {
         fun conversation(
             messages: List<UIMessage> = listOf(UIMessage.user("Question"), UIMessage.assistant("Answer")),
             suggestions: List<String> = emptyList(),
-        ): Conversation = Conversation.ofId(
-            id = Uuid.random(),
+        ) = Conversation.ofId(
+            Uuid.random(),
             messages = messages.map(UIMessage::toMessageNode),
         ).copy(chatSuggestions = suggestions)
 
-        fun response(message: String?): MessageChunk = MessageChunk(
+        fun response(message: String?) = MessageChunk(
             id = "response",
             model = "fake",
             choices = listOf(

@@ -318,65 +318,6 @@ class ConversationRepository(
         messageFtsManager.indexConversation(conversation)
     }
 
-    suspend fun updateConversationTitle(
-        conversationId: Uuid,
-        expectedTitle: String,
-        title: String,
-    ): Boolean = database.withWriteTransaction {
-        val id = conversationId.toString()
-        val updated = conversationDAO.updateTitleIfUnchanged(
-            id = id,
-            expectedTitle = expectedTitle,
-            title = title,
-        )
-        if (updated > 0) {
-            messageFtsManager.updateConversationTitle(id, title)
-        }
-        updated > 0
-    }
-
-    suspend fun updateConversationSuggestions(
-        conversationId: Uuid,
-        expectedMessages: List<UIMessage>,
-        suggestions: List<String>,
-    ): Boolean = database.withWriteTransaction {
-        val currentConversation = getConversationById(conversationId) ?: return@withWriteTransaction false
-        if (currentConversation.currentMessages != expectedMessages) return@withWriteTransaction false
-
-        conversationDAO.updateSuggestions(
-            id = conversationId.toString(),
-            suggestions = JsonInstant.encodeToString(suggestions),
-        ) > 0
-    }
-
-    suspend fun updateMessageTranslation(
-        conversationId: Uuid,
-        expectedMessage: UIMessage,
-        translation: String?,
-    ): Boolean = database.withWriteTransaction {
-        val conversationIdString = conversationId.toString()
-        if (!conversationDAO.existsById(conversationIdString)) return@withWriteTransaction false
-
-        val updatedNodes = messageNodeDAO.getNodesOfConversation(conversationIdString).map { entity ->
-            val messages = JsonInstant.decodeFromString<List<UIMessage>>(entity.messages)
-            val matchingMessages = messages.filter { it.id == expectedMessage.id }
-            if (matchingMessages.any { it.role != expectedMessage.role || it.parts != expectedMessage.parts }) {
-                return@withWriteTransaction false
-            }
-
-            val updatedMessages = messages.map { message ->
-                if (message.id == expectedMessage.id) message.copy(translation = translation) else message
-            }
-            if (matchingMessages.isEmpty()) null else entity.copy(messages = JsonInstant.encodeToString(updatedMessages))
-        }
-
-        val nodesToUpdate = updatedNodes.filterNotNull()
-        if (nodesToUpdate.isEmpty()) return@withWriteTransaction false
-
-        nodesToUpdate.forEach { messageNodeDAO.update(it) }
-        true
-    }
-
     suspend fun deleteConversation(conversation: Conversation) {
         // 获取完整的 Conversation（包含 messageNodes）以正确清理文件
         val fullConversation = if (conversation.messageNodes.isEmpty()) {
