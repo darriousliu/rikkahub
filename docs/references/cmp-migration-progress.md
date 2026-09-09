@@ -494,8 +494,14 @@ Android host **117**、JVM **122**、iOS Simulator **117** 项通过；另有 An
 [命令与结果](evidence/cmp-message-node-selection-2026-09-09/code-tests.txt)已留存。
 
 方法含签名与方法体的逐字比较通过；生产代码只修改 `ChatRuntime` 和 Android `ChatService` 两个文件。
-本项没有 UI 变更，不执行 GUI；没有模型调用、临时生产日志、依赖或数据库格式变更。
+GUI 判断：本项无需补充 GUI。现有 `ChatMessageBranchSelector` 仍通过原 `onUpdate` 更新节点，
+Android Web 路由仍调用原 `ChatService` facade；界面状态接线、生命周期和平台实现均未改动。
+迁移方法的选择、校验、异常与保存行为已有三端契约测试及 JVM SQLite 重开测试覆盖。
+这不代表完整应用 GUI 已验证；本项没有模型调用、临时生产日志、依赖或数据库格式变更。
 SQLite 测试临时文件已自动删除，构建临时日志在提交前清理。
+
+后续每项迁移均按根目录 `AGENTS.md` 的规则评估 GUI 必要性；需要 GUI 的，在同一轮完成代码测试、
+受影响平台 GUI 验证、证据记录与临时文件清理后再提交，不留待用户另行要求。
 
 下一项建议：**消息删除后的节点与分支索引计算（低难度）**，直接抽取 Android 的
 `buildConversationAfterMessageDelete`，继续保留各运行时原有的保存和文件处理方式。
