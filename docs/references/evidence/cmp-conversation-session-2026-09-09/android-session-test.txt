@@ -1,0 +1,37 @@
+ConversationSession 原样迁移：真实 Android 应用主线程仪器测试（2026-09-09）
+设备：Pixel_10_Pro_XL / emulator-5554 / API 37 / arm64-v8a。
+安装前确认该 AVD 没有 me.rerere.rikkahub 包，本轮使用新安装的 debug 应用及测试包。
+测试源码未修改，使用实际应用 Koin 的 ChatRuntime / ChatService；无 Activity 操作或模型请求。
+
+安装命令：
+adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
+adb -s emulator-5554 install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+两项均返回 Success。
+
+测试命令：
+adb -s emulator-5554 shell am instrument -w -r -e class me.rerere.rikkahub.service.ChatServiceSessionTest me.rerere.rikkahub.debug.test/androidx.test.runner.AndroidJUnitRunner
+退出码 0，原始测试输出如下：
+
+INSTRUMENTATION_STATUS: class=me.rerere.rikkahub.service.ChatServiceSessionTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+me.rerere.rikkahub.service.ChatServiceSessionTest:
+INSTRUMENTATION_STATUS: test=creatingSessionWhileConversationJobsAreCollectedDoesNotBlockMainThread
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=me.rerere.rikkahub.service.ChatServiceSessionTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=creatingSessionWhileConversationJobsAreCollectedDoesNotBlockMainThread
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 0.202
+
+OK (1 test)
+
+
+INSTRUMENTATION_CODE: -1

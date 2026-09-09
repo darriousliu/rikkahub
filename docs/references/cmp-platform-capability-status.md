@@ -42,6 +42,9 @@ SharedChatRuntime 原编辑流程不变，详见[验证记录](cmp-migration-pro
 被打断工具调用的收尾方法已原样移为 commonMain 的 ChatRuntime 扩展，Android 原发送/停止入口继续调用；
 取消结果、末节点处理、结束时间和保存规则保持。SharedChatRuntime 原发送/停止行为未调整，
 详见[验证记录](cmp-migration-progress.md#2026-09-09被打断工具调用的收尾处理)。
+`ConversationSession.kt` 已整文件原样移至 commonMain，包名与 API 不变，Android 继续使用原调用点；
+引用计数、生成任务和 5 秒空闲回收通过三端测试，真实 Android 主线程会话创建/复用测试通过。
+SharedChatRuntime 原会话管理保持，详见[验证记录](cmp-migration-progress.md#2026-09-09conversationsession-会话状态与引用计数)。
 
 ## 代码分布
 

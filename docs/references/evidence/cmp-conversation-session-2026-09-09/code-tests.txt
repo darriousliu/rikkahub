@@ -1,0 +1,42 @@
+ConversationSession 会话状态与引用计数：原样迁移验证（2026-09-09）
+基线：28f8ccbcb；策略 PRESERVE，适用性 SUPPORTED。
+
+基线命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test --console=plain
+BUILD SUCCESSFUL in 1s，退出码 0。Android host 135、JVM 142、iOS Simulator 135 项。
+
+迁移后命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test :composeApp:compileCommonMainKotlinMetadata :composeApp:compileKotlinIosArm64 :app:compileDebugKotlin :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest :app:assembleDebug :app:assembleDebugAndroidTest --console=plain
+BUILD SUCCESSFUL in 1m 3s，退出码 0；528 个任务，78 executed，450 up-to-date。
+testAndroidHostTest: tests=144, failures=0, errors=0, skipped=0
+jvmTest: tests=151, failures=0, errors=0, skipped=0
+iosSimulatorArm64Test: tests=144, failures=0, errors=0, skipped=0
+Android ChatServiceTest: tests=1, failures=0, errors=0, skipped=0
+Android ChatServiceSessionTest: tests=1, failures=0，OK (1 test)，退出码 0。
+合计 441 次执行；新增 ConversationSessionTest 的 9 项用例各在 Android/JVM/iOS 执行，共新增 27 次。
+三个目标的 ConversationSessionTest XML 均为 tests=9, failures=0, errors=0, skipped=0。
+
+编译范围：Android app、Android 共享模块、JVM、iOS arm64 / Simulator arm64 和 common metadata。
+Android Debug APK、AndroidTest APK 构建成功，并安装到 Pixel_10_Pro_XL / API 37 / arm64-v8a 运行仪器测试。
+iOS arm64 只验证编译；仪器测试证据另见 android-session-test.txt。
+
+自动化覆盖：
+- 多引用只在最后释放后进入空闲；4999 ms 不通知，5000 ms 通知。
+- 重获引用取消旧计时，再次释放后等待完整 5 秒。
+- 嵌套同步与挂起引用作用域保留返回值，异常通过 finally 释放，取消挂起作用域也释放。
+- 活跃生成任务抑制空闲通知，任务完成时清空状态并在无引用时重新开始完整计时。
+- 替换/清空任务取消原任务，持有引用时的生成完成等待后续 release。
+- cleanup 取消生成与空闲任务，保留会话及 processingStatus。
+- 引用下溢仍按原负计数增减，不增加归零或校验。
+- 真实 Android 仪器测试验证 jobs 主线程收集期间创建会话不阻塞、复用同一状态流，
+  无生成任务不进入 jobs，也不会重复发布会话；沿用原已修复的 ChatService 实现。
+
+源码比较：108 行 ConversationSession.kt 与迁移前文件逐字节一致，只改变源集路径。
+包名、类/构造函数/成员可见性、AtomicInt、状态流、定时、异常/取消与原日志均未改动。
+无需 Java/Android API 替换或新增依赖。ChatService、ChatRuntime、SharedChatRuntime、UI、Repository、DAO、FTS、
+平台文件处理与构建配置均未修改。SharedChatRuntime 自身会话管理保持原样。
+
+GUI 判断：无需额外 GUI。整文件原样移动，原 UI/生命周期接线及回收回调不变，
+三端虚拟时间/任务测试与真实 Android 主线程测试覆盖本次行为与应用接线。
+本轮未执行完整应用 GUI，不将仪器测试记作 GUI 通过；没有模型请求或临时生产日志。
+本轮新安装的 debug/test 包已卸载，本轮启动的模拟器已关闭；构建与仪器临时日志保留证据后清理。

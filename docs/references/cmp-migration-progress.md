@@ -658,3 +658,53 @@ GUI 判断：无需 GUI。UI、任务取消与 join 的触发顺序、生命周�
 
 下一项建议：**ConversationSession 会话状态与引用计数（低难度）**。其依赖已可用于 common，
 可整文件移动，原样保留引用计数、生成任务绑定和 5 秒空闲回收，继续使用现有调用点。
+
+## 2026-09-09：ConversationSession 会话状态与引用计数
+
+迁移前基线：`28f8ccbcb`。策略 `PRESERVE`，适用性 `SUPPORTED`，难度低。
+状态：整文件原样迁移、三端测试及真实 Android 主线程仪器测试完成。
+目标为 Android、Desktop JVM、iOS arm64 / Simulator arm64；沿用 Kotlin 2.4.20-RC、CMP 1.12.0、
+AGP 9.3.2、Gradle 9.5.0 和现有 JDK/Xcode 环境，不更改依赖与配置。
+基线三端测试通过：Android host 135、JVM 142、iOS Simulator 135 项。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| CS01 ConversationSession.kt | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 整文件原样移动，保留 AtomicInt、状态流、引用作用域、任务绑定与 5 秒空闲检查 | 包名、类名、构造函数和成员 API 全部不变 | 完成；108 行逐字一致，9 项计时/取消测试在三端通过 |
+| CS02 Android 会话管理 | app | REQUIRED_FOR_KMP / ANDROID_ONLY | 保留既有 ChatService 创建/回收、jobs 订阅及 ANR 修复；接线原样复用 | 无 | 保留；现有真实 Android 主线程仪器测试通过 |
+
+原文件仅依赖 Kotlin 标准库、协程、公共日志和 Conversation，均已有对应 common 依赖。
+不新增抽象、参数校验、锁或任务处理逻辑；SharedChatRuntime 现有会话管理保持不变。
+没有 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 改动。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 获取多份引用，逐次释放，推进虚拟时间 | 最后一份释放后才计时；4,999 ms 不回收，5,000 ms 通知空闲 | 三端通过 |
+| 空闲计时期间重新获取引用，再释放 | 取消旧计时，再次释放后完整等待 5 秒 | 三端通过 |
+| 嵌套同步/挂起引用作用域，正常返回、抛错或取消 | 返回值和异常保持；finally 释放全部作用域引用，取消后按原时机进入空闲 | 三端通过 |
+| 无引用时保持生成任务运行，随后完成；另测持有引用时完成 | 生成中不通知空闲；无引用时从完成起等待 5 秒，有引用时等待其释放 | 三端通过 |
+| 替换或清除生成任务，再执行 cleanup | 取消旧任务并更新任务状态；cleanup 取消生成及回收计时，保留会话与处理状态 | 三端通过 |
+| 没有引用时先 release，再 acquire | 保留原负计数及后续增减行为，不增加归零或校验 | 三端通过 |
+| Android 实际 Koin/ChatService 下订阅 jobs，在主线程创建并再次获取同一会话 | 创建无主线程阻塞；两次获取同一状态流；没有生成任务的会话不出现在 jobs 中 | Pixel_10_Pro_XL / API 37 / arm64-v8a，1 项仪器测试通过 |
+
+Android host **144**、JVM **151**、iOS Simulator **144** 项通过；Android `ChatServiceTest` 另有 1 项，
+真实 Android `ChatServiceSessionTest` 另有 1 项，共 **441** 次测试执行。
+本项新增 9 项 common 测试各在三端执行，共新增 27 次；仪器测试沿用已有用例，未修改其源码。
+Android 应用与共享模块、JVM、iOS arm64、iOS Simulator arm64 和 common metadata 编译通过；
+Debug APK / AndroidTest APK 构建通过。iOS arm64 本项只验证编译。
+[完整命令与结果](evidence/cmp-conversation-session-2026-09-09/code-tests.txt)及
+[Android 仪器测试输出](evidence/cmp-conversation-session-2026-09-09/android-session-test.txt)已留存。
+
+生产改动仅移动 `ConversationSession.kt`，与迁移前文件逐字节一致；包名、可见性、参数、
+原子计数、异常/取消处理和既有日志全部保留，无 Java/Android API 需要替换。
+ChatService、ChatRuntime、SharedChatRuntime、UI、存储及构建配置未修改。
+本项使该类可在三端使用；SharedChatRuntime 沿用自身原有的会话管理，不宣称已统一所有平台的回收链路。
+
+GUI 判断：无需额外 GUI。整文件原样移动且界面、平台生命周期接线及回收回调不变，
+三端虚拟时间/任务测试覆盖状态行为，真实 Android 主线程仪器测试覆盖原会话创建与订阅链路，无待人工确认项。
+未执行完整应用 GUI，也不将仪器测试记作 GUI 通过；没有模型请求或临时生产日志。
+本轮临时安装的 debug 与测试包已卸载，本轮启动的模拟器已关闭，临时构建和仪器日志在保留上述证据后清理。
+
+下一项建议：**无效工具消息的节点清理计算（中低难度）**，原样移动 `checkInvalidMessages`
+中的节点计算，保留原 Android `updateConversation` 调用与文件处理时机。
