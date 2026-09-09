@@ -5,6 +5,7 @@ import android.content.Context
 import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.net.toUri
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -159,6 +160,23 @@ class ChatService(
                     } else current
                 }
             }
+        },
+    )
+
+    private val messageTranslator = MessageTranslationManager(
+        scope = CoroutineScope(appScope.coroutineContext + Dispatchers.IO),
+        getSettings = { settingsStore.settingsFlow.first() },
+        translateText = { settings, source, code, name ->
+            generationHandler.translateText(settings, source, code, name)
+        },
+        getConversation = { sessions[it]?.state?.value },
+        updateTranslation = { id, message, translation ->
+            sessions[id]?.state?.update { it.withMessageTranslation(message, translation) }
+        },
+        saveTranslation = conversationRepo::updateMessageTranslation,
+        getLoadingText = { context.getString(R.string.translating) },
+        onError = { id, error ->
+            addError(error, id, title = context.getString(R.string.error_title_translate_message))
         },
     )
 
@@ -963,63 +981,13 @@ class ChatService(
         message: UIMessage,
         targetLanguageTag: String,
     ) {
-        appScope.launch(Dispatchers.IO) {
-            try {
-                val targetLanguage = Locale.forLanguageTag(targetLanguageTag)
-                val settings = settingsStore.settingsFlow.first()
-
-                val messageText = message.parts.filterIsInstance<UIMessagePart.Text>()
-                    .joinToString("\n\n") { it.text }
-                    .trim()
-
-                if (messageText.isBlank()) return@launch
-
-                // Set loading state for translation
-                val loadingText = context.getString(R.string.translating)
-                updateTranslationField(conversationId, message.id, loadingText)
-
-                generationHandler.translateText(
-                    settings = settings,
-                    sourceText = messageText,
-                    targetLanguageCode = targetLanguage.toString(),
-                    targetLanguageName = targetLanguage.getDisplayLanguage(Locale.ENGLISH),
-                ) { translatedText ->
-                    // Update translation field in real-time
-                    updateTranslationField(conversationId, message.id, translatedText)
-                }.collect { /* Final translation already handled in onStreamUpdate */ }
-
-                // Save the conversation after translation is complete
-                saveConversation(conversationId, getConversationFlow(conversationId).value)
-            } catch (e: Exception) {
-                // Clear translation field on error
-                clearTranslationField(conversationId, message.id)
-                addError(e, conversationId, title = context.getString(R.string.error_title_translate_message))
-            }
-        }
-    }
-
-    private fun updateTranslationField(
-        conversationId: Uuid,
-        messageId: Uuid,
-        translationText: String
-    ) {
-        val currentConversation = getConversationFlow(conversationId).value
-        val updatedNodes = currentConversation.messageNodes.map { node ->
-            if (node.messages.any { it.id == messageId }) {
-                val updatedMessages = node.messages.map { msg ->
-                    if (msg.id == messageId) {
-                        msg.copy(translation = translationText)
-                    } else {
-                        msg
-                    }
-                }
-                node.copy(messages = updatedMessages)
-            } else {
-                node
-            }
-        }
-
-        updateConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
+        val targetLanguage = Locale.forLanguageTag(targetLanguageTag)
+        messageTranslator.translate(
+            conversationId = conversationId,
+            message = message,
+            targetLanguageCode = targetLanguage.toString(),
+            targetLanguageName = targetLanguage.getDisplayLanguage(Locale.ENGLISH),
+        )
     }
 
     // ---- 消息操作 ----
@@ -1199,23 +1167,7 @@ class ChatService(
     }
 
     override fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
-        val currentConversation = getConversationFlow(conversationId).value
-        val updatedNodes = currentConversation.messageNodes.map { node ->
-            if (node.messages.any { it.id == messageId }) {
-                val updatedMessages = node.messages.map { msg ->
-                    if (msg.id == messageId) {
-                        msg.copy(translation = null)
-                    } else {
-                        msg
-                    }
-                }
-                node.copy(messages = updatedMessages)
-            } else {
-                node
-            }
-        }
-
-        updateConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
+        messageTranslator.clear(conversationId, messageId)
     }
 
     // 停止当前会话生成任务（不清理会话缓存）

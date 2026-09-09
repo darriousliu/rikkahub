@@ -281,3 +281,100 @@ iOS/Desktop 未改代码，沿用本轮已完成的 GUI 证据。
 后续真实 API 测试按用户要求复用本机钥匙串中的 DeepSeek 测试密钥，优先 `deepseek-v4-flash`、关闭思考、
 短输入和短输出；不得把密钥写入仓库。完整步骤、预期、用量可知范围、截图及 ANR 证据见
 [CMP GUI 回归记录](cmp-gui-regression.md)。下一项迁移建议仍为聊天消息翻译（中低难度）。
+
+## 2026-09-09：聊天消息翻译
+
+迁移前基线：`4dab04e3`。本项难度：中低，复用已有共享翻译设置和消息译文 UI，补齐 iOS/Desktop 聊天调用及持久化。
+
+### 配置与范围
+
+| 项目 | 本项选择 |
+|---|---|
+| 策略与适用性 | `PRESERVE` / `SUPPORTED`，保留模块、DI、`ChatRuntime` 和 `TranslationRuntime` 接口 |
+| 目标与工具链 | Android、Desktop JVM、iOS arm64、iOS Simulator arm64；沿用前述工具链，无依赖/版本升级 |
+| 迁移单位 | 聊天消息翻译、流式译文更新、清除译文及保存；独立翻译页面复用同一请求实现 |
+| 平台保留内容 | Android 的 Java Locale、Context 资源和 IO 调度；共享运行时使用既有语言枚举、Compose 资源及 Default 调度 |
+| 验证协作 | 按用户最新要求，子 agent 全部使用 `gpt-5.6-terra`；契约测试、SQLite 集成测试、并发审查和 Desktop GUI 分工验证 |
+
+### 实现与兼容性
+
+- `TextTranslationGenerator` 提取 Android 与共享翻译页面的重复请求逻辑，供 `GenerationHandler`、`SharedTranslationRuntime` 和聊天运行时复用。原有 facade 签名保持不变。
+- 翻译仍只使用 `translateModeId` 指定的模型，不回退聊天/快速模型；保留 Provider override、翻译提示词和思考预算。模型自定义 headers/body 现在也传入请求，可应用输出上限等设置。
+- 普通模型继续流式生成，累计 assistant 文本；只有非空文本才更新。空 choices、仅用量或尚无 assistant 文本的 chunk 不会把源提示词显示成译文。
+- Qwen MT 保留非流式分支、原文输入、`temperature=0.3`、`topP=0.95` 和 `translation_options`（自动源语言、英文目标语言名）；必需的翻译选项覆盖同名自定义参数。
+- `MessageTranslationManager` 共享文本提取、加载状态、流式更新、错误清理及保存。仅拼接 Text 部分，以两个换行分隔并 trim；图片/推理不参与，空白输入跳过。
+- 翻译任务独立于聊天生成任务。每个消息的请求有独立令牌；状态锁将请求占用、内存更新和清除排序，避免较旧请求在清除或新请求后回写。锁内不等待模型请求或磁盘写入。
+- 磁盘写入单独串行化。完成或清除时，仅更新目标消息的 `translation`，不保存整份旧会话快照；消息 ID、角色和内容变化或消息/会话已删除时拒绝过期写入。
+- 空结果清除加载状态并保存 null；普通失败清除自己仍拥有的译文并显示既有翻译错误；取消执行清理后继续传播，不显示普通错误。原地编辑若保留了当前请求的半截译文，也会清除该旧值。
+- 支持未选中的历史消息分支；不改写其他消息、标题、建议、时间、收藏或 FTS。数据库仍使用原 `UIMessage.translation` JSON 字段，无 schema 或 DataStore 键变更。
+- iOS/Desktop 支持共享 UI 提供的 9 种目标语言；Android 保留 Java Locale 对语言标签的解析。共享运行时对 UI 集合外的标签明确报错。
+
+新增公开 API：`TextTranslationGenerator`、`MessageTranslationManager`、`Conversation.withMessageTranslation` 和
+`ConversationRepository.updateMessageTranslation(conversationId, expectedMessage, translation)`；未删除或改变既有公开签名。
+
+| 台账类别 | 技术处理 | 结果 |
+|---|---|---|
+| `REQUIRED_FOR_KMP`：共享翻译请求与解析 | `REWRITEABLE` | 普通流式和 Qwen MT 分支已共享，原 facade 委托共享生成器 |
+| `REQUIRED_FOR_KMP`：聊天运行时接线 | `REWRITEABLE` | Android/iOS/Desktop 共用状态管理和持久化逻辑 |
+| `REQUIRED_FOR_KMP`：语言与本地资源 | 复用现有平台边界 | Android 保留平台 Locale/资源；共享层复用语言枚举和 Compose 资源 |
+| `RECOMMENDED`：清除后重现与字段隔离 | `REWRITEABLE` | 清除落盘，事务校验源消息，仅合并译文字段 |
+| `RECOMMENDED`：空响应、取消和旧结果竞争 | `REWRITEABLE` | 空响应不显示原文/永久加载；状态更新与请求令牌同步 |
+| `ARCHITECTURAL_OPTIMIZATION` | — | 未重构所有会话保存入口、消息编辑策略或聊天任务生命周期 |
+
+### 代码验证步骤与预期结果
+
+测试文件：commonTest 的 `TextTranslationGeneratorTest`、`MessageTranslationManagerTest`，以及 jvmTest 的
+`MessageTranslationPersistenceTest`、`MessageTranslationConcurrencyTest`。Mock Provider 无网络请求；真实 SQLite
+用例使用 Room/Bundled SQLite，测试结束关闭数据库和 HTTP 客户端；线程用例设超时并关闭 executor。
+
+| 验证内容 | 步骤 | 预期结果 |
+|---|---|---|
+| 请求参数 | 配置翻译模型、Provider override、自定义参数和目标语言 | 使用指定模型/Provider，替换提示词并保留参数；无模型明确失败 |
+| 普通流式与 Qwen MT | 普通模型分块返回；Qwen 返回完整文本 | 普通译文累计更新，Qwen 请求保留翻译选项，两者都保存最终文本 |
+| 非文本及空响应 | 输入图片/空白，或返回空 choices、用量、推理、空白文本 | 非文本输入不请求；响应不泄漏源提示词，结束后没有加载占位 |
+| 失败和取消 | 半截译文后令 Provider 失败或取消 | 内存和重新读取的数据库均为空；仅普通失败展示错误 |
+| 清除与重启 | 保存译文后清除，再从数据库重新读取 | 清除立即反映到界面，落盘后译文保持为空 |
+| 旧请求和编辑 | 新请求先完成，旧请求迟到；或原地修改消息内容/删除消息 | 旧结果不覆盖新值或已编辑内容，不重建消息/会话 |
+| 并发清除 | 暂停已进入内存更新回调的旧 partial，在另一线程执行 clear | 调用不自锁，清除等待当前状态更新排序，最终内存和磁盘为空 |
+| 保存交错 | 暂停旧结果数据库保存，再清除译文 | 最终保存顺序为旧值、null，旧结果不会重新显示 |
+| 字段隔离与 JSON | 翻译未选中的分支，写入 Unicode/引号/换行，再清除 | 仅该消息译文变化；其他分支、元数据及 FTS 不变，JSON 正确往返 |
+
+执行命令：
+
+```bash
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test
+./gradlew :composeApp:compileCommonMainKotlinMetadata \
+  :composeApp:compileAndroidMain :composeApp:compileKotlinJvm \
+  :composeApp:compileKotlinIosArm64 :composeApp:compileKotlinIosSimulatorArm64 \
+  :app:compileDebugKotlin \
+  :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest
+```
+
+| 验证对象 | 结果 |
+|---|---|
+| 迁移前 composeApp 基线 | Android 97、JVM 107、iOS Simulator 97 项通过 |
+| 迁移后 composeApp 测试 | Android 121、JVM 137、iOS Simulator 121 项通过；无失败、错误或跳过 |
+| 新增共享生成器与状态管理用例 | 每目标 24 项，共 72 次通过 |
+| 新增 JVM SQLite / 并发用例 | 5 项真实数据库用例、1 项真实线程并发清除用例通过 |
+| 原 Android 请求参数回归 | `ChatServiceTest` 1 项通过 |
+| Android 应用、共享 Android/JVM/iOS arm64/iOS Simulator arm64、common metadata 编译 | 全部通过 |
+
+编译中修正了挂起 DAO 函数引用和测试构造参数后，全部检查通过；独立审查发现的状态更新竞态已修复并补充线程回归。
+代码测试汇总见[验证记录](evidence/cmp-translation-2026-09-09/code-tests.txt)。
+
+Desktop GUI 补充验证为 `Blocked`：初次运行遇到 macOS 自动锁屏；用户随后解锁并开启电脑插件锁屏操作。
+已尝试原生测试包（独立 bundle ID/配置）及重建插件连接，但 `cua.getApp` 持续返回
+`SCStreamErrorDomain -3811`（音频/视频捕捉失败），无法取得可操作窗口。AWT 线程检查未发现卡死。
+本项未触发真实模型请求；不将启动成功或代码测试记为 GUI 通过。临时测试环境清理后提交代码，
+后续 GUI 复测步骤与工具错误见 [GUI 回归记录](cmp-gui-regression.md#2026-09-09聊天消息翻译)。
+
+### 验证范围与下一项
+
+代码测试覆盖请求、状态与持久化契约。真实 SQLite 测试在 JVM 执行，iOS Simulator 的代码测试使用 Kotlin/Native；
+它们不替代完整应用的 GUI 验证，也不评判翻译质量。Qwen MT 由 Mock Provider 验证协议，本项不使用额外付费模型调用。
+
+本项保护翻译自身的写入；应用其他流程仍可保存整份会话快照，不声称解决全应用所有字段的并发写入。
+新的翻译/清除使旧请求失效，但不增加聊天停止按钮对翻译任务的控制。
+
+下一项建议：**会话上下文压缩（中等难度）**。共享运行时的 `compressConversation` 仍返回不可用错误；可继续提取
+Android 的压缩请求，优先验证保留最近消息数、目标 token、失败回滚和摘要持久化。

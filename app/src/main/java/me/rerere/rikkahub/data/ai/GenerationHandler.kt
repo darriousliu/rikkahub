@@ -16,16 +16,13 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import me.rerere.ai.core.MessageRole
-import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.Tool
 import me.rerere.ai.core.merge
-import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.Provider
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
-import me.rerere.ai.registry.ModelRegistry
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.ToolApprovalState
@@ -41,12 +38,11 @@ import me.rerere.rikkahub.data.ai.transformers.transforms
 import me.rerere.rikkahub.data.ai.transformers.visualTransforms
 import me.rerere.rikkahub.data.ai.tools.buildMemoryTools
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.data.repository.MemoryRepository
-import me.rerere.rikkahub.utils.applyPlaceholders
+import me.rerere.rikkahub.service.TextTranslationGenerator
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -488,70 +484,11 @@ class GenerationHandler(
         targetLanguageCode: String,
         targetLanguageName: String,
         onStreamUpdate: ((String) -> Unit)? = null
-    ): Flow<String> = flow {
-        val model = settings.providers.findModelById(settings.translateModeId)
-            ?: error("Translation model not found")
-        val provider = model.findProvider(settings.providers)
-            ?: error("Translation provider not found")
-
-        val providerHandler = providerManager.getProviderByType(provider)
-
-        if (!ModelRegistry.QWEN_MT.match(model.modelId)) {
-            // Use regular translation with prompt
-            val prompt = settings.translatePrompt.applyPlaceholders(
-                "source_text" to sourceText,
-                "target_lang" to targetLanguageCode,
-            )
-
-            var messages = listOf(UIMessage.user(prompt))
-            var translatedText = ""
-
-            providerHandler.streamText(
-                providerSetting = provider,
-                messages = messages,
-                params = TextGenerationParams(
-                    model = model,
-                    reasoningLevel = ReasoningLevel.fromBudgetTokens(settings.translateThinkingBudget),
-                ),
-            ).collect { chunk ->
-                messages = messages.handleMessageChunk(chunk)
-                translatedText = messages.lastOrNull()?.toText() ?: ""
-
-                if (translatedText.isNotBlank()) {
-                    onStreamUpdate?.invoke(translatedText)
-                    emit(translatedText)
-                }
-            }
-        } else {
-            // Use Qwen MT model with special translation options
-            val messages = listOf(UIMessage.user(sourceText))
-            val chunk = providerHandler.generateText(
-                providerSetting = provider,
-                messages = messages,
-                params = TextGenerationParams(
-                    model = model,
-                    temperature = 0.3f,
-                    topP = 0.95f,
-                    customBody = listOf(
-                        CustomBody(
-                            key = "translation_options",
-                            value = buildJsonObject {
-                                put("source_lang", JsonPrimitive("auto"))
-                                put(
-                                    "target_lang",
-                                    JsonPrimitive(targetLanguageName)
-                                )
-                            }
-                        )
-                    )
-                ),
-            )
-            val translatedText = chunk.choices.firstOrNull()?.message?.toText() ?: ""
-
-            if (translatedText.isNotBlank()) {
-                onStreamUpdate?.invoke(translatedText)
-                emit(translatedText)
-            }
-        }
-    }.flowOn(Dispatchers.IO)
+    ): Flow<String> = TextTranslationGenerator(providerManager).translateText(
+        settings = settings,
+        sourceText = sourceText,
+        targetLanguageCode = targetLanguageCode,
+        targetLanguageName = targetLanguageName,
+        onStreamUpdate = onStreamUpdate,
+    ).flowOn(Dispatchers.IO)
 }

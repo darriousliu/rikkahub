@@ -2,6 +2,7 @@ package me.rerere.rikkahub.service
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -69,6 +71,9 @@ import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.error_title_generate_title
+import me.rerere.rikkahub.generated.resources.error_title_translate_message
+import me.rerere.rikkahub.generated.resources.translating
+import me.rerere.rikkahub.ui.pages.translator.TranslationLanguage
 import me.rerere.rikkahub.utils.JsonInstantPretty
 import org.jetbrains.compose.resources.getString
 import kotlin.time.Clock
@@ -132,6 +137,24 @@ internal class SharedChatRuntime(
                     } else current
                 }
             }
+        },
+    )
+
+    private val textTranslator = TextTranslationGenerator(providerManager)
+    private val messageTranslator = MessageTranslationManager(
+        scope = scope,
+        getSettings = { settingsStore.settingsFlow.first() },
+        translateText = { settings, source, code, name ->
+            textTranslator.translateText(settings, source, code, name).flowOn(Dispatchers.Default)
+        },
+        getConversation = { conversations[it]?.value },
+        updateTranslation = { id, message, translation ->
+            conversations[id]?.update { it.withMessageTranslation(message, translation) }
+        },
+        saveTranslation = conversationRepository::updateMessageTranslation,
+        getLoadingText = { getString(Res.string.translating) },
+        onError = { id, error ->
+            addError(error, id, title = getString(Res.string.error_title_translate_message))
         },
     )
 
@@ -424,9 +447,24 @@ internal class SharedChatRuntime(
         message: UIMessage,
         targetLanguageTag: String,
     ) {
-        addError(
-            UnsupportedOperationException("Message translation is not available on this platform"),
+        val language = TranslationLanguage.entries.firstOrNull {
+            it.languageTag.equals(targetLanguageTag, ignoreCase = true)
+        }
+        if (language == null) {
+            scope.launch {
+                addError(
+                    IllegalArgumentException("Unsupported translation language: $targetLanguageTag"),
+                    conversationId,
+                    title = getString(Res.string.error_title_translate_message),
+                )
+            }
+            return
+        }
+        messageTranslator.translate(
             conversationId = conversationId,
+            message = message,
+            targetLanguageCode = language.promptCode,
+            targetLanguageName = language.apiName,
         )
     }
 
@@ -460,17 +498,7 @@ internal class SharedChatRuntime(
     }
 
     override fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
-        updateConversationState(conversationId) { conversation ->
-            conversation.copy(
-                messageNodes = conversation.messageNodes.map { node ->
-                    node.copy(
-                        messages = node.messages.map { message ->
-                            if (message.id == messageId) message.copy(translation = null) else message
-                        },
-                    )
-                },
-            )
-        }
+        messageTranslator.clear(conversationId, messageId)
     }
 
     override fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean =
