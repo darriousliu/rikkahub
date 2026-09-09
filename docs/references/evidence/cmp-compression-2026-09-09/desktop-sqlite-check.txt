@@ -1,0 +1,41 @@
+{
+  "app_fully_exited": true,
+  "title": "CMP Compression GUI",
+  "suggestions": [],
+  "messages": [
+    {
+      "id": "4880bf5f-8ee1-41fc-b255-0f5a2cf6d6fc",
+      "role": "user",
+      "parts": [
+        {
+          "type": "text",
+          "text": "好的，我记住了：爱丽丝选择了茶。",
+          "metadata": null
+        }
+      ],
+      "annotations": [],
+      "createdAt": "2026-09-09T16:18:39.593478",
+      "finishedAt": null,
+      "modelId": null,
+      "usage": null,
+      "translation": null
+    },
+    {
+      "id": "b6b1b77e-d170-4818-a34e-d64c9cfbea21",
+      "role": "user",
+      "parts": [
+        {
+          "type": "text",
+          "text": "Keep this recent message.",
+          "metadata": null
+        }
+      ],
+      "annotations": [],
+      "createdAt": "2026-09-09T15:52:59.548682",
+      "finishedAt": null,
+      "modelId": null,
+      "usage": null,
+      "translation": null
+    }
+  ]
+}

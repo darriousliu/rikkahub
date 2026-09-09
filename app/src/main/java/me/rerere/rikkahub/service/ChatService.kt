@@ -8,9 +8,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,10 +62,8 @@ import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.findModelById
-import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getAssistantById
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.Assistant
@@ -81,7 +76,6 @@ import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.web.BadRequestException
 import me.rerere.rikkahub.web.NotFoundException
-import me.rerere.rikkahub.utils.applyPlaceholders
 import me.rerere.rikkahub.ui.hooks.writeStringPreference
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.workspace.WorkspaceShellStatus
@@ -161,6 +155,13 @@ class ChatService(
                 }
             }
         },
+    )
+
+    private val conversationCompressor = ConversationCompressor(
+        providerManager = providerManager,
+        getSettings = { settingsStore.settingsFlow.first() },
+        saveConversation = ::saveConversation,
+        getNotEnoughMessagesText = { context.getString(R.string.chat_page_compress_not_enough_messages) },
     )
 
     private val messageTranslator = MessageTranslationManager(
@@ -817,83 +818,9 @@ class ChatService(
         additionalPrompt: String,
         targetTokens: Int,
         keepRecentMessages: Int,
-    ): Result<Unit> = runCatching {
-        val settings = settingsStore.settingsFlow.first()
-        val model = settings.findModelById(settings.compressModelId)
-            ?: settings.getCurrentChatModel()
-            ?: throw IllegalStateException("No model available for compression")
-        val provider = model.findProvider(settings.providers)
-            ?: throw IllegalStateException("Provider not found")
-
-        val providerHandler = providerManager.getProviderByType(provider)
-
-        val maxMessagesPerChunk = 256
-        val allMessages = conversation.currentMessages
-
-        // Split messages into those to compress and those to keep
-        val messagesToCompress: List<UIMessage>
-        val messagesToKeep: List<UIMessage>
-
-        if (keepRecentMessages > 0 && allMessages.size > keepRecentMessages) {
-            messagesToCompress = allMessages.dropLast(keepRecentMessages)
-            messagesToKeep = allMessages.takeLast(keepRecentMessages)
-        } else if (keepRecentMessages > 0) {
-            // Not enough messages to compress while keeping recent ones
-            throw IllegalStateException(context.getString(R.string.chat_page_compress_not_enough_messages))
-        } else {
-            messagesToCompress = allMessages
-            messagesToKeep = emptyList()
-        }
-
-        fun splitMessages(messages: List<UIMessage>): List<List<UIMessage>> {
-            if (messages.size <= maxMessagesPerChunk) return listOf(messages)
-            val mid = messages.size / 2
-            val left = splitMessages(messages.subList(0, mid))
-            val right = splitMessages(messages.subList(mid, messages.size))
-            return left + right
-        }
-
-        suspend fun compressMessages(messages: List<UIMessage>): String {
-            val contentToCompress = messages.joinToString("\n\n") { it.summaryAsText(maxLength = 2000) }
-            val prompt = settings.compressPrompt.applyPlaceholders(
-                "content" to contentToCompress,
-                "target_tokens" to targetTokens.toString(),
-                "additional_context" to if (additionalPrompt.isNotBlank()) {
-                    "Additional instructions from user: $additionalPrompt"
-                } else "",
-                "locale" to Locale.getDefault().displayName
-            )
-
-            val result = providerHandler.generateText(
-                providerSetting = provider,
-                messages = listOf(UIMessage.user(prompt)),
-                params = backgroundTextGenerationParams(model),
-            )
-
-            return result.choices[0].message?.toText()?.trim()
-                ?: throw IllegalStateException("Failed to generate compressed summary")
-        }
-
-        val compressedSummaries = coroutineScope {
-            splitMessages(messagesToCompress)
-                .map { chunk -> async { compressMessages(chunk) } }
-                .awaitAll()
-        }
-
-        // Create new conversation with compressed history as multiple user messages + kept messages
-        val newMessageNodes = buildList {
-            compressedSummaries.forEach { summary ->
-                add(UIMessage.user(summary).toMessageNode())
-            }
-            addAll(messagesToKeep.map { it.toMessageNode() })
-        }
-        val newConversation = conversation.copy(
-            messageNodes = newMessageNodes,
-            chatSuggestions = emptyList(),
-        )
-
-        saveConversation(conversationId, newConversation)
-    }
+    ): Result<Unit> = conversationCompressor.compress(
+        conversationId, conversation, additionalPrompt, targetTokens, keepRecentMessages,
+    )
 
     // ---- 对话状态更新 ----
 

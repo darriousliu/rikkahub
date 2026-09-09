@@ -1,0 +1,62 @@
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 文本 (selectable) 用户
+									10 未知 (selectable)
+									11 文本 (selectable) Alice chose tea.
+									12 未知 (selectable) 0
+										13 未知 (selectable) 0
+											14 未知 (selectable) 复制
+											15 未知 (selectable) 重新生成
+											16 未知 (selectable) 更多选项
+									17 未知 (selectable) 0
+										18 文本 (selectable) Noted.
+									19 未知 (selectable) 0
+										20 未知 (selectable) 0
+											21 未知 (selectable) 复制
+											22 未知 (selectable) 重新生成
+											23 未知 (selectable) 语音
+											24 未知 (selectable) 翻译
+											25 未知 (selectable) 更多选项
+									26 文本 (selectable) 用户
+									27 未知 (selectable)
+									28 文本 (selectable) Keep this recent message.
+									29 未知 (selectable) 0
+										30 未知 (selectable) 0
+											31 未知 (selectable) 复制
+											32 未知 (selectable) 重新生成
+											33 未知 (selectable) 更多选项
+									34 滚动条 (selectable, disabled) 55
+								35 滚动区 (selectable) 0
+									36 文本 (selectable) Old suggestion
+								37 文本 (selectable) 消息数量不足，无法压缩。请减少保留的消息数量或添加更多消息。
+								38 文本 (selectable) 消息数量不足，无法压缩。请减少保留的消息数量或添加更多消息。
+							39 container (selectable) 0
+								40 未知 (selectable) 0
+									41 按钮 (selectable) Messages
+									42 未知 (selectable) 0
+										43 文本 (selectable) CMP Compression GUI, CMP Compression GUI Assistant / DeepSeek CMP Compression (DeepSeek GUI Compression)
+									44 按钮 (selectable) Chat Options
+									45 按钮 (selectable) New Message
+							46 container (selectable) 0
+								47 container (selectable) 0
+									48 文本栏 (selectable, settable) 输入消息与AI聊天
+									49 滚动区 (selectable) 0
+										50 按钮 (selectable) D
+										51 未知 (selectable) 网络搜索
+									52 未知 (selectable) 更多选项
+									53 container (selectable) 发送
+					54 未知 (selectable)
+	55 关闭按钮
+	56 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	57 最小化按钮
+	58 文本 RikkaHub
+59 menu bar
+	60 RikkaHub Compression GUI

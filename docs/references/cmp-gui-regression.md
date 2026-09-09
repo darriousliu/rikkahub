@@ -179,3 +179,25 @@ adb -s emulator-5560 shell am instrument -w -r \
 未记录服务端实际 token 用量，因此不推算精确消耗。空响应、失败、取消与竞争仍由无网络代码测试覆盖。
 本轮仅补充 Desktop GUI，不将结果外推为 Android/iOS 的翻译 GUI 已验收。
 临时应用、配置、seed 和日志在提交前清理；钥匙串中的测试密钥保留供后续验证。
+
+## 2026-09-09：会话上下文压缩
+
+状态：`Pass`（Desktop 限定范围）；Android/iOS 使用无网络代码测试与编译证据。
+专用 profile 预存 `Alice chose tea.`、`Noted.`、`Keep this recent message.` 三条消息及 `Old suggestion`。
+模型为 `deepseek-v4-flash`，custom body 关闭思考并设置 `max_tokens: 64`，不触发聊天、标题或建议请求。
+
+| 步骤 | 预期结果 | 实际结果 |
+|---|---|---|
+| 更多 → 压缩历史，保持保留 32 条并确认 | 提示消息不足，原数据保持 | Pass；保留 3 条消息和旧建议，未调用模型 |
+| 退出重启，设目标 500、保留 1，确认一次 | 前两条生成摘要，最近一条原样保留，旧建议清空 | Pass；摘要为“好的，我记住了：爱丽丝选择了茶。”，最近消息及其 ID 保留，建议为 [] |
+| 完全退出，再启动同一 profile | 仍为摘要 + 最近消息，旧建议不恢复 | Pass；窗口 AX、清晰截图及独立 SQLite 检查一致 |
+
+证据：[消息不足](evidence/cmp-compression-2026-09-09/desktop-not-enough.jpg)、
+[压缩结果](evidence/cmp-compression-2026-09-09/desktop-compressed.jpg)、
+[重启后](evidence/cmp-compression-2026-09-09/desktop-restart.jpg)、
+[SQLite](evidence/cmp-compression-2026-09-09/desktop-sqlite-check.txt)。同目录保留参数、失败、成功及重启的 AX 文本。
+
+Terra 子 agent 完成打开会话与默认保留数量确认；工具调用曾停滞，主 agent 重建 node 会话接手。
+回到正常聊天视图后看到了两次不足提示（子 agent 与主 agent 各确认一次），两次都在请求前失败。
+有效压缩只点击一次，共一次真实模型请求；没有服务端实际 token 统计，不推算精确消耗。
+所有 GUI 操作使用电脑插件。临时应用、profile、seed、Gradle init 与日志已清理，钥匙串测试凭据保留。

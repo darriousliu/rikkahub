@@ -1,0 +1,79 @@
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 文本 (selectable) 用户
+									10 未知 (selectable)
+									11 文本 (selectable) Alice chose tea.
+									12 未知 (selectable) 0
+										13 未知 (selectable) 0
+											14 未知 (selectable) 复制
+											15 未知 (selectable) 重新生成
+											16 未知 (selectable) 更多选项
+									17 未知 (selectable) 0
+										18 文本 (selectable) Noted.
+									19 未知 (selectable) 0
+										20 未知 (selectable) 0
+											21 未知 (selectable) 复制
+											22 未知 (selectable) 重新生成
+											23 未知 (selectable) 语音
+											24 未知 (selectable) 翻译
+											25 未知 (selectable) 更多选项
+									26 文本 (selectable) 用户
+									27 未知 (selectable)
+									28 文本 (selectable) Keep this recent message.
+									29 未知 (selectable) 0
+										30 未知 (selectable) 0
+											31 未知 (selectable) 复制
+											32 未知 (selectable) 重新生成
+											33 未知 (selectable) 更多选项
+									34 滚动条 (selectable, disabled) 55
+								35 滚动区 (selectable) 0
+									36 文本 (selectable) Old suggestion
+							37 container (selectable) 0
+								38 未知 (selectable) 0
+									39 按钮 (selectable) Messages
+									40 未知 (selectable) 0
+										41 文本 (selectable) CMP Compression GUI, CMP Compression GUI Assistant / DeepSeek CMP Compression (DeepSeek GUI Compression)
+									42 按钮 (selectable) Chat Options
+									43 按钮 (selectable) New Message
+							44 container (selectable) 0
+								45 container (selectable) 0
+									46 文本栏 (selectable, settable) 输入消息与AI聊天
+									47 滚动区 (selectable) 0
+										48 按钮 (selectable) D
+										49 未知 (selectable) 网络搜索
+									50 未知 (selectable) 更多选项
+									51 container (selectable) 发送
+					52 未知 (selectable)
+		53 container (selectable) 0
+			54 未知 (selectable) 0
+				55 未知 (selectable) 0
+					56 container (selectable) 0
+						57 文本 (selectable) 压缩对话历史
+						58 文本 (selectable) 将对话压缩为摘要以节省令牌
+						59 文本 (selectable) 目标Token大小
+						60 未知 (selectable) 0
+							61 单选按钮 (selectable) 1000
+							62 单选按钮 (selectable) 2000
+							63 单选按钮 (selectable) 4000
+							64 单选按钮 (selectable) 500
+						65 文本栏 (selectable, settable) Description: 保留最近的消息, Value: 1
+						66 文本栏 (selectable, settable) 附加说明（可选）
+						67 文本 (selectable) ⚠️ 压缩上下文将重置当前对话中的所有消息
+						68 按钮 (selectable) 确认
+						69 按钮 (selectable) 取消
+	70 关闭按钮
+	71 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	72 最小化按钮
+	73 文本 RikkaHub
+74 menu bar
+	75 RikkaHub Compression GUI
+
+The focused UI element is 1 未知 (selectable)

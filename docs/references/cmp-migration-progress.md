@@ -1,5 +1,9 @@
 # CMP 逐项迁移与验证记录
 
+后续迁移约束（2026-09-09 用户明确要求）：优先直接移动文件，仅对 common 不支持的 Java/Android API 做少量适配。
+禁止借迁移大量修改业务逻辑；保持原有判断、异常、取消、并发和持久化行为。验证用于确认迁移等价。
+本次会话上下文压缩完成后，回查本 session 已有改动并按此约束收敛。
+
 ## 2026-09-08：持久化 LRU Key 轮换
 
 状态：本项实现及自动化验证完成。迁移前基线为 `66e8370c1`，不代表整个 CMP 迁移已经完成。
@@ -381,3 +385,66 @@ Desktop GUI 补充验证已由 `Blocked` 更新为 `Pass`。用户解锁后，�
 
 下一项建议：**会话上下文压缩（中等难度）**。共享运行时的 `compressConversation` 仍返回不可用错误；可继续提取
 Android 的压缩请求，优先验证保留最近消息数、目标 token、失败回滚和摘要持久化。
+
+## 2026-09-09：会话上下文压缩
+
+迁移前基线：`db93b1a79`。状态：代码验证与 Desktop 限定范围 GUI 回归完成。本项难度：中等。
+
+### 配置与范围
+
+| 项目 | 本项选择 |
+|---|---|
+| 策略与适用性 | `PRESERVE` / `SUPPORTED`，沿用模块、DI 和公开压缩调用 |
+| 目标 | Android、Desktop JVM、iOS arm64、iOS Simulator arm64 |
+| 工具链 | 沿用已有 Kotlin 2.4.20-RC、CMP 1.12.0、AGP 9.3.2、Gradle 9.5.0、JDK 21、Xcode 27.0 |
+| 迁移单位 | 压缩请求、结果替换、对话框及 iOS/Desktop 入口 |
+| 基线 | Android 121、JVM 137、iOS Simulator 121 项通过；无依赖、数据库 schema 或设置键变更 |
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险及动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| C01 压缩请求 | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 保留模型回退、256 条递归分块、提示词及保留最近消息规则 | ChatRuntime 原签名保留 | 完成；8 项 common 契约测试 |
+| C02 压缩保存 | 平台 runtime | REQUIRED_FOR_KMP / REWRITEABLE | 共享逻辑继续调用原 saveConversation，保持节点替换和建议清空规则 | 不变 | 完成；2 项真实 SQLite 集成测试 |
+| C03 压缩 UI | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 共享参数、加载与取消；Android 保留原入口，iOS/Desktop 补齐更多菜单 | Android 对话框 facade 保留 | 三端编译通过；Desktop GUI 通过 |
+| C04 Locale 与文件清理 | 平台 runtime | REQUIRED_FOR_KMP / ANDROID_ONLY | 复用 PlatformDeviceInfo 的 locale；文件清理及保存时机保持原 runtime 行为 | 不变 | Android locale 实现与原 Locale 调用一致，保存方法无变更 |
+
+按用户要求，本项以原样抽取与接线为准；保持原校验、取消、空响应处理及保存行为，不新增事务、过期请求检查或参数规则。
+
+### 移动内容与兼容边界
+
+- `ChatService.compressConversation` 的方法体抽取到 `ConversationCompressor`；归一化比较确认，仅替换设置读取、
+  错误字符串和 Locale 访问，模型参数、递归分块、异步合并及原 `runCatching` 均保持一致。
+- Android 与 `SharedChatRuntime` 保留原 `compressConversation` 签名，委托共享实现并传入各自既有的 `saveConversation`。
+  未改 repository、消息结构、保存流程或文件删除行为。
+- `CompressContextDialog` 主体移动到 `SharedCompressContextDialog`。只将 Android 资源包装器换成 CMP 资源 API，
+  用 composable slot 隔离 Android `RabbitLoadingIndicator`；原 Android facade 和加载动画保留。
+  默认目标 2000、选项 500/1000/2000/4000、默认保留 32 条、输入、确认和取消流程不变。
+- iOS/Desktop 输入框“更多”补充“添加附件 / 压缩历史”入口，附件选择仍调用原 FileKit launcher。
+
+新增兼容边界为 `ConversationCompressor` 的设置、保存、错误资源与 Locale 回调，及共享对话框的加载动画 slot。
+新增公开类型/函数为 `ConversationCompressor` 和 `SharedCompressContextDialog`；既有公开方法签名与调用方式不变。
+没有执行 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 类业务改造。
+
+### 自动化验证
+
+| 验证步骤 | 预期结果 | 结果 |
+|---|---|---|
+| 指定压缩模型或回退聊天模型，配置 Provider override/自定义参数 | 请求与原 Android 模型选择、AUTO 思考参数和四个占位符一致 | 通过 |
+| 压缩选中分支并保留最近消息，257 条消息分块逆序完成 | 只发送选中分支；保留 UIMessage 元数据，摘要按源顺序保存并清空建议 | 通过 |
+| 测试消息不足、空 choices/null message、普通错误及取消 | 保留原 Result/异常与不调用保存的行为 | 通过 |
+| 测试空白摘要、非正 keep 和目标 token 边界 | 与旧实现一致，不新增校验 | 通过 |
+| 真实 SQLite 保存后重新读取并查询 FTS | 摘要和最近消息正确保存，旧文本索引移除，新索引存在 | 通过 |
+
+Android host **129**、JVM **147**、iOS Simulator **129** 项通过；本项新增执行 26 次。
+Android `ChatServiceTest` 1 项通过。Android、JVM、iOS arm64、iOS Simulator arm64 和 common metadata 编译通过。
+命令及详细结果见[自动化记录](evidence/cmp-compression-2026-09-09/code-tests.txt)。
+
+### GUI 与后续工作
+
+Desktop 已通过“消息不足”“摘要 + 最近一条消息”“清空旧建议”“退出重启恢复”的限定回归。
+一次 DeepSeek V4 Flash 请求，关闭思考并以模型 custom body 限制输出 64 token；未取得服务端实际用量。
+Terra 子 agent 完成入口与失败分支操作，插件调用停滞后由主 agent 重建会话并完成有效压缩和重启。
+截图、AX 与独立 SQLite 证据见[GUI 回归](cmp-gui-regression.md#2026-09-09会话上下文压缩)。
+Android/iOS 本项只完成代码测试与编译，不外推为相应 GUI 已通过。
+临时 app、profile、seed、Gradle init 和日志已删除；未添加临时生产日志。
+
+按用户最新要求，下一步先回查本 session 的全部改动，删除非迁移所需的业务改写，再建议下一项迁移。

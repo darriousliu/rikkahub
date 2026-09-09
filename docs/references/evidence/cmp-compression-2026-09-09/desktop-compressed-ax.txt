@@ -1,0 +1,50 @@
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 文本 (selectable) 用户
+									10 未知 (selectable)
+									11 文本 (selectable) 好的，我记住了：爱丽丝选择了茶。
+									12 未知 (selectable) 0
+										13 未知 (selectable) 0
+											14 未知 (selectable) 复制
+											15 未知 (selectable) 重新生成
+											16 未知 (selectable) 更多选项
+									17 文本 (selectable) 用户
+									18 未知 (selectable)
+									19 文本 (selectable) Keep this recent message.
+									20 未知 (selectable) 0
+										21 未知 (selectable) 0
+											22 未知 (selectable) 复制
+											23 未知 (selectable) 重新生成
+											24 未知 (selectable) 更多选项
+							25 container (selectable) 0
+								26 未知 (selectable) 0
+									27 按钮 (selectable) Messages
+									28 未知 (selectable) 0
+										29 文本 (selectable) CMP Compression GUI, CMP Compression GUI Assistant / DeepSeek CMP Compression (DeepSeek GUI Compression)
+									30 按钮 (selectable) Chat Options
+									31 按钮 (selectable) New Message
+							32 container (selectable) 0
+								33 container (selectable) 0
+									34 文本栏 (selectable, settable) 输入消息与AI聊天
+									35 滚动区 (selectable) 0
+										36 按钮 (selectable) D
+										37 未知 (selectable) 网络搜索
+									38 未知 (selectable) 更多选项
+									39 container (selectable) 发送
+					40 未知 (selectable)
+	41 关闭按钮
+	42 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	43 最小化按钮
+	44 文本 RikkaHub
+45 menu bar
+	46 RikkaHub Compression GUI
+
+The focused UI element is 1 未知 (selectable)

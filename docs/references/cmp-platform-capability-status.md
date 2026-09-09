@@ -28,7 +28,8 @@
 2026-09-09 后续增量：已补齐聊天消息翻译，三端共用普通流式/Qwen MT 请求、译文状态管理和字段级保存；
 清除译文会落盘，空响应、取消和旧请求竞争有代码测试。Desktop 的真实翻译、折叠/展开、保留及清空后重启均已通过
 [GUI 回归](cmp-gui-regression.md#2026-09-09聊天消息翻译)，并修复原生包读取保存设置所需的 JDK 模块缺失。
-共享运行时仍缺少会话上下文压缩，作为下一项迁移建议。
+会话上下文压缩现已原样抽取至 commonMain，并接入 iOS/Desktop 更多菜单。模型回退、递归分块、保留最近消息、
+异常和保存规则沿用原 Android 实现；三端代码测试及编译通过，详见[压缩迁移记录](cmp-migration-progress.md#2026-09-09会话上下文压缩)。
 
 ## 代码分布
 
@@ -68,6 +69,7 @@ for m in composeApp common ai search speech highlight web material3; do for ss i
 | AI 自动会话标题 | ✅ | ✅ | ✅ | `ConversationTitleGenerator`；2026-09-08 增量，Android `ChatService` 与 iOS/Desktop `SharedChatRuntime` 共用 |
 | AI 追问建议 | ✅ | ✅ | ✅ | `ConversationSuggestionGenerator`；2026-09-09 增量，三端共用，现有共享 UI 显示建议并支持点击填入输入框 |
 | 聊天消息翻译 | ✅ | ✅ | ✅ | `TextTranslationGenerator` / `MessageTranslationManager`；2026-09-09 增量，普通流式/Qwen MT、译文清除和持久化共用 |
+| 会话上下文压缩 | ✅ | ✅ | ✅ | `ConversationCompressor` / `SharedCompressContextDialog`；原 Android 逻辑抽取，继续使用各 runtime 的既有保存流程 |
 | Room 3 + bundled SQLite | ✅ | ✅ | ✅ | `AppDatabase` expect/actual |
 | DataStore 设置 | ✅ | ✅ | ✅ | `SettingsStore` |
 | MCP 运行时 | ✅ | ✅ | ✅ | `McpManager` |

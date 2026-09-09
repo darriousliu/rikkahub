@@ -70,6 +70,7 @@ import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.generated.resources.chat_page_compress_not_enough_messages
 import me.rerere.rikkahub.generated.resources.error_title_generate_title
 import me.rerere.rikkahub.generated.resources.error_title_translate_message
 import me.rerere.rikkahub.generated.resources.translating
@@ -138,6 +139,13 @@ internal class SharedChatRuntime(
                 }
             }
         },
+    )
+
+    private val conversationCompressor = ConversationCompressor(
+        providerManager = providerManager,
+        getSettings = { settingsStore.settingsFlow.first() },
+        saveConversation = ::saveConversation,
+        getNotEnoughMessagesText = { getString(Res.string.chat_page_compress_not_enough_messages) },
     )
 
     private val textTranslator = TextTranslationGenerator(providerManager)
@@ -314,8 +322,8 @@ internal class SharedChatRuntime(
         additionalPrompt: String,
         targetTokens: Int,
         keepRecentMessages: Int,
-    ): Result<Unit> = Result.failure(
-        UnsupportedOperationException("Context compression is not available on this platform"),
+    ): Result<Unit> = conversationCompressor.compress(
+        conversationId, conversation, additionalPrompt, targetTokens, keepRecentMessages,
     )
 
     override suspend fun forkConversationAtMessage(
