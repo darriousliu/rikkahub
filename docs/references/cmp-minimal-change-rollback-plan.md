@@ -139,7 +139,7 @@ GUI 决策：**需要**。构造依赖和 Android/非 Android Koin 接线改变�
 
 ## 第 03 项：RequestLogSink / RequestTimeSource / RequestTimeMark
 
-起点：`3c8a274e`。状态：**验证完成**。
+起点：`3c8a274e`。状态：**验证完成，已签名提交 `e5c363e6`**。
 生产代码只修改 `RequestLoggingInterceptor.kt`，增加 6 行、删除 44 行，净减少 38 行。
 三个专用接口、两个转发对象以及包装用的内部构造参数归零；直接调用现有 `Logging` 和
 `TimeSource.Monotonic`，恢复 tag 中的类结构、方法体位置和 `startTime` 名称。
@@ -160,6 +160,40 @@ GUI 决策：**免 GUI**。原生产无参入口、network interceptor 注册、
 真实 Logging 和本地 HTTP 代码测试覆盖所改调用链。未改 UI、导航、生命周期或平台资源。本轮未启动子 agent。
 完整命令、逐项步骤/预期、覆盖边界和清理记录见 [第 03 项验证记录](evidence/cmp-rollback-03-2026-09-10/verification.md)。
 
-第 04 项建议：撤销 `McpTokenPolicy` 的业务判断抽取，将 `needsRefresh` / `computeExpiry` 放回
-`McpOAuthCoordinator`。用 Coordinator 入口测试未启用、缺少 token、未到期、60 秒刷新边界及 expiry 计算，
-保持原请求/刷新逻辑和平台 OAuth 接线。本项尚未开始。
+第 04 项建议：撤销 `McpTokenPolicy` 的业务判断抽取，将刷新判断和 `computeExpiry` 放回
+`McpOAuthCoordinator`。执行结果见下一节；tag 中刷新判断位于 `ensureFreshToken` 内，没有独立 `needsRefresh` 方法。
+
+## 第 04 项：McpTokenPolicy
+
+起点：`e5c363e6`。状态：**验证完成**。
+删除 `McpTokenPolicy.kt`，将刷新前置判断放回 `ensureFreshToken`，将私有 `computeExpiry` 放回
+`McpOAuthCoordinator` 原位置。生产代码增加 20 行、删除 34 行，净减少 14 行。
+构造参数改为已有标准类型 `Clock`，默认 `Clock.System`；保留现有秒转毫秒 API、Ktor 和平台 OAuth 回调实现。
+没有重新增加 `needsRefresh` 或单次时间读取包装方法，没有改锁、请求、异常、取消或持久化流程。
+
+同一组 11 项测试在回退前后均通过，只有夹具构造参数由 `McpTokenPolicy(clock)` 改为直接传 `clock`。
+测试使用真实 Coordinator、OAuthClient、SettingsStore 和 SHA-256 actual；HTTP 为 Ktor MockEngine，
+底层 Preferences 与浏览器回调为内存夹具，不使用真实服务或凭据。
+
+| 验证步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 未启用、缺少 token/端点/clientId，未到期或未知到期时间 | 沿用原前置判断；不请求、不写入、返回当前配置 | 回退前后通过 |
+| 距到期 60,001 / 60,000 / 59,999 ms，以及空 access token | 60,001 ms 不刷新，60,000 ms 起刷新；空 access token 在具备刷新条件时刷新 | 回退前后通过 |
+| 同实例推进时钟、再次传入旧配置、改用最新已存凭据 | 按当前时间与最新配置判断，不缓存旧时钟或旧凭据，不重复刷新已更新 token | 回退前后通过 |
+| HTTP/SSE 两种配置刷新，核对 form、header 和序列化重读 | 原 resource、scope、client 字段保持；只更新目标 OAuth，其他配置及传输信息保持 | 回退前后通过 |
+| 请求期间推进 5 秒；响应省略或返回非正/正 expires_in | 省略/非正保存 0；正值从响应时刻计算；刷新 token/scope 缺失沿用旧值，空串保持 | 回退前后通过 |
+| 服务器已不在设置中，或 HTTP/解析/传输/取消失败 | 缺失项不插入；失败不重试、不写入并返回旧配置，保留现有取消处理 | 回退前后通过 |
+| 通过既有回调接口夹具完成授权码交换 | PKCE/state/redirect/resource 参数保持；先保存授权元数据，再保存 token 与正确 expiry，关闭回调会话 | 回退前后通过 |
+
+回退后全部 composeApp JVM 测试 29 类、198 项通过；common metadata、JVM、Android、iOS Arm64 和
+iOS Simulator Arm64 编译通过，Android Debug APK 打包通过。
+
+GUI 决策：**免 GUI**。本项只归位原判断/计算；唯一生产构造点 `McpManager` 仍使用默认参数，
+OAuth 浏览器与系统回调、UI、导航、生命周期、存储实现及平台接线均未改动。
+代码覆盖所改判断及刷新/授权两条到期时间保存链路；不把回调夹具视为操作系统 OAuth 验证。
+没有启动子 agent、读取钥匙串或增加生产临时日志；临时 Gradle 输出已清理。
+完整步骤、预期、命令、源代码对比与覆盖边界见 [第 04 项验证记录](evidence/cmp-rollback-04-2026-09-10/verification.md)。
+
+第 05 项建议：撤销 Vertex token Provider 的二次 HTTP Transport/DTO 包装，回到 Provider 直接使用 Ktor。
+保留平台 RSA 签名实现；先验证 token URL、form、JWT 声明、缓存过期和成功/错误/取消行为，再判断 GUI 需求。
+本项尚未开始。

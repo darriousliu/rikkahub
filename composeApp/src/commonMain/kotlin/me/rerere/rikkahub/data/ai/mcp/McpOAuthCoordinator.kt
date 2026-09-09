@@ -15,10 +15,13 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.platform.OAuthCallbackSession
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.requireAuthorizationCode
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 private const val TAG = "McpOAuthCoordinator"
+private const val TOKEN_REFRESH_LEEWAY_MS = 60_000L
 private val OAUTH_CALLBACK_TIMEOUT = 5.minutes
 
 internal class McpOAuthCoordinator(
@@ -27,7 +30,7 @@ internal class McpOAuthCoordinator(
     private val oauthClient: McpOAuthClient,
     private val callbackSessionFactory: OAuthCallbackSessionFactory,
     private val updateStatus: (Uuid, McpStatus) -> Unit,
-    private val tokenPolicy: McpTokenPolicy = McpTokenPolicy(),
+    private val clock: Clock = Clock.System,
 ) : McpAuthorizationCoordinator {
     private val authorizationJobs = AtomicSnapshotMap<Uuid, Job>()
     private val refreshLocks = AtomicSnapshotMap<Uuid, Mutex>()
@@ -71,8 +74,12 @@ internal class McpOAuthCoordinator(
             val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == configInput.id }
                 ?: configInput
             val oauth = config.commonOptions.oauth ?: return@withLock config
-            if (!tokenPolicy.needsRefresh(oauth)) return@withLock config
-            val refreshToken = oauth.refreshToken ?: return@withLock config
+            if (!oauth.enabled || oauth.refreshToken.isNullOrBlank()) return@withLock config
+
+            val expired = oauth.expiresAt > 0 &&
+                clock.now().toEpochMilliseconds() >= oauth.expiresAt - TOKEN_REFRESH_LEEWAY_MS
+            if (!oauth.accessToken.isNullOrBlank() && !expired) return@withLock config
+
             val tokenEndpoint = oauth.tokenEndpoint ?: return@withLock config
             val clientId = oauth.clientId ?: return@withLock config
             runCatching {
@@ -80,14 +87,14 @@ internal class McpOAuthCoordinator(
                     tokenEndpoint = tokenEndpoint,
                     clientId = clientId,
                     clientSecret = oauth.clientSecret,
-                    refreshToken = refreshToken,
+                    refreshToken = oauth.refreshToken,
                     resource = McpOAuthClient.canonicalResource(config.serverUrl),
                     scope = oauth.scope,
                 )
                 val updated = oauth.copy(
                     accessToken = token.accessToken,
                     refreshToken = token.refreshToken ?: oauth.refreshToken,
-                    expiresAt = tokenPolicy.computeExpiry(token.expiresIn),
+                    expiresAt = computeExpiry(token.expiresIn),
                     scope = token.scope ?: oauth.scope,
                 )
                 persistOAuthState(config.id, updated)
@@ -200,7 +207,7 @@ internal class McpOAuthCoordinator(
                 scope = token.scope ?: scope,
                 accessToken = token.accessToken,
                 refreshToken = token.refreshToken,
-                expiresAt = tokenPolicy.computeExpiry(token.expiresIn),
+                expiresAt = computeExpiry(token.expiresIn),
             ),
         )
     }
@@ -215,6 +222,13 @@ internal class McpOAuthCoordinator(
             )
         }
     }
+
+    private fun computeExpiry(expiresIn: Long?): Long =
+        if (expiresIn != null && expiresIn > 0) {
+            clock.now().toEpochMilliseconds() + expiresIn.seconds.inWholeMilliseconds
+        } else {
+            0L
+        }
 
     private fun looksUnauthorized(error: Throwable): Boolean {
         val message = generateSequence(error) { it.cause }
