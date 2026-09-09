@@ -39,6 +39,9 @@ Android 原调用入口保留。此项只共享运行时 API，现有 UI 与 Web
 用户输入正则预处理 `preprocessUserInputParts` 已原样移至 commonMain，Android 发送/编辑及
 SharedChatRuntime 发送共用原规则；Text 以外的内容、正则异常处理与原调用时机保持不变。
 SharedChatRuntime 原编辑流程不变，详见[验证记录](cmp-migration-progress.md#2026-09-09用户输入正则预处理)。
+被打断工具调用的收尾方法已原样移为 commonMain 的 ChatRuntime 扩展，Android 原发送/停止入口继续调用；
+取消结果、末节点处理、结束时间和保存规则保持。SharedChatRuntime 原发送/停止行为未调整，
+详见[验证记录](cmp-migration-progress.md#2026-09-09被打断工具调用的收尾处理)。
 
 ## 代码分布
 

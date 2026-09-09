@@ -605,3 +605,56 @@ GUI 判断：无需 GUI。纯同步文本计算及等价调用替换，界面入
 
 下一项建议：**被打断工具调用的收尾处理（中低难度）**，直接搬迁 `finishInterruptedPendingTools`
 与 `cancelToolByUser`，保留原触发和保存时机。
+
+## 2026-09-09：被打断工具调用的收尾处理
+
+迁移前基线：`387778613`。策略 `PRESERVE`，适用性 `SUPPORTED`，难度中低。
+状态：原样迁移与自动化验证完成。
+目标为 Android、Desktop JVM、iOS arm64 / Simulator arm64；沿用 Kotlin 2.4.20-RC、CMP 1.12.0、
+AGP 9.3.2、Gradle 9.5.0 和现有 JDK/Xcode 环境，无依赖或配置变更。
+基线三端测试通过：Android host 128、JVM 134、iOS Simulator 128 项。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| T01 `cancelToolByUser` / `finishInterruptedPendingTools` | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 原样移动取消结果构造、最后节点当前分支处理、变化判断与保存；接收者改为既有 ChatRuntime | 原 private 收尾方法成为公开扩展函数，取消结果构造保持 private；ChatRuntime 接口不变 | 完成；7 项 common 契约测试、1 项 JVM SQLite 重开 |
+| T02 Android 触发顺序 | app | REQUIRED_FOR_KMP / ANDROID_ONLY | 原发送前和停止后的 cancel/join/收尾顺序、错误捕获、状态与文件保存均保留 | 发送/停止 API 不变 | 保留；源码与编译调用检查 |
+
+`UIMessage.finishPendingTools` / `finishReasoning` 已在 commonMain，沿用原工具输出判定、消息/推理结束时间处理。
+本轮共享收尾方法；SharedChatRuntime 原发送和停止行为保持不变，不新增其他平台触发入口。
+没有新接口、回调、任务状态、锁或 `RECOMMENDED` / `ARCHITECTURAL_OPTIMIZATION` 改动。
+
+公开 API 变化：原 private 收尾方法移为
+`suspend fun ChatRuntime.finishInterruptedPendingTools(conversationId: Uuid)`；取消结果构造仍为 private 顶层函数。
+新文件为 `composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/InterruptedToolCompletion.kt`。
+通过既有 ChatRuntime 的 getConversationFlow/saveConversation 调用原平台实现，没有新增 facade、
+兼容接口、回调、expect/actual 或服务层。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 当前末条消息混合五种审批状态的无输出工具、已执行工具与推理 | 所有无输出工具使用原取消 JSON/Denied 原因，补齐消息和未完成推理时间；已执行工具及嵌套输出保持 | 三端通过 |
+| 同时存在前面节点和未选中分支的未完成工具 | 保留这些消息、其余部件及会话/消息元数据，只处理末节点当前消息对应 ID | 三端通过 |
+| 空会话、当前消息没有未完成工具，或再次执行已完成的收尾 | 无变化时不保存；单独未结束的推理不被顺带结束；重复调用只保存一次 | 三端通过 |
+| 两次调用间修改标题并追加含未完成工具的末节点 | 第二次读取最新会话，保留先前节点和新标题 | 三端通过 |
+| 末节点包含多个相同消息 ID | 沿用原 map 规则替换所有匹配项，保留节点 ID 和选中索引 | 三端通过 |
+| 空末节点/越界索引，以及保存抛异常或取消 | 保持原异常；无新增修复或重试，保存失败异常原样传播 | 三端通过 |
+| 保存收尾结果后关闭并重开 SQLite | 取消输出、审批原因、消息/推理时间、分支、元数据和文件引用完整恢复，两条分支仍可搜索 | JVM 通过 |
+
+Android host **135**、JVM **142**、iOS Simulator **135** 项通过；Android `ChatServiceTest` 另有 1 项，
+共 413 次测试执行，本项新增执行 22 次。Android 应用、Android 共享模块、JVM、iOS arm64、
+iOS Simulator arm64 与 common metadata 编译通过；iOS arm64 本项只验证编译。
+[完整命令与结果](evidence/cmp-interrupted-tools-2026-09-09/code-tests.txt)已留存。
+
+源码对比确认两段方法体原样保留，仅调整外层缩进、收尾方法可见性及 ChatRuntime 接收者。
+Android 文件只删除原定义和一个未使用的 import，发送/停止入口的 cancel/join/收尾顺序及其他代码逐字不变。
+`javap` 确认两个原入口调用 `InterruptedToolCompletionKt.finishInterruptedPendingTools`。
+ChatRuntime 接口、SharedChatRuntime、UI、UIMessage 时间处理、Repository、DAO、FTS 和平台文件操作均未修改。
+
+GUI 判断：无需 GUI。UI、任务取消与 join 的触发顺序、生命周期和平台保存链路保持原样，
+三端运行时契约、SQLite 集成和编译调用证据覆盖本次变化，无待人工确认项。
+不将代码测试记为完整应用 GUI 通过；本轮没有新增其他平台的停止收尾触发行为。
+无模型请求或临时生产日志。SQLite 测试专用目录已自动清理，Gradle 临时日志在提交前删除。
+
+下一项建议：**ConversationSession 会话状态与引用计数（低难度）**。其依赖已可用于 common，
+可整文件移动，原样保留引用计数、生成任务绑定和 5 秒空闲回收，继续使用现有调用点。
