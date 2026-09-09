@@ -25,29 +25,15 @@ private val JWT_LIFETIME_SECONDS = 1.hours.inWholeSeconds
 private val TOKEN_REFRESH_BUFFER_SECONDS = 5.minutes.inWholeSeconds
 private const val TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 
-internal fun interface ServiceAccountTokenTransport {
-    suspend fun exchange(assertion: String): ServiceAccountTokenHttpResponse
-}
-
-internal data class ServiceAccountTokenHttpResponse(
-    val code: Int,
-    val body: String,
-)
-
 /**
  * 使用服务账号（email + private key PEM）换取 Google OAuth2 Access Token。
  * 构造时传入 HttpClient；调用时传 email、私钥 PEM 与 scopes。
  */
-class ServiceAccountTokenProvider internal constructor(
-    private val transport: ServiceAccountTokenTransport,
-    private val clock: Clock,
+class ServiceAccountTokenProvider(
+    private val http: HttpClient,
+    private val clock: Clock = Clock.System,
     private val rsaSha256Signer: RsaSha256Signer = defaultVertexRsaSha256Signer(),
 ) {
-    constructor(http: HttpClient) : this(
-        transport = KtorServiceAccountTokenTransport(http),
-        clock = Clock.System,
-    )
-
     private val json = Json { ignoreUnknownKeys = true }
 
     // Token cache to avoid frequent token requests
@@ -115,11 +101,23 @@ class ServiceAccountTokenProvider internal constructor(
         )
         val assertion = "$signingInput.${base64UrlNoPad(signature)}"
 
-        val response = transport.exchange(assertion)
-        if (response.code !in 200..299) {
-            throw IllegalStateException("Token endpoint ${response.code}: ${response.body}")
+        val form = Parameters.build {
+            append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+            append("assertion", assertion)
         }
-        val tokenResp = json.decodeFromString(TokenResponse.serializer(), response.body)
+        val resp = http.post(TOKEN_ENDPOINT) {
+            setBody(
+                TextContent(
+                    text = form.formUrlEncode(),
+                    contentType = ContentType.Application.FormUrlEncoded,
+                )
+            )
+        }
+        val body = resp.bodyAsText()
+        if (resp.status.value !in 200..299) {
+            throw IllegalStateException("Token endpoint ${resp.status.value}: $body")
+        }
+        val tokenResp = json.decodeFromString(TokenResponse.serializer(), body)
         val accessToken = tokenResp.accessToken ?: error("No access_token in response")
 
         // Cache the token with expiration time
@@ -145,28 +143,4 @@ class ServiceAccountTokenProvider internal constructor(
             .withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
             .encode(bytes)
 
-}
-
-internal class KtorServiceAccountTokenTransport(
-    private val http: HttpClient,
-    private val tokenEndpoint: String = TOKEN_ENDPOINT,
-) : ServiceAccountTokenTransport {
-    override suspend fun exchange(assertion: String): ServiceAccountTokenHttpResponse {
-        val form = Parameters.build {
-            append("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-            append("assertion", assertion)
-        }
-        val response = http.post(tokenEndpoint) {
-            setBody(
-                TextContent(
-                    text = form.formUrlEncode(),
-                    contentType = ContentType.Application.FormUrlEncoded,
-                )
-            )
-        }
-        return ServiceAccountTokenHttpResponse(
-            code = response.status.value,
-            body = response.bodyAsText(),
-        )
-    }
 }

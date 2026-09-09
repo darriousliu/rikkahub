@@ -165,7 +165,7 @@ GUI 决策：**免 GUI**。原生产无参入口、network interceptor 注册、
 
 ## 第 04 项：McpTokenPolicy
 
-起点：`e5c363e6`。状态：**验证完成**。
+起点：`e5c363e6`。状态：**验证完成，已签名提交 `b4314f7f`**。
 删除 `McpTokenPolicy.kt`，将刷新前置判断放回 `ensureFreshToken`，将私有 `computeExpiry` 放回
 `McpOAuthCoordinator` 原位置。生产代码增加 20 行、删除 34 行，净减少 14 行。
 构造参数改为已有标准类型 `Clock`，默认 `Clock.System`；保留现有秒转毫秒 API、Ktor 和平台 OAuth 回调实现。
@@ -196,4 +196,42 @@ OAuth 浏览器与系统回调、UI、导航、生命周期、存储实现及平
 
 第 05 项建议：撤销 Vertex token Provider 的二次 HTTP Transport/DTO 包装，回到 Provider 直接使用 Ktor。
 保留平台 RSA 签名实现；先验证 token URL、form、JWT 声明、缓存过期和成功/错误/取消行为，再判断 GUI 需求。
-本项尚未开始。
+执行结果见下一节。
+
+## 第 05 项：Vertex token HTTP Transport / DTO
+
+起点：`b4314f7f`。状态：**验证完成**。
+生产代码只修改 `ServiceAccountTokenProvider.kt`，删除 `ServiceAccountTokenTransport`、
+`ServiceAccountTokenHttpResponse`、`KtorServiceAccountTokenTransport`，以及包装构造函数。
+原 `fetchAccessToken` 直接持有并使用传入的 Ktor HttpClient，恢复原 `resp` / `body` 局部变量。
+标准 `Clock`、`RsaSha256Signer` 及默认平台签名实现保留。增加 19 行、删除 45 行，生产代码净减少 26 行。
+
+HTTP 表单方法体从包装原样归位，仅恢复局部变量名和原固定端点；同方法的其余语句未变。
+保留缓存容器、5 分钟缓冲、请求开始时间计过期、空 token、错误正文及取消传播行为，没有加入重试、锁或请求合并。
+测试新增一项 `commonTest` 依赖：仓库已有版本的 Ktor MockEngine；生产依赖不变。
+
+新增 12 项 Provider 契约测试和 2 项平台 RSA 测试，同一组 14 项在回退前后分别于 JVM、Android host、
+iOS 模拟器全部通过。仅测试夹具构造参数由 Transport 改为直接 HttpClient，输入与断言保持一致。
+
+| 验证步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 固定时钟，使用专用测试 PKCS#8 私钥请求 token | URL、POST/form、JWT header/claims 与无 padding 编码保持；签名符合 OpenSSL 独立结果 | 三个目标回退前后通过 |
+| 变换 scope 顺序/重复项、邮箱、私钥，跨越 5 分钟边界 | 原缓存键与 JWT scope 顺序保持；有效缓存不重签；边界精确刷新 | 三个目标回退前后通过 |
+| 缺失/非正/短 expires_in，及请求过程中推进时间 | 原默认 1 小时、短有效期和按请求开始时刻计算过期保持 | 三个目标回退前后通过 |
+| 成功/空 token、HTTP 错误、缺失字段、解析/传输/签名失败和取消 | 原返回值、错误类型/正文与传播保持；不缓存失败、不自动重试 | 三个目标回退前后通过 |
+| 两个并发缓存未命中请求，随后读取缓存 | 原来分别发送两次请求，完成后读缓存；不新增合并 | 三个目标回退前后通过 |
+| GoogleProvider 使用默认构造进行两次模型列表请求 | 只换取一次 token；两次下游请求均携带 Bearer，邮箱去空格/PEM 转义接线保持 | 三个目标回退前后通过 |
+| PKCS#8 的 LF/CRLF 与损坏输入 | 实际签名匹配 OpenSSL 测试向量，损坏输入失败 | 三个目标回退前后通过 |
+
+回退后 ai 全量结果：JVM 94 项、Android host 144 项、iOS 模拟器 94 项，全部通过。
+common/JVM/Android/iOS Arm64/iOS Simulator Arm64 编译、Android Debug APK、桌面 Kotlin 编译通过。
+
+GUI 决策：**免 GUI**。请求构造原样归位；GoogleProvider 仍使用原默认构造和同一客户端，
+平台 engine、RSA actual、UI、导航和生命周期接线均未变；真实 Provider 调用及 iOS Security 签名已有代码执行证据。
+Android host 是在主机 JVM 上执行 Android actual，不等于 Android 设备加密验证；本项未操作三端 GUI。
+没有启动子 agent 或读取钥匙串，专用测试密钥不对应任何真实账号；临时文件已清理。
+完整步骤、预期、命令和覆盖边界见 [第 05 项验证记录](evidence/cmp-rollback-05-2026-09-10/verification.md)。
+
+第 06 项建议：将 `StatsRepository` / `StatsQueries` 的统计逻辑归回原 `StatsVM`。
+先用固定日期/时区和 Room 数据核对 token、会话数及热力图边界；涉及 VM/界面数据接线，
+由显式指定 `gpt-5.6-terra` 的子 agent 验证 Android、iOS 和桌面统计页。本项尚未开始。
