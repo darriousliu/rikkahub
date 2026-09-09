@@ -708,3 +708,61 @@ GUI 判断：无需额外 GUI。整文件原样移动且界面、平台生命周
 
 下一项建议：**无效工具消息的节点清理计算（中低难度）**，原样移动 `checkInvalidMessages`
 中的节点计算，保留原 Android `updateConversation` 调用与文件处理时机。
+
+## 2026-09-09：无效工具消息的节点清理计算
+
+迁移前基线：`51c01a209`。策略 `PRESERVE`，适用性 `SUPPORTED`，难度中低。
+状态：原样迁移、三端契约测试及 SQLite 集成验证完成。
+目标为 Android、Desktop JVM、iOS arm64 / Simulator arm64；沿用 Kotlin 2.4.20-RC、CMP 1.12.0、
+AGP 9.3.2、Gradle 9.5.0 和现有 JDK/Xcode 环境，不更改依赖、配置与持久化格式。
+基线三端测试通过：Android host 144、JVM 151、iOS Simulator 144 项。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| IC01 checkInvalidMessages 节点计算 | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 原样移动工具审批判断、当前分支移除、索引修正与空节点过滤 | 新增同包公开纯函数，原 Android private 包装入口保留 | 完成；方法体比较、7 项三端契约测试及 1 项 JVM SQLite 重开 |
+| IC02 Android 更新与文件处理 | app | REQUIRED_FOR_KMP / ANDROID_ONLY | 读取后调用共享计算，仍在原位置调用 updateConversation；文件清理、状态更新、生成及后续保存顺序不变 | 无 | 保留；源码与 Android 编译调用检查通过 |
+
+依赖 Conversation/MessageNode、UIMessage.getTools、Tool.isExecuted 和 canResumeToolExecution 均已在 commonMain。
+保留原分支判断，包括已有的 allToolsExecuted 分支、按消息 ID 过滤、单次遍历与错误行为；
+不增加修复、校验、循环清理、回调、状态机或锁。SharedChatRuntime 原流程保持不变。
+没有 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 改动。
+
+公开 API 变化：新增
+`fun buildConversationAfterInvalidMessageCleanup(conversation: Conversation): Conversation`，位于
+`composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/InvalidMessageCleanup.kt`，供 app 跨模块调用。
+原 `checkInvalidMessages` 仍为 ChatService 的 private 方法，沿用原调用点和更新入口。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 五种工具审批状态分别使用空输出、含空 Text 的非空输出 | 未执行 Auto/Pending 移除，Approved/Denied/Answered 保留；只要输出列表非空就视为已执行 | 三端通过 |
+| Auto/Pending 与可继续执行的工具混合，再给后者补充输出 | 存在未执行的可恢复工具时保留整条；若它已执行而其余工具仍未解决，则移除当前消息 | 三端通过 |
+| 分别清理首、中、末选中分支；连续调用清理 | 保留原索引减一及越界归零；每次只检查当时选中的分支，不递归清理刚被选中的分支 | 三端通过 |
+| 多节点同时包含无效分支、待删除整节点、可恢复工具及共享附件引用 | 保持节点顺序、ID、收藏、未选中分支、译文和会话元数据；只移除计算结果中的空节点，附件引用随所属消息保留或移除 | 三端通过 |
+| 当前节点存在重复消息 ID，后续节点和未选中分支也有相同 ID 或未执行工具 | 只在当前消息无效的节点内过滤全部匹配 ID，保留其他节点与未选中内容 | 三端通过 |
+| 输入已经为空的节点、负索引或过大索引 | 保持原 IllegalStateException 及消息，不在访问 currentMessage 前新增修复或跳过 | 三端通过 |
+| 空会话、无工具消息、含嵌套未执行工具的已执行结果 | 保持原会话内容，不递归检查工具输出；未改变节点保持对象引用 | 三端通过 |
+| 保存清理结果后关闭并重开 SQLite，再搜索移除与保留的分支 | 节点/索引、审批、译文、元数据和文件引用完整恢复；已移除消息退出 FTS，保留分支仍可搜索 | JVM 通过 |
+
+Android host **151**、JVM **159**、iOS Simulator **151** 项通过；Android `ChatServiceTest` 另有 1 项，
+共 **462** 次测试执行。本项新增 7 项 common 测试各在三端执行，加上 1 项 JVM SQLite 用例，新增 22 次。
+Android 应用与共享模块、JVM、iOS arm64、iOS Simulator arm64 和 common metadata 编译通过；
+iOS arm64 本项只验证编译。[完整命令与结果](evidence/cmp-invalid-messages-2026-09-09/code-tests.txt)及
+[Android 编译调用证据](evidence/cmp-invalid-messages-2026-09-09/android-call.txt)已留存。
+
+源码比较确认计算块只移除外层缩进，原会话 copy 改为返回值；Android 包装方法仅用共享函数替换计算，
+另删除未使用的 import，ChatService 其余内容逐字不变。
+`javap` 确认原包装方法依次读取会话、调用共享计算、调用原 updateConversation。
+ChatRuntime、SharedChatRuntime、UI、Repository、DAO、FTS、文件处理和依赖均未修改。
+本项共享节点计算，未增加 SharedChatRuntime 的清理触发，不宣称统一了各端完整工具处理流程。
+
+GUI 判断：无需 GUI。纯同步计算原样抽取，原界面、状态订阅、生命周期、文件清理与保存接线保持；
+三端边界测试、SQLite 集成和实际编译调用证据覆盖本次变化，无待人工确认项。
+未执行完整应用 GUI，也不将 SQLite 测试记为实际附件删除验证。
+测试仅使用虚构文件 URI；SQLite 专用目录由测试自动删除，临时构建日志保留证据后清理。
+本轮没有模型请求、临时生产日志或设备安装。
+
+下一项建议：**Workspace 文本替换器（低难度）**。`TextReplacers.kt` 仅使用 Kotlin 标准库，
+可整文件迁入 commonMain，将现有 14 项 JUnit 测试适配为 kotlin.test 在三端运行；
+Android `WorkspaceTools` 的文件读写与替换调用保持原样。
