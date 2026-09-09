@@ -141,29 +141,41 @@ adb -s emulator-5560 shell am instrument -w -r \
 
 ## 2026-09-09：聊天消息翻译
 
-状态：`Blocked`（Desktop 电脑插件采集失败）；代码测试通过，详见
+状态：`Pass`（Desktop 限定范围 GUI 回归，修复原生包启动问题后通过）；代码测试通过，详见
 [迁移与验证记录](cmp-migration-progress.md#2026-09-09聊天消息翻译)及
 [自动化结果](evidence/cmp-translation-2026-09-09/code-tests.txt)。
 
 使用独立 Desktop profile，预存一条 assistant 消息 `Hello`，设置翻译模型为 `deepseek-v4-flash`，
 提示词仅要求翻译；关闭思考，限制输出 128 token，不发送聊天，不触发自动标题/建议。
-`gpt-5.6-terra` 子 agent 准备数据与应用包，主 agent 复核并排查电脑插件连接。
+`gpt-5.6-terra` 子 agent 操作真实窗口，完成翻译、折叠/展开和首次重启；主 agent 完成清空与第二次重启，
+并独立复核截图、窗口可访问性文本和 SQLite 数据。
 
 | 验证步骤 | 预期结果 | 本轮结果 |
 |---|---|---|
-| 启动当前迁移代码的隔离 Desktop 应用 | 正常初始化，加载测试配置 | 启动成功；不据此认定 GUI 测试通过 |
-| 对 `Hello` 选择简体中文翻译 | 显示加载后出现中文译文 | Blocked，未执行点击 |
-| 折叠、展开译文 | 译文区域相应隐藏和恢复 | Blocked |
-| 关闭并重新启动同一配置 | 原消息和译文保持一致 | Blocked |
-| 清除译文，再重启 | 译文不再出现，原消息保持 | Blocked |
+| 启动当前迁移代码的隔离 Desktop 应用 | 正常初始化，加载测试配置 | Pass；修复打包运行时后可读取已保存设置 |
+| 对 `Hello` 选择简体中文翻译 | 出现中文译文 | Pass；唯一一次真实请求返回“你好。” |
+| 折叠、展开译文 | 译文区域相应隐藏和恢复 | Pass；按钮在“展开翻译”与“折叠翻译”之间切换，正文随之隐藏/恢复 |
+| 退出并重新启动同一配置 | 原消息和译文保持一致 | Pass；界面和独立 SQLite 查询均确认 `Hello` / `你好。` |
+| 清除译文，再退出并重启 | 译文不再出现，原消息保持 | Pass；旧进程确实退出，重启后只有 `Hello`，SQLite 中 `translation` 为 null |
 
-最初 macOS 自动锁屏使窗口无法操作。用户解锁并开启电脑插件锁屏操作后，继续尝试：
+原生打包回归发现并修复了实际启动缺陷：裁剪后的 JDK 缺少 `jdk.unsupported`，DataStore 的 Protobuf
+读取器找不到 `sun.misc.Unsafe`。`desktopApp` 的 `nativeDistributions` 现显式加入该模块；重新构建后，
+验证运行时确实包含此类，并用预存设置的原生应用完成上述 GUI 流程。打包命令通过，恢复正常配置后的
+共享 JVM 测试 137 项通过；记录见[打包修复与测试](evidence/cmp-translation-2026-09-09/desktop-packaged-startup.txt)。
 
-1. 电脑插件可枚举运行中的 Java 窗口，但按 `MainKt` / `com.jetbrains.jbr.java` 获取返回 `Invalid app`。
-2. 使用当前代码的原生 `.app` 构建，设置独立 `me.rerere.rikkahub.gui.translation` 标识和测试 profile，完成本地 ad-hoc 签名。
-3. 按原生包绝对路径连接，返回 `SCStreamErrorDomain -3811`：音频/视频捕捉失败，无法开始流播放。
-4. 重建 JavaScript 会话和电脑接口后重试，返回同一采集错误。未通过其他桌面控制方式绕开该插件。
+证据：
 
-未获得 GUI 截图，未发起真实翻译请求；本项真实模型 token 消耗为 0。不能从该工具错误推断翻译功能失败。
-译文保存/清除、重启读库、空响应、失败、取消与竞争由无网络代码测试覆盖。
-临时应用、配置、seed、窗口辅助程序和日志在提交前清理；钥匙串中的测试密钥保留供后续复测。
+- [首次重启后仍有译文](evidence/cmp-translation-2026-09-09/desktop-after-restart.jpg)
+- [清空并第二次重启后无译文](evidence/cmp-translation-2026-09-09/desktop-cleared-restart.jpg)
+- [各步骤窗口状态](evidence/cmp-translation-2026-09-09/desktop-gui-steps.txt)
+- [两次重启后的独立 SQLite 检查](evidence/cmp-translation-2026-09-09/desktop-sqlite-check.txt)
+
+此前电脑插件曾出现 `SCStreamErrorDomain -3811`；本次用户解锁后，主会话恢复，子 agent 重建会话后也可操作。
+导航时的 `noWindowsAvailable`、重启后的 `procNotFound` 经重新读取窗口或使用 `.app` 路径恢复。
+调用窗口的 `Raise` 可恢复清晰截图；滚动工具未奏效时，以 Tab 导航语言列表找到“清空翻译”。
+全程通过电脑插件操作，没有用其他桌面控制方式替代。未专门验证锁屏期间的操作能力。
+
+真实模型请求共 1 次；关闭思考、限制输出 128 token，不额外请求聊天、标题、建议或 Qwen MT。
+未记录服务端实际 token 用量，因此不推算精确消耗。空响应、失败、取消与竞争仍由无网络代码测试覆盖。
+本轮仅补充 Desktop GUI，不将结果外推为 Android/iOS 的翻译 GUI 已验收。
+临时应用、配置、seed 和日志在提交前清理；钥匙串中的测试密钥保留供后续验证。

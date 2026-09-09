@@ -60,6 +60,8 @@ compose.desktop {
         jvmArgs("--enable-native-access=ALL-UNNAMED")
 
         nativeDistributions {
+            // DataStore's Protobuf reader needs sun.misc.Unsafe in the packaged runtime.
+            modules("jdk.unsupported")
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "RikkaHub"
             packageVersion = "2.4.5"

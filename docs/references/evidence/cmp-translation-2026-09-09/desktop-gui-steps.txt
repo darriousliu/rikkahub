@@ -1,0 +1,304 @@
+[translated-and-expanded]
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 未知 (selectable) 0
+										10 文本 (selectable) Hello
+									11 文本 (selectable) 译文
+									12 按钮 (selectable) 折叠翻译
+									13 未知 (selectable) 0
+										14 container (selectable) 0
+											15 未知 (selectable) 0
+												16 文本 (selectable) 你好。
+									17 未知 (selectable) 0
+										18 未知 (selectable) 0
+											19 未知 (selectable) 复制
+											20 未知 (selectable) 重新生成
+											21 未知 (selectable) 语音
+											22 未知 (selectable) 翻译
+											23 未知 (selectable) 更多选项
+							24 container (selectable) 0
+								25 未知 (selectable) 0
+									26 按钮 (selectable) Messages
+									27 未知 (selectable) 0
+										28 文本 (selectable) Translation GUI Hello, GUI Translation Assistant / DeepSeek GUI Translation (DeepSeek GUI Translation)
+									29 按钮 (selectable) Chat Options
+									30 按钮 (selectable) New Message
+							31 container (selectable) 0
+								32 container (selectable) 0
+									33 文本栏 (selectable, settable) 输入消息与AI聊天
+									34 滚动区 (selectable) 0
+										35 按钮 (selectable) D
+										36 未知 (selectable) 网络搜索
+									37 未知 (selectable) 更多选项
+									38 container (selectable) 发送
+					39 未知 (selectable)
+	40 关闭按钮
+	41 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	42 最小化按钮
+	43 文本 RikkaHub
+44 menu bar
+	45 RikkaHub Translation GUI
+
+
+[after-restart-translation-present]
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 未知 (selectable) 0
+										10 文本 (selectable) Hello
+									11 文本 (selectable) 译文
+									12 按钮 (selectable) 折叠翻译
+									13 未知 (selectable) 0
+										14 container (selectable) 0
+											15 未知 (selectable) 0
+												16 文本 (selectable) 你好。
+									17 未知 (selectable) 0
+										18 未知 (selectable) 0
+											19 未知 (selectable) 复制
+											20 未知 (selectable) 重新生成
+											21 未知 (selectable) 语音
+											22 未知 (selectable) 翻译
+											23 未知 (selectable) 更多选项
+							24 container (selectable) 0
+								25 未知 (selectable) 0
+									26 按钮 (selectable) Messages
+									27 未知 (selectable) 0
+										28 文本 (selectable) Translation GUI Hello, GUI Translation Assistant / DeepSeek GUI Translation (DeepSeek GUI Translation)
+									29 按钮 (selectable) Chat Options
+									30 按钮 (selectable) New Message
+							31 container (selectable) 0
+								32 container (selectable) 0
+									33 文本栏 (selectable, settable) 输入消息与AI聊天
+									34 滚动区 (selectable) 0
+										35 按钮 (selectable) D
+										36 未知 (selectable) 网络搜索
+									37 未知 (selectable) 更多选项
+									38 container (selectable) 发送
+					39 未知 (selectable)
+	40 关闭按钮
+	41 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	42 最小化按钮
+	43 文本 RikkaHub
+44 menu bar
+	45 RikkaHub Translation GUI
+
+
+[collapsed]
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 未知 (selectable) 0
+										10 文本 (selectable) Hello
+									11 文本 (selectable) 译文
+									12 按钮 (selectable) 展开翻译
+									13 未知 (selectable) 0
+										14 container (selectable) 0
+									15 未知 (selectable) 0
+										16 未知 (selectable) 0
+											17 未知 (selectable) 复制
+											18 未知 (selectable) 重新生成
+											19 未知 (selectable) 语音
+											20 未知 (selectable) 翻译
+											21 未知 (selectable) 更多选项
+							22 container (selectable) 0
+								23 未知 (selectable) 0
+									24 按钮 (selectable) Messages
+									25 未知 (selectable) 0
+										26 文本 (selectable) Translation GUI Hello, GUI Translation Assistant / DeepSeek GUI Translation (DeepSeek GUI Translation)
+									27 按钮 (selectable) Chat Options
+									28 按钮 (selectable) New Message
+							29 container (selectable) 0
+								30 container (selectable) 0
+									31 文本栏 (selectable, settable) 输入消息与AI聊天
+									32 滚动区 (selectable) 0
+										33 按钮 (selectable) D
+										34 未知 (selectable) 网络搜索
+									35 未知 (selectable) 更多选项
+									36 container (selectable) 发送
+					37 未知 (selectable)
+	38 关闭按钮
+	39 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	40 最小化按钮
+	41 文本 RikkaHub
+42 menu bar
+	43 RikkaHub Translation GUI
+
+
+[clear-action-visible]
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 未知 (selectable) 0
+										10 文本 (selectable) Hello
+									11 文本 (selectable) 译文
+									12 按钮 (selectable) 折叠翻译
+									13 未知 (selectable) 0
+										14 container (selectable) 0
+											15 未知 (selectable) 0
+												16 文本 (selectable) 你好。
+									17 未知 (selectable) 0
+										18 未知 (selectable) 0
+											19 未知 (selectable) 复制
+											20 未知 (selectable) 重新生成
+											21 未知 (selectable) 语音
+											22 未知 (selectable) 翻译
+											23 未知 (selectable) 更多选项
+							24 container (selectable) 0
+								25 未知 (selectable) 0
+									26 按钮 (selectable) Messages
+									27 未知 (selectable) 0
+										28 文本 (selectable) Translation GUI Hello, GUI Translation Assistant / DeepSeek GUI Translation (DeepSeek GUI Translation)
+									29 按钮 (selectable) Chat Options
+									30 按钮 (selectable) New Message
+							31 container (selectable) 0
+								32 container (selectable) 0
+									33 文本栏 (selectable, settable) 输入消息与AI聊天
+									34 滚动区 (selectable) 0
+										35 按钮 (selectable) D
+										36 未知 (selectable) 网络搜索
+									37 未知 (selectable) 更多选项
+									38 container (selectable) 发送
+					39 未知 (selectable)
+		40 container (selectable) 0
+			41 未知 (selectable) 0
+				42 container (selectable) 0
+					43 container (selectable) 0
+						44 未知 (selectable) 0
+							45 container (selectable) 拖动手柄
+							46 文本 (selectable) 选择翻译语言
+							47 滚动区 (selectable) 0
+								48 文本 (selectable) 🇨🇳 繁體中文
+								49 文本 (selectable) 🇯🇵 日本語
+								50 文本 (selectable) 🇰🇷 한국어
+								51 文本 (selectable) 🇫🇷 Français
+								52 文本 (selectable) 🇩🇪 Deutsch
+								53 文本 (selectable) 🇪🇸 西班牙语
+								54 文本 (selectable) 🇮🇹 Italiano
+								55 文本 (selectable) 清空翻译
+								56 滚动条 (selectable, disabled) 1128
+					57 未知 (selectable) 关闭工作表
+	58 关闭按钮
+	59 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	60 最小化按钮
+	61 文本 RikkaHub
+62 menu bar
+	63 RikkaHub Translation GUI
+
+The focused UI element is 1 未知 (selectable)
+
+[after-clear]
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 未知 (selectable) 0
+										10 文本 (selectable) Hello
+									11 未知 (selectable) 0
+										12 未知 (selectable) 0
+											13 未知 (selectable) 复制
+											14 未知 (selectable) 重新生成
+											15 未知 (selectable) 语音
+											16 未知 (selectable) 翻译
+											17 未知 (selectable) 更多选项
+							18 container (selectable) 0
+								19 未知 (selectable) 0
+									20 按钮 (selectable) Messages
+									21 未知 (selectable) 0
+										22 文本 (selectable) Translation GUI Hello, GUI Translation Assistant / DeepSeek GUI Translation (DeepSeek GUI Translation)
+									23 按钮 (selectable) Chat Options
+									24 按钮 (selectable) New Message
+							25 container (selectable) 0
+								26 container (selectable) 0
+									27 文本栏 (selectable, settable) 输入消息与AI聊天
+									28 滚动区 (selectable) 0
+										29 按钮 (selectable) D
+										30 未知 (selectable) 网络搜索
+									31 未知 (selectable) 更多选项
+									32 container (selectable) 发送
+					33 未知 (selectable)
+	34 关闭按钮
+	35 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	36 最小化按钮
+	37 文本 RikkaHub
+38 menu bar
+	39 RikkaHub Translation GUI
+
+The focused UI element is 1 未知 (selectable)
+
+[after-clear-and-restart]
+Window: "RikkaHub", App: RikkaHub.
+0 标准窗口 RikkaHub, Secondary Actions: Raise
+	1 未知 (selectable) 0
+		2 container (selectable) 0
+			3 未知 (selectable) 0
+				4 未知 (selectable) 0
+					5 container (selectable) 0
+						6 container (selectable) 0
+							7 未知 (selectable) 0
+								8 滚动区 (selectable) 0
+									9 未知 (selectable) 0
+										10 文本 (selectable) Hello
+									11 未知 (selectable) 0
+										12 未知 (selectable) 0
+											13 未知 (selectable) 复制
+											14 未知 (selectable) 重新生成
+											15 未知 (selectable) 语音
+											16 未知 (selectable) 翻译
+											17 未知 (selectable) 更多选项
+							18 container (selectable) 0
+								19 未知 (selectable) 0
+									20 按钮 (selectable) Messages
+									21 未知 (selectable) 0
+										22 文本 (selectable) Translation GUI Hello, GUI Translation Assistant / DeepSeek GUI Translation (DeepSeek GUI Translation)
+									23 按钮 (selectable) Chat Options
+									24 按钮 (selectable) New Message
+							25 container (selectable) 0
+								26 container (selectable) 0
+									27 文本栏 (selectable, settable) 输入消息与AI聊天
+									28 滚动区 (selectable) 0
+										29 按钮 (selectable) D
+										30 未知 (selectable) 网络搜索
+									31 未知 (selectable) 更多选项
+									32 container (selectable) 发送
+					33 未知 (selectable)
+	34 关闭按钮
+	35 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	36 最小化按钮
+	37 文本 RikkaHub
+38 menu bar
+	39 RikkaHub Translation GUI

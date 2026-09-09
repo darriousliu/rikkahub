@@ -1,0 +1,29 @@
+首次 GUI 重启后独立只读 SQLite 检查：
+{
+  "role": "assistant",
+  "parts": [
+    {
+      "type": "text",
+      "text": "Hello",
+      "metadata": null
+    }
+  ],
+  "translation": "你好。"
+}
+结果：通过；原文 Hello 不变，译文 你好。 已落盘。
+
+清空并第二次 GUI 重启后独立只读 SQLite 检查：
+{
+  "role": "assistant",
+  "parts": [
+    {
+      "type": "text",
+      "text": "Hello",
+      "metadata": null
+    }
+  ],
+  "translation": null
+}
+结果：通过；原文 Hello 不变，translation 为 null。
+重启前 PID：74850；退出后进程列表为空。
+重启后：['75444 /private/tmp/rikkahub-translation-gui/RikkaHubTranslationGUI.app/Contents/MacOS/RikkaHub']

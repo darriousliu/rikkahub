@@ -362,16 +362,19 @@ iOS/Desktop 未改代码，沿用本轮已完成的 GUI 证据。
 编译中修正了挂起 DAO 函数引用和测试构造参数后，全部检查通过；独立审查发现的状态更新竞态已修复并补充线程回归。
 代码测试汇总见[验证记录](evidence/cmp-translation-2026-09-09/code-tests.txt)。
 
-Desktop GUI 补充验证为 `Blocked`：初次运行遇到 macOS 自动锁屏；用户随后解锁并开启电脑插件锁屏操作。
-已尝试原生测试包（独立 bundle ID/配置）及重建插件连接，但 `cua.getApp` 持续返回
-`SCStreamErrorDomain -3811`（音频/视频捕捉失败），无法取得可操作窗口。AWT 线程检查未发现卡死。
-本项未触发真实模型请求；不将启动成功或代码测试记为 GUI 通过。临时测试环境清理后提交代码，
-后续 GUI 复测步骤与工具错误见 [GUI 回归记录](cmp-gui-regression.md#2026-09-09聊天消息翻译)。
+Desktop GUI 补充验证已由 `Blocked` 更新为 `Pass`。用户解锁后，使用电脑插件和 `gpt-5.6-terra` 子 agent
+完成真实翻译、折叠/展开和重启；主 agent 补充清空后的重启验证，并独立查询 SQLite。
+唯一一次 DeepSeek 请求将 `Hello` 翻译为“你好。”；重启后译文保留，清空并再次重启后为 null，原文不变。
+
+同时修复原生包缺少 `jdk.unsupported` 导致 DataStore 读取已保存设置时找不到 `sun.misc.Unsafe` 的问题。
+重新打包、检查运行时类并完成 GUI 回归；恢复常规配置后 JVM 137 项测试再次通过。
+本轮只补充 Desktop GUI，详细步骤、截图、SQLite 和打包证据见
+[GUI 回归记录](cmp-gui-regression.md#2026-09-09聊天消息翻译)。
 
 ### 验证范围与下一项
 
 代码测试覆盖请求、状态与持久化契约。真实 SQLite 测试在 JVM 执行，iOS Simulator 的代码测试使用 Kotlin/Native；
-它们不替代完整应用的 GUI 验证，也不评判翻译质量。Qwen MT 由 Mock Provider 验证协议，本项不使用额外付费模型调用。
+它们不替代完整应用的 GUI 验证，也不评判翻译质量。Qwen MT 由 Mock Provider 验证协议，不增加真实 Qwen 请求。
 
 本项保护翻译自身的写入；应用其他流程仍可保存整份会话快照，不声称解决全应用所有字段的并发写入。
 新的翻译/清除使旧请求失效，但不增加聊天停止按钮对翻译任务的控制。
