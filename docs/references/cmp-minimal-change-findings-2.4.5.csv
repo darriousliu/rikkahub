@@ -1,0 +1,338 @@
+id,decision,title,origin,reason,treatment,action,core_files,core_file_lines,new_basename_files,new_basename_lines,verification
+E01,额外抽取,第二套聊天运行时,ChatService.kt + data/ai/GenerationHandler.kt,接口覆盖整套业务；非 Android 重新实现会话、分支、生成循环，未直接迁移原类。,ARCHITECTURAL_OPTIMIZATION / MANUAL_REDESIGN,按原 ChatService/GenerationHandler 收敛成一套 common 业务，只适配末端文件、资源、系统集成。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ChatRuntime.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/SharedChatRuntime.kt",890,2,890,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E02,额外抽取,第二套图片生成运行时,ui/pages/imggen/ImgGenVM.kt + GenMediaRepository.kt,把 VM 的请求、分页、落盘拆成整套 runtime，并维护 Android/Shared 两份流程。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,保留 ImgGenVM 业务；文件与图像编解码使用 FileKit 或窄平台实现。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ImageGenerationRuntime.kt
+app/src/main/java/me/rerere/rikkahub/service/AndroidImageGenerationRuntime.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/SharedImageGenerationRuntime.kt",557,3,557,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E03,额外抽取,翻译运行时转发层,TranslatorVM.kt + GenerationHandler.translateText,SettingsStore 与翻译参数均可共用，三个 runtime 文件继续转发设置和同一个翻译主体。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,VM 保留直接 SettingsStore/共享原翻译方法依赖，Locale 在最窄处转换。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/TranslationRuntime.kt
+app/src/main/java/me/rerere/rikkahub/service/AndroidTranslationRuntime.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/SharedTranslationRuntime.kt",82,3,82,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E04,额外抽取,MCP 业务接口和资源镜像模型,McpManager.kt + McpOAuthCoordinator.kt + MCP SDK resource types,McpManager/Coordinator 及 SDK 已进入 common，仍在外层镜像整套业务 API 与 SDK DTO。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,保留 OAuthCallbackSession、外部 URI、图片落盘边界；共同代码直接依赖原 Manager。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpRuntime.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpAuthorizationCoordinator.kt",81,2,81,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E05,额外抽取,统计 Repository/Queries 分层,ui/pages/stats/StatsVM.kt::loadStats,StatsVM 原本直接调用 DAO；新增 StatsRepository、StatsQueries、RoomStatsQueries 三层。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,迁移原 VM 和日期 API；DAO 已在 common，继续原直接调用。,composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/StatsRepository.kt,70,1,70,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E06,额外抽取,备份业务仓库与设置 Gateway,ui/pages/backup/BackupVM.kt,新增 BackupRepository、BackupSettingsGateway、SettingsStoreBackupSettingsGateway；包裹已有 common SettingsStore。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,保留原 VM 的设置、列表、备份后更新时间流程，撤掉纯转发设置 Gateway。,composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/BackupRepository.kt,82,1,82,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E07,额外抽取,并行备份同步和归档编排,data/sync/S3Sync.kt + data/sync/webdav/WebDavSync.kt,旧 Android Sync 留存，同时新增 Shared Sync/Archive 路径，复制配置、归档、恢复和清理流程。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,迁移原 Sync；Ktor、文件系统和数据库文件路径做适配；保留确有复用的 ZIP I/O 工具。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/sync/BackupTransport.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/sync/SharedS3BackupTransport.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/sync/SharedWebDavBackupTransport.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/sync/BackupArchiveService.kt",435,4,435,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E08,额外抽取,本地备份导入业务服务,BackupVM.kt::restoreFromChatBox/restoreFromCherryStudio/exportToFile,以 LocalFileService 为名复制导入去重、助手设置更新和备份时间等业务，不只隔离 I/O。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,原导入业务保留单份，平台边界只处理文件读写和选取。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/BackupLocalFileService.kt
+app/src/main/java/me/rerere/rikkahub/data/repository/AndroidBackupLocalFileService.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/FileKitBackupLocalFileService.kt",227,3,227,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E09,额外抽取,技能存储并行实现,data/files/SkillManager.kt + SkillPaths.kt + SkillMetadata.kt,原 SkillManager 仍留 Android；FileKitSkillStore 另写解析、保存、删除及设置清理，新增 Summary/File DTO。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,保留 SkillManager 方法、原路径规则及原子保存算法，仅替换 File/Context；原 staging 行为不是本次新增。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/SkillStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/FileKitSkillStore.kt
+app/src/main/java/me/rerere/rikkahub/data/files/AndroidSkillStore.kt",331,3,331,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E10,额外抽取,提示词预览运行时,AssistantPromptPage.kt 调用 TemplateTransformer,Android 走 TemplateTransformer；Common 另造 Korte renderer 和 time/date 上下文，已有语义分叉。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,两端直接调用已共享的 TemplateTransformer，保留原预览参数。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantPromptPreviewRuntime.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/assistant/detail/AndroidAssistantPromptPreviewRuntime.kt",76,2,76,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E11,额外抽取,助手技能目录接口,AssistantDetailVM.kt 对 SkillManager 的访问,又增加一套 listSkills 与 AssistantSkillMetadata，重复包装 SkillStore/SkillManager。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,随 SkillManager 迁移一起移除中间 DTO/接口，保持原数据与选择 key 语义。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/AssistantSkillCatalog.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/assistant/AndroidAssistantSkillCatalog.kt",30,2,30,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E12,额外抽取,会话实体映射类,同名 ConversationRepository.kt 内原转换方法,仅替换 Instant API 即可，却增加 ConversationEntityMapper 再让原方法转发。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,映射方法留在原位置；文件删除与 Android 数据库异常的窄边界另行保留。,composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/ConversationRepository.kt,510,0,0,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E13,额外抽取,文件夹映射类和 DAO 回调,同名 FolderRepository.kt 私有扩展与 createFolder,新增 FolderPersistenceMapper，并把已可共享的 ConversationDAO 改成 clearConversationFolder 回调。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,原私有扩展/DAO 依赖保留，改 Instant 取得与转换 API 即可。,composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/FolderRepository.kt,71,0,0,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E14,额外抽取,请求日志专用测试接口,同名 Android RequestLoggingInterceptor.kt,新增 RequestLogSink、RequestTimeSource、RequestTimeMark 及实现；文件仍留 Android，跨平台插件又独立实现。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,时间使用 kotlin.time；避免为单一拦截器维护额外时钟/日志接口，保留实际所需 Ktor 插件。,app/src/main/java/me/rerere/rikkahub/data/ai/RequestLoggingInterceptor.kt,107,0,0,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E15,额外抽取,Vertex token HTTP 二次封装,同名 ServiceAccountTokenProvider.kt::getAccessToken,除必要 RSA 平台适配外，新增 ServiceAccountTokenTransport/HttpResponse/KtorServiceAccountTokenTransport 包一条 POST。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,原 Provider 内直接使用 Ktor HttpClient；测试可使用现有 MockEngine；RSA 签名边界保留。,ai/src/commonMain/kotlin/me/rerere/ai/provider/providers/vertex/ServiceAccountTokenProvider.kt,172,0,0,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E16,额外抽取,OAuth 刷新业务 Policy,McpOAuthCoordinator.kt::needsRefresh/computeExpiry,把普通 token 过期判断和时间计算独立为业务 Policy，Clock 替换本身不要求拆类。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,判断留在原 Coordinator；注入已有 Clock 类型即可，无需新增业务策略层。,composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpTokenPolicy.kt,28,1,28,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+E17,额外抽取,Web 服务生命周期二次分层,web/WebServerManager.kt + web module Server.kt,Host 隔离有必要；另增 Controller 状态机/Mutex/配置校验，再由 Runtime 映射第二套 ManagerState。,ARCHITECTURAL_OPTIMIZATION / MANUAL_REDESIGN,保留真实 engine/前台服务/NSD 边界，尽量沿用原 Manager 与状态，不为迁移新增生命周期规则。,"web/src/commonMain/kotlin/me/rerere/rikkahub/web/WebServerController.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/web/WebServerRuntime.kt
+app/src/main/java/me/rerere/rikkahub/web/AndroidWebServerRuntime.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/web/IosWebServerRuntime.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/web/JvmWebServerRuntime.kt",324,5,324,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+X01,额外脚手架,启动状态和能力演示 UI,无对应业务；同名 app/RikkaHubApp.kt 是 Application 类,新增 Status/Capabilities 页面及演示底栏/侧栏；产品入口传入 productContent 后直接绕过。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,正式入口保留，迁移演示内容移出生产或删除；不误认为同名 Application 的搬移。,composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/RikkaHubApp.kt,160,0,0,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B01,混合需收窄,聊天后续方法抽取,ChatService.kt + GenerationHandler.kt 原业务方法,主体大体保留原行为；但因两个 runtime 共存而增加 Generator/Manager 与大量回调，是前序分叉的后续成本。,ARCHITECTURAL_OPTIMIZATION / REWRITEABLE,当前不盲删；原 ChatService/GenerationHandler 统一时将主体放回原职责，再删除无用包装。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ConversationTitleGenerator.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ConversationSuggestionGenerator.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ConversationCompressor.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/MessageTranslationManager.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/TextTranslationGenerator.kt",415,5,415,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B02,混合需收窄,聊天页面大范围平台容器,ChatPage.kt + ChatInput.kt + ChatMessage.kt/消息操作组件,IME、音量键、截图和系统选择器需适配，但整块错误、加载、附件及预览 UI 也放入平台接口和 fallback。,REQUIRED_FOR_KMP（系统入口）/ ANDROID_ONLY；容器扩张为 ARCHITECTURAL_OPTIMIZATION,共用原 Compose UI，仅在系统动作及不能共享的组件上留 expect/actual 或原参数 slot。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/chat/ChatPagePlatformContent.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/chat/AndroidChatPagePlatformContent.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ai/ChatInputPlatformContent.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/ai/AndroidChatInputPlatformContent.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/message/ChatMessagePlatformActions.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/message/AndroidChatMessagePlatformActions.kt",932,6,932,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B03,混合需收窄,模板引擎兼容层与多余转发,TemplateTransformer.kt 内 Pebble 构造、缓存和渲染,Pebble 换 Korte 与过滤器兼容合理；Default→Korte 转发、ContextFactory 及多个接口并非全部必要。,REQUIRED_FOR_KMP / REWRITEABLE；部分 ARCHITECTURAL_OPTIMIZATION,保留最小引擎语义兼容层与原缓存；普通上下文构造可留 Transformer 内。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/template/MessageTemplateRenderer.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/template/KorteMessageTemplateRenderer.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/transformers/TemplateTransformer.kt",266,2,194,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B04,混合需收窄,通用并发 Map 的自研实现,ChatService/McpSessionRegistry/McpOAuthCoordinator 的 ConcurrentHashMap,多个调用点使用，属于可抽取 util；但 Ready/Pending/CAS/自旋等待是新并发实现，并非简单替换依赖。,REQUIRED_FOR_KMP / MANUAL_REDESIGN,优先保留原并发语义；评估窄 expect/actual 容器是否减少成本；已修复 ANR 不应直接回滚。,common/src/commonMain/kotlin/me/rerere/common/concurrent/AtomicSnapshotMap.kt,155,1,155,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B05,混合需收窄,TTS 调度数据结构抽取,tts/controller/TtsController.kt 队列、allChunks、缓存,JDK 容器需替换；新增三泛型业务 Store、Pending/CAS/自旋，并非迁移调度主体所必需。,REQUIRED_FOR_KMP / MANUAL_REDESIGN；额外业务抽取,业务调度保留原 TtsController；容器适配单独解决并保持取消与队列语义。,speech/src/commonMain/kotlin/me/rerere/tts/controller/TtsSchedulingStore.kt,138,1,138,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B06,混合需收窄,手写 ZIP 容器,java.util.zip 的多个归档调用点,ZIP 平台边界合理；共同容器/CRC32/raw-deflate 编排是新实现，当前显式不支持 ZIP64。,REQUIRED_FOR_KMP / MANUAL_REDESIGN,保留小归档 API；优先沿用各平台成熟 ZIP 实现或经验证的 KMP 库，不把手写 ZIP 视为必选。,"common/src/commonMain/kotlin/me/rerere/common/archive/ZipArchive.kt
+common/src/commonMain/kotlin/me/rerere/common/archive/CommonZipArchive.kt
+common/src/commonMain/kotlin/me/rerere/common/archive/RawDeflateCodec.kt
+common/src/commonMain/kotlin/me/rerere/common/archive/ZipCrc32.kt
+common/src/androidMain/kotlin/me/rerere/common/archive/PlatformZipArchive.kt
+common/src/iosMain/kotlin/me/rerere/common/archive/PlatformZipArchive.kt
+common/src/jvmMain/kotlin/me/rerere/common/archive/PlatformZipArchive.kt",885,7,885,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B07,混合需收窄,通知 Policy/Coordinator/Presenter,service/ChatNotificationManager.kt,系统通知与前台事件适配必要，原事件/节流主体可以共享；另拆 Policy/Coordinator 不是必要条件。,REQUIRED_FOR_KMP / ANDROID_ONLY；部分 ARCHITECTURAL_OPTIMIZATION,保留原 Manager 业务与平台 Presenter/前台事件，减少同层策略类。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/ChatNotification.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidChatNotificationManager.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosChatNotificationManager.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmChatNotificationManager.kt
+app/src/main/java/me/rerere/rikkahub/service/AndroidChatNotificationPresenter.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosUserNotificationPresenter.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmSystemTrayChatNotificationPresenter.kt",610,7,610,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B08,混合需收窄,非 Android 产品入口与整套 DI,RouteActivity.kt + di/AppModule/DataSourceModule/RepositoryModule/ViewModelModule.kt,iOS/Desktop 入口与平台实例注入必要；重新维护整套业务绑定和二十余入口参数是分叉成本。,REQUIRED_FOR_KMP / ANDROID_ONLY；部分 ARCHITECTURAL_OPTIMIZATION,共用原业务 Koin module，平台侧只供给 engine、路径及系统实例；保留各端实际生命周期。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/SharedProductApp.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/SharedProductModule.kt",519,2,519,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B09,混合需收窄,文件工具和新的目录布局,FilesManager.kt + 原附件导入调用,多处共用的复制/写文件 util 合理；新 platform-files/attachments 路径与旧备份/删除约定尚未对齐。,REQUIRED_FOR_KMP / REWRITEABLE；目录变化有语义风险,保留文件 util/平台 I/O，沿用原目录及失败约定；统一备份、fork 与清理。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/PlatformFileStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/SharedChatAttachmentStore.kt",189,2,189,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+B10,混合需收窄,JavaScript executor 与 HTTP 适配,common/js/QuickJSFetch.kt + LocalTools/JavaScriptTool.kt 的 QuickJS 使用,换 QuickJS-KT、保留同步 fetch/超时/结果格式需要适配；单一包装或兼容执行器合理，测试 Observer 和多层 DTO/Transport 可精简。,REQUIRED_FOR_KMP / REWRITEABLE；部分 RECOMMENDED,保留脚本兼容语义；按实际库差异限定层数，不把整个 executor 判为多余。,"common/src/commonMain/kotlin/me/rerere/common/js/JavaScriptExecutor.kt
+common/src/commonMain/kotlin/me/rerere/common/js/DefaultJavaScriptExecutor.kt
+common/src/commonMain/kotlin/me/rerere/common/js/KtorJavaScriptHttpTransport.kt",428,3,428,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R01,合理保留,网络换库与多调用点协议工具,原 AI/Search/TTS/ASR Provider 的 OkHttp/回调协议与 RequestLoggingInterceptor,Ktor+平台 engine 是合理换库；复用的请求/编码函数及回调到协程兼容层不等于新业务架构。,REQUIRED_FOR_KMP / REWRITEABLE,保留请求与取消契约；不要在此基础上增加业务 Repository/UseCase。,"ai/src/commonMain/kotlin/me/rerere/ai/provider/providers/openai/OpenAIHttp.kt
+search/src/commonMain/kotlin/me/rerere/search/SearchHttp.kt
+search/src/commonMain/kotlin/me/rerere/search/SearchQueryEncoder.kt
+speech/src/commonMain/kotlin/me/rerere/tts/provider/providers/RemoteTtsHttp.kt
+speech/src/commonMain/kotlin/me/rerere/asr/providers/BatchAsrHttp.kt
+speech/src/commonMain/kotlin/me/rerere/asr/providers/AsrWebSocketTransport.kt
+speech/src/commonMain/kotlin/me/rerere/asr/providers/VolcengineFrameCodec.kt
+common/src/commonMain/kotlin/me/rerere/common/logging/RequestLoggingPlugin.kt
+common/src/commonMain/kotlin/me/rerere/common/http/SSE.kt
+ai/src/commonMain/kotlin/me/rerere/ai/provider/providers/GoogleProvider.kt
+ai/src/commonMain/kotlin/me/rerere/ai/provider/providers/ClaudeProvider.kt
+ai/src/commonMain/kotlin/me/rerere/ai/provider/providers/OpenAIProvider.kt",2596,8,802,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R02,合理保留,附件平台编码,ai/util/FileEncoder.kt,common 保留同名入口，Bitmap/EXIF/本地文件读取移到 actual。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留窄 expect 函数和原编码语义。,"ai/src/commonMain/kotlin/me/rerere/ai/util/FileEncoder.kt
+ai/src/androidMain/kotlin/me/rerere/ai/util/FileEncoder.android.kt
+ai/src/iosMain/kotlin/me/rerere/ai/util/FileEncoder.ios.kt
+ai/src/jvmMain/kotlin/me/rerere/ai/util/FileEncoder.jvm.kt",389,3,343,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R03,合理保留,加密与安全随机平台实现,Chatbox 稳定 UUID、S3 签名、MCP PKCE、Vertex RSA/JDK 安全 API,隔离真实平台密码学；上层签名与业务流程保持原有形状。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留；不要手写密码算法替代成熟实现。,"common/src/commonMain/kotlin/me/rerere/common/crypto/Md5Digest.kt
+common/src/commonMain/kotlin/me/rerere/common/crypto/Sha256Crypto.kt
+common/src/commonMain/kotlin/me/rerere/common/crypto/RsaSha256Signer.kt
+common/src/commonMain/kotlin/me/rerere/common/crypto/PlatformSecureRandom.kt
+common/src/androidMain/kotlin/me/rerere/common/crypto/PlatformSecureRandom.android.kt
+common/src/iosMain/kotlin/me/rerere/common/crypto/PlatformSecureRandom.ios.kt
+common/src/jvmMain/kotlin/me/rerere/common/crypto/PlatformSecureRandom.jvm.kt
+common/src/androidMain/kotlin/me/rerere/common/crypto/PlatformCrypto.android.kt
+common/src/iosMain/kotlin/me/rerere/common/crypto/PlatformCrypto.ios.kt
+common/src/jvmMain/kotlin/me/rerere/common/crypto/PlatformCrypto.jvm.kt
+ai/src/commonMain/kotlin/me/rerere/ai/provider/providers/vertex/DefaultVertexRsaSha256Signer.kt
+ai/src/androidMain/kotlin/me/rerere/ai/provider/providers/vertex/JdkVertexRsaSha256Signer.kt
+ai/src/jvmMain/kotlin/me/rerere/ai/provider/providers/vertex/JdkVertexRsaSha256Signer.jvm.kt
+ai/src/iosMain/kotlin/me/rerere/ai/provider/providers/vertex/VertexRsaSha256Signer.ios.kt
+app/src/main/java/me/rerere/rikkahub/data/sync/s3/JdkSha256Crypto.kt",459,15,459,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R04,合理保留,本地化时间和数值 util,TimeUtil.kt 与多处 java.time/Locale/format 使用,同一工具多处复用；计算用 Kotlin 时间，Locale 格式化使用 expect/actual。,REQUIRED_FOR_KMP / REWRITEABLE + ANDROID_ONLY,保留原精度/格式/时区，普通 epoch 调用直接替换。,"common/src/commonMain/kotlin/me/rerere/common/time/CalendarDate.kt
+common/src/commonMain/kotlin/me/rerere/common/time/FileTimestamp.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/utils/SharedUiFormatter.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/utils/SharedUiFormatter.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/utils/SharedUiFormatter.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/utils/SharedUiFormatter.jvm.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolTimePolicy.kt",374,7,374,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R05,合理保留,Key 轮换持久化与锁,ai/util/KeyRoulette.kt 内原 LRU 文件持久化,轮换算法原先存在；文件读写、缓存路径和同步锁需适配。,REQUIRED_FOR_KMP / REWRITEABLE + ANDROID_ONLY,保留算法/缓存格式，只隔离 I/O/锁。,"ai/src/commonMain/kotlin/me/rerere/ai/util/PersistentKeyRoulette.kt
+ai/src/androidMain/kotlin/me/rerere/ai/util/PersistentKeyRoulette.android.kt
+ai/src/androidMain/kotlin/me/rerere/ai/util/KeyRouletteFileLock.android.kt
+ai/src/iosMain/kotlin/me/rerere/ai/util/KeyRouletteFileLock.ios.kt
+ai/src/jvmMain/kotlin/me/rerere/ai/util/KeyRouletteFileLock.jvm.kt
+ai/src/commonMain/kotlin/me/rerere/ai/util/KeyRoulette.kt",166,5,79,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R06,合理保留,高亮同步锁,highlight/core/GrammarLocator.kt 的 JVM 同步,窄 expect/actual 锁，未把高亮业务变成新 runtime。,REQUIRED_FOR_KMP / ANDROID_ONLY,可作为最小平台适配示例。,"highlight/src/commonMain/kotlin/me/rerere/highlight/core/HighlightLock.kt
+highlight/src/androidMain/kotlin/me/rerere/highlight/core/HighlightLock.android.kt
+highlight/src/iosMain/kotlin/me/rerere/highlight/core/HighlightLock.ios.kt
+highlight/src/jvmMain/kotlin/me/rerere/highlight/core/HighlightLock.jvm.kt",35,4,35,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R07,合理保留,搜索反射替代,SearchServiceOptions 反射创建与 Bing Locale,显式构造注册表替代 kotlin-reflect；locale 为真实平台差异。,REQUIRED_FOR_KMP / REWRITEABLE,保留原 provider 对应关系及默认值。,"search/src/commonMain/kotlin/me/rerere/search/SearchProviderRegistry.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/setting/SearchServiceOptionsFactory.kt
+search/src/androidMain/kotlin/me/rerere/search/SearchLocale.android.kt
+search/src/iosMain/kotlin/me/rerere/search/SearchLocale.ios.kt
+search/src/jvmMain/kotlin/me/rerere/search/SearchLocale.jvm.kt
+search/src/commonMain/kotlin/me/rerere/search/BingSearchService.kt",309,5,204,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R08,合理保留,数据库/DataStore 构建及旧偏好适配,PreferencesStore.kt + AppDatabase.kt + preference hooks + ConversationRepository.kt,数据库路径、Android SharedPreferences 和 SQLite 驱动/异常适配必要；不是整套业务仓库抽象。,REQUIRED_FOR_KMP / VERSION_GATED,保留旧 key/文件名/schema；Room3 升级是否必要另列，勿混同。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/datastore/SettingsDataStore.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/data/datastore/AndroidSettingsDataStore.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/data/datastore/IosSettingsDataStore.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/data/datastore/JvmSettingsDataStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/db/AppDatabaseFactory.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/data/db/IosAppDatabase.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/data/db/JvmAppDatabase.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/db/SQLiteExtensions.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/datastore/BooleanPreferenceStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/datastore/StringPreferenceStore.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/data/datastore/AndroidBooleanPreferenceStore.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/data/datastore/AndroidStringPreferenceStore.kt
+app/src/main/java/me/rerere/rikkahub/data/datastore/AndroidDefaultProviderDescriptions.kt
+app/src/main/java/me/rerere/rikkahub/data/repository/AndroidConversationRepositoryPlatform.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/db/AppDatabase.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/db/fts/MessageFtsManager.kt",605,14,386,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R09,合理保留,文档/OCR/图片等外部能力接缝,原 DocumentAsPrompt/Ocr/Base64/McpSessionRegistry 文件处理,文档模块尚为 Android，图像编解码和缓存持久化需替库/平台实现；transformer 业务仍在同名文件。,REQUIRED_FOR_KMP / REWRITEABLE + ANDROID_ONLY,UnsupportedDocumentTextExtractor 是能力未完成，不代表原文档功能已经跨端迁移。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/transformers/DocumentTextExtractor.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/AndroidDocumentTextExtractor.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/AndroidBase64ImageStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/transformers/OcrResultCache.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpImageStore.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/AndroidMcpImageStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/transformers/Base64ImageToLocalFileTransformer.kt",300,6,238,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R10,合理保留,系统操作窄适配,Android Context/Intent/Clipboard/Build/退出/分享 APIs,边界是具体系统动作，未重新实现业务。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/PlatformBackHandler.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/PlatformBackHandler.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/PlatformBackHandler.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/PlatformBackHandler.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/PlatformClipboard.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/PlatformClipboard.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/PlatformClipboard.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/PlatformClipboard.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/PlatformDeviceInfo.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/PlatformDeviceInfo.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/PlatformDeviceInfo.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/PlatformDeviceInfo.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/PlatformFileSharing.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/PlatformFileSharing.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/PlatformFileSharing.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/PlatformFileSharing.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/ApplicationLifecycle.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/ApplicationLifecycle.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/ApplicationLifecycle.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/ApplicationLifecycle.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/ExternalUriOpener.kt
+app/src/main/java/me/rerere/rikkahub/platform/AndroidExternalUriOpener.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosExternalUriOpener.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmExternalUriOpener.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/TextSharer.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidTextSharer.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosTextSharer.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmTextSharer.kt",424,28,424,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R11,合理保留,系统 OAuth、监控、发现及浮窗,MCP OAuth callback、Firebase、NsdServiceRegistrar、FloatingWindow,具体系统 SDK/外部回调需要各端实现；桌面监控后端选择属于实现选择。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留 OS 接线；业务 OAuth Coordinator 不必另抽大接口。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/OAuthCallbackSession.kt
+app/src/main/java/me/rerere/rikkahub/platform/AndroidOAuthCallbackSession.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosOAuthCallbackSession.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmOAuthCallbackSession.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/Monitoring.kt
+app/src/main/java/me/rerere/rikkahub/platform/AndroidFirebaseMonitoring.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosFirebaseMonitoring.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmSentryMonitoring.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/ServiceRegistrar.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidJmDnsServiceRegistrar.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosBonjourServiceRegistrar.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmJmDnsServiceRegistrar.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidFloatingWindow.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosFloatingWindow.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmFloatingWindow.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/FloatingWindow.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/FloatingWindow.kt",792,15,748,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R12,合理保留,二维码、图片与字体平台实现,原扫码、裁剪、元数据、GIF、字体 Context/Bitmap/Android SDK 代码,多数是实际平台适配；Runtime 名字不能独立作为过度抽取证据。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留真实边界；未支持端明确标记，勿把 fallback 视为验证通过。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/QrCode.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidQrCodeRenderer.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosQrCodeRenderer.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmQrCodeRenderer.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidQrImageDecoder.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosQrImageDecoder.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmQrImageDecoder.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmQrScanner.kt
+composeApp/src/mobileMain/kotlin/me/rerere/rikkahub/platform/KScanQrScanner.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/ImageCropper.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidImageCropper.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosImageCropper.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmImageCropper.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/ImageEncoder.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/ImageEncoder.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/ImageEncoder.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/ImageEncoder.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/CharacterCardMetadataReader.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidCharacterCardMetadataReader.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosCharacterCardMetadataReader.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmCharacterCardMetadataReader.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/GifDecoding.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/platform/AndroidGifDecoding.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/platform/IosGifDecoding.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/platform/JvmGifDecoding.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/theme/ChatFontRuntime.kt
+app/src/main/java/me/rerere/rikkahub/ui/theme/AndroidChatFontRuntime.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/UIAvatar.kt",1051,27,755,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R13,合理保留,音频播放和系统 TTS,speech/tts/controller/AudioPlayer.kt + SystemTTSProvider.kt,Media3/AVFoundation/JavaFX/系统 TTS 是具体平台实现，TtsController 本身仍共用。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留播放器边界；调度层的自研 Store 单独评估。,"speech/src/commonMain/kotlin/me/rerere/tts/controller/PlatformAudioPlayer.kt
+speech/src/androidMain/kotlin/me/rerere/tts/controller/AndroidAudioPlayer.kt
+speech/src/iosMain/kotlin/me/rerere/tts/controller/IosAudioPlayer.kt
+speech/src/jvmMain/kotlin/me/rerere/tts/controller/JvmAudioPlayer.kt
+speech/src/iosMain/kotlin/me/rerere/tts/IosAudioData.kt
+speech/src/iosMain/kotlin/me/rerere/tts/provider/providers/IosSystemTTSProvider.kt
+speech/src/jvmMain/kotlin/me/rerere/tts/provider/providers/JvmSystemTTSProvider.kt
+speech/src/commonMain/kotlin/me/rerere/tts/provider/providers/AudioBase64Decoder.kt",858,8,858,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R14,合理保留,权限平台实现,原 Permission/LocalTools 与权限调用,Android 权限和系统工具不能直接运行于其他平台；窄适配合理。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留原 common tools，只有平台工具/权限落在实际实现。,"composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/components/ui/permission/AndroidPermissionState.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/components/ui/permission/AndroidPermissionTypes.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/components/ui/permission/AndroidRememberPermissionState.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/ui/components/ui/permission/IosPermission.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/ui/components/ui/permission/JvmPermission.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantLocalToolPlatform.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantLocalToolPlatform.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantLocalToolPlatform.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantLocalToolPlatform.jvm.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AndroidLocalTools.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/permission/PermissionState.kt",1026,10,916,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R15,合理保留,主题、资源与普通 UI 兼容 util,Theme/ColorMode、Android resource、AutoAIIcon、Material 色彩调用,资源/动态色/系统栏平台 API 和可复用 UI 工具，与业务 runtime 抽取不同。,REQUIRED_FOR_KMP / VERSION_GATED,保留必要兼容实现；适配时延续原样式与资源回退。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/theme/PlatformTheme.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/theme/PlatformTheme.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/ui/theme/PlatformTheme.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/ui/theme/PlatformTheme.jvm.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/hooks/ColorMode.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/ui/hooks/ColorMode.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/ui/hooks/ColorMode.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/theme/CodeFont.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/theme/CustomThemeColorScheme.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/theme/HslColor.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/theme/ThemeLocals.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/layout/WindowSize.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/AutoAIIcon.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/ui/components/ui/AndroidAutoAIIcon.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/ui/components/ui/IosAutoAIIcon.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/ui/components/ui/JvmAutoAIIcon.kt
+app/src/main/java/me/rerere/rikkahub/ui/resources/AppStringResources.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/ImageContexts.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/SiliconFlowPowerByIcon.kt
+ai/src/commonMain/kotlin/me/rerere/ai/provider/ProviderSetting.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/setting/SettingProviderPage.kt",1582,19,618,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R16,合理保留,富文本库兼容与平台视图,原 Markdown/HTML/LaTeX/代码预览/WebView/DiffUtils,Ksoup、RaTeX、diff KMP 库替代及原生视图 slot 有实际原因；格式兼容函数属于工具。,REQUIRED_FOR_KMP / REWRITEABLE + ANDROID_ONLY,保留旧 HTML/LaTeX/diff 输出；不要把新预览功能当纯移动。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/richtext/RichHtmlParser.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/utils/HtmlEntities.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/richtext/LatexLayout.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/richtext/RichTextPlatformContexts.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/richtext/SharedRichTextPlatformActions.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/richtext/AndroidRichTextPlatformProvider.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/webview/SharedWebViewPage.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/webview/WebViewContentStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/diff/UnifiedDiff.kt",655,9,655,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R17,合理保留,文件清理/存储统计/更新下载接口,AssistantDetailVM/SettingPage/UpdateChecker 的平台 FilesManager/File 调用,边界局限于实际文件操作或下载平台效果，可保留；部分 Unsupported 仍未实现。,REQUIRED_FOR_KMP / ANDROID_ONLY,后续 FilesManager 共用后复查，当前不要误删真实平台桥接。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/AssistantAssetCleaner.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/assistant/AndroidAssistantAssetCleaner.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/setting/ChatStorageSummaryProvider.kt
+app/src/main/java/me/rerere/rikkahub/utils/AndroidUpdateDownloader.kt",66,4,66,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R18,合理保留,保留名字的原方法/类型拆文件,原 RouteActivity/PreferencesStore/ChatService/ModelList/Markdown/PropertyEditor/TTS 等同名方法或类型,多项本来就存在；有的移到独立文件或去除 Locale/资源类型，不等于新增业务层。,REQUIRED_FOR_KMP / REWRITEABLE（纯拆文件部分可选）,保留原方法体优先；未接入 Shared 的方法不能宣称整条链已共用。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/Screen.kt
+app/src/main/java/me/rerere/rikkahub/NavigationIntent.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/datastore/SettingsModels.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/datastore/SettingsStore.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/FileFolders.kt
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntityExtensions.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/model/AppStats.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/LightConversationEntity.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/sync/webdav/WebDavBackupItem.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/BackgroundTextGeneration.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ConversationMessageDelete.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/InterruptedToolCompletion.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/InvalidMessageCleanup.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/UserInputPreprocessor.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ai/ModelTags.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ai/SharedCompressContextDialog.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/richtext/HeaderStyle.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/ProviderShareCodec.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/chat/ConversationListItem.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/setting/components/CustomRequestEditors.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/utils/SpeechText.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/hooks/CustomTtsState.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/translator/TranslationLanguage.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/ai/AndroidAttachmentChips.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/backup/tabs/ImportExportTab.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ConversationSession.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/WorkspaceReminderTransformer.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/tools/TextReplacers.kt",2424,24,1828,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R19,合理保留,通用日志与 JSON 字符串工具,android.util.Log/Commons Text 等多处用法,Kermit facade 复用旧调用形状，编解码函数多处复用，符合 util 抽取范围。,REQUIRED_FOR_KMP / REWRITEABLE,可保留，无须因增加文件名而撤回。,"common/src/commonMain/kotlin/me/rerere/common/logging/RikkaLog.kt
+common/src/commonMain/kotlin/me/rerere/common/text/JsonStringDecoding.kt
+common/src/commonMain/kotlin/me/rerere/common/logging/Logging.kt",256,2,145,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R20,合理保留,真实平台入口与路由宿主,RouteActivity.kt 路由、BuildConfig 与各平台新入口,平台入口/构建产物/不能共享的页面宿主必须存在；原导航表移出 Activity 合理。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留真实宿主，演示根 UI 及整套重复业务 DI 分别处理。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/ProductNavigationHost.kt
+app/src/main/java/me/rerere/rikkahub/AndroidPlatformRouteContent.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/shared/IosPlatformRouteContent.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/shared/JvmPlatformRouteContent.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/shared/MainViewController.kt
+desktopApp/src/jvmMain/kotlin/me/rerere/rikkahub/desktop/Main.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/PlatformBuildInfo.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/shared/PlatformBuildInfo.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/shared/PlatformBuildInfo.jvm.kt
+composeApp/src/androidMain/kotlin/me/rerere/rikkahub/shared/Platform.android.kt
+composeApp/src/iosMain/kotlin/me/rerere/rikkahub/shared/Platform.ios.kt
+composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/shared/Platform.jvm.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/RikkaHubShared.kt
+web/src/androidJvmMain/kotlin/me/rerere/rikkahub/web/KtorWebServerHost.kt
+web/src/iosMain/kotlin/me/rerere/rikkahub/web/UnavailableWebServerHost.kt",814,15,814,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R21,可选轻量抽取,小策略和界面状态适配,原 ChatPage 尺寸判断、偏好 hooks、TTS.kt 及平台可用性,存在一些非必需小策略/重复 hook，但多用于接线；CustomTtsState 接口在基线已存在。,RECOMMENDED / REWRITEABLE,不作为核心过度架构计数；统一宿主后再减少重复，勿先批量删除。,"composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/chat/ChatWindowPolicy.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/hooks/BooleanPreference.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/hooks/SharedCustomTtsState.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/PlatformCapabilities.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/CapabilityGate.kt
+composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ui/BackupReminderCard.kt",446,5,342,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+D01,独立功能修复,ZIP 路径安全规则,原 S3/WebDav ZIP 文件处理,防路径逃逸与不跟随符号链接是独立安全改动，不能仅凭 common 不支持解释。,RECOMMENDED / REWRITEABLE,单独记录修复理由和测试，不随架构压缩机械恢复不安全行为。,"common/src/commonMain/kotlin/me/rerere/common/archive/ZipEntryPathPolicy.kt
+app/src/main/java/me/rerere/rikkahub/data/sync/BackupZipPathResolver.kt
+app/src/main/java/me/rerere/rikkahub/data/sync/BackupZipSourcePolicy.kt",80,3,80,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
+R22,合理保留,JavaScript 调度平台兼容,QuickJS/同步 fetch 的运行线程,调度实际与平台绑定；比抽象脚本业务更窄。,REQUIRED_FOR_KMP / ANDROID_ONLY,保留实际调用与取消语义。,"common/src/commonMain/kotlin/me/rerere/common/js/JavaScriptDispatchers.kt
+common/src/androidMain/kotlin/me/rerere/common/js/JavaScriptDispatchers.android.kt
+common/src/jvmMain/kotlin/me/rerere/common/js/JavaScriptDispatchers.jvm.kt
+common/src/nativeMain/kotlin/me/rerere/common/js/JavaScriptDispatchers.native.kt",27,4,27,源码/基线/调用点审计；未运行 Gradle、GUI 或真实模型请求。
