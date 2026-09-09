@@ -1,0 +1,19 @@
+Workspace 文本替换器 Android 编译调用证据（2026-09-09）
+命令：javap -c -p app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/me/rerere/rikkahub/data/ai/tools/WorkspaceToolsKt$createEditFileTool$3.class
+原 WorkspaceTools 文件未修改；以下为实际工具执行体内的调用指令。
+
+     257: invokestatic  #177                // Method me/rerere/rikkahub/data/ai/tools/WorkspaceToolsKt.access$readTextInRootfs:(Lme/rerere/rikkahub/data/repository/WorkspaceRepository;Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+     341: invokestatic  #185                // Method me/rerere/rikkahub/data/ai/tools/TextReplacersKt.replaceText$default:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLjava/util/List;ILjava/lang/Object;)Lme/rerere/rikkahub/data/ai/tools/ReplaceTextResult;
+     390: invokevirtual #205                // Method me/rerere/rikkahub/data/ai/tools/ReplaceTextResult.getUpdated:()Ljava/lang/String;
+     464: invokestatic  #213                // Method me/rerere/rikkahub/data/ai/tools/WorkspaceToolsKt.access$writeTextInRootfs:(Lme/rerere/rikkahub/data/repository/WorkspaceRepository;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/coroutines/Continuation;)Ljava/lang/Object;
+     549: invokevirtual #205                // Method me/rerere/rikkahub/data/ai/tools/ReplaceTextResult.getUpdated:()Ljava/lang/String;
+     604: invokevirtual #240                // Method me/rerere/rikkahub/data/ai/tools/ReplaceTextResult.getReplacements:()I
+     619: invokevirtual #254                // Method me/rerere/rikkahub/data/ai/tools/ReplaceTextResult.getStrategy:()Ljava/lang/String;
+     622: getstatic     #260                // Field me/rerere/rikkahub/data/ai/tools/ExactReplacer.INSTANCE:Lme/rerere/rikkahub/data/ai/tools/ExactReplacer;
+     625: invokevirtual #263                // Method me/rerere/rikkahub/data/ai/tools/ExactReplacer.getName:()Ljava/lang/String;
+     641: invokevirtual #254                // Method me/rerere/rikkahub/data/ai/tools/ReplaceTextResult.getStrategy:()Ljava/lang/String;
+
+共享模块编译产物：
+composeApp/build/classes/kotlin/android/main/me/rerere/rikkahub/data/ai/tools/TextReplacersKt.class
+composeApp/build/classes/kotlin/jvm/main/me/rerere/rikkahub/data/ai/tools/TextReplacersKt.class
+app 编译目录中的原 TextReplacersKt.class / ExactReplacer.class 均已移除，调用解析至共享模块。

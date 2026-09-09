@@ -48,6 +48,9 @@ SharedChatRuntime 原会话管理保持，详见[验证记录](cmp-migration-pro
 无效工具消息的节点清理计算已原样移至 commonMain，Android 原 `checkInvalidMessages` 继续读取会话并
 调用原更新与文件清理入口；审批判断、分支移除及索引规则保持。三端契约与 SQLite 重开测试通过，
 SharedChatRuntime 未新增清理触发，详见[验证记录](cmp-migration-progress.md#2026-09-09无效工具消息的节点清理计算)。
+Workspace 文本替换器 `TextReplacers.kt` 已整文件原样迁入 commonMain，原 14 项测试在三端通过。
+Android Workspace 工具继续使用原替换调用；Rootfs、文件访问和 shell 沿用现有平台边界，
+详见[验证记录](cmp-migration-progress.md#2026-09-09workspace-文本替换器)。
 
 ## 代码分布
 

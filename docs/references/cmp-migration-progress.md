@@ -766,3 +766,53 @@ GUI 判断：无需 GUI。纯同步计算原样抽取，原界面、状态订阅
 下一项建议：**Workspace 文本替换器（低难度）**。`TextReplacers.kt` 仅使用 Kotlin 标准库，
 可整文件迁入 commonMain，将现有 14 项 JUnit 测试适配为 kotlin.test 在三端运行；
 Android `WorkspaceTools` 的文件读写与替换调用保持原样。
+
+## 2026-09-09：Workspace 文本替换器
+
+迁移前基线：`3e3ad7545`。策略 `PRESERVE`，适用性 `SUPPORTED`，难度低。
+状态：整文件原样迁移与原测试三端验证完成。
+目标为 Android、Desktop JVM、iOS arm64 / Simulator arm64；沿用 Kotlin 2.4.20-RC、CMP 1.12.0、
+AGP 9.3.2、Gradle 9.5.0 和现有 JDK/Xcode 环境，不更改依赖或构建配置。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| TR01 TextReplacers.kt | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 整文件原样移动精确、逐行 trim、首尾锚点替换器，保留匹配优先级、偏移、缩进、换行与异常 | 包名、类型和函数 API 不变 | 完成；194 行逐字节一致，原测试三端通过 |
+| TR02 TextReplacersTest.kt | app test → commonTest | REQUIRED_FOR_KMP / REWRITEABLE | 沿用 14 项原测试，JUnit 断言/注解适配为 kotlin.test，保持输入和预期结果 | 仅测试 API | 完成；原 14 项 Android 基线通过，迁移后三端各 14 项通过 |
+| TR03 WorkspaceTools 调用与文件读写 | app | REQUIRED_FOR_KMP / ANDROID_ONLY | 原工具参数、审批、读写、异常包装、返回 JSON 和 diff metadata 保留 | 无 | 保留；源码与编译调用检查通过 |
+
+生产文件只依赖 Kotlin 标准库，没有 Android/Java API 或新增外部依赖。
+不增加参数校验、替换策略、文件处理或工具入口；没有 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 改动。
+本轮只共享文本计算，Workspace Rootfs、文件访问和 shell 仍按现有平台边界保留。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 精确替换单处、非重叠命中和 replaceAll 多处替换 | 输出、替换数量和 exact 策略保持 | 三端通过 |
+| 输入多处精确匹配、空 oldText 或完全不匹配的文本 | 保持 IllegalArgumentException 与原测试的多处提示断言 | 三端通过 |
+| 丢失缩进、相对缩进、CRLF/LF 差异和 oldText 尾部换行 | 沿用 line_trimmed 降级、缩进恢复及换行结果 | 三端通过 |
+| 逐行匹配命中多处或 oldText 仅有空白 | 保持多处异常和空白不启用宽松匹配的行为 | 三端通过 |
+| 首尾行匹配、中间行有差异，以及不足三行的输入 | 前者采用 block_anchor，后者不启用锚点匹配 | 三端通过 |
+| 检查 Android 工具执行体与共享编译产物 | 原读文件 → replaceText → 写文件顺序保持，调用与 ExactReplacer 引用解析至共享模块 | 编译指令检查通过 |
+
+基线：共享 Android host **151**、JVM **159**、iOS Simulator **151** 项，以及 app 的原文本替换测试
+14 项和 `ChatServiceTest` 1 项，全部通过。
+迁移后 Android host **165**、JVM **173**、iOS Simulator **165** 项，以及 app `ChatServiceTest` 1 项，
+共 **504** 次测试执行通过；本项沿用 14 项原用例，在三端共执行 42 次，没有新增测试逻辑。
+Android 应用与共享模块、JVM、iOS arm64、iOS Simulator arm64 和 common metadata 编译通过；
+iOS arm64 本项只验证编译。[完整命令与结果](evidence/cmp-text-replacers-2026-09-09/code-tests.txt)及
+[Android 调用证据](evidence/cmp-text-replacers-2026-09-09/android-call.txt)已留存。
+
+生产改动仅移动 `TextReplacers.kt`，与基线逐字节一致；所有公开与私有定义、注释、默认参数及异常均保留。
+测试仅替换 JUnit imports 和 `assertThrows(IllegalArgumentException::class.java)`，原测试方法体的
+输入、操作及预期结果保持。无需替换生产 API、添加依赖或新建接口。
+`javap` 确认既有 Workspace 工具仍调用 `TextReplacersKt.replaceText$default` 和 `ExactReplacer`，
+app 原类产物已移除，共享 Android/JVM 产物存在；`WorkspaceTools.kt` 逐字不变。
+
+GUI 判断：无需 GUI。纯文本算法整文件原样移动，原工具入口、审批、文件读写、结果/diff 展示和平台接线均未变；
+原 14 项行为测试在三端通过，并核对真实 Android 调用产物，无待人工确认项。
+本项验证文本算法与编译接线，未运行完整 Workspace Rootfs 文件编辑或应用 GUI。
+测试仅在内存中替换字符串，临时构建日志保留证据后清理；没有临时生产日志、设备安装或模型请求。
+
+下一项建议：**聊天附件类型判断（低难度）**，将 `ChatUtil.kt` 中的 `isAllowedFileType` 与两组白名单
+原样移至 commonMain，保留 Android 文件选择、MIME 获取和附件导入调用点。

@@ -1,8 +1,8 @@
 package me.rerere.rikkahub.data.ai.tools
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
-import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.Test
 
 class TextReplacersTest {
 
@@ -33,7 +33,7 @@ class TextReplacersTest {
 
     @Test
     fun `exact match throws on ambiguous occurrences without replace_all`() {
-        val e = assertThrows(IllegalArgumentException::class.java) {
+        val e = assertFailsWith<IllegalArgumentException> {
             replaceText("foo foo", "foo", "bar", replaceAll = false)
         }
         assertEquals(true, e.message!!.contains("2 locations"))
@@ -41,14 +41,14 @@ class TextReplacersTest {
 
     @Test
     fun `throws when old_text is not found anywhere`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             replaceText("hello world", "missing", "x", replaceAll = false)
         }
     }
 
     @Test
     fun `throws when old_text is empty`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             replaceText("hello", "", "x", replaceAll = false)
         }
     }
@@ -102,7 +102,7 @@ class TextReplacersTest {
     fun `line trimmed throws on ambiguous match without replace_all`() {
         val content = "    foo\nbar\n    foo"
         // exact 找不到 tab 缩进的 "foo", line_trimmed 命中两处
-        val e = assertThrows(IllegalArgumentException::class.java) {
+        val e = assertFailsWith<IllegalArgumentException> {
             replaceText(content, "\tfoo", "baz", replaceAll = false)
         }
         assertEquals(true, e.message!!.contains("line_trimmed"))
@@ -110,7 +110,7 @@ class TextReplacersTest {
 
     @Test
     fun `whitespace only old_text never fuzzy matches`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             replaceText("a\n\n\nb", "    \n  ", "x", replaceAll = false)
         }
     }
@@ -134,7 +134,7 @@ class TextReplacersTest {
     @Test
     fun `block anchor requires at least three lines`() {
         // 两行的 old_text 中间行写错时不应启用锚点匹配
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             replaceText("start\nend", "start oops\nend", "x", replaceAll = false)
         }
     }
