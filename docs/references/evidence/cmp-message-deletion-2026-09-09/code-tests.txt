@@ -1,0 +1,37 @@
+消息删除后的节点与分支索引计算：原样迁移验证（2026-09-09）
+基线：93596057d；策略 PRESERVE，适用性 SUPPORTED。
+
+基线命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test --console=plain
+BUILD SUCCESSFUL in 836ms，退出码0。Android host 117、JVM 122、iOS Simulator 117 项。
+
+迁移后命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test :composeApp:compileCommonMainKotlinMetadata :composeApp:compileKotlinIosArm64 :app:compileDebugKotlin :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest --console=plain
+BUILD SUCCESSFUL in 41s，退出码0。
+testAndroidHostTest: tests=122, failures=0, errors=0, skipped=0
+jvmTest: tests=128, failures=0, errors=0, skipped=0
+iosSimulatorArm64Test: tests=122, failures=0, errors=0, skipped=0
+Android ChatServiceTest: tests=1, failures=0, errors=0, skipped=0
+总计373次；新增5项common用例各执行于Android/JVM/iOS，JVM另有1项SQLite关闭重开用例，共新增16次。
+
+本次实际执行的生产编译任务：
+:composeApp:compileKotlinJvm
+:composeApp:compileAndroidMain
+:composeApp:compileKotlinIosArm64
+:composeApp:compileKotlinIosSimulatorArm64
+:composeApp:compileCommonMainKotlinMetadata
+:app:compileDebugKotlin
+
+行为验证：首/中/末候选与三个选中索引的9种组合；节点唯一消息与会话唯一消息；缺失ID/空会话/空节点；
+重复ID只处理首个匹配节点；负索引和超大索引保持原边界规则；保留会话元数据、消息内容和其他节点。
+SQLite用例经原Repository连续保存分支删除和完整节点删除，再关闭并重开同一文件，验证选中分支、
+剩余候选、元数据、共享文件引用和FTS。删除内容无搜索结果，保留分支仍可搜索。测试只使用虚构附件URI。
+
+源码对比：移除外层缩进与private后，新函数与原函数逐字一致；Android文件仅删除该定义，其他代码逐字一致。
+编译调用验证：javap -c -p app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes/me/rerere/rikkahub/service/ChatService.class
+deleteMessage字节码包含：invokestatic me/rerere/rikkahub/service/ConversationMessageDeleteKt.buildConversationAfterMessageDelete
+SharedChatRuntime/UI/Repository/DAO/FTS/平台文件操作/构建配置未变，新common文件未引用Java/Android API。
+
+GUI判断：无需GUI。调用入口、状态订阅、持久化与平台链路保持不变，本次计算行为已有上述代码证据；
+未执行GUI或物理附件删除验证。未使用子agent，无模型调用、临时生产日志或依赖变更。
+SQLite测试关闭所有连接并自动删除临时目录；Gradle临时日志清理后提交。

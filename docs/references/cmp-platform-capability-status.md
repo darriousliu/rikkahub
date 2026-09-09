@@ -33,6 +33,9 @@ Desktop 在原迁移提交上的真实翻译、折叠/展开、保留及清空�
 异常和保存规则沿用原 Android 实现；三端代码测试及编译通过，详见[压缩迁移记录](cmp-migration-progress.md#2026-09-09会话上下文压缩)。
 消息分支选择命令 `selectMessageNode` 已原样移动到 `ChatRuntime` 默认实现，三端共用校验与保存；
 Android 原调用入口保留。此项只共享运行时 API，现有 UI 与 Web 路由没有变更，详见[验证记录](cmp-migration-progress.md#2026-09-09消息分支选择运行时-api)。
+消息删除的纯节点计算 `buildConversationAfterMessageDelete` 已原样移至 commonMain，Android 现有调用点直接使用；
+各端原有删除命令、保存与文件处理保持不变。SharedChatRuntime 对重复 ID 和缺失消息的原有差异保留，
+本项不宣称统一了各端完整删除流程，详见[验证记录](cmp-migration-progress.md#2026-09-09消息删除后的节点与分支索引计算)。
 
 ## 代码分布
 

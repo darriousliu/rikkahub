@@ -505,3 +505,52 @@ SQLite 测试临时文件已自动删除，构建临时日志在提交前清理�
 
 下一项建议：**消息删除后的节点与分支索引计算（低难度）**，直接抽取 Android 的
 `buildConversationAfterMessageDelete`，继续保留各运行时原有的保存和文件处理方式。
+
+## 2026-09-09：消息删除后的节点与分支索引计算
+
+迁移前基线：`93596057d`。策略 `PRESERVE`，适用性 `SUPPORTED`，难度低。
+状态：原样迁移与自动化验证完成。目标为 Android、Desktop JVM、iOS arm64 / Simulator arm64；
+沿用 Kotlin 2.4.20-RC、CMP 1.12.0、AGP 9.3.2、Gradle 9.5.0 和现有 JDK/Xcode 环境，无依赖或配置变更。
+基线三端测试通过：Android host 117、JVM 122、iOS Simulator 117 项。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| D01 `buildConversationAfterMessageDelete` | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 原样移动首次匹配、消息过滤、空节点移除与索引上限计算；不修正既有边界行为 | 原 private 成员移为同包顶层函数，供 app 跨模块调用；原 deleteMessage 签名不变 | 完成；5 项 common 契约测试、1 项 JVM SQLite 重开 |
+| D02 删除命令及文件处理 | app / commonMain | REQUIRED_FOR_KMP / ANDROID_ONLY | Android 保存、404/缺失跳过、文件回收保持原位置；SharedChatRuntime 的缺失消息保存和多节点匹配规则原样保留 | 无 | 保留；调用链与源码比较 |
+
+Android 只处理首个含目标消息的节点，SharedChatRuntime 处理所有匹配节点，并在缺失消息时仍保存和更新时间。
+本轮共享 Android 的纯计算方法，不合并这两套已有调用语义；未新增接口、适配器、依赖或数据库格式。
+没有 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 改动。
+
+公开 API 变化仅为 `ChatService` 的 private 方法成为同包的
+`fun buildConversationAfterMessageDelete(conversation: Conversation, messageId: Uuid): Conversation?`，
+以供 Android app 跨模块访问。没有新增兼容接口、facade、回调、expect/actual 或服务层。
+新文件为 `composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/ConversationMessageDelete.kt`。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 在三个选中索引下分别删除首/中/末候选，共 9 种组合 | 过滤目标消息，保留原数值索引并限制其上限；其他节点、消息元数据、会话字段及输入对象保持 | 三端通过 |
+| 删除节点唯一消息，再删除会话唯一消息 | 仅移除目标节点；允许空会话，其他空节点不被顺带清理 | 三端通过 |
+| 删除不存在的 ID，包含空会话和空节点 | 计算方法返回 null；Android 调用者原 404/跳过代码保持不变 | 三端通过、源码对比通过 |
+| 同一消息 ID 在首个节点重复并出现在后续节点 | 首个匹配节点内所有同 ID 消息移除，后续节点原样保留 | 三端通过 |
+| 输入负索引、超大索引 | 保留负值，只调整超过剩余末项的上界，与迁移前一致 | 三端通过 |
+| 连续删除分支与完整节点，保存后关闭并重开 SQLite | 删除结果与选中分支恢复，元数据和共享文件引用保持；删除内容的 FTS 消失，保留分支仍可搜索 | JVM 通过 |
+
+Android host **122**、JVM **128**、iOS Simulator **122** 项全部通过；Android `ChatServiceTest` 另有 1 项，
+共 373 次测试执行，本项新增执行 16 次。Android 应用、Android 共享模块、JVM、iOS arm64、
+iOS Simulator arm64 与 common metadata 编译均通过。iOS arm64 本项只验证编译。
+[完整命令与结果](evidence/cmp-message-deletion-2026-09-09/code-tests.txt)已留存。
+
+源码比较确认：新函数只移除 private 和外层缩进，原方法体保持不变；Android 文件仅删除原方法定义，
+其他代码逐字不变。`javap` 确认 Android `deleteMessage` 调用共享函数。
+`SharedChatRuntime`、UI、Repository、DAO、FTS、文件回收及依赖配置未修改；新 common 文件无 Java/Android API。
+
+GUI 判断：无需 GUI。现有聊天删除入口、状态订阅、各端保存与文件处理、平台生命周期均未改动；
+三端边界测试、SQLite 集成测试及实际编译调用证据已覆盖本次变化，无待人工确认项。
+此次验证范围为计算与持久化契约，不将其写为完整应用 GUI 通过，也不声称验证了实际附件删除。
+测试仅使用虚构文件 URI；SQLite 专用临时目录已自动删除，构建临时日志在提交前清理；没有模型请求或临时生产日志。
+
+下一项建议：**用户输入正则预处理（低难度）**，原样移动 `preprocessUserInputParts`，复用 Android
+发送/编辑和 SharedChatRuntime 发送中的现有等价文本处理，保持非文本内容与原调用时机。
