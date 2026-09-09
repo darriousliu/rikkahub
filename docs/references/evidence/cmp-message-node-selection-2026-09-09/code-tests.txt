@@ -1,0 +1,25 @@
+消息分支选择运行时 API：原样移动验证（2026-09-09）
+基线：e85f9e95a
+
+基线命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test --console=plain
+BUILD SUCCESSFUL in 1s。基线 Android host 110、JVM 114、iOS Simulator 110 项。
+
+迁移后命令：
+./gradlew :composeApp:jvmTest :composeApp:testAndroidHostTest :composeApp:iosSimulatorArm64Test :composeApp:compileCommonMainKotlinMetadata :composeApp:compileKotlinIosArm64 :app:compileDebugKotlin :app:testDebugUnitTest --tests me.rerere.rikkahub.service.ChatServiceTest --console=plain
+BUILD SUCCESSFUL in 20s，退出码0。
+testAndroidHostTest: {'tests': 117, 'failures': 0, 'errors': 0, 'skipped': 0}
+jvmTest: {'tests': 122, 'failures': 0, 'errors': 0, 'skipped': 0}
+iosSimulatorArm64Test: {'tests': 117, 'failures': 0, 'errors': 0, 'skipped': 0}
+Android ChatServiceTest: {'tests': '1', 'failures': '0', 'errors': '0', 'skipped': '0'}
+
+新增7项common契约用例，在Android/JVM/iOS各执行；JVM另有1项真实SQLite关闭重开用例，共新增22次。
+common metadata、Android应用、JVM、iOS arm64/iOS Simulator arm64生产编译均通过。
+首次测试编译发现测试替身把StateFlow声明为Flow，修正测试签名后通过；生产方法没有修改逻辑。
+
+静态比较：ChatRuntime.selectMessageNode的整个签名/方法体与基线ChatService方法逐字一致。
+Android facade保留并调用super<ChatRuntime>；SharedChatRuntime继承默认实现。
+现有404/400异常类、状态码、消息文案、重复选择返回、读取与保存路径均沿用原实现。
+没有更改repository/DAO/FTS、设置、模型请求或UI。无新增生产日志或依赖。
+SQLite测试关闭所有连接并删除专用临时目录；Gradle临时日志清理后提交。
+本项未执行GUI；原聊天分支按钮与Web路由界面均未修改。真实模型请求数0。

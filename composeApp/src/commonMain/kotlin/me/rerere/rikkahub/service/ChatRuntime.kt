@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.web.BadRequestException
+import me.rerere.rikkahub.web.NotFoundException
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -64,6 +66,34 @@ interface ChatRuntime {
     ): Result<Unit>
 
     suspend fun forkConversationAtMessage(conversationId: Uuid, messageId: Uuid): Conversation
+    suspend fun selectMessageNode(
+        conversationId: Uuid,
+        nodeId: Uuid,
+        selectIndex: Int
+    ) {
+        val currentConversation = getConversationFlow(conversationId).value
+        val targetNode = currentConversation.messageNodes.firstOrNull { it.id == nodeId }
+            ?: throw NotFoundException("Message node not found")
+
+        if (selectIndex !in targetNode.messages.indices) {
+            throw BadRequestException("Invalid selectIndex")
+        }
+
+        if (targetNode.selectIndex == selectIndex) {
+            return
+        }
+
+        val updatedNodes = currentConversation.messageNodes.map { node ->
+            if (node.id == nodeId) {
+                node.copy(selectIndex = selectIndex)
+            } else {
+                node
+            }
+        }
+
+        saveConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
+    }
+
     suspend fun deleteMessage(conversationId: Uuid, message: UIMessage)
     fun regenerateAtMessage(
         conversationId: Uuid,

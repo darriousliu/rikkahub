@@ -462,3 +462,40 @@ AI 三端 130/80/80、composeApp 三端 110/114/110，以及 Android ChatService
 原模型参数、提示词/分支、取消/失败及整会话保存契约继续覆盖。临时构建日志清理后提交。
 
 下一项建议：消息分支选择（低难度），直接抽取 Android `selectMessageNode` 的原校验和保存方法体。
+
+## 2026-09-09：消息分支选择运行时 API
+
+迁移前基线：`e85f9e95a`。状态：实现与自动化验证完成；难度低。策略为 `PRESERVE`，适用性 `SUPPORTED`。
+目标仍为 Android、Desktop JVM、iOS arm64 / Simulator arm64；沿用现有工具链，无依赖或配置变更。
+基线检查成功：Android host 110、JVM 114、iOS Simulator 110 项。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| S01 `ChatService.selectMessageNode` | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 原样移动节点查找、索引校验、重复选择跳过与保存；保留异常类型/文案/状态码 | `ChatRuntime` 增加同签名默认方法，Android 保留原 facade | 完成；7 项 common 契约测试 |
+| S02 runtime 保存边界 | commonMain / app | REQUIRED_FOR_KMP / REWRITEABLE | 默认实现直接调用既有 getConversationFlow/saveConversation，不改存储或并发 | SharedChatRuntime 直接继承；现有 Android Web 路由调用不变 | 完成；JVM SQLite 关闭重开验证 |
+
+两种 API 异常已在 commonMain，原方法体没有 Java/Android API，无需新增兼容类型、回调或依赖。
+本项只共享运行时命令；聊天页面现有分支按钮和 Android Web 路由均不改。
+没有 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 类改动。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 将目标节点从第 0 条切至第 1 条 | 仅目标 selectIndex 改变；原候选消息、其余节点和会话元数据保持，保存一次 | 三端通过 |
+| 再次选择已选中的条目 | 直接返回，不调用保存 | 三端通过 |
+| 传入不存在的节点 ID / 越界索引 / 空节点 | 分别保留原 404 / 400 和错误文案，不调用保存；节点查找先于索引检查 | 三端通过 |
+| 两次调用之间修改当前会话 | 下一次读取最新内存，保留新增消息和标题 | 三端通过 |
+| 保存抛异常或取消 | 原异常传播，无重试或新增捕获 | 三端通过 |
+| 切换后关闭数据库并重新打开同一 SQLite 文件 | 选中分支恢复；候选消息、会话元数据及两条分支的搜索索引保持 | JVM 通过 |
+
+Android host **117**、JVM **122**、iOS Simulator **117** 项通过；另有 Android `ChatServiceTest` 1 项，
+本轮共 357 次测试执行，新用例执行 22 次。Android 应用、JVM、iOS arm64、iOS Simulator arm64 和 common metadata 编译均通过。
+[命令与结果](evidence/cmp-message-node-selection-2026-09-09/code-tests.txt)已留存。
+
+方法含签名与方法体的逐字比较通过；生产代码只修改 `ChatRuntime` 和 Android `ChatService` 两个文件。
+本项没有 UI 变更，不执行 GUI；没有模型调用、临时生产日志、依赖或数据库格式变更。
+SQLite 测试临时文件已自动删除，构建临时日志在提交前清理。
+
+下一项建议：**消息删除后的节点与分支索引计算（低难度）**，直接抽取 Android 的
+`buildConversationAfterMessageDelete`，继续保留各运行时原有的保存和文件处理方式。

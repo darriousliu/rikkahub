@@ -31,6 +31,8 @@ Desktop 在原迁移提交上的真实翻译、折叠/展开、保留及清空�
 [GUI 回归](cmp-gui-regression.md#2026-09-09聊天消息翻译)，并修复原生包读取保存设置所需的 JDK 模块缺失；其中清除立即落盘的额外逻辑在本次审查中已撤回。
 会话上下文压缩现已原样抽取至 commonMain，并接入 iOS/Desktop 更多菜单。模型回退、递归分块、保留最近消息、
 异常和保存规则沿用原 Android 实现；三端代码测试及编译通过，详见[压缩迁移记录](cmp-migration-progress.md#2026-09-09会话上下文压缩)。
+消息分支选择命令 `selectMessageNode` 已原样移动到 `ChatRuntime` 默认实现，三端共用校验与保存；
+Android 原调用入口保留。此项只共享运行时 API，现有 UI 与 Web 路由没有变更，详见[验证记录](cmp-migration-progress.md#2026-09-09消息分支选择运行时-api)。
 
 ## 代码分布
 
