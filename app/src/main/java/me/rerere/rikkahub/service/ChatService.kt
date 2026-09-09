@@ -204,7 +204,8 @@ class ChatService(
     // ---- Session 管理 ----
 
     private fun getOrCreateSession(conversationId: Uuid): ConversationSession {
-        return sessions.getOrPut(conversationId) {
+        var created = false
+        val session = sessions.getOrPut(conversationId) {
             val id = conversationId
             val settings = settingsStore.settingsFlow.value
             ConversationSession(
@@ -216,10 +217,15 @@ class ChatService(
                 scope = appScope,
                 onIdle = { removeSession(it) }
             ).also {
-                _sessionsVersion.update { it + 1 }
-                Log.i(TAG, "createSession: $id (total: ${sessions.size})")
+                created = true
             }
         }
+        if (created) {
+            // Collectors may synchronously read the map; publish only after its pending entry is ready.
+            _sessionsVersion.update { it + 1 }
+            Log.i(TAG, "createSession: $conversationId (total: ${sessions.size})")
+        }
+        return session
     }
 
     private fun removeSession(conversationId: Uuid) {

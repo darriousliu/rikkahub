@@ -267,3 +267,17 @@ Mock Provider 用例位于 `composeApp/src/commonTest/kotlin/me/rerere/rikkahub/
 保留既有 Android 行为：关闭开关不会删除已显示的建议；不触发回复的纯编辑、删消息或分支切换入口没有统一清空策略。本项保护这些变化期间仍在运行的旧请求，不重构所有消息操作。无临时验证日志，常规失败日志和永久测试保留。
 
 下一项建议：聊天消息翻译（中低难度）。`SharedChatRuntime.translateMessage` 当前仍返回不可用错误，可复用已有共享翻译请求，实现流式译文、错误清理和消息保存，并优先用 Mock Provider 验证。
+
+## 2026-09-09：DeepSeek 三端 GUI 回归补充
+
+对 `252a0b541` 的自动标题和追问建议补充真实应用 GUI 验证。Android、iOS Simulator、Desktop 均通过
+短回复、自动标题、建议显示、点击只填入输入框及重启持久化检查；由 `gpt-5.6-sol` 操作，主 agent 复核截图。
+
+Android 打开已保存会话时发现既有 ANR：创建会话的 Pending 条目尚未就绪，状态通知同步重入会话列表读取，
+导致主线程自旋。已将 `ChatService` 的通知移到 `getOrPut` 返回之后，并用原会话完成 GUI 复验，无新增模型请求。
+新增真实 ChatService 的无网络仪器测试通过（1 项，0.581 秒）；既有 `ChatServiceTest` 1 项及 Android APK 构建通过。
+iOS/Desktop 未改代码，沿用本轮已完成的 GUI 证据。
+
+后续真实 API 测试按用户要求复用本机钥匙串中的 DeepSeek 测试密钥，优先 `deepseek-v4-flash`、关闭思考、
+短输入和短输出；不得把密钥写入仓库。完整步骤、预期、用量可知范围、截图及 ANR 证据见
+[CMP GUI 回归记录](cmp-gui-regression.md)。下一项迁移建议仍为聊天消息翻译（中低难度）。

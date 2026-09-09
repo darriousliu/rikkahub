@@ -1,0 +1,44 @@
+RikkaHub Android GUI regression ANR diagnosis (sanitized)
+
+Device: emulator-5560
+Package/activity: me.rerere.rikkahub.debug / RouteActivity
+App PID: 7348
+ANR time: 2026-09-09 03:15:09 +0800
+Reason: Input dispatching timed out; waited 5000 ms for MotionEvent.
+
+Main thread state: Runnable
+Main-thread stack (app-relevant frames):
+  me.rerere.common.concurrent.Entry$Pending.await(AtomicSnapshotMap.kt:150)
+  me.rerere.common.concurrent.Entry$Pending.getValue(AtomicSnapshotMap.kt:143)
+  me.rerere.common.concurrent.AtomicSnapshotMap.valuesSnapshot(AtomicSnapshotMap.kt:29)
+  me.rerere.rikkahub.service.ChatService$getConversationJobs...invokeSuspend(Merge.kt:215)
+  kotlinx.coroutines.flow.internal.ChannelFlowTransformLatest...emit(Merge.kt:29)
+  kotlinx.coroutines.flow.StateFlowSlot.makePending(StateFlow.kt:290)
+  kotlinx.coroutines.flow.StateFlowImpl.updateState(StateFlow.kt:354)
+  me.rerere.rikkahub.service.ChatService.getOrCreateSession$lambda$0(ChatService.kt:1400)
+  me.rerere.common.concurrent.AtomicSnapshotMap.getOrPut(AtomicSnapshotMap.kt:69)
+  me.rerere.rikkahub.service.ChatService.getOrCreateSession(ChatService.kt:207)
+  me.rerere.rikkahub.service.ChatService.getConversationFlow(ChatService.kt:263)
+  me.rerere.rikkahub.ui.pages.chat.ChatVM.<init>(ChatVM.kt:55)
+
+Cause:
+  getOrPut installs a Pending entry, then runs its factory. The factory synchronously updates
+  _sessionsVersion. Its eager StateFlow collector re-enters getConversationJobs on the same main
+  thread and calls valuesSnapshot. valuesSnapshot encounters that same incomplete Pending and
+  spins forever in await(), so the outer factory can never reach pending.complete().
+
+Resource evidence:
+  App CPU: 96% user, 0% kernel at diagnosis.
+  system_server: 2.9%; SurfaceFlinger: 0.3%; SystemUI: 0.2%.
+  Total CPU: 29%; iowait: 0.1%.
+  App main-thread trace schedstat: about 102.6 s CPU vs 0.685 s runqueue wait.
+  App memory: TOTAL PSS about 237 MB; TOTAL RSS about 382 MB; no OOM evidence.
+
+Conclusion:
+  Deterministic app-side same-thread re-entrancy deadlock expressed as a busy spin. This is not
+  explained by emulator-wide CPU, I/O, memory, SurfaceFlinger, or system_server starvation.
+
+Candidate fix location (not applied):
+  ChatService.getOrCreateSession: publish _sessionsVersion only after getOrPut has returned and
+  the map entry is Ready. A blocking implementation of Pending.await alone would still deadlock
+  on this same-thread re-entry; it would only remove the CPU spin.

@@ -38,3 +38,8 @@
 | M32 | 完整核心聊天流程 | Android | 无 Android GUI、provider 凭据和真实附件/搜索环境 | 恢复设置，新建 Assistant/provider/会话，流式聊天并验证搜索、富文本、附件、历史、收藏、统计，重启 | 全流程可用；工具调用可继续生成；重启后状态一致 | Blocked | Android 单元测试/编译链路通过；需 Android 设备和隔离测试 provider | 2026-08-01 |
 | M33 | 完整核心聊天流程 | iOS | 无签名 iOS 应用、GUI 和 provider 凭据 | 恢复设置，新建 Assistant/provider/会话，流式聊天并验证搜索、富文本、附件、历史、收藏、统计，重启 | 全流程可用；不支持能力明确隐藏/降级；重启后状态一致 | Blocked | iOS simulator 编译/测试通过；需签名设备和隔离测试 provider | 2026-08-01 |
 | M34 | 完整核心聊天流程 | JVM | 当前会话不能进行桌面 GUI 操作，且无 provider 凭据 | 恢复设置，新建 Assistant/provider/会话，流式聊天并验证搜索、富文本、附件、历史、收藏、统计，重启 | 全流程可用；不支持能力明确隐藏/降级；重启后状态一致 | Blocked | Desktop smoke 通过但未执行真实 provider 聊天；需 JDK 21 GUI 和隔离测试 provider | 2026-08-01 |
+| M35 | DeepSeek 短聊天、自动标题与追问建议 | JVM | 需真实模型及桌面 GUI | 发送短消息，点击建议，关闭窗口后重启 | 回复、标题和建议出现；建议只填入；重启保持数据 | Pass | gpt-5.6-sol 操作真实 Compose 窗口；3 次请求；主 agent 复核[报告与截图](cmp-gui-regression.md#desktop-jvm) | 2026-09-09 |
+| M36 | DeepSeek 短聊天、自动标题与追问建议 | iOS | 需真实模型及模拟器 GUI | 发送短消息，点击建议，停止并重新启动应用 | 回复、标题和建议出现；建议只填入；重启保持数据 | Pass | iPhone 17 Pro Max / iOS 27.0；gpt-5.6-sol 操作真实 iosApp；主 agent 复核[报告与截图](cmp-gui-regression.md#ios-simulator) | 2026-09-09 |
+| M37 | DeepSeek 短聊天、自动标题与追问建议 | Android | 需真实模型及模拟器 GUI | 发送短消息，从历史打开，点击建议，停止后重启 | 回复、标题和建议出现；历史无 ANR；建议只填入；重启保持数据 | Pass（修复后） | API 37 独立模拟器；发现并修复会话创建重入自锁；无网络仪器测试通过；主 agent 复核[报告与截图](cmp-gui-regression.md#android) | 2026-09-09 |
+
+M35 起为后续补充的限定范围 GUI 回归，不将其结果外推为 M32–M34 的完整核心流程通过。
