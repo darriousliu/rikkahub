@@ -238,7 +238,7 @@ Android host 是在主机 JVM 上执行 Android actual，不等于 Android 设�
 
 ## 第 06 项：统计逻辑归回 StatsVM
 
-起点：`c1b49204`。状态：**验证完成**。
+起点：`c1b49204`。状态：**已签名提交 `2466dfa8`**。
 
 删除 `StatsRepository`、`StatsQueries`、`RoomStatsQueries` 和 `heatmapStartDate`；
 `AppStats` 归回原 `StatsVM.kt`，VM 直接使用原 DAO 与 SettingsStore。
@@ -263,3 +263,31 @@ GUI 决策：**需要三端验证**。VM 构造和 Koin 数据接线发生变化
 第 07 项建议：删除 `RikkaHubApp` 的 Status/Capabilities 演示外壳。
 已查明仅 `RouteActivity` 与 `SharedProductApp` 两个实际调用点，均传入正式产品内容并立即返回，演示分支未使用。
 下一项保留正式导航与平台宿主，删除冗余外壳，并对两个调用点覆盖的三端进行冷启动、导航和返回验证。
+
+## 第 07 项：删除 RikkaHubApp 演示外壳
+
+起点：`2466dfa8`。状态：**验证通过，随本项独立提交**。
+
+删除共享 `RikkaHubApp.kt` 的 Status/Capabilities 演示 UI、导航选择函数和专用 `SharedEntryTestTags`。
+`RouteActivity` 直接调用原 `AppRoutes()`；`SharedProductApp` 直接调用原 `ProductNavigationHost(...)`。
+4 个生产文件增加 7 行、删除 180 行，净减少 173 行。
+
+两个实际调用点原本始终传入 `productContent`，包装立即调用它并返回，未执行演示主题、状态或导航分支。
+已逐文件核对仅删除这层包装与调整缩进；原主题、Koin、导航参数、生命周期效果保持。
+Android 同名 `Application` 类和清单未动；真实功能使用的平台能力判断、expect/actual 和桌面 smoke 路径保留。
+
+回退前后同一批现有测试全部通过：composeApp JVM 205 项、Android app 单元测试 63 项。
+common、Android、JVM、iOS Arm64/iOS Simulator Arm64 编译及 Android APK、桌面分发包、iOS 模拟器应用构建成功。
+没有新增只检查已删除包装的测试或测试依赖。
+
+GUI 决策：**需要三端验证**。本项修改根 Composition 的调用层级，现有单元测试不能证明实际宿主、导航返回及草稿状态接线。
+三端由新建且已核对实际模型为 `gpt-5.6-terra / high` 的子 agent 验证正式入口、统计/设置导航、页面往返草稿及冷启动。
+三端实际通过：草稿往返保留，清空后同 profile 冷启动正常，未发送草稿未增加会话或消息。
+Android 首次无设备未计通过，启动既有模拟器后由新的 Terra agent 完成重试；Android 实际设置覆盖为助手设置层级，
+iOS 为偏好设置/界面偏好设置，Desktop 为偏好设置。测试实例、草稿和临时文件已清理，本轮启动的 Android 模拟器已关闭。
+首次签名因 `1Password: failed to fill whole buffer` 失败；用户确认已解锁后沿用原签名设置重试。
+完整步骤、预期与实际结果见 [第 07 项验证记录](evidence/cmp-rollback-07-2026-09-10/verification.md)。
+
+第 08 项建议：把 `BackupRepository` 的转发和备份完成时间更新归回原 `BackupVM`，直接使用 `SettingsStore`，
+删除 `BackupSettingsGateway`。保留必要的 WebDAV/S3 transport 与本地文件平台能力，先验证设置读取时机、列表排序、
+成功更新时间及失败传播，再核对三端备份页。

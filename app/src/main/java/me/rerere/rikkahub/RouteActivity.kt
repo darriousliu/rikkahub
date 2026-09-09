@@ -27,7 +27,6 @@ import io.ktor.client.HttpClient
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.platform.addPlatformGifDecoder
 import me.rerere.rikkahub.shared.ProductNavigationHost
-import me.rerere.rikkahub.shared.RikkaHubApp
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.richtext.rememberAndroidRichTextPlatformActions
 import me.rerere.rikkahub.ui.context.LocalASRState
@@ -89,9 +88,7 @@ class RouteActivity : ComponentActivity() {
                         }
                         .build()
                 }
-                RikkaHubApp {
-                    AppRoutes()
-                }
+                AppRoutes()
             }
         }
     }

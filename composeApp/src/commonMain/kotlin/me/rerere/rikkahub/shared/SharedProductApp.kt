@@ -188,14 +188,12 @@ fun SharedProductApp(
 
     KoinApplication(configuration = koinConfiguration) {
         RikkahubTheme {
-            RikkaHubApp {
-                ProductNavigationHost(
-                    startScreen = initialScreen,
-                    ttsState = ttsState,
-                    platformRoutes = platformRoutes,
-                    richTextPlatformActions = richTextPlatformActions,
-                )
-            }
+            ProductNavigationHost(
+                startScreen = initialScreen,
+                ttsState = ttsState,
+                platformRoutes = platformRoutes,
+                richTextPlatformActions = richTextPlatformActions,
+            )
         }
     }
 }

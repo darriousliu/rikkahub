@@ -122,11 +122,3 @@ public fun capabilityMatrix(platform: PlatformKind): Map<PlatformCapability, Cap
     PlatformCapability.entries.associateWith { capability ->
         capabilityState(platform = platform, capability = capability)
     }
-
-/** Stable semantics contract used by all three shell smoke tests. */
-public object SharedEntryTestTags {
-    public const val Root: String = "shared_entry_root"
-    public const val Platform: String = "shared_entry_platform"
-
-    public fun capability(id: PlatformCapability): String = "shared_entry_capability_${id.id}"
-}
