@@ -33,10 +33,7 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
-import me.rerere.rikkahub.data.repository.RoomStatsQueries
 import me.rerere.rikkahub.data.repository.SettingsStoreBackupSettingsGateway
-import me.rerere.rikkahub.data.repository.StatsQueries
-import me.rerere.rikkahub.data.repository.StatsRepository
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.BackupArchiveService
 import me.rerere.rikkahub.data.sync.BackupFileLayout
@@ -204,14 +201,6 @@ internal fun sharedProductModule(
     }
     single { MemoryRepository(get()) }
     single { FavoriteRepository(get()) }
-    single<StatsQueries> { RoomStatsQueries(get(), get()) }
-    single {
-        StatsRepository(
-            queries = get(),
-            launchCountProvider = { settingsStore.settingsFlow.value.launchCount },
-        )
-    }
-
     single<SkillStore> { FileKitSkillStore(settingsStore) }
     single<AssistantAssetCleaner> { AssistantAssetCleaner { } }
     single<AssistantSkillCatalog> {
@@ -239,7 +228,7 @@ internal fun sharedProductModule(
     viewModelOf(::SearchVM)
     viewModelOf(::HistoryVM)
     viewModelOf(::FavoriteVM)
-    viewModelOf(::StatsVM)
+    viewModel { StatsVM(get(), get(), get()) }
     viewModelOf(::AssistantVM)
     viewModel<AssistantDetailVM> { parameters ->
         AssistantDetailVM(

@@ -21,10 +21,7 @@ import me.rerere.rikkahub.data.repository.FilesRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
-import me.rerere.rikkahub.data.repository.RoomStatsQueries
 import me.rerere.rikkahub.data.repository.SettingsStoreBackupSettingsGateway
-import me.rerere.rikkahub.data.repository.StatsQueries
-import me.rerere.rikkahub.data.repository.StatsRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.S3Sync
@@ -66,18 +63,6 @@ val repositoryModule = module {
 
     single {
         FavoriteRepository(get())
-    }
-
-    single<StatsQueries> {
-        RoomStatsQueries(get(), get())
-    }
-
-    single {
-        val settingsStore: SettingsStore = get()
-        StatsRepository(
-            queries = get(),
-            launchCountProvider = { settingsStore.settingsFlow.value.launchCount },
-        )
     }
 
     single<BackupSettingsGateway> {

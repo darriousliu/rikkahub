@@ -28,7 +28,7 @@
 | 04 / 低 | E16：McpTokenPolicy 判断放回 McpOAuthCoordinator | 通过 Coordinator + Clock + HTTP mock 验证未启用、无 refresh token、无 access token、未到期、60 秒边界、无 expires_in | 刷新次数、请求内容及 expiresAt 与原判断一致；不加入保护或请求合并 | 仅私有判断归位且 OAuth 接线不变时可免；不把 HTTP mock 当系统授权回调验证 |
 | 05 / 低至中 | E15：Vertex token Provider 直接用 Ktor，去掉二次 HTTP Transport/DTO | Ktor MockEngine 检查 token URL、form、JWT 声明、成功/错误/取消/缓存；平台签名契约测试 | 保留原参数、缓存过期与异常语义；RSA actual 保留 | 网络与签名接线若未变可代码免 GUI；不请求真实付费服务 |
 | 06 / 中 | E05：StatsRepository / StatsQueries 逻辑回到 StatsVM | 固定日期/时区和 Room 数据，核对各 token 计数、会话数、热力图边界与空库；测试 VM 原入口 | 页面统计值与原 DAO/VM 行为一致，启动次数来源不变 | 三端打开统计页、切换后返回；核对种子数据与显示结果 |
-| 07 / 中 | X01：删除 RikkaHubApp 演示 Status/Capabilities 壳 | 查清全部调用点，编译真实入口，验证产品内容仍由原入口提供 | 移除演示页及包装，正式导航、状态与平台宿主保持 | 对实际受影响的 iOS/桌面冷启动、导航、返回；Android 若入口未改，记录依据 |
+| 07 / 中 | X01：删除 RikkaHubApp 演示 Status/Capabilities 壳 | 核对 RouteActivity 和 SharedProductApp 两个调用点，编译真实入口，验证产品内容仍由原入口提供 | 移除演示页及包装，正式导航、状态与平台宿主保持 | 两个调用点覆盖三端；验证 Android/iOS/桌面冷启动、导航、返回 |
 | 08 / 中 | E06：BackupRepository / Settings Gateway 的转发及 VM 方法归位 | 设置持久化测试；以既有 transport 测试备份列表、成功/失败、更新时间、恢复选项 | 原设置 key 和读写时机保持；失败不假冒成功；这一项先不重写归档/网络传输 | 三端备份页保存设置、返回再进入；连接可用的测试备份端核对列表 |
 | 09 / 中 | E10 + B03：统一提示词预览，收敛模板多层包装 | 原 TemplateTransformer 入口固定模板、日期、时区、Locale、空变量、错误输入；预览和实际生成上下文用同一组样本核对 | 预览与生成输入一致；Korte 替库保留，原模板语义保持，不新增另一套 renderer | 三端预览相同模板，核对时间/日期等结果；不需真实模型请求 |
 | 10 / 中 | E03：移除 TranslationRuntime 及 Android/Shared 转发 | 原 TranslatorVM 入口测试参数、流式文本、失败、取消、设置切换；暂用已共享的原翻译方法，随第 24 项最终归位 | 模型/语言/提示词/回调与原流程一致，无第二份翻译业务 | 三端翻译页开始、停止、失败、重试；优先 mock/现有配置，必要时少量 DeepSeek 请求 |
@@ -200,7 +200,7 @@ OAuth 浏览器与系统回调、UI、导航、生命周期、存储实现及平
 
 ## 第 05 项：Vertex token HTTP Transport / DTO
 
-起点：`b4314f7f`。状态：**验证完成**。
+起点：`b4314f7f`。状态：**已签名提交 `c1b49204`**。
 生产代码只修改 `ServiceAccountTokenProvider.kt`，删除 `ServiceAccountTokenTransport`、
 `ServiceAccountTokenHttpResponse`、`KtorServiceAccountTokenTransport`，以及包装构造函数。
 原 `fetchAccessToken` 直接持有并使用传入的 Ktor HttpClient，恢复原 `resp` / `body` 局部变量。
@@ -234,4 +234,32 @@ Android host 是在主机 JVM 上执行 Android actual，不等于 Android 设�
 
 第 06 项建议：将 `StatsRepository` / `StatsQueries` 的统计逻辑归回原 `StatsVM`。
 先用固定日期/时区和 Room 数据核对 token、会话数及热力图边界；涉及 VM/界面数据接线，
-由显式指定 `gpt-5.6-terra` 的子 agent 验证 Android、iOS 和桌面统计页。本项尚未开始。
+由显式指定 `gpt-5.6-terra` 的子 agent 验证 Android、iOS 和桌面统计页。执行结果见下一节。
+
+## 第 06 项：统计逻辑归回 StatsVM
+
+起点：`c1b49204`。状态：**验证完成**。
+
+删除 `StatsRepository`、`StatsQueries`、`RoomStatsQueries` 和 `heatmapStartDate`；
+`AppStats` 归回原 `StatsVM.kt`，VM 直接使用原 DAO 与 SettingsStore。
+Android 和共享 Koin 入口改为直接构造 VM。7 个生产文件增加 72 行、删除 119 行，净减少 47 行。
+
+与 tag 比较，`AppStats` 定义完全一致；整个 `loadStats` 方法仅替换 common 不可用的日期 API。
+原 50ms 延迟、IO 范围、查询顺序、启动次数读取时机及快照行为保持。
+标准 Clock/TimeZone 使用已有默认值，测试可传固定值；没有新增业务接口或时钟包装。
+
+新增 7 项真实 Room/VM 契约测试，回退前后输入和断言相同；回退后全部 composeApp JVM 测试
+30 类、205 项通过。common、Android、iOS Arm64、iOS Simulator Arm64 编译通过，
+Android APK、桌面分发包及 iOS 模拟器应用构建成功。
+
+GUI 决策：**需要三端验证**。VM 构造和 Koin 数据接线发生变化，编译及 JVM 测试不足以证明三个实际入口均能加载。
+三端均由新建且实际上下文已核对为 `gpt-5.6-terra / high` 的子 agent 执行。
+使用离线专用数据核对会话/消息/token、热力图、切换返回及冷启动，不发真实模型请求。
+三端实际显示均为会话 3、消息 6、输入 124、输出 74、缓存 28，热力图两格深浅不同；
+返回与冷启动后保持。Android 启动次数按原逻辑 5→6→7→8，iOS/桌面为 0。
+三端按专用 ID 清理并通过无关行指纹与数据库完整性检查，GUI 恢复零统计、缓存卡片消失。
+完整步骤、预期、源代码比较和结果见 [第 06 项验证记录](evidence/cmp-rollback-06-2026-09-10/verification.md)。
+
+第 07 项建议：删除 `RikkaHubApp` 的 Status/Capabilities 演示外壳。
+已查明仅 `RouteActivity` 与 `SharedProductApp` 两个实际调用点，均传入正式产品内容并立即返回，演示分支未使用。
+下一项保留正式导航与平台宿主，删除冗余外壳，并对两个调用点覆盖的三端进行冷启动、导航和返回验证。

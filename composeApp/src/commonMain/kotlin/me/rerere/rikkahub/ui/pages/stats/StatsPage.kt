@@ -41,12 +41,12 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import me.rerere.common.time.today
-import me.rerere.rikkahub.data.model.AppStats
-import me.rerere.rikkahub.data.repository.heatmapStartDate
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.theme.CustomColors
@@ -149,7 +149,9 @@ private fun HeatmapCard(conversationsPerDay: Map<LocalDate, Int>, modifier: Modi
 @Composable
 private fun ChatHeatmap(conversationsPerDay: Map<LocalDate, Int>) {
     val today = Clock.System.today()
-    val startSunday = heatmapStartDate(today)
+    val startSunday = today
+        .minus((today.dayOfWeek.ordinal - DayOfWeek.SUNDAY.ordinal + 7) % 7, DateTimeUnit.DAY)
+        .minus(52 * 7, DateTimeUnit.DAY)
 
     val numWeeks = 53
     val activeCounts = conversationsPerDay.values.filter { it > 0 }.sorted()

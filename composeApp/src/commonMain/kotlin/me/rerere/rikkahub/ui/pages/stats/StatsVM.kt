@@ -3,16 +3,42 @@ package me.rerere.rikkahub.ui.pages.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.rerere.rikkahub.data.model.AppStats
-import me.rerere.rikkahub.data.repository.StatsRepository
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import me.rerere.common.time.today
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.db.dao.ConversationDAO
+import me.rerere.rikkahub.data.db.dao.MessageNodeDAO
+import me.rerere.rikkahub.data.db.dao.getMessageCountPerDay
+import me.rerere.rikkahub.data.db.dao.getTokenStats
+import kotlin.time.Clock
+
+data class AppStats(
+    val isLoading: Boolean = true,
+    val totalConversations: Int = 0,
+    val totalMessages: Int = 0,
+    val totalPromptTokens: Long = 0L,
+    val totalCompletionTokens: Long = 0L,
+    val totalCachedTokens: Long = 0L,
+    val conversationsPerDay: Map<LocalDate, Int> = emptyMap(),
+    val launchCount: Int = 0,
+)
 
 class StatsVM(
-    private val statsRepository: StatsRepository,
+    private val conversationDAO: ConversationDAO,
+    private val messageNodeDAO: MessageNodeDAO,
+    private val settingsStore: SettingsStore,
+    private val clock: Clock = Clock.System,
+    private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) : ViewModel() {
 
     private val _stats = MutableStateFlow(AppStats())
@@ -24,6 +50,41 @@ class StatsVM(
 
     private suspend fun loadStats() {
         delay(50)
-        _stats.value = withContext(Dispatchers.Default) { statsRepository.loadStats() }
+
+        val today = clock.today(timeZone)
+
+        // 热力图起始日期（52 周前的周日），格式 "yyyy-MM-dd" 直接与 JSON 中的 LocalDateTime 前缀比较
+        val startDate = today
+            .minus((today.dayOfWeek.ordinal - DayOfWeek.SUNDAY.ordinal + 7) % 7, DateTimeUnit.DAY)
+            .minus(52 * 7, DateTimeUnit.DAY)
+            .toString()
+
+        // 基于用户消息的 createdAt 统计每日活跃消息数，SQLite 侧 GROUP BY，返回 ≤371 行
+        val conversationsPerDay = withContext(Dispatchers.IO) {
+            messageNodeDAO
+                .getMessageCountPerDay(startDate)
+                .mapNotNull { entry ->
+                    runCatching { LocalDate.parse(entry.day) to entry.count }.getOrNull()
+                }
+                .toMap()
+        }
+
+        val totalConversations = conversationDAO.countAll()
+
+        // json_each() + json_extract() 在 SQLite 侧聚合，不再加载完整 JSON 到 Kotlin
+        val tokenStats = messageNodeDAO.getTokenStats()
+
+        val launchCount = settingsStore.settingsFlow.value.launchCount
+
+        _stats.value = AppStats(
+            isLoading = false,
+            totalConversations = totalConversations,
+            totalMessages = tokenStats.totalMessages,
+            totalPromptTokens = tokenStats.promptTokens,
+            totalCompletionTokens = tokenStats.completionTokens,
+            totalCachedTokens = tokenStats.cachedTokens,
+            conversationsPerDay = conversationsPerDay,
+            launchCount = launchCount,
+        )
     }
 }

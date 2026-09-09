@@ -77,5 +77,5 @@ val viewModelModule = module {
     }
     viewModelOf(::FavoriteVM)
     viewModelOf(::SearchVM)
-    viewModelOf(::StatsVM)
+    viewModel { StatsVM(get(), get(), get()) }
 }
