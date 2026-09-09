@@ -554,3 +554,54 @@ GUI 判断：无需 GUI。现有聊天删除入口、状态订阅、各端保存
 
 下一项建议：**用户输入正则预处理（低难度）**，原样移动 `preprocessUserInputParts`，复用 Android
 发送/编辑和 SharedChatRuntime 发送中的现有等价文本处理，保持非文本内容与原调用时机。
+
+## 2026-09-09：用户输入正则预处理
+
+迁移前基线：`44b376a1c`。策略 `PRESERVE`，适用性 `SUPPORTED`，难度低。
+状态：原样迁移与自动化验证完成。
+目标仍为 Android、Desktop JVM、iOS arm64 / Simulator arm64；沿用 Kotlin 2.4.20-RC、CMP 1.12.0、
+AGP 9.3.2、Gradle 9.5.0 与现有 JDK/Xcode 环境，不修改依赖、配置或数据库格式。
+基线三端测试通过：Android host 122、JVM 128、iOS Simulator 122 项。
+
+| ID / 位置 | 源集 | 义务 / 技术处理 | 语义风险与动作 | 公开 API 影响 | 状态 / 验证 |
+|---|---|---|---|---|---|
+| P01 `preprocessUserInputParts` | app → commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 原样移动 Text 处理，保留 USER/non-visual 参数、部件顺序和非文本引用 | private 成员变为同包顶层函数，供 app 跨模块调用；发送/编辑 API 不变 | 完成；6 项 common 契约测试在三端通过 |
+| P02 SharedChatRuntime 发送 | commonMain | REQUIRED_FOR_KMP / REWRITEABLE | 等价内联 map 替换为原方法调用；保留设置读取、空输入判断、创建与保存时机 | 无 | 完成；源码及编译调用比较通过 |
+
+`String.replaceRegexes` 和 `AssistantRegex` 已在 commonMain，包含启用/作用域/visualOnly 过滤、按序替换、
+正则缓存及原异常处理，保持原样；不新增包装接口、回调或状态逻辑。
+Android 原发送/编辑继续调用该方法；SharedChatRuntime 仅替换发送中的等价代码，其编辑流程不变。
+没有 `RECOMMENDED` 或 `ARCHITECTURAL_OPTIMIZATION` 改动。
+
+公开 API 变化：原 private 成员成为
+`fun preprocessUserInputParts(parts: List<UIMessagePart>, assistant: Assistant): List<UIMessagePart>`，
+位于 `composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/UserInputPreprocessor.kt`，以供 app 跨模块调用。
+没有新增兼容接口、facade、回调、expect/actual 或服务层；平台输入、文件、任务与界面代码保留原位置。
+
+### 验证步骤与预期结果
+
+| 步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 混合启用/禁用、USER/ASSISTANT/空作用域、视觉规则 | 仅启用且包含 USER 的非视觉规则生效；双作用域规则也生效 | 三端通过 |
+| 多段文本依次执行捕获组替换和中文替换 | 按配置顺序替换所有文本，保留段落顺序与换行，不修改原输入 | 三端通过 |
+| 混合带元数据的文本、图片、文档、音视频、推理及含嵌套文本的工具部件 | 仅顶层 Text 变化；元数据、部件顺序及所有非文本对象引用保持 | 三端通过 |
+| 非法正则、成功规则、不存在的替换分组、后续成功规则依次执行 | 沿用原捕获/跳过行为，保留失败前文本，继续执行后续规则 | 三端通过 |
+| 空输入、无规则、无匹配规则 | 空列表及原文本保持 | 三端通过 |
+| 替换得到空文本或纯空格 | 原 Text 部件继续保留，不增加过滤或 trim | 三端通过 |
+
+Android host **128**、JVM **134**、iOS Simulator **128** 项通过；Android `ChatServiceTest` 另有 1 项，
+共 391 次测试执行，本项新增执行 18 次。Android 应用、Android 共享模块、JVM、iOS arm64、
+iOS Simulator arm64 与 common metadata 编译通过；iOS arm64 本项只验证编译。
+[完整命令与结果](evidence/cmp-input-preprocess-2026-09-09/code-tests.txt)已留存。
+
+源码对比确认原方法仅移除 private 和外层缩进；Android 两个调用点与其方法体保持不变，
+SharedChatRuntime 仅替换等价内联块并删除未使用的 import。
+`javap` 确认 Android 发送/编辑及 SharedChatRuntime JVM/Android 编译产物均调用共享函数。
+生产代码仅涉及三个文件；正则引擎、缓存、异常处理、UI、存储、模型请求与构建配置均未修改。
+
+GUI 判断：无需 GUI。纯同步文本计算及等价调用替换，界面入口、状态接线、平台 API、生命周期、
+持久化与打包均不变，三端契约测试和调用证据覆盖本次变化，无待人工确认项。
+未执行完整应用 GUI，不评判实际模型输出。无模型请求、临时生产日志或临时测试数据；构建临时日志在提交前清理。
+
+下一项建议：**被打断工具调用的收尾处理（中低难度）**，直接搬迁 `finishInterruptedPendingTools`
+与 `cancelToolByUser`，保留原触发和保存时机。

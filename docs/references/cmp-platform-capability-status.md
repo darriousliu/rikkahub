@@ -36,6 +36,9 @@ Android 原调用入口保留。此项只共享运行时 API，现有 UI 与 Web
 消息删除的纯节点计算 `buildConversationAfterMessageDelete` 已原样移至 commonMain，Android 现有调用点直接使用；
 各端原有删除命令、保存与文件处理保持不变。SharedChatRuntime 对重复 ID 和缺失消息的原有差异保留，
 本项不宣称统一了各端完整删除流程，详见[验证记录](cmp-migration-progress.md#2026-09-09消息删除后的节点与分支索引计算)。
+用户输入正则预处理 `preprocessUserInputParts` 已原样移至 commonMain，Android 发送/编辑及
+SharedChatRuntime 发送共用原规则；Text 以外的内容、正则异常处理与原调用时机保持不变。
+SharedChatRuntime 原编辑流程不变，详见[验证记录](cmp-migration-progress.md#2026-09-09用户输入正则预处理)。
 
 ## 代码分布
 

@@ -60,9 +60,7 @@ import me.rerere.rikkahub.data.ai.transformers.onGenerationFinish
 import me.rerere.rikkahub.data.ai.transformers.transforms
 import me.rerere.rikkahub.data.ai.transformers.visualTransforms
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.data.model.AssistantAffectScope
 import me.rerere.rikkahub.data.model.Conversation
-import me.rerere.rikkahub.data.model.replaceRegexes
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
@@ -254,19 +252,7 @@ internal class SharedChatRuntime(
             val conversation = conversationState(conversationId).value
             val settings = settingsStore.settingsFlow.first()
             val assistant = settings.getAssistantById(conversation.assistantId) ?: settings.getCurrentAssistant()
-            val processedParts = content.map { part ->
-                if (part is UIMessagePart.Text) {
-                    part.copy(
-                        text = part.text.replaceRegexes(
-                            assistant = assistant,
-                            scope = AssistantAffectScope.USER,
-                            visual = false,
-                        ),
-                    )
-                } else {
-                    part
-                }
-            }
+            val processedParts = preprocessUserInputParts(content, assistant)
             val updated = conversation.copy(
                 messageNodes = conversation.messageNodes + UIMessage(
                     role = MessageRole.USER,
