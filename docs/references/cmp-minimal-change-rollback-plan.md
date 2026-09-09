@@ -102,6 +102,7 @@ GUI 决策：本项免 GUI。三个纯转换方法归位；Repository 构造和�
 ## 第 02 项：FolderPersistenceMapper 与 DAO 回调
 
 起点：`c64962ed`。状态：**代码与功能验证完成**，iOS 输入覆盖限制和桌面执行模型偏差见下文。
+提交：`3c8a274e`（`refactor(cmp): 撤销文件夹映射与DAO回调抽取`）。
 回退后 JVM 28 类、187 项测试通过，新增文件夹测试 7 项回退前后均通过。
 命令和实际覆盖范围见 [第 02 项验证记录](evidence/cmp-rollback-02-2026-09-09/verification.md)。
 
@@ -134,4 +135,31 @@ GUI 决策：**需要**。构造依赖和 Android/非 Android Koin 接线改变�
 
 第 03 项建议：撤销 `RequestLoggingInterceptor` 的 `RequestLogSink`、`RequestTimeSource`、`RequestTimeMark`
 等额外测试接口，保留必要的 common 日志/时间 API 适配。先用请求拦截器测试覆盖日志关闭、请求/响应正文、
-异常原样传播和耗时范围；若日志实际应用链路不能由测试覆盖，再由 Terra 补充 GUI。本项尚未开始。
+异常原样传播和耗时范围；若日志实际应用链路不能由测试覆盖，再由 Terra 补充 GUI。执行结果见下一节。
+
+## 第 03 项：RequestLogSink / RequestTimeSource / RequestTimeMark
+
+起点：`3c8a274e`。状态：**验证完成**。
+生产代码只修改 `RequestLoggingInterceptor.kt`，增加 6 行、删除 44 行，净减少 38 行。
+三个专用接口、两个转发对象以及包装用的内部构造参数归零；直接调用现有 `Logging` 和
+`TimeSource.Monotonic`，恢复 tag 中的类结构、方法体位置和 `startTime` 名称。
+保留 common 日志包与现有单调计时选择（独立提交 `614f3f34`）；Ktor 插件仍承担必要的替库能力。
+
+同一组 10 项测试在回退前后均通过；回退后全部 app JVM 测试共 10 类、63 项通过，Android APK 构建通过。
+测试使用原无参构造、真实 Logging 和 OkHttp Chain，并通过本地 HTTP 服务检查真实网络拦截器往返，
+没有为测试添加新的生产接口或依赖。
+
+| 验证步骤 | 预期结果 | 实际 |
+|---|---|---|
+| 日志关闭/开启、同实例切换及请求途中关闭 | 实时读取开关，条数正确；关闭不额外序列化，进行中关闭不写最终日志 | 回退前后通过 |
+| Unicode 内容、重复头、GET 和 400/429/500 响应 | 对象与内容保持，重复头沿用最后值，HTTP 错误状态仍返回响应；响应体不提前读取 | 回退前后通过 |
+| IOException、无消息异常、取消、Error、请求序列化失败 | 原对象向外抛出，原异常边界与日志有无保持，不增加失败保护 | 回退前后通过 |
+| 后续链实际等待、本地 HTTP 服务往返 | 耗时单位/范围正确，请求和完整响应保持；记录可从日志页所用的真实存储入口取得 | 回退前后通过 |
+
+GUI 决策：**免 GUI**。原生产无参入口、network interceptor 注册、日志存储及日志页接线保持；
+真实 Logging 和本地 HTTP 代码测试覆盖所改调用链。未改 UI、导航、生命周期或平台资源。本轮未启动子 agent。
+完整命令、逐项步骤/预期、覆盖边界和清理记录见 [第 03 项验证记录](evidence/cmp-rollback-03-2026-09-10/verification.md)。
+
+第 04 项建议：撤销 `McpTokenPolicy` 的业务判断抽取，将 `needsRefresh` / `computeExpiry` 放回
+`McpOAuthCoordinator`。用 Coordinator 入口测试未启用、缺少 token、未到期、60 秒刷新边界及 expiry 计算，
+保持原请求/刷新逻辑和平台 OAuth 接线。本项尚未开始。

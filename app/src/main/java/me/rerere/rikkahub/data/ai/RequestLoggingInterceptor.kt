@@ -7,52 +7,14 @@ import okhttp3.Response
 import okio.Buffer
 import kotlin.time.TimeSource
 
-internal interface RequestLogSink {
-    val enabled: Boolean
-
-    fun log(entry: LogEntry.RequestLog)
-}
-
-internal fun interface RequestTimeSource {
-    fun markNow(): RequestTimeMark
-}
-
-internal fun interface RequestTimeMark {
-    fun elapsedMilliseconds(): Long
-}
-
-private object LoggingRequestLogSink : RequestLogSink {
-    override val enabled: Boolean
-        get() = Logging.isRequestLoggingEnabled()
-
-    override fun log(entry: LogEntry.RequestLog) {
-        Logging.logRequest(entry)
-    }
-}
-
-private object MonotonicRequestTimeSource : RequestTimeSource {
-    override fun markNow(): RequestTimeMark {
-        val startedAt = TimeSource.Monotonic.markNow()
-        return RequestTimeMark { startedAt.elapsedNow().inWholeMilliseconds }
-    }
-}
-
-class RequestLoggingInterceptor internal constructor(
-    private val logSink: RequestLogSink,
-    private val timeSource: RequestTimeSource,
-) : Interceptor {
-    constructor() : this(
-        logSink = LoggingRequestLogSink,
-        timeSource = MonotonicRequestTimeSource,
-    )
-
+class RequestLoggingInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        if (!logSink.enabled) {
+        if (!Logging.isRequestLoggingEnabled()) {
             return chain.proceed(chain.request())
         }
 
         val request = chain.request()
-        val timeMark = timeSource.markNow()
+        val startTime = TimeSource.Monotonic.markNow()
 
         val requestHeaders = request.headers.toMap()
         val requestBody = request.body?.let { body ->
@@ -68,7 +30,7 @@ class RequestLoggingInterceptor internal constructor(
             response = chain.proceed(request)
         } catch (e: Exception) {
             error = e.message
-            logSink.log(
+            Logging.logRequest(
                 LogEntry.RequestLog(
                     tag = "HTTP",
                     url = request.url.toString(),
@@ -81,10 +43,10 @@ class RequestLoggingInterceptor internal constructor(
             throw e
         }
 
-        val durationMs = timeMark.elapsedMilliseconds()
+        val durationMs = startTime.elapsedNow().inWholeMilliseconds
         val responseHeaders = response.headers.toMap()
 
-        logSink.log(
+        Logging.logRequest(
             LogEntry.RequestLog(
                 tag = "HTTP",
                 url = request.url.toString(),
