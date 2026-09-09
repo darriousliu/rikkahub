@@ -19,7 +19,6 @@ import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.AppDatabase
-import me.rerere.rikkahub.data.db.dao.ConversationDAO
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.files.FileKitSkillStore
@@ -169,8 +168,7 @@ internal fun sharedProductModule(
         )
     }
     single {
-        val conversationDao: ConversationDAO = get()
-        FolderRepository(folderDAO = get(), clearConversationFolder = conversationDao::clearFolder)
+        FolderRepository(folderDAO = get(), conversationDAO = get())
     }
     single<Base64ImageStore> { SharedBase64ImageStore() }
     single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }

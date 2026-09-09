@@ -56,7 +56,8 @@
 1. 说明具体原方法、当前多余结构和本次边界；必要依赖替换与平台能力单独列明。
 2. 尽可能先跑改动前的契约测试，再用同样数据测改动后。修改共同代码时检查受影响平台编译。
 3. 记录每个场景的操作/输入、预期、实际结果和未覆盖范围。编译通过不等于 GUI 或真实协议通过。
-4. 需要 GUI 时，委派 `gpt-5.6-terra` 子 agent，提供构建版本、测试数据和预期；同轮核对证据。
+4. 需要 GUI 时，显式委派 `gpt-5.6-terra` 子 agent，提供构建版本、测试数据和预期；同轮核对证据。
+   启动或恢复后先核对实际模型配置，不能仅凭最初的创建参数认定模型未变；恢复不能保留时，重新创建指定模型的子 agent。
 5. 临时日志只能记录验证必需信息；清除调试代码及临时数据后，复查最终 diff，再用中文 conventional commit 提交。
 6. 报告本项提交与结果，给出下一项范围。出现新的行为选择或既有用户数据兼容歧义时及时询问，不擅自改业务规则。
 
@@ -68,6 +69,7 @@
 状态：**已完成**。回退前后七项契约测试均通过；回退后 `composeApp:jvmTest` 共 180 项通过，
 common、JVM、Android、iOS 真机目标及 iOS 模拟器目标编译通过。
 命令、覆盖范围及源码等价复核见 [第 01 项验证记录](evidence/cmp-rollback-01-2026-09-09/verification.md)。
+提交：`c64962ed`（`refactor(cmp): 撤销会话实体映射的额外抽取`）。
 
 生产改动仅为 `composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/ConversationRepository.kt`：
 
@@ -96,3 +98,40 @@ GUI 决策：本项免 GUI。三个纯转换方法归位；Repository 构造和�
 
 第 02 项建议：`FolderPersistenceMapper` 及 `clearConversationFolder` 回调。先恢复原文件夹转换方法和直接
 `ConversationDAO`，用 Room 验证文件夹操作及删除后会话归属，再由 Terra 子 agent 核对三端 DI 与页面链路。
+
+## 第 02 项：FolderPersistenceMapper 与 DAO 回调
+
+起点：`c64962ed`。状态：**代码与功能验证完成**，iOS 输入覆盖限制和桌面执行模型偏差见下文。
+回退后 JVM 28 类、187 项测试通过，新增文件夹测试 7 项回退前后均通过。
+命令和实际覆盖范围见 [第 02 项验证记录](evidence/cmp-rollback-02-2026-09-09/verification.md)。
+
+`FolderRepository.kt` 整个文件恢复到 tag 的结构：原 `createFolder` 方法体、文件级私有 `toFolder` / `toEntity`
+扩展、直接 `ConversationDAO` 依赖。仅替换时间 import、`Instant.now()`、毫秒读取及转换 API；不再需要 mapper
+类、mapper 属性和用于该包装的 Clock 构造参数。Android `RepositoryModule` 与 `sharedProductModule` 的对应
+单条 Koin 绑定恢复直接注入 DAO。没有调整 DAO SQL/schema、VM 行为或界面交互。
+
+| 场景 / 验证步骤 | 预期结果 | 回退前 | 回退后 |
+|---|---|---|---|
+| Repository 创建 Unicode/换行、空串、空格及同名文件夹，重新读取 | 原样保留名称，ID 独立、sortIndex 为 0、时间在调用区间且落库为毫秒；不新增 Repository 校验 | 通过 | 通过 |
+| 写入旧格式、epoch 前时间、不同排序和助手的文件夹后查询 | 全字段正确恢复，按 sortIndex/createAt 排序且助手隔离；不存在的 ID 返回 null | 通过 | 通过 |
+| 重命名目标，再对不存在的 ID 重命名 | 只改目标名称，原 ID/时间/排序与其他文件夹保持；不存在的 ID 不产生新记录 | 通过 | 通过 |
+| 删除含两个会话的文件夹，另准备其他文件夹和未归类会话 | 目标文件夹删除，原会话正文/分支/元数据完整且移至未归类，无关数据保持 | 通过 | 通过 |
+| 删除不存在但仍有会话引用的文件夹，重复删除 | 沿用先清空引用的原逻辑，不新增“文件夹不存在即返回”判断 | 通过 | 通过 |
+| 用内存库 trigger 使 clearFolder 失败 | 异常继续传播，文件夹和会话归属保持 | 通过 | 通过 |
+| 用内存库 trigger 使 deleteById 失败 | 异常继续传播，文件夹仍在，但先前清空归属的写入保留；不新增跨两条 DAO 调用的事务 | 通过 | 通过 |
+
+GUI 决策：**需要**。构造依赖和 Android/非 Android Koin 接线改变，委派 `gpt-5.6-terra` 子 agent 在三端
+操作创建、重命名、移动测试会话、删除文件夹及重进页面/重启。预期会话保留并返回未归类，无关数据不变，
+无依赖注入错误。只使用专用测试数据，不需模型请求或读取钥匙串；验证完清理测试数据。
+
+实际：Android 上述场景通过；iOS 创建、重命名回调、移动、删除及重启通过，但精确名称的纯 GUI 输入重试
+受自动化工具限制（停止应用后曾修正测试记录），没有把该项标为通过。桌面此前因 Mac 锁屏受阻；用户解锁后
+已通过创建、精确重命名、移动、删除、目标会话返回未归类、对照数据保持和冷启动验证。三端测试数据、临时日志
+与工具均已清理。各平台 GUI 使用空会话，正文与分支完整性由 Room 测试覆盖。
+
+执行模型偏差：Android/iOS 为 Terra；桌面恢复后的实际上下文变为 `gpt-6-astra / max`，父 agent 未在恢复时
+及时发现，未遵守用户指定低成本模型的要求。该次桌面补验据实记录为 GPT-6，后续按上面的启动/恢复核验步骤执行。
+
+第 03 项建议：撤销 `RequestLoggingInterceptor` 的 `RequestLogSink`、`RequestTimeSource`、`RequestTimeMark`
+等额外测试接口，保留必要的 common 日志/时间 API 适配。先用请求拦截器测试覆盖日志关闭、请求/响应正文、
+异常原样传播和耗时范围；若日志实际应用链路不能由测试覆盖，再由 Terra 补充 GUI。本项尚未开始。
