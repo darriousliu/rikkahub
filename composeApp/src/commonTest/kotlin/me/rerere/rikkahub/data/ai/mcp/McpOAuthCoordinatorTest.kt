@@ -21,7 +21,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import me.rerere.common.crypto.PlatformSha256Crypto
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.platform.OAuthCallback
@@ -278,6 +281,13 @@ class McpOAuthCoordinatorTest {
             fixture.beforeTokenResponse = { fixture.clock.milliseconds += 5_000 }
             fixture.coordinator.startAuthorization(fixture.current())
             fixture.callbackClosed.await()
+
+            // Callback closure follows persistence; the SettingsStore collector may still be dispatching its value.
+            withContext(Dispatchers.Default) {
+                withTimeout(5_000) {
+                    fixture.store.settingsFlow.first { it.mcpServers.first().commonOptions.oauth?.accessToken == "new-access" }
+                }
+            }
 
             val state = assertNotNull(fixture.current().commonOptions.oauth)
             assertTrue(state.enabled)

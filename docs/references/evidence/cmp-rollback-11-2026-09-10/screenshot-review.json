@@ -1,0 +1,156 @@
+[
+  {
+    "file": "gui-android-01-server-initial.png",
+    "sha256": "012c09eace97f698e85ac912b5ea70ef10aafef427b3542007ab5d842d234229",
+    "visuallyReviewedByParent": true,
+    "observation": "Corrected legal names CMP11Good/CMP11Retry. Good normal MCP icon, Retry alert with fixed error. Both green dots only indicate enabled.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-ios-01-initial-list.jpg",
+    "sha256": "7344a58bce1170d6961290a1228d9a3ba3ab2fee8cc04077b4f56effe9ef317c",
+    "visuallyReviewedByParent": true,
+    "observation": "Corrected legal fixture names on Max; Good normal icon and Retry fixed Streamable HTTP error.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-ios-02-tools-configured.jpg",
+    "sha256": "91b67a6487098465d7194536dabb170258b7c8789e60aa8b1c9bdc91f3797d55",
+    "visuallyReviewedByParent": true,
+    "observation": "Echo approval on and enable off, image enabled; expanded echo description and value parameter. Before Save: does not establish persistence.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-android-05-tools-reopened.png",
+    "sha256": "1a0fb2ea5017200408541c46b1fd6b17283ae89e7a7397574301717de4efd4f0",
+    "visuallyReviewedByParent": true,
+    "observation": "Reopened Tools: echo approval on, enabled off; image approval off and enabled on. Confirms saved values after reopening.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-initial-mcp.png",
+    "sha256": "cd203f538dc82dd0616c14d86c3999ca67f19b6a0c2823d0d9f0bb3f0472bf82",
+    "visuallyReviewedByParent": true,
+    "observation": "Native screenshot contains only RikkaHub window; legal names, Good normal icon, Retry visible fixed HTTP error.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-android-06-good-disabled.png",
+    "sha256": "5ab06e365fdaac2ff54decc4f8fa0d4384a41d6f5bd782025d40989bbcc61d59",
+    "visuallyReviewedByParent": true,
+    "observation": "After OFF/Save, CMP11Good has disabled icon and red enabled-state dot; Retry retains its initial error.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-ios-03-good-disabled.jpg",
+    "sha256": "03a44ced03fc1115f2e0fbca665ce0e2713b81da9e868c03b5ef7d80db11b163",
+    "visuallyReviewedByParent": true,
+    "observation": "After OFF/Save, Good has disabled icon/red dot. Retry now shows normal MCP icon without error after app relaunch.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-ios-04-good-reconnected.jpg",
+    "sha256": "6edf0495a5d6ac304024ad117e514d01f03b5fd824bc8071e98d310b850edd8b",
+    "visuallyReviewedByParent": true,
+    "observation": "After Good re-enable and Save, both legal-named servers show normal MCP icons and no error. Retry recovery is via actual app relaunch after local service recovery.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-android-07-retry-recovered.png",
+    "sha256": "1c1419f78cde8e75f4aecece332f918b6fb487231c99cbbce7edbfd7d44583e2",
+    "visuallyReviewedByParent": true,
+    "observation": "After Retry re-enable, both servers have normal MCP icons; prior fixed error is gone.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-ios-05-assistant-mcp-picker.jpg",
+    "sha256": "3c4f6802178d0ce88f1174cfe1b847408ce57ff51a3938879561344ffd9cedad",
+    "visuallyReviewedByParent": true,
+    "observation": "Assistant MCP page: Good Connected 1/2 tools selected, Retry Connected 2/2 tools unselected.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-ios-06-cold-tools.jpg",
+    "sha256": "175117913efa3bf820634dfbd518884fc6615fecc45beebfcc285a74db328004",
+    "visuallyReviewedByParent": true,
+    "observation": "After cold restart, echo approval on/enabled off; image approval off/enabled on. No unavailable-client warning.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-android-08-picker.png",
+    "sha256": "3471bb086cd92e8212f1e512f980076b19b6b5b8127b9cc0975546f24a8e0c0e",
+    "visuallyReviewedByParent": true,
+    "observation": "Chat attachment MCP selector: Good Connected 1/2 tools selected; Retry Connected 2/2 tools unselected.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-android-03-echo-schema.png",
+    "sha256": "7188d6a7819d528fad95b6dfc251321e623e8de4967e51b04441281ab57964ed",
+    "visuallyReviewedByParent": true,
+    "observation": "Expanded echo shows CMP11 echo description and visible value parameter before switch changes.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-android-09-cold-launch-tools.png",
+    "sha256": "4b00c4777d4b1b69a807e0fdb0d6f049ecdf9af6ac9bea388f25ed020140af62",
+    "visuallyReviewedByParent": true,
+    "observation": "Cold launch: echo approval enabled, echo Enable disabled, image Enable enabled. Both server backgrounds show normal MCP icons.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-good-tools-persisted.png",
+    "sha256": "594fe15134b8bc158b0cdfee4f6792f67a038c35e83153cbc63a6b5ac4fc9323",
+    "visuallyReviewedByParent": true,
+    "observation": "Reopened desktop Tools shows echo approval on / Enable off, image approval off / Enable on. Only the RikkaHub window is captured.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-good-disabled-saved.png",
+    "sha256": "9d0e9945c9f6e91ff24b564b73ce5a70a48712bfc3e36681a74e54de8c85c202",
+    "visuallyReviewedByParent": true,
+    "observation": "Good is disabled after Save (inactive icon and red enabled-state dot); Retry retains its expected fixed error.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-good-reenabled-saved.png",
+    "sha256": "84fa64a713fd1ce701286bdcf242f30d6849a652421351bbed6e7cdc1224c60c",
+    "visuallyReviewedByParent": true,
+    "observation": "After Good re-enable and Save, Good shows normal MCP icon with no error. Retry still shows the initial fixed HTTP error.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-good-disabled-modal.png",
+    "sha256": "9a011a023786da06f20c80d0c066c6b06c304374e27084711bdc08eb86242883",
+    "visuallyReviewedByParent": true,
+    "observation": "Before Save, the Basic Settings sheet shows the legal Good name and Enable off; persisted disabled state is proved by the separate saved-state screenshot.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-retry-recovered.png",
+    "sha256": "863d97bed96c50a14d7eaf47f8b1eb02698ed90e45ed830f94f7bc18f92a5871",
+    "visuallyReviewedByParent": true,
+    "observation": "After Retry service recovery and actual OFF/Save/ON/Save, both Good and Retry show normal MCP icons and no previous error.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-good-echo-expanded.png",
+    "sha256": "72ef9560edac0e35898ccbac3bdd7c866a1ce301e63bdb808efddc6d23c52dba",
+    "visuallyReviewedByParent": true,
+    "observation": "Actual expanded echo displays CMP11 echo description and value. Echo approval on/enabled off and image enabled remain visible. Raw second screenshot replaced the earlier collapsed image; no image editing.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-assistant-mcp-picker.png",
+    "sha256": "2d63d0dc3102dc1880edb6532cbcfc8bb2ad6bcf54f59aa016f53e3ec3f7904d",
+    "visuallyReviewedByParent": true,
+    "observation": "Assistant MCP selector: Good Connected, 1/2 tools, selected; Retry Connected, 2/2 tools, unselected.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  },
+  {
+    "file": "gui-desktop-cold-restart-good-tools.png",
+    "sha256": "0a08b6165ec6bb43a917e5b2abd721926e22d1c6e2651cc323dcd8fad37721fa",
+    "visuallyReviewedByParent": true,
+    "observation": "New desktop process after cold restart: echo approval on / Enable off; image approval off / Enable on. Background server rows show normal MCP icons.",
+    "fixtureRound": "corrected-alphanumeric-names"
+  }
+]

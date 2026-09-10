@@ -1,0 +1,55 @@
+{"time": 1789048098.999041, "event": "started", "port": 18771}
+{"time": 1789048146.617033, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "initialize", "response": 503, "headerValid": true}
+{"time": 1789048146.617493, "event": "rpc", "platform": "ios", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048146.621593, "event": "rpc", "platform": "ios", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048146.6238132, "event": "rpc", "platform": "ios", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048155.352587, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048155.3528562, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "initialize", "response": 503, "headerValid": true}
+{"time": 1789048155.361865, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048155.364577, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048185.5689201, "event": "rpc", "platform": "android", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048185.5690932, "event": "rpc", "platform": "android", "fixture": "retry", "method": "initialize", "response": 503, "headerValid": true}
+{"time": 1789048186.075705, "event": "rpc", "platform": "android", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048186.085221, "event": "rpc", "platform": "android", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048320.736657, "event": "recover", "platform": "ios"}
+{"time": 1789048535.959475, "event": "rpc", "platform": "ios", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048535.9599402, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048535.9709198, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048535.971184, "event": "rpc", "platform": "ios", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048535.978148, "event": "rpc", "platform": "ios", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048535.9784389, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048628.9461708, "event": "rpc", "platform": "android", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048629.4506292, "event": "rpc", "platform": "android", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048629.9573572, "event": "rpc", "platform": "android", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048645.076515, "event": "recover", "platform": "android"}
+{"time": 1789048676.4164538, "event": "rpc", "platform": "ios", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048676.419626, "event": "rpc", "platform": "ios", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048676.422644, "event": "rpc", "platform": "ios", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789048728.19507, "event": "rpc", "platform": "android", "fixture": "retry", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789048728.2029161, "event": "rpc", "platform": "android", "fixture": "retry", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789048728.2104168, "event": "rpc", "platform": "android", "fixture": "retry", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789049060.3599591, "event": "rpc", "platform": "ios", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789049060.36032, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789049060.36584, "event": "rpc", "platform": "ios", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789049060.366087, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789049060.368613, "event": "rpc", "platform": "ios", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789049060.3699799, "event": "rpc", "platform": "ios", "fixture": "retry", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789049104.988183, "event": "rpc", "platform": "android", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789049104.988601, "event": "rpc", "platform": "android", "fixture": "retry", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789049105.516856, "event": "rpc", "platform": "android", "fixture": "retry", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789049105.518774, "event": "rpc", "platform": "android", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789049105.528113, "event": "rpc", "platform": "android", "fixture": "retry", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789049105.537473, "event": "rpc", "platform": "android", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789050137.4984572, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789050137.500415, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789050137.502506, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789050164.722324, "event": "recover", "platform": "desktop"}
+{"time": 1789050353.638813, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789050353.6408901, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789050353.642477, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789050849.4296021, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789050849.429888, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "initialize", "response": 200, "headerValid": true}
+{"time": 1789050849.4397461, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789050849.439959, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "notifications/initialized", "response": 202, "headerValid": true}
+{"time": 1789050849.4430678, "event": "rpc", "platform": "desktop", "fixture": "retry", "method": "tools/list", "response": 200, "headerValid": true}
+{"time": 1789050849.4433632, "event": "rpc", "platform": "desktop", "fixture": "good", "method": "tools/list", "response": 200, "headerValid": true}

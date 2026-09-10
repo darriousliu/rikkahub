@@ -1,0 +1,45 @@
+{
+  "basis": "f6010b2619ba6b59705aca93d0f359fd42035433",
+  "unchangedFiles": [
+    {
+      "path": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpOAuthCoordinator.kt",
+      "sha256": "b01eac4589d93edd699caeae4035fd9d9e4c10870815c5959424c62c107eb7d9"
+    },
+    {
+      "path": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpOAuthClient.kt",
+      "sha256": "b2ed2ba22f9012b38b4f55e7aa5b0c5c6c9e6a88053e5af83aa73cc24bb7a22b"
+    },
+    {
+      "path": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/mcp/McpImageStore.kt",
+      "sha256": "fb41a13b3182ca4c7613def421b4d9c680602c35f0d5d6e7482de5d662b9d9e3"
+    },
+    {
+      "path": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/OAuthCallbackSession.kt",
+      "sha256": "d757766adfa093d88a537a2a21cb1b084f596e3aae88b6b0a21820343933f952"
+    },
+    {
+      "path": "app/src/main/java/me/rerere/rikkahub/service/ChatService.kt",
+      "sha256": "b4b550328b1e906d26996fd1c5b6a2744e2c5c7a6c5cee5af2cedda49406909a"
+    }
+  ],
+  "remainingRegistryByteIdentical": true,
+  "activeManagerBodiesByteIdentical": true,
+  "sharedChatOnlyDependencyRename": true,
+  "tagHasNoResourceApis": true,
+  "preservedProtocolsAndBoundaries": [
+    "Ktor HTTP + existing platform engines",
+    "SSE transport creation",
+    "Streamable HTTP transport creation",
+    "OAuth callback factories and URI handling",
+    "McpImageStore platform file output"
+  ],
+  "guiProtocol": "Streamable HTTP on a local fixed-response server",
+  "notGuiCovered": [
+    "SSE server interaction",
+    "external OAuth browser callback",
+    "real MCP tool invocation (real SDK contract tests instead)",
+    "real model requests"
+  ],
+  "mcpPageOnlyDependencyAndClientExistenceChange": true,
+  "nameValidationByteIdenticalToTag": true
+}

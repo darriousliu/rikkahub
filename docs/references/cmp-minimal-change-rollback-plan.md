@@ -33,7 +33,7 @@
 | 08 / 中 | E06：BackupRepository / Settings Gateway 的转发及 VM 方法归位 | 设置持久化测试；以既有 transport 测试备份列表、成功/失败、更新时间、恢复选项 | 原设置 key 和读写时机保持；失败不假冒成功；这一项先不重写归档/网络传输 | 三端备份页保存设置、返回再进入；连接可用的测试备份端核对列表 |
 | 09 / 中 | E10 + B03：统一提示词预览，收敛模板多层包装 | 原 TemplateTransformer 入口固定模板、日期、时区、Locale、空变量、错误输入；预览和实际生成上下文用同一组样本核对 | 预览与生成输入一致；Korte 替库保留，原模板语义保持，不新增另一套 renderer | 三端预览相同模板，核对时间/日期等结果；不需真实模型请求 |
 | 10 / 中 | E03：移除 TranslationRuntime 及 Android/Shared 转发 | 原 TranslatorVM 入口测试参数、流式文本、失败、取消、设置切换；暂用已共享的原翻译方法，随第 24 项最终归位 | 模型/语言/提示词/回调与原流程一致，无第二份翻译业务 | 三端翻译页开始、停止、失败、重试；优先 mock/现有配置，必要时少量 DeepSeek 请求 |
-| 11 / 中 | E04：McpRuntime 与资源镜像 DTO 收敛到原 Manager/Coordinator | 测试连接、工具和资源读取、资源参数/图片、授权状态传播；直接使用 SDK 类型 | 工具/资源内容、错误及连接状态一致，系统 OAuth callback 和 URI 适配保留 | 三端对测试 MCP 服务连接/断开、资源查看；涉及 OAuth 接线时完成各端实际回调 |
+| 11 / 中 | E04：调用点直接使用 McpManager，删除 McpRuntime 和无调用点的资源 DTO/API | 真实 SDK 测试连接、工具同步/参数/图片/嵌入资源、错误、取消、授权状态 | 活跃方法体保持；闲置资源列表/读取没有原产品入口，直接删除；系统 OAuth callback 保留 | 三端连接/断开、工具开关、错误重试及 MCP 选择器；无资源查看入口，OAuth 平台接线未改 |
 | 12 / 中至高 | B10：JavaScript executor 中多余测试 Observer/Transport/DTO | 使用原脚本样本核对同步 fetch、header/body、返回值、throw、超时、取消；覆盖对应平台引擎 | 保持脚本契约和线程/取消行为，保留 QuickJS-KT 的必要适配 | 脚本工具实际接线若改变，三端执行测试脚本并中止；只测不涉及外部凭据的本地请求 |
 | 13 / 高 | E09 + E11：原 SkillManager 迁到 common，去掉 SkillStore/目录镜像业务 | 临时文件目录验证解析、导入、覆盖、删除、失败、重名和设置清理；保留原 staging/rename 与路径规则 | Android 与其他端只有一套技能业务；选择 key/元数据、原子保存行为保持 | 三端导入、查看、编辑、删除测试技能，重启后确认持久化；清理测试技能 |
 | 14 / 高 | B09：附件目录约定和删除接线收敛 | 对原 upload 等目录及迁移后已有目录构造样本，验证读取、复制、fork 独立性、删除及备份文件集合 | 恢复原文件约定；已有数据仍能访问，删除只影响目标，备份包含其附件；共用文件 util 保留 | 三端发送本地附件、fork 后删除源会话、重启再读取；若已用新目录产生真实数据，先明确兼容迁移方式，禁止直接删目录 |
@@ -389,5 +389,33 @@ Android 临时本地网络权限已恢复拒绝，三项测试设置已精确恢
 Android 仅正常启动计数变化。独立 profile、测试进程、服务、私有快照和临时日志/文件已清理。
 完整记录见 [第 10 项验证记录](evidence/cmp-rollback-10-2026-09-10/verification.md)。
 
+本项已提交：`f6010b2619ba6b59705aca93d0f359fd42035433`，SSH 签名已验证。
+
 下一项建议：第 11 项收敛 `McpRuntime` 与资源镜像 DTO，使调用点直接依赖原 `McpManager`。
-保留必要的 Ktor、图片文件能力和 OAuth 平台回调；先核对资源 API 的实际调用点，再按原入口验证连接、工具、资源和授权状态。
+
+## 第 11 项：MCP Runtime 与闲置资源 API 收敛
+
+起点：`f6010b2619ba6b59705aca93d0f359fd42035433`。状态：已完成回退、代码/三端 GUI 验证和独立测试资料清理。
+
+原 McpManager 已是 common 实现，不需要另一层 McpRuntime。页面、McpPicker 和 SharedChatRuntime 直接
+注入 Manager；原客户端可用性判断恢复 getClient(config) == null。删除没有产品调用点的 McpResource/
+McpResourceContent，以及 Manager/Registry 的 listResources/readResource 闲置方法。tag 2.4.5 也无资源入口，
+因此修正本表原先误列的“资源查看”验证要求。工具结果中的 SDK 嵌入资源 JSON 转换仍保留。
+
+生产改动为 8 文件，增加 24 行、删除 177 行，净减少 153 行。保留的 Manager 方法体和 Registry 其余内容
+逐字节核对通过；SharedChatRuntime 只改依赖类型/名字，完整业务归位仍在第 24 项。OAuth、图片落盘和
+Android ChatService 没有改动；未增加依赖、平台接口或业务抽象。
+
+代码步骤与预期、基线和构建证据见 [第 11 项验证记录](evidence/cmp-rollback-11-2026-09-10/verification.md)。
+新增 7 项真实 SDK 契约测试在回退前后均通过，原 14 项 MCP 测试继续通过。完整测试共 310 项通过；
+其中既有 OAuth 测试补上等待 SettingsStore 发布新 token 的同步点，未改变断言或生产授权行为。
+
+三端由实际 gpt-5.6-terra/high 子 agent 完成连接、工具描述/开关、服务器启停、失败恢复、选择器及冷启动验证；
+22 张原始截图经父 agent 复核。Android 使用 android-cli，iOS 使用 Build iOS Apps 的 iPhone 17 Pro Max；
+桌面使用独立 profile，捕获流异常后用原生 AX/窗口截图完成。三端均未发送真实模型请求。
+Android 和 iOS 测试偏好已恢复并回读；独立桌面 profile、服务、辅助脚本、私有快照和临时日志已清理。
+修正夹具后 51 次 JSON-RPC POST 的固定请求头均保持。默认桌面额外实例的关闭被自动审批拒绝，
+已保留并记录处置边界，未把未关闭的实例标为已清理。
+
+下一项建议：第 12 项检查 JavaScript executor 中的测试 Observer、Transport 和镜像 DTO，按同一原则收敛，
+保留 QuickJS-KT 必需的平台能力与原脚本错误、超时、取消和 fetch 语义。

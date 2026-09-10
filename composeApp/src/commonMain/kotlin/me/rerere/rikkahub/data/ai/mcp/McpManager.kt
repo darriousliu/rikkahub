@@ -8,8 +8,6 @@ import io.ktor.serialization.kotlinx.json.json
 import io.modelcontextprotocol.kotlin.sdk.client.Client
 import io.modelcontextprotocol.kotlin.sdk.types.ImageContent
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
-import io.modelcontextprotocol.kotlin.sdk.types.BlobResourceContents
-import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -32,14 +30,14 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
-/** Shared MCP runtime used by Android, iOS and Desktop. */
+/** MCP manager used by Android, iOS and Desktop. */
 class McpManager(
     private val settingsStore: SettingsStore,
     private val appScope: CoroutineScope,
     private val imageStore: McpImageStore,
     callbackSessionFactory: OAuthCallbackSessionFactory,
     private val httpClient: HttpClient = createMcpHttpClient(),
-) : McpRuntime {
+) {
     private val statusStore = McpStatusStore()
     private val oauthCoordinator = McpOAuthCoordinator(
         settingsStore = settingsStore,
@@ -70,16 +68,14 @@ class McpManager(
         }
     }
 
-    override val syncingStatus: StateFlow<Map<Uuid, McpStatus>>
+    val syncingStatus: StateFlow<Map<Uuid, McpStatus>>
         get() = statusStore.status
 
     fun getClient(config: McpServerConfig): Client? = sessionRegistry.getClient(config.id)
 
-    override fun getStatus(config: McpServerConfig): Flow<McpStatus> = sessionRegistry.getStatus(config.id)
+    fun getStatus(config: McpServerConfig): Flow<McpStatus> = sessionRegistry.getStatus(config.id)
 
-    override fun hasClient(config: McpServerConfig): Boolean = getClient(config) != null
-
-    override fun getAllAvailableTools(): List<Triple<Uuid, String, McpTool>> {
+    fun getAllAvailableTools(): List<Triple<Uuid, String, McpTool>> {
         val settings = settingsStore.settingsFlow.value
         val assistant = settings.getCurrentAssistant()
         return settings.mcpServers
@@ -91,7 +87,7 @@ class McpManager(
             }
     }
 
-    override suspend fun callTool(
+    suspend fun callTool(
         serverId: Uuid,
         toolName: String,
         args: JsonObject,
@@ -112,55 +108,17 @@ class McpManager(
         }
     }
 
-    override suspend fun listResources(serverId: Uuid): List<McpResource> {
-        val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == serverId }
-            ?: throw McpClientUnavailableException("No MCP configuration for server $serverId")
-        return sessionRegistry.listResources(serverId).map { resource ->
-            McpResource(
-                serverId = serverId,
-                serverName = config.commonOptions.name,
-                uri = resource.uri,
-                name = resource.name,
-                description = resource.description,
-                mimeType = resource.mimeType,
-                size = resource.size,
-            )
-        }
-    }
-
-    override suspend fun readResource(serverId: Uuid, uri: String): List<McpResourceContent> =
-        sessionRegistry.readResource(serverId, uri).map { content ->
-            when (content) {
-                is TextResourceContents -> McpResourceContent.Text(
-                    uri = content.uri,
-                    mimeType = content.mimeType,
-                    text = content.text,
-                )
-
-                is BlobResourceContents -> McpResourceContent.Blob(
-                    uri = content.uri,
-                    mimeType = content.mimeType,
-                    bytes = Base64.decode(content.blob),
-                )
-
-                else -> McpResourceContent.Unknown(
-                    uri = content.uri,
-                    mimeType = content.mimeType,
-                )
-            }
-        }
-
     suspend fun addClient(config: McpServerConfig) = sessionRegistry.addClient(config)
 
     suspend fun removeClient(config: McpServerConfig) = sessionRegistry.removeClient(config)
 
-    override suspend fun syncAll() = sessionRegistry.syncAll()
+    suspend fun syncAll() = sessionRegistry.syncAll()
 
-    override fun startAuthorization(config: McpServerConfig) {
+    fun startAuthorization(config: McpServerConfig) {
         oauthCoordinator.startAuthorization(config)
     }
 
-    override fun cancelAuthorization(config: McpServerConfig) {
+    fun cancelAuthorization(config: McpServerConfig) {
         oauthCoordinator.cancelAuthorization(config.id)
     }
 

@@ -1,0 +1,55 @@
+{
+  "platform": "ios",
+  "servers": [
+    {
+      "type": "streamable_http",
+      "id": "6786e5e9-05c8-5fb4-9c94-06b2f08766e0",
+      "commonOptions": {
+        "enable": true,
+        "name": "CMP11Good",
+        "headers": [
+          {
+            "first": "X-CMP11",
+            "second": "ios"
+          }
+        ],
+        "tools": []
+      },
+      "url": "http://127.0.0.1:18771/ios/good/mcp"
+    },
+    {
+      "type": "streamable_http",
+      "id": "a507a3b1-0c5e-5dca-ab64-a596b9d5fdf9",
+      "commonOptions": {
+        "enable": true,
+        "name": "CMP11Retry",
+        "headers": [
+          {
+            "first": "X-CMP11",
+            "second": "ios"
+          }
+        ],
+        "tools": []
+      },
+      "url": "http://127.0.0.1:18771/ios/retry/mcp"
+    }
+  ],
+  "modifiedKeys": [
+    "mcp_servers",
+    "assistants"
+  ],
+  "otherPreferencesByteIdentical": 44,
+  "beforeSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+  "afterSha256": "f3751ec7918a3482302645191bcf51c942bebfead75386df068714496132d3f3",
+  "simulatorId": "03C090DA-107B-4F9F-BCCD-8D5265D32820",
+  "simulatorName": "iPhone 17 Pro Max",
+  "fixtureCorrection": {
+    "reason": "original test names included spaces rejected by unchanged tag 2.4.5 UI name guard",
+    "names": [
+      "CMP11Good",
+      "CMP11Retry"
+    ],
+    "productionChanged": false,
+    "sha256AfterCorrection": "02ae7c09e638e7fa673ec3d58a101d0101ba7b79a3912004d375ca83b5e9cad6"
+  }
+}

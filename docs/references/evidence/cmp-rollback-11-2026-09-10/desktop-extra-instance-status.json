@@ -1,0 +1,12 @@
+{
+  "pid": 99566,
+  "startedLocal": "Thu Sep 10 21:37:33 2026",
+  "toolCallUtc": "2026-09-10T13:37:33.424Z",
+  "observation": "Sky get_app_state with the built app path was called at the process startup time; this additional instance uses the default profile.",
+  "stopAttempt": "rejected by automatic approval review before execution",
+  "rejectionReason": "Default-profile ownership and absence of unsaved state could not be conclusively established.",
+  "disposition": "left running; user was asked, and no authorization to close was received before task completion",
+  "defaultProfileSnapshotBeforeLaunchAvailable": false,
+  "defaultProfileByteIdentityClaimed": false,
+  "notes": "Owned fixture edits were made only in the independent test profile. No guessed rollback or deletion of default-profile data was performed."
+}

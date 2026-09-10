@@ -30,7 +30,7 @@ import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.handleMessageChunk
 import me.rerere.ai.ui.isEmptyInputMessage
 import me.rerere.ai.ui.limitContext
-import me.rerere.rikkahub.data.ai.mcp.McpRuntime
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
@@ -95,7 +95,7 @@ internal class SharedChatRuntime(
     private val booleanPreferenceStore: BooleanPreferenceStore,
     private val stringPreferenceStore: StringPreferenceStore,
     private val attachmentStore: SharedChatAttachmentStore,
-    private val mcpRuntime: McpRuntime,
+    private val mcpManager: McpManager,
     private val templateTransformer: TemplateTransformer,
     private val localTools: LocalTools,
     private val memoryRepository: MemoryRepository,
@@ -676,7 +676,7 @@ internal class SharedChatRuntime(
         }
     }
 
-    private fun buildMcpTools(): List<Tool> = mcpRuntime.getAllAvailableTools().also { available ->
+    private fun buildMcpTools(): List<Tool> = mcpManager.getAllAvailableTools().also { available ->
         val invalidNames = available.map { it.second }.distinct().filter { name ->
             name.isEmpty() || !name.all { character ->
                 character in 'a'..'z' || character in 'A'..'Z' || character in '0'..'9'
@@ -691,7 +691,7 @@ internal class SharedChatRuntime(
             description = tool.description.orEmpty(),
             parameters = { tool.inputSchema },
             needsApproval = { tool.needsApproval },
-            execute = { input -> mcpRuntime.callTool(serverId, tool.name, input.jsonObject) },
+            execute = { input -> mcpManager.callTool(serverId, tool.name, input.jsonObject) },
         )
     }
 

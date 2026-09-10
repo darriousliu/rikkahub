@@ -5,7 +5,6 @@ import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import me.rerere.ai.provider.ProviderManager
-import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
@@ -124,7 +123,7 @@ internal fun sharedProductModule(
     single { providerManager }
     single { eventBus }
     single<McpImageStore> { FileKitMcpImageStore() }
-    single<McpRuntime> {
+    single {
         McpManager(
             settingsStore = settingsStore,
             appScope = appScope,
@@ -185,7 +184,7 @@ internal fun sharedProductModule(
             booleanPreferenceStore = booleanPreferenceStore,
             stringPreferenceStore = stringPreferenceStore,
             attachmentStore = get(),
-            mcpRuntime = get(),
+            mcpManager = get(),
             templateTransformer = get(),
             localTools = get(),
             memoryRepository = get(),

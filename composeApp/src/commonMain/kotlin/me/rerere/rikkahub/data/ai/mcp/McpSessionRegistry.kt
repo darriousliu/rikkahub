@@ -13,12 +13,6 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequestParams
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
-import io.modelcontextprotocol.kotlin.sdk.types.ListResourcesRequest
-import io.modelcontextprotocol.kotlin.sdk.types.PaginatedRequestParams
-import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceRequest
-import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceRequestParams
-import io.modelcontextprotocol.kotlin.sdk.types.Resource
-import io.modelcontextprotocol.kotlin.sdk.types.ResourceContents
 import io.modelcontextprotocol.kotlin.sdk.types.Tool
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.CancellationException
@@ -153,38 +147,6 @@ class McpSessionRegistry(
                 ),
                 options = RequestOptions(timeout = 120.seconds),
             )
-        }
-    }
-
-    suspend fun listResources(serverId: Uuid): List<Resource> {
-        val (sdkClient, config) = readyClient(serverId)
-        return executeRequest(config) {
-            buildList {
-                var cursor: String? = null
-                val seenCursors = mutableSetOf<String>()
-                do {
-                    val result = sdkClient.listResources(
-                        request = ListResourcesRequest(
-                            params = cursor?.let { PaginatedRequestParams(cursor = it) },
-                        ),
-                        options = RequestOptions(timeout = 120.seconds),
-                    )
-                    addAll(result.resources)
-                    cursor = result.nextCursor?.also { nextCursor ->
-                        check(seenCursors.add(nextCursor)) { "MCP server repeated resource cursor: $nextCursor" }
-                    }
-                } while (cursor != null)
-            }
-        }
-    }
-
-    suspend fun readResource(serverId: Uuid, uri: String): List<ResourceContents> {
-        val (sdkClient, config) = readyClient(serverId)
-        return executeRequest(config) {
-            sdkClient.readResource(
-                request = ReadResourceRequest(ReadResourceRequestParams(uri = uri)),
-                options = RequestOptions(timeout = 120.seconds),
-            ).contents
         }
     }
 

@@ -44,7 +44,7 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Alert01
 import me.rerere.hugeicons.stroke.Icon1stBracket
 import me.rerere.hugeicons.stroke.McpServer
-import me.rerere.rikkahub.data.ai.mcp.McpRuntime
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
 import me.rerere.rikkahub.data.model.Assistant
@@ -59,7 +59,7 @@ import org.koin.compose.koinInject
 fun McpPickerButton(
     assistant: Assistant,
     servers: List<McpServerConfig>,
-    mcpManager: McpRuntime,
+    mcpManager: McpManager,
     modifier: Modifier = Modifier,
     onUpdateAssistant: (Assistant) -> Unit
 ) {
@@ -163,7 +163,7 @@ fun McpPickerButton(
 fun McpPickerListItem(
     assistant: Assistant,
     servers: List<McpServerConfig>,
-    mcpManager: McpRuntime,
+    mcpManager: McpManager,
     modifier: Modifier = Modifier,
     onUpdateAssistant: (Assistant) -> Unit
 ) {
@@ -279,7 +279,7 @@ fun McpPicker(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     onUpdateAssistant: (Assistant) -> Unit
 ) {
-    val mcpManager = koinInject<McpRuntime>()
+    val mcpManager = koinInject<McpManager>()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = contentPadding,

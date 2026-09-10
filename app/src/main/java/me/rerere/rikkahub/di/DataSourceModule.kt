@@ -35,7 +35,6 @@ import me.rerere.rikkahub.data.db.fts.SimpleDictManager
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.mcp.AndroidMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
-import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
@@ -116,7 +115,6 @@ val dataSourceModule = module {
         )
     }
     single<McpImageStore> { AndroidMcpImageStore(get()) }
-    single<McpRuntime> { get<McpManager>() }
 
     single {
         GenerationHandler(

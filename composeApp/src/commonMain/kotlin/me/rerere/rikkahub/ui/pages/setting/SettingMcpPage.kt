@@ -89,7 +89,7 @@ import me.rerere.hugeicons.stroke.McpServer
 import me.rerere.hugeicons.stroke.MessageBlocked
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.rikkahub.data.ai.mcp.McpCommonOptions
-import me.rerere.rikkahub.data.ai.mcp.McpRuntime
+import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
 import me.rerere.rikkahub.data.ai.mcp.McpStatus
 import me.rerere.rikkahub.data.ai.mcp.McpTool
@@ -166,7 +166,7 @@ fun SettingMcpPage(vm: SettingVM = koinViewModel()) {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CustomColors.topBarColors.containerColor
     ) { innerPadding ->
-        val mcpManager = koinInject<McpRuntime>()
+        val mcpManager = koinInject<McpManager>()
         val status by mcpManager.syncingStatus.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         val state = rememberPullToRefreshState()
@@ -248,7 +248,7 @@ private fun McpServerItem(
     onDelete: () -> Unit,
     onEdit: (McpServerConfig) -> Unit,
 ) {
-    val mcpManager = koinInject<McpRuntime>()
+    val mcpManager = koinInject<McpManager>()
     val status by mcpManager.getStatus(item).collectAsStateWithLifecycle(McpStatus.Idle)
     val dismissBoxState = rememberSwipeToDismissBoxState()
     val scope = rememberCoroutineScope()
@@ -835,13 +835,13 @@ private fun McpToolsConfigure(
     config: McpServerConfig,
     update: (McpServerConfig) -> Unit,
 ) {
-    val mcpManager = koinInject<McpRuntime>()
+    val mcpManager = koinInject<McpManager>()
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (!mcpManager.hasClient(config)) {
+        if (mcpManager.getClient(config) == null) {
             item {
                 Text(stringResource(Res.string.setting_mcp_page_tools_unavailable_message))
             }

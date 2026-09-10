@@ -1,0 +1,157 @@
+{
+  "fixtureRound": "corrected-alphanumeric-names",
+  "discardedEarlierEventCount": 18,
+  "scope": "Only recorded JSON-RPC POST requests; GET 405 transport probes are not counted.",
+  "platforms": {
+    "android": {
+      "rpcCount": 16,
+      "allFixtureHeadersRetained": true,
+      "recoveryControlCount": 1,
+      "counts": [
+        {
+          "fixture": "good",
+          "method": "initialize",
+          "response": 200,
+          "count": 3
+        },
+        {
+          "fixture": "good",
+          "method": "notifications/initialized",
+          "response": 202,
+          "count": 3
+        },
+        {
+          "fixture": "good",
+          "method": "tools/list",
+          "response": 200,
+          "count": 3
+        },
+        {
+          "fixture": "retry",
+          "method": "initialize",
+          "response": 200,
+          "count": 2
+        },
+        {
+          "fixture": "retry",
+          "method": "initialize",
+          "response": 503,
+          "count": 1
+        },
+        {
+          "fixture": "retry",
+          "method": "notifications/initialized",
+          "response": 202,
+          "count": 2
+        },
+        {
+          "fixture": "retry",
+          "method": "tools/list",
+          "response": 200,
+          "count": 2
+        }
+      ]
+    },
+    "ios": {
+      "rpcCount": 19,
+      "allFixtureHeadersRetained": true,
+      "recoveryControlCount": 1,
+      "counts": [
+        {
+          "fixture": "good",
+          "method": "initialize",
+          "response": 200,
+          "count": 4
+        },
+        {
+          "fixture": "good",
+          "method": "notifications/initialized",
+          "response": 202,
+          "count": 4
+        },
+        {
+          "fixture": "good",
+          "method": "tools/list",
+          "response": 200,
+          "count": 4
+        },
+        {
+          "fixture": "retry",
+          "method": "initialize",
+          "response": 200,
+          "count": 2
+        },
+        {
+          "fixture": "retry",
+          "method": "initialize",
+          "response": 503,
+          "count": 1
+        },
+        {
+          "fixture": "retry",
+          "method": "notifications/initialized",
+          "response": 202,
+          "count": 2
+        },
+        {
+          "fixture": "retry",
+          "method": "tools/list",
+          "response": 200,
+          "count": 2
+        }
+      ]
+    },
+    "desktop": {
+      "rpcCount": 16,
+      "allFixtureHeadersRetained": true,
+      "recoveryControlCount": 1,
+      "counts": [
+        {
+          "fixture": "good",
+          "method": "initialize",
+          "response": 200,
+          "count": 3
+        },
+        {
+          "fixture": "good",
+          "method": "notifications/initialized",
+          "response": 202,
+          "count": 3
+        },
+        {
+          "fixture": "good",
+          "method": "tools/list",
+          "response": 200,
+          "count": 3
+        },
+        {
+          "fixture": "retry",
+          "method": "initialize",
+          "response": 200,
+          "count": 2
+        },
+        {
+          "fixture": "retry",
+          "method": "initialize",
+          "response": 503,
+          "count": 1
+        },
+        {
+          "fixture": "retry",
+          "method": "notifications/initialized",
+          "response": 202,
+          "count": 2
+        },
+        {
+          "fixture": "retry",
+          "method": "tools/list",
+          "response": 200,
+          "count": 2
+        }
+      ]
+    }
+  },
+  "noGuiToolCalls": true,
+  "noRealModelRequests": true,
+  "totalRpcCount": 51
+}

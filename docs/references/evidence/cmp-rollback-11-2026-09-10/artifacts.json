@@ -1,0 +1,19 @@
+{
+  "androidApk": {
+    "path": "/Users/liuzhenhui/AndroidStudioProjects/rikkahub/app/build/outputs/apk/debug/app-arm64-v8a-debug.apk",
+    "sha256": "870ac5e30e29b830bb661a0b84e007aa6a94217fd6e3b3ebd2cb2986e5f0e538"
+  },
+  "desktopJar": {
+    "path": "/Users/liuzhenhui/AndroidStudioProjects/rikkahub/desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/app/composeApp-jvm-1e3b1a6c84e93473611374bf326542.jar",
+    "sha256": "56403f05e5c4edd8ff411c05782ed03430554bee78c975e29561d62d6513f835"
+  },
+  "iosExecutable": {
+    "path": "/Users/liuzhenhui/Library/Developer/Xcode/DerivedData/iosApp-fpbfsgalslastofwurqoaqnyqkdb/Build/Products/Debug-iphonesimulator/RikkaHub.app/RikkaHub",
+    "sha256": "484959fc68a738655aa73181d7c9db5a55f9b0eeafe97591f4d89c992f847f2c"
+  },
+  "androidInstalledBaseApkSha256": "870ac5e30e29b830bb661a0b84e007aa6a94217fd6e3b3ebd2cb2986e5f0e538",
+  "iosDebugDylib": {
+    "path": "/Users/liuzhenhui/Library/Developer/Xcode/DerivedData/iosApp-fpbfsgalslastofwurqoaqnyqkdb/Build/Products/Debug-iphonesimulator/RikkaHub.app/RikkaHub.debug.dylib",
+    "sha256": "8e95b92f007e1f63bdb9a3709132ac860713a3a382f29626ad444a285489bab1"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "platform": "desktop",
+  "servers": [
+    {
+      "type": "streamable_http",
+      "id": "bc22ec02-b464-588f-8028-f888cfed310b",
+      "commonOptions": {
+        "enable": true,
+        "name": "CMP11Good",
+        "headers": [
+          {
+            "first": "X-CMP11",
+            "second": "desktop"
+          }
+        ],
+        "tools": []
+      },
+      "url": "http://127.0.0.1:18771/desktop/good/mcp"
+    },
+    {
+      "type": "streamable_http",
+      "id": "73a0f4d5-7e96-580d-ba46-39ae351cb2e9",
+      "commonOptions": {
+        "enable": true,
+        "name": "CMP11Retry",
+        "headers": [
+          {
+            "first": "X-CMP11",
+            "second": "desktop"
+          }
+        ],
+        "tools": []
+      },
+      "url": "http://127.0.0.1:18771/desktop/retry/mcp"
+    }
+  ],
+  "modifiedKeys": [
+    "mcp_servers",
+    "assistants",
+    "select_assistant"
+  ],
+  "otherPreferencesByteIdentical": 0,
+  "beforeSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "afterSha256": "d16482569117fcf06a7a8fda03311332538b6a2a482e75e749735f671aa89cc5",
+  "profile": "/private/tmp/cmp-rollback-11/desktop-home",
+  "fixtureCorrection": {
+    "reason": "spaces in initial test names rejected by unchanged tag 2.4.5 name guard",
+    "names": [
+      "CMP11Good",
+      "CMP11Retry"
+    ],
+    "productionChanged": false,
+    "sha256AfterCorrection": "afb0ee7cd5ad7a2ea1680a1b2309839efcbe78d9b31420daae03234c60be28f5"
+  }
+}

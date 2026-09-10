@@ -1,0 +1,47 @@
+{
+  "platform": "ios",
+  "appStopped": true,
+  "originalSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+  "restoredSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+  "ownedKeysRestored": [
+    "mcp_servers",
+    "assistants"
+  ],
+  "remainingChangedPreferences": [],
+  "deviceReadbackMatches": true,
+  "wholePreferencesByteIdentical": true,
+  "guiFinalFixtureValues": [
+    {
+      "name": "CMP11Good",
+      "enabled": true,
+      "tools": [
+        {
+          "name": "cmp11_echo",
+          "enabled": false,
+          "needsApproval": true
+        },
+        {
+          "name": "cmp11_image",
+          "enabled": true,
+          "needsApproval": false
+        }
+      ]
+    },
+    {
+      "name": "CMP11Retry",
+      "enabled": true,
+      "tools": [
+        {
+          "name": "cmp11_echo",
+          "enabled": true,
+          "needsApproval": false
+        },
+        {
+          "name": "cmp11_image",
+          "enabled": true,
+          "needsApproval": false
+        }
+      ]
+    }
+  ]
+}

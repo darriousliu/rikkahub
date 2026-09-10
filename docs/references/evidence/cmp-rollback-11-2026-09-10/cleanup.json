@@ -1,0 +1,12 @@
+{
+  "ownedPrivateRootRemoved": "/private/tmp/cmp-rollback-11",
+  "baselineLogRemoved": "/private/tmp/cmp11-baseline.log",
+  "localFixtureServerStopped": true,
+  "caffeinateExecSessionStopped": true,
+  "allGuiAgentsClosed": true,
+  "mobilePreferenceRestoreVerified": true,
+  "protectedUserXcodeFilesUnchanged": true,
+  "productionDebugLoggingAdded": false,
+  "defaultDesktopInstanceLeftRunning": 99566,
+  "defaultDesktopCloseAttemptRejectedBeforeExecution": true
+}
