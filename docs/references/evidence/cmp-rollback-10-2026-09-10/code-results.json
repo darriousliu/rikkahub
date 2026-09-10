@@ -1,0 +1,56 @@
+{
+  "baseline": {
+    "name": "TranslatorVMContractTest[jvm]",
+    "tests": "8",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-09-10T12:16:00.615Z",
+    "hostname": "s-MacBook-Pro.local",
+    "time": "0.279"
+  },
+  "baselineTestSha256": "62863b3dd5cd2d95782fd0c54f7e3638dcad6e8e52417576d070bcaaf46cc3dd",
+  "after": {
+    "name": "TranslatorVMContractTest[jvm]",
+    "tests": "9",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-09-10T12:21:05.151Z",
+    "hostname": "s-MacBook-Pro.local",
+    "time": "0.041"
+  },
+  "generator": {
+    "name": "TextTranslationGeneratorTest[jvm]",
+    "tests": "8",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-09-10T12:21:04.991Z",
+    "hostname": "s-MacBook-Pro.local",
+    "time": "0.012"
+  },
+  "comparison": {
+    "unchangedBaselineScenariosAndAssertions": 8,
+    "unchangedTranslationGenerator": true,
+    "unchangedTranslationLanguage": true,
+    "unchangedAndroidGenerationHandler": true,
+    "newNativeDispatcherScenario": 1
+  },
+  "allTests": {
+    "composeApp": {
+      "tests": 240,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 33
+    },
+    "app": {
+      "tests": 63,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 10
+    }
+  }
+}

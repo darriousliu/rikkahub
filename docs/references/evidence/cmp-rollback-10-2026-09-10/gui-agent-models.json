@@ -1,0 +1,48 @@
+{
+  "01a08b48-a4e1-7120-80a6-a782f6fca3fb": [
+    {
+      "turn_id": "01a08b48-a54b-7193-a2c9-bdbc00ff73d9",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ],
+  "01a08b4b-d62e-7211-a5bd-8f670fea0f24": [
+    {
+      "turn_id": "01a08b4b-d692-73a3-8d9a-4e1c7aa342d1",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b58-3918-7e21-8afc-241e05ab0541",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b58-68cf-77d3-883c-7bf5cf57f314",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b5a-1f38-7770-97db-5af4147e022e",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b5b-bc12-7b73-9b5f-6062269e262d",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b5d-6985-7d32-bd31-d07c3b5391d1",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ],
+  "01a08b4c-cc81-7753-bc42-ef3e84d2d12a": [
+    {
+      "turn_id": "01a08b4c-cce5-7401-88f4-21ae3968ff7f",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ]
+}

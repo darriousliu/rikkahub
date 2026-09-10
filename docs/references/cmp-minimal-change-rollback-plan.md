@@ -329,7 +329,7 @@ Max 两组假配置在应用停止后精确恢复，其他 44 项设置和未知
 
 ## 第 09 项：提示词预览与模板包装收敛
 
-起点：`07f91940`。状态：**已完成，三端验证范围及限制见下**。审计 E10 + B03。
+起点：`07f91940`。状态：**已签名提交 `90fc09ab`，签名校验通过**。审计 E10 + B03。
 
 恢复原 `AssistantPromptPage` 直接调用 `TemplateTransformer`、原 `AssistantTemplateLoader` 查找方式；
 删除独立预览 Runtime、ContextFactory 和模板的多层转发接口。使用 Korte 原生类型，保留当前 Pebble 兼容标签/过滤器、
@@ -359,3 +359,35 @@ Android 测试助手已删除并关闭模拟器；iOS 测试助手原模板已�
 
 提交后下一项：第 10 项移除 `TranslationRuntime` 及 Android/Shared 转发，恢复 TranslatorVM 直接访问 SettingsStore；
 暂时复用既有共享翻译方法，保持参数、流式响应、异常/取消和各端执行上下文，完整方法归位留在第 24 项。
+
+## 第 10 项：翻译 Runtime 转发收敛
+
+起点：`90fc09ab`。状态：**代码、构建及三端 GUI 验证完成，测试环境已清理**。审计 E03。
+
+删除 `TranslationRuntime`、`AndroidTranslationRuntime`、`SharedTranslationRuntime`；
+`TranslatorVM` 恢复直接依赖 SettingsStore，暂用现有 TextTranslationGenerator 的原翻译方法。
+原 GenerationHandler 的完整归位仍留在第 24 项。本项不改 Generator 方法体、语言映射、请求参数或原 VM 状态流程。
+使用协程库原生 CoroutineDispatcher 保留 Android 的 IO 与共享端的 Default，避免新增另一层业务接口。
+
+先用真实 SettingsStore、现有 SharedTranslationRuntime/Generator 和可控 Provider 测试 VM 原入口；
+回退后保持场景和断言，只调整构造夹具。预期：懒订阅和设置 key 保持，输入在点击时捕获、语言在请求开始时读取；
+普通/Qwen 参数、流式累计、空输入不取消、错误保留部分结果、重试、取消、替换请求和 VM 清理保持原行为。
+继续运行既有 TextTranslationGenerator 测试及相关模块测试，并编译三端。
+
+GUI 决策：**需要三端验证**。VM/Koin/调用接线改变，代码测试不能证明真实页面中的开始、流式结果、取消、
+错误与重试、模型/语言切换。由实际核验为 Terra 的子 agent 操作；Android 使用 android-cli，iOS 使用
+Build iOS Apps 的 iPhone 17 Pro Max，桌面使用独立 profile。优先使用本机固定响应服务，避免真实模型请求。
+
+代码结果：8 项基线场景及断言回退前后保持相同并通过；另加原生 IO/Default 上游调度验证，回退后 VM 共 9 项，
+既有 Generator 8 项通过。完整相关 JVM 测试 303 项通过，common/各平台编译、Android APK、桌面分发包与 iOS 应用构建通过。
+生产代码增加 25 行、删除 98 行，净减少 73 行；原 Generator、GenerationHandler 和语言枚举逐字节保持。
+三端由实际 gpt-5.6-terra/high 子 agent 完成翻译、语言切换、取消、错误、重试、页面往返和冷启动模型持久化，
+25 张原始截图经父 agent 复核。本机固定服务共 17 次请求，三端取消均在 45 秒延迟完成前断开。
+iOS 键盘遮挡通过仅清焦点的原生 LLDB 辅助处理，其他操作使用 Build iOS Apps；普通软键盘收起路径未覆盖。
+iOS 取消后无原图，判断依据实际运行时快照和服务断开记录；未把取消前截图作为取消后证据。
+Android 临时本地网络权限已恢复拒绝，三项测试设置已精确恢复并回读；iOS 整个设置文件恢复原哈希，
+Android 仅正常启动计数变化。独立 profile、测试进程、服务、私有快照和临时日志/文件已清理。
+完整记录见 [第 10 项验证记录](evidence/cmp-rollback-10-2026-09-10/verification.md)。
+
+下一项建议：第 11 项收敛 `McpRuntime` 与资源镜像 DTO，使调用点直接依赖原 `McpManager`。
+保留必要的 Ktor、图片文件能力和 OAuth 平台回调；先核对资源 API 的实际调用点，再按原入口验证连接、工具、资源和授权状态。

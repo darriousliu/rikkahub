@@ -2,22 +2,27 @@ package me.rerere.rikkahub.ui.pages.translator
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.service.TranslationRuntime
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.service.TextTranslationGenerator
 
 private const val TAG = "TranslatorVM"
 
 class TranslatorVM(
-    private val translationRuntime: TranslationRuntime,
+    private val settingsStore: SettingsStore,
+    private val translationGenerator: TextTranslationGenerator,
+    private val translationDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
-    val settings: StateFlow<Settings> = translationRuntime.settingsFlow
+    val settings: StateFlow<Settings> = settingsStore.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
 
     // 翻译状态
@@ -44,7 +49,7 @@ class TranslatorVM(
 
     fun updateSettings(settings: Settings) {
         viewModelScope.launch {
-            translationRuntime.updateSettings(settings)
+            settingsStore.update(settings)
         }
     }
 
@@ -69,14 +74,18 @@ class TranslatorVM(
 
         currentJob = viewModelScope.launch {
             runCatching {
-                translationRuntime.translateText(
-                    settings = settings.value,
+                val settings = settings.value
+                val targetLanguage = targetLanguage.value
+                translationGenerator.translateText(
+                    settings = settings,
                     sourceText = inputText,
-                    targetLanguage = targetLanguage.value
+                    targetLanguageCode = targetLanguage.promptCode,
+                    targetLanguageName = targetLanguage.apiName,
                 ) { translatedText ->
                     // Update translation in real-time
                     _translatedText.value = translatedText
-                }.collect { /* Final translation already handled in onStreamUpdate */ }
+                }.flowOn(translationDispatcher)
+                    .collect { /* Final translation already handled in onStreamUpdate */ }
             }.onFailure {
                 it.printStackTrace()
                 errorFlow.emit(it)

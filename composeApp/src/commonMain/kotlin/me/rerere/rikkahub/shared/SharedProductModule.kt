@@ -3,6 +3,7 @@ package me.rerere.rikkahub.shared
 import io.ktor.client.HttpClient
 import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
@@ -48,8 +49,7 @@ import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.service.SharedChatRuntime
 import me.rerere.rikkahub.service.SharedImageGenerationRuntime
-import me.rerere.rikkahub.service.SharedTranslationRuntime
-import me.rerere.rikkahub.service.TranslationRuntime
+import me.rerere.rikkahub.service.TextTranslationGenerator
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
@@ -207,7 +207,7 @@ internal fun sharedProductModule(
             }
         }
     }
-    single<TranslationRuntime> { SharedTranslationRuntime(settingsStore, providerManager) }
+    single { TextTranslationGenerator(providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }
     single<WebDavBackupTransport> { SharedWebDavBackupTransport(httpClient, get()) }
@@ -236,7 +236,7 @@ internal fun sharedProductModule(
     viewModelOf(::SkillDetailVM)
     viewModel { BackupVM(get(), get(), get(), get()) }
     viewModelOf(::ImgGenVM)
-    viewModelOf(::TranslatorVM)
+    viewModel { TranslatorVM(get(), get(), Dispatchers.Default) }
     viewModel<ChatVM> { parameters ->
         ChatVM(
             id = parameters.get(),

@@ -1,0 +1,15 @@
+{
+  "platform": "ios",
+  "removedProviderId": "876e0bf8-4df8-5d49-b7e7-ff908dc3ef25",
+  "originalThreePreferencesRestored": true,
+  "remainingChangedPreferenceKeys": [],
+  "otherPreferencesUnchangedSinceGuiEnd": true,
+  "beforeSha256": "369677b7ff7a293f7bf852d8edd36a25c78042638f894c084b1af68bfc95d34e",
+  "afterSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+  "deviceReadbackVerified": true,
+  "readbackSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+  "applicationStopped": true,
+  "clipboardReadbackMatchesOriginal": true,
+  "clipboardUnchangedAtCleanup": true,
+  "simulator": "03C090DA-107B-4F9F-BCCD-8D5265D32820"
+}

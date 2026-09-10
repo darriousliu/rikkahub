@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.di
 
+import kotlinx.coroutines.Dispatchers
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
@@ -55,7 +56,7 @@ val viewModelModule = module {
             workspaceDao = get(),
         )
     }
-    viewModelOf(::TranslatorVM)
+    viewModel { TranslatorVM(get(), get(), Dispatchers.IO) }
     viewModel<ShareHandlerVM> {
         ShareHandlerVM(
             text = it.get(),
