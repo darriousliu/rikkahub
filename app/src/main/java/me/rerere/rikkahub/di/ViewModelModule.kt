@@ -62,7 +62,7 @@ val viewModelModule = module {
             settingsStore = get(),
         )
     }
-    viewModelOf(::BackupVM)
+    viewModel { BackupVM(get(), get(), get(), get()) }
     viewModelOf(::ImgGenVM)
     viewModelOf(::PromptVM)
     viewModelOf(::QuickMessagesVM)

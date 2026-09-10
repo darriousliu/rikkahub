@@ -32,9 +32,9 @@ import me.rerere.common.archive.readText
 import me.rerere.common.crypto.PlatformSha256Crypto
 import me.rerere.common.time.toCompactFileTimestamp
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.migration.SettingsJsonMigrator
 import me.rerere.rikkahub.data.files.FileFolders
-import me.rerere.rikkahub.data.repository.BackupSettingsGateway
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
@@ -62,7 +62,7 @@ data class BackupFileLayout(
 }
 
 class BackupArchiveService(
-    private val settingsGateway: BackupSettingsGateway,
+    private val settingsStore: SettingsStore,
     private val json: Json,
     private val layout: BackupFileLayout,
 ) {
@@ -74,7 +74,7 @@ class BackupArchiveService(
             archive.delete(mustExist = false)
             try {
                 PlatformZipArchive.create(archive.sink().buffered()) {
-                    addText(SETTINGS_ENTRY, json.encodeToString(settingsGateway.settings.value))
+                    addText(SETTINGS_ENTRY, json.encodeToString(settingsStore.settingsFlow.value))
                     if (includeDatabase) addDatabaseEntries()
                     if (includeFiles) addApplicationFiles()
                 }
@@ -173,7 +173,7 @@ class BackupArchiveService(
 
     private suspend fun restoreSettings(entry: ZipArchiveEntry) {
         val migrated = SettingsJsonMigrator.migrate(entry.readText())
-        settingsGateway.update(json.decodeFromString<Settings>(migrated))
+        settingsStore.update(json.decodeFromString<Settings>(migrated))
     }
 
     private fun isRestorableApplicationPath(path: String): Boolean =

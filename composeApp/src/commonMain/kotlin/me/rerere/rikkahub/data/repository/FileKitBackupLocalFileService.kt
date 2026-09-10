@@ -2,20 +2,29 @@ package me.rerere.rikkahub.data.repository
 
 import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.common.logging.RikkaLog as Log
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.sync.BackupArchiveService
 import me.rerere.rikkahub.data.sync.importer.ChatboxImporter
 import me.rerere.rikkahub.data.sync.importer.CherryStudioProviderImporter
+import kotlin.time.Clock
 
 private const val TAG = "BackupLocalFiles"
 
 class FileKitBackupLocalFileService(
     private val archives: BackupArchiveService,
-    private val backupRepository: BackupRepository,
+    private val settingsStore: SettingsStore,
     private val conversationRepository: ConversationRepository,
+    private val clock: Clock = Clock.System,
 ) : BackupLocalFileService {
     override suspend fun prepareExport(): PlatformFile {
         val archive = archives.prepareArchive(includeDatabase = true, includeFiles = true)
-        backupRepository.recordBackupCompleted()
+        settingsStore.update { settings ->
+            settings.copy(
+                backupReminderConfig = settings.backupReminderConfig.copy(
+                    lastBackupTime = clock.now().toEpochMilliseconds(),
+                )
+            )
+        }
         return archive
     }
 
@@ -26,7 +35,7 @@ class FileKitBackupLocalFileService(
     override suspend fun restoreChatbox(source: PlatformFile): ChatboxRestoreResult {
         var importedConversations = 0
         var skippedExistingConversations = 0
-        val settings = backupRepository.settings.value
+        val settings = settingsStore.settingsFlow.value
         val result = ChatboxImporter.importStreaming(
             file = source,
             assistantId = settings.assistantId,
@@ -40,7 +49,7 @@ class FileKitBackupLocalFileService(
                 }
             },
         )
-        backupRepository.updateSettings(
+        settingsStore.update(
             settings.copy(
                 providers = result.providers + settings.providers,
                 assistants = settings.assistants.map { assistant ->
@@ -69,7 +78,7 @@ class FileKitBackupLocalFileService(
     override suspend fun restoreCherryStudio(source: PlatformFile) {
         val importedProviders = CherryStudioProviderImporter.importProviders(source)
         require(importedProviders.isNotEmpty()) { "No importable providers found in Cherry Studio backup" }
-        val settings = backupRepository.settings.value
-        backupRepository.updateSettings(settings.copy(providers = importedProviders + settings.providers))
+        val settings = settingsStore.settingsFlow.value
+        settingsStore.update(settings.copy(providers = importedProviders + settings.providers))
     }
 }

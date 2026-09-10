@@ -10,25 +10,34 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
 import kotlinx.io.asSink
 import me.rerere.common.logging.RikkaLog as Log
+import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import me.rerere.rikkahub.data.sync.importer.ChatboxImporter
 import me.rerere.rikkahub.data.sync.importer.CherryStudioProviderImporter
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
+import kotlin.time.Clock
 
 private const val TAG = "AndroidBackupFiles"
 
 class AndroidBackupLocalFileService(
     private val context: Context,
     private val webDavSync: WebDavSync,
-    private val backupRepository: BackupRepository,
+    private val settingsStore: SettingsStore,
     private val conversationRepository: ConversationRepository,
+    private val clock: Clock = Clock.System,
 ) : BackupLocalFileService {
     override suspend fun prepareExport(): PlatformFile = withContext(Dispatchers.IO) {
         val file = webDavSync.prepareBackupFile(
-            backupRepository.settings.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries)
+            settingsStore.settingsFlow.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries)
         )
         try {
-            backupRepository.recordBackupCompleted()
+            settingsStore.update { settings ->
+                settings.copy(
+                    backupReminderConfig = settings.backupReminderConfig.copy(
+                        lastBackupTime = clock.now().toEpochMilliseconds(),
+                    )
+                )
+            }
             PlatformFile(file)
         } catch (error: Throwable) {
             file.delete()
@@ -40,7 +49,7 @@ class AndroidBackupLocalFileService(
         withTempFile("restore_", ".zip", source) { file ->
             webDavSync.restoreFromLocalFile(
                 file,
-                backupRepository.settings.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries),
+                settingsStore.settingsFlow.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries),
             )
         }
     }
@@ -49,7 +58,7 @@ class AndroidBackupLocalFileService(
         withTempFile("chatbox_", ".json", source) { file ->
             var importedConversations = 0
             var skippedExistingConversations = 0
-            val settings = backupRepository.settings.value
+            val settings = settingsStore.settingsFlow.value
             val result = ChatboxImporter.importStreaming(
                 file = PlatformFile(file),
                 assistantId = settings.assistantId,
@@ -65,7 +74,7 @@ class AndroidBackupLocalFileService(
             )
 
             val targetAssistantId = settings.assistantId
-            backupRepository.updateSettings(
+            settingsStore.update(
                 settings.copy(
                     providers = result.providers + settings.providers,
                     assistants = settings.assistants.map { assistant ->
@@ -97,8 +106,8 @@ class AndroidBackupLocalFileService(
             require(importedProviders.isNotEmpty()) {
                 "No importable providers found in Cherry Studio backup"
             }
-            val settings = backupRepository.settings.value
-            backupRepository.updateSettings(
+            val settings = settingsStore.settingsFlow.value
+            settingsStore.update(
                 settings.copy(providers = importedProviders + settings.providers)
             )
         }

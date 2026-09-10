@@ -25,15 +25,12 @@ import me.rerere.rikkahub.data.files.FileKitSkillStore
 import me.rerere.rikkahub.data.files.SkillStore
 import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.FileKitBackupLocalFileService
-import me.rerere.rikkahub.data.repository.BackupRepository
-import me.rerere.rikkahub.data.repository.BackupSettingsGateway
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
-import me.rerere.rikkahub.data.repository.SettingsStoreBackupSettingsGateway
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.BackupArchiveService
 import me.rerere.rikkahub.data.sync.BackupFileLayout
@@ -217,11 +214,9 @@ internal fun sharedProductModule(
     single<AssistantPromptPreviewRuntime> { CommonAssistantPromptPreviewRuntime }
     single<TranslationRuntime> { SharedTranslationRuntime(settingsStore, providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
-    single<BackupSettingsGateway> { SettingsStoreBackupSettingsGateway(settingsStore) }
     single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }
     single<WebDavBackupTransport> { SharedWebDavBackupTransport(httpClient, get()) }
     single<S3BackupTransport> { SharedS3BackupTransport(httpClient, get()) }
-    single { BackupRepository(get(), get(), get()) }
     single<BackupLocalFileService> { FileKitBackupLocalFileService(get(), get(), get()) }
 
     viewModelOf(::SettingVM)
@@ -244,7 +239,7 @@ internal fun sharedProductModule(
     viewModelOf(::QuickMessagesVM)
     viewModelOf(::SkillsVM)
     viewModelOf(::SkillDetailVM)
-    viewModelOf(::BackupVM)
+    viewModel { BackupVM(get(), get(), get(), get()) }
     viewModelOf(::ImgGenVM)
     viewModelOf(::TranslatorVM)
     viewModel<ChatVM> { parameters ->

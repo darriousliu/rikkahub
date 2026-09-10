@@ -6,6 +6,7 @@
 
 用户本轮要求：从简单到困难逐项收敛；每项先明确验证步骤和预期结果，优先代码测试，需要 GUI 时由
 `gpt-5.6-terra` 子 agent 在受影响平台验证；清除临时调试内容后提交，再提出下一项建议。
+用户补充指定：iOS 使用 Build iOS Apps 插件操作 iPhone 17 Pro Max 模拟器，Android 使用 `android-cli` 技能操作模拟器。
 
 本记录中的“回退”指恢复原类、原方法和原行为，同时保留 common 必需的依赖替换与平台实现。
 混合提交不做整条 `git revert`。Ktor + 平台 engine、日期/编码 util、真实 OS 边界、已确认的独立修复继续保留。
@@ -266,7 +267,7 @@ GUI 决策：**需要三端验证**。VM 构造和 Koin 数据接线发生变化
 
 ## 第 07 项：删除 RikkaHubApp 演示外壳
 
-起点：`2466dfa8`。状态：**验证通过，随本项独立提交**。
+起点：`2466dfa8`。状态：**已签名提交 `cbb224b4`**。
 
 删除共享 `RikkaHubApp.kt` 的 Status/Capabilities 演示 UI、导航选择函数和专用 `SharedEntryTestTags`。
 `RouteActivity` 直接调用原 `AppRoutes()`；`SharedProductApp` 直接调用原 `ProductNavigationHost(...)`。
@@ -285,9 +286,43 @@ GUI 决策：**需要三端验证**。本项修改根 Composition 的调用层�
 三端实际通过：草稿往返保留，清空后同 profile 冷启动正常，未发送草稿未增加会话或消息。
 Android 首次无设备未计通过，启动既有模拟器后由新的 Terra agent 完成重试；Android 实际设置覆盖为助手设置层级，
 iOS 为偏好设置/界面偏好设置，Desktop 为偏好设置。测试实例、草稿和临时文件已清理，本轮启动的 Android 模拟器已关闭。
-首次签名因 `1Password: failed to fill whole buffer` 失败；用户确认已解锁后沿用原签名设置重试。
+首次签名因 `1Password: failed to fill whole buffer` 失败；用户确认已解锁后沿用原签名设置重试成功。
 完整步骤、预期与实际结果见 [第 07 项验证记录](evidence/cmp-rollback-07-2026-09-10/verification.md)。
 
 第 08 项建议：把 `BackupRepository` 的转发和备份完成时间更新归回原 `BackupVM`，直接使用 `SettingsStore`，
 删除 `BackupSettingsGateway`。保留必要的 WebDAV/S3 transport 与本地文件平台能力，先验证设置读取时机、列表排序、
 成功更新时间及失败传播，再核对三端备份页。
+
+## 第 08 项：备份转发与设置访问归位
+
+起点：`cbb224b4`。状态：**代码及三端受影响接线验证完成，随本轮签名提交**。
+iOS 文本输入未覆盖，见下方边界。用户已改用原生 ssh-agent，本仓库签名器随之切换为系统 ssh-keygen。
+
+删除 `BackupRepository`、`BackupSettingsGateway`、`SettingsStoreBackupSettingsGateway`。
+原 `BackupVM` 直接依赖 `SettingsStore` 和现有 WebDAV/S3 transport；网络方法和 `recordBackupTime` 归回 VM。
+`BackupArchiveService` 及两端本地文件服务直接访问同一个 SettingsStore，Koin 删除包装注册并直接构造 VM。
+8 个生产文件增加 78 行、删除 132 行，净减少 54 行；没有新增生产接口、依赖或业务工具函数。
+
+本地导出的时间更新暂时原样内联在两个已有文件服务的原调用位置。这样保留 Android 的 IO 范围与失败删临时文件、
+FileKit 已生成归档在时间持久化失败后保留的既有差异；第 15 项再连同完整本地导入/导出业务归回 VM。
+没有提前统一该行为，也没有重写 WebDAV/S3、ZIP 或导入器。标准 Clock 从被删 Repository 移到实际持有方法的类，默认值不变。
+
+新增 14 项 BackupVM/SettingsStore/真实 FileKit ZIP 契约测试，回退前后输入和断言完全相同。
+覆盖列表状态/排序、异步设置更新与原 key、当前配置及恢复选项、成功/失败/取消、并发独立请求、完成时间读取时机、
+SettingsStore 原有写失败语义、真实归档保存/恢复设置及导出时间顺序。包括“返回 false 但未抛异常仍记录时间”的原行为。
+回退后 composeApp JVM 219 项、Android app 单元测试 63 项全部通过；common/各平台编译、APK、桌面分发包、iOS 模拟器应用构建通过。
+
+GUI 决策：**需要三端验证**。VM 构造、Koin 和设置访问接线变化，须通过真实备份页验证设置写入、重新进入和冷启动后的持久化，
+以及列表加载。使用本机只读 WebDAV/S3 固定响应服务，不访问真实云端、不读取钥匙串，不执行上传/恢复/删除。
+桌面及 Android 两协议列表、配置持久化已通过。Android 需从系统界面临时授予本地网络相关权限，
+测试字段及未授权状态已恢复；权限请求缺口属于既有平台接线问题，本项未顺带改动。
+iOS 早期因锁屏及 Pro 的输入工具问题未完成。随后按用户指定，改用 Build iOS Apps 插件操作 iPhone 17 Pro Max。
+文本输入工具仍未生效，采用本机假配置夹具，实际通过 GUI 验证两协议连接/列表，以及备份选项改变后冷启动重新进入的持久化，
+再通过 GUI 恢复勾选。该流程验证本次 VM/SettingsStore 接线，不声称键盘文本输入已覆盖。
+Max 两组假配置在应用停止后精确恢复，其他 44 项设置和未知 protobuf 字段保持；没有读取真实密钥。
+旧 Pro 中本轮写入的假 WebDAV 字段已按记录恢复，其他 45 项设置及未知 protobuf 字段经比较保持不变；
+这次程序清理不计为 GUI 验证通过。
+完整步骤、预期及实际结果见 [第 08 项验证记录](evidence/cmp-rollback-08-2026-09-10/verification.md)。
+
+第 09 项建议：收敛提示词预览与模板的多层包装，保留 Korte 替库；以相同模板、固定日期/时区/Locale、
+缺失变量及错误样本核对预览与实际生成上下文，再由三端 GUI 验证模板预览。

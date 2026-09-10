@@ -11,8 +11,6 @@ import me.rerere.rikkahub.data.repository.AndroidConversationFileStore
 import me.rerere.rikkahub.data.repository.AndroidBackupLocalFileService
 import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.AndroidMessageNodeReadErrorPolicy
-import me.rerere.rikkahub.data.repository.BackupRepository
-import me.rerere.rikkahub.data.repository.BackupSettingsGateway
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.FavoriteRepository
@@ -21,7 +19,6 @@ import me.rerere.rikkahub.data.repository.FilesRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
-import me.rerere.rikkahub.data.repository.SettingsStoreBackupSettingsGateway
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.S3Sync
@@ -65,17 +62,9 @@ val repositoryModule = module {
         FavoriteRepository(get())
     }
 
-    single<BackupSettingsGateway> {
-        SettingsStoreBackupSettingsGateway(get())
-    }
-
     single<WebDavBackupTransport> { get<WebDavSync>() }
 
     single<S3BackupTransport> { get<S3Sync>() }
-
-    single {
-        BackupRepository(get(), get(), get())
-    }
 
     single<BackupLocalFileService> {
         AndroidBackupLocalFileService(get(), get(), get(), get())
