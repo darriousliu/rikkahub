@@ -1,0 +1,152 @@
+{
+  "files": 29,
+  "added": 501,
+  "deleted": 758,
+  "details": [
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/data/files/AndroidSkillStore.kt",
+      "added": 0,
+      "deleted": 72
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/data/files/SkillManager.kt",
+      "added": 0,
+      "deleted": 217
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/data/files/SkillPaths.kt",
+      "added": 0,
+      "deleted": 35
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/data/sync/S3Sync.kt",
+      "added": 4,
+      "deleted": 3
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/data/sync/webdav/WebDavSync.kt",
+      "added": 4,
+      "deleted": 3
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/di/AppModule.kt",
+      "added": 1,
+      "deleted": 4
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/di/RepositoryModule.kt",
+      "added": 2,
+      "deleted": 7
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt",
+      "added": 1,
+      "deleted": 1
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/service/ChatService.kt",
+      "added": 4,
+      "deleted": 4
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/ui/components/ui/ExtensionSelector.kt",
+      "added": 3,
+      "deleted": 9
+    },
+    {
+      "file": "app/src/main/java/me/rerere/rikkahub/ui/pages/assistant/AndroidAssistantSkillCatalog.kt",
+      "added": 0,
+      "deleted": 19
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/ai/tools/SkillsTools.kt",
+      "added": 21,
+      "deleted": 12
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/FileKitSkillStore.kt",
+      "added": 0,
+      "deleted": 221
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/SkillStore.kt",
+      "added": 0,
+      "deleted": 38
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/service/SharedChatRuntime.kt",
+      "added": 4,
+      "deleted": 4
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/SharedProductModule.kt",
+      "added": 7,
+      "deleted": 18
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/components/ai/ExtensionContent.kt",
+      "added": 3,
+      "deleted": 3
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/AssistantSkillCatalog.kt",
+      "added": 0,
+      "deleted": 11
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantDetailVM.kt",
+      "added": 8,
+      "deleted": 5
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/extensions/skills/SkillDetailPage.kt",
+      "added": 3,
+      "deleted": 2
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/extensions/skills/SkillDetailVM.kt",
+      "added": 43,
+      "deleted": 43
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/extensions/skills/SkillsPage.kt",
+      "added": 3,
+      "deleted": 3
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/extensions/skills/SkillsVM.kt",
+      "added": 27,
+      "deleted": 24
+    },
+    {
+      "file": "composeApp/src/androidMain/kotlin/me/rerere/rikkahub/utils/FileSystem.android.kt",
+      "added": 8,
+      "deleted": 0
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/SkillManager.kt",
+      "added": 228,
+      "deleted": 0
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/SkillPaths.kt",
+      "added": 38,
+      "deleted": 0
+    },
+    {
+      "file": "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/utils/FileSystem.kt",
+      "added": 60,
+      "deleted": 0
+    },
+    {
+      "file": "composeApp/src/iosMain/kotlin/me/rerere/rikkahub/utils/FileSystem.ios.kt",
+      "added": 21,
+      "deleted": 0
+    },
+    {
+      "file": "composeApp/src/jvmMain/kotlin/me/rerere/rikkahub/utils/FileSystem.jvm.kt",
+      "added": 8,
+      "deleted": 0
+    }
+  ]
+}

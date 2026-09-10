@@ -424,6 +424,8 @@ Android 和 iOS 测试偏好已恢复并回读；独立桌面 profile、服务�
 
 ## 第 12 项：JavaScript HTTP 包装与空观察器
 
+提交：`6ac2e6e9db098250a718dd2b4a43931135c79b92`，SSH 签名已验证。
+
 起点：`28568f63f25e678ec555b20c5c175bd80e9dee57`。状态：回退、代码/三端 GUI 验证及全部本轮临时资料清理完成。
 
 移除空 RuntimeObserver/NoOp、HTTP Transport/Call 及镜像请求/响应，共 7 个类型。执行器直接接收已有
@@ -449,3 +451,41 @@ iOS 10.149 秒、桌面 1.279 秒。18 张原始截图经父 agent 复核。移�
 下一项建议：第 13 项 E09 + E11，收敛 SkillManager/SkillStore 与目录镜像业务。先对照 tag 恢复原 SkillManager
 职责，将能通用的原方法体迁入 common，仅保留文件系统平台适配；用临时目录验证解析、导入、覆盖、删除、
 失败和设置清理，再做三端导入/查看/编辑/删除及冷启动验证。
+
+
+## 第 13 项：SkillManager 与助手技能目录收敛
+
+起点：`6ac2e6e9db098250a718dd2b4a43931135c79b92`。审计 E09 + E11。状态：代码回退、测试、三端 GUI 与测试资料清理完成。
+
+将 tag 原 SkillManager/SkillMetadata、SkillPaths 迁入 common；删除 SkillStore、SkillSummary、StoredSkillFile、
+AndroidSkillStore、FileKitSkillStore、AssistantSkillCatalog、AssistantSkillMetadata、AndroidAssistantSkillCatalog，
+共 8 个额外类型。调用点直接依赖原 Manager/Metadata；文件树恢复原目录递归，保留已经修复的显示名/目录名映射。
+助手选择仍按 frontmatter 名称持久化，列表项 key 使用原技能目录路径。
+
+文件类型用已有 kotlinx-io 的 Path/SystemFileSystem 替换 java.io.File，复用同步文件 util 的原 Boolean/异常约定。
+canonicalFile、renameTo 使用窄 expect/actual：Android/JVM 调用原 java.io.File，iOS 使用系统 URL/rename；
+没有新增业务接口。FileKit 保留在原应用目录和系统文件选择边界。staging/backup 的 100 次命名尝试、rename、
+回滚、finally 清理顺序以及 parse/delete/prune 方法体保持；源代码机械替换后相等性另有证据。
+
+验证基线：临时 JVM 夹具仅将 tag Context.filesDir 改为传入 File，原 18 项真实目录契约均通过；
+既有详情页 5 项、工具 4 项测试通过。回退后同一组 Manager 测试只改构造夹具；原 mock Store 测试改成真实目录，
+继续覆盖显示名不同、工具文件读取与错误、名称不可修改。另补原生路径/保存和真实 ZIP/GitHub mock 导入测试。
+
+GUI 决策：需要三端验证。Manager/Koin/技能选择器及文件 I/O 接线变化，单元测试不足以证明系统选择器、
+页面编辑、选择持久化与重启后的实际应用链路。由 gpt-5.6-terra 子 agent 在 Android CLI、Build iOS Apps 的
+ iPhone 17 Pro Max、独立桌面 profile 中导入离线 ZIP、查看/编辑辅助文件、勾选技能、冷启动、删除与检查引用清理。
+不需要模型请求或密钥。
+
+结果：生产源码 29 个路径变动（含移动前后路径），增加 501 行、删除 758 行，净减少 257 行。Manager/Paths
+机械替换后与 tag 原方法体相等，frontmatter parser 原样保持。最终 363 次测试执行通过（JVM 284、Pro Max 原生
+技能测试 19、Android app 单元测试 60），失败/错误/跳过均 0；三端构建及 common/iOS 编译通过。
+
+三端由实际 `gpt-5.6-terra/high` 完成导入、查看、编辑保存、助手启用、冷启动、删除及落盘清理检查。
+采用完整流程后追加最终包补验，实际范围见 [第 13 项验证记录](evidence/cmp-rollback-13-2026-09-11/verification.md)。
+30 张原始截图经父 agent 复核。旧助手 VM 只在初始化时读取技能列表是 tag 已有行为，保留并用冷启动复核。
+Android 早期空列表未被单独作为清理通过依据，重新通过 GUI 删除并检查实际目录及全部引用为零。
+
+Android 偏好仅启动计数变化；iOS 本轮技能引用归零，未逐键核对其余偏好，不声称整体设置恢复原字节。
+测试技能、下载件、私有备份、独立桌面 profile、临时工具/日志与本轮测试进程均已清理。未动原有 Xcode 配置改动。
+
+下一项建议：第 14 项 B09，恢复原附件目录约定，接通会话删除文件清理，验证已有数据、fork 独立性与备份文件集合。

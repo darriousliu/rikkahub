@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Link01
-import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
+import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.data.model.Lorebook
 import me.rerere.rikkahub.data.model.PromptInjection
 import me.rerere.rikkahub.data.model.QuickMessage
@@ -112,7 +112,7 @@ fun LorebooksContent(
 
 @Composable
 fun SkillsContent(
-    skills: List<AssistantSkillMetadata>,
+    skills: List<SkillMetadata>,
     enabledSkills: Set<String>,
     onToggle: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -122,7 +122,7 @@ fun SkillsContent(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        items(skills, key = { it.key }) { skill ->
+        items(skills, key = { it.skillDir.toString() }) { skill ->
             ListItem(
                 headlineContent = { Text(skill.name) },
                 supportingContent = if (skill.description.isNotBlank()) {

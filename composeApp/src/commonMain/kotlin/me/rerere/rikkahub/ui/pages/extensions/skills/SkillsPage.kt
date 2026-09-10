@@ -55,7 +55,7 @@ import me.rerere.hugeicons.stroke.FileImport
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.hugeicons.stroke.Puzzle
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
-import me.rerere.rikkahub.data.files.SkillSummary
+import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -77,7 +77,7 @@ fun SkillsPage() {
     var showImportSheet by rememberSaveable { mutableStateOf(false) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var showImportDialog by rememberSaveable { mutableStateOf(false) }
-    var deleteTarget by remember { mutableStateOf<SkillSummary?>(null) }
+    var deleteTarget by remember { mutableStateOf<SkillMetadata?>(null) }
     val importSuccessPrefix = stringResource(Res.string.skills_page_import_success, "")
     val importFailedPrefix = stringResource(Res.string.skills_page_import_failed, "")
     val saveFailedMessage = stringResource(Res.string.skills_page_save_failed)
@@ -223,7 +223,7 @@ fun SkillsPage() {
 
 @Composable
 private fun SkillCard(
-    skill: SkillSummary,
+    skill: SkillMetadata,
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {

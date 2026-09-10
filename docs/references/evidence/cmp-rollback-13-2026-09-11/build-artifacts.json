@@ -1,0 +1,22 @@
+[
+  {
+    "path": "app/build/outputs/apk/debug/app-arm64-v8a-debug.apk",
+    "sha256": "79e2f78015a5ad155107208376e09f03e6e38ed79506ce3d48e4ccae158f8796"
+  },
+  {
+    "path": "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/MacOS/RikkaHub",
+    "sha256": "b1f12466218617805fd2f2ea59f0e9b19c655cf1a8a3d7e84e8af26274ac336c"
+  },
+  {
+    "path": "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/app/composeApp-jvm-d2be9efdbf56dd1225449a8a95ff7b16.jar",
+    "sha256": "c3ffa09687562766d30c4f3ecce47307d015a8e7edd8505137148c2deb3b55a1"
+  },
+  {
+    "path": "/Users/liuzhenhui/Library/Developer/XcodeBuildMCP/workspaces/rikkahub-2353818a8111/DerivedData/iosApp-5ff671450a50/Build/Products/Debug-iphonesimulator/RikkaHub.app/RikkaHub",
+    "sha256": "0f551c88440f3257eb25b56f79b922d19c118fa5584e67125c9de4a5c4fba9e5"
+  },
+  {
+    "path": "/Users/liuzhenhui/Library/Developer/XcodeBuildMCP/workspaces/rikkahub-2353818a8111/DerivedData/iosApp-5ff671450a50/Build/Products/Debug-iphonesimulator/RikkaHub.app/RikkaHub.debug.dylib",
+    "sha256": "86b2ccdf5d26c27b14d6c4eb9a17b396904b3b6f4bfe27df4c7cd3a49cf50c70"
+  }
+]

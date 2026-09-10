@@ -1,16 +1,19 @@
 package me.rerere.rikkahub.data.files
 
-import java.io.File
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemPathSeparator
+import me.rerere.rikkahub.utils.canonicalFile
+import me.rerere.rikkahub.utils.resolve
 
-internal object SkillPaths {
-    fun resolveSkillDir(skillsRoot: File, skillName: String): File? {
+object SkillPaths {
+    fun resolveSkillDir(skillsRoot: Path, skillName: String): Path? {
         if (skillName.isBlank()) return null
         if (skillName == "." || skillName == "..") return null
         if (skillName.contains('/') || skillName.contains('\\')) return null
 
         val canonicalRoot = skillsRoot.canonicalFile
         val canonicalDir = canonicalRoot.resolve(skillName).canonicalFile
-        val parent = canonicalDir.parentFile ?: return null
+        val parent = canonicalDir.parent ?: return null
 
         if (parent != canonicalRoot) return null
         if (!canonicalDir.isSameOrInside(canonicalRoot)) return null
@@ -18,7 +21,7 @@ internal object SkillPaths {
         return canonicalDir
     }
 
-    fun resolveSkillFile(skillDir: File, relativePath: String): File? {
+    fun resolveSkillFile(skillDir: Path, relativePath: String): Path? {
         if (relativePath.isBlank()) return null
 
         val canonicalSkillDir = skillDir.canonicalFile
@@ -27,9 +30,9 @@ internal object SkillPaths {
         return canonicalTarget.takeIf { it.isSameOrInside(canonicalSkillDir) }
     }
 
-    private fun File.isSameOrInside(root: File): Boolean {
-        val rootPath = root.canonicalFile.path
-        val currentPath = canonicalFile.path
-        return currentPath == rootPath || currentPath.startsWith(rootPath + File.separator)
+    private fun Path.isSameOrInside(root: Path): Boolean {
+        val rootPath = root.canonicalFile.toString()
+        val currentPath = canonicalFile.toString()
+        return currentPath == rootPath || currentPath.startsWith(rootPath + SystemPathSeparator)
     }
 }

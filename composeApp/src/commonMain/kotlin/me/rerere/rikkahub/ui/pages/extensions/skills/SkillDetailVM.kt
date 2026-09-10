@@ -2,17 +2,24 @@ package me.rerere.rikkahub.ui.pages.extensions.skills
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemPathSeparator
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
-import me.rerere.rikkahub.data.files.SkillStore
-import me.rerere.rikkahub.data.files.StoredSkillFile
+import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.utils.isDirectory
+import me.rerere.rikkahub.utils.isFile
+import me.rerere.rikkahub.utils.listFiles
+import me.rerere.rikkahub.utils.readText
 
 data class SkillFile(
-    val name: String,
+    val file: Path,
     val relativePath: String,
-    val size: Long,
 )
 
 sealed class SkillFileNode {
@@ -26,7 +33,7 @@ sealed class SkillFileNode {
 }
 
 class SkillDetailVM(
-    private val skillStore: SkillStore,
+    private val skillManager: SkillManager,
 ) : ViewModel() {
     private val _tree = MutableStateFlow<List<SkillFileNode>>(emptyList())
     val tree = _tree.asStateFlow()
@@ -45,37 +52,42 @@ class SkillDetailVM(
     }
 
     fun loadFiles() {
-        viewModelScope.launch {
-            _tree.value = buildTree(skillStore.listSkillFiles(resolveDirectory()))
+        viewModelScope.launch(Dispatchers.IO) {
+            val dir = skillManager.getSkillDir(resolveDirectory()) ?: return@launch
+            _tree.value = buildTree(dir, dir)
         }
     }
 
     fun readFile(skillFile: SkillFile, onResult: (String?) -> Unit) {
-        viewModelScope.launch {
-            onResult(skillStore.readSkillFile(resolveDirectory(), skillFile.relativePath))
+        viewModelScope.launch(Dispatchers.IO) {
+            val content = skillManager.resolveSkillFile(resolveDirectory(), skillFile.relativePath)
+                ?.takeIf { it.isFile }?.readText()
+            withContext(Dispatchers.Main) { onResult(content) }
         }
     }
 
     fun saveFile(relativePath: String, content: String, onResult: (String?) -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if (relativePath == "SKILL.md") {
                 val name = SkillFrontmatterParser.parse(content)["name"]
                 if (name != displayName) {
-                    onResult("不允许修改技能名称（name 字段必须为 \"$displayName\"）")
+                    withContext(Dispatchers.Main) {
+                        onResult("不允许修改技能名称（name 字段必须为 \"$displayName\"）")
+                    }
                     return@launch
                 }
             }
-            val success = skillStore.saveSkillFile(resolveDirectory(), relativePath, content)
+            val success = skillManager.saveSkillFile(resolveDirectory(), relativePath, content)
             loadFiles()
-            onResult(if (success) null else "保存失败")
+            withContext(Dispatchers.Main) { onResult(if (success) null else "保存失败") }
         }
     }
 
     fun deleteFile(skillFile: SkillFile, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val success = skillStore.deleteSkillFile(resolveDirectory(), skillFile.relativePath)
+        viewModelScope.launch(Dispatchers.IO) {
+            val success = skillManager.deleteSkillFile(resolveDirectory(), skillFile.relativePath)
             if (success) loadFiles()
-            onResult(success)
+            withContext(Dispatchers.Main) { onResult(success) }
         }
     }
 
@@ -83,42 +95,30 @@ class SkillDetailVM(
      * 导航只带显示名，而显示名可能与目录名不同。解析一次并缓存；找不到时退回显示名，
      * 与修复前的行为一致。
      */
-    private suspend fun resolveDirectory(): String {
+    private fun resolveDirectory(): String {
         directoryName?.let { return it }
-        val resolved = skillStore.listSkills()
+        val resolved = skillManager.listSkills()
             .firstOrNull { summary -> summary.name == displayName }
-            ?.directoryName
+            ?.skillDir?.name
             ?: displayName
         directoryName = resolved
         return resolved
     }
 
-    private fun buildTree(entries: List<StoredSkillFile>, parentPath: String = ""): List<SkillFileNode> {
-        val children = entries.filter { entry ->
-            entry.relativePath.substringBeforeLast('/', missingDelimiterValue = "") == parentPath
-        }
-        val directories = children
-            .filter(StoredSkillFile::isDirectory)
-            .sortedBy(StoredSkillFile::name)
-            .map { directory ->
+    private fun buildTree(root: Path, dir: Path): List<SkillFileNode> {
+        val items = dir.listFiles() ?: return emptyList()
+        val files = items
+            .filter { it.isFile }
+            .sortedWith(compareBy({ it.name != "SKILL.md" }, { it.name }))
+            .map { f -> SkillFileNode.FileNode(SkillFile(f, f.toString().removePrefix("$root$SystemPathSeparator"))) }
+        val dirs = items
+            .filter { it.isDirectory }
+            .sortedBy { it.name }
+            .map { d ->
                 SkillFileNode.DirNode(
-                    name = directory.name,
-                    relativePath = directory.relativePath,
-                    children = buildTree(entries, directory.relativePath),
+                    d.name, d.toString().removePrefix("$root$SystemPathSeparator"), buildTree(root, d),
                 )
             }
-        val files = children
-            .filterNot(StoredSkillFile::isDirectory)
-            .sortedWith(compareBy({ it.name != "SKILL.md" }, StoredSkillFile::name))
-            .map { file ->
-                SkillFileNode.FileNode(
-                    SkillFile(
-                        name = file.name,
-                        relativePath = file.relativePath,
-                        size = file.size,
-                    )
-                )
-            }
-        return directories + files
+        return dirs + files
     }
 }

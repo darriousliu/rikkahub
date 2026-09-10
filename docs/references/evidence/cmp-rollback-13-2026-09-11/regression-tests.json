@@ -1,0 +1,380 @@
+[
+  {
+    "directory": "composeApp/build/test-results/jvmTest",
+    "total": 284,
+    "failures": 0,
+    "suites": [
+      {
+        "name": "StatsVMPersistenceTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "McpManagerContractTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "SkillManagerContractTest[jvm]",
+        "tests": "18",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "TemplateTransformerContractTest[jvm]",
+        "tests": "12",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "McpConnectionKeyTest[jvm]",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "MessageTranslationPersistenceTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "InvalidMessageCleanupTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ControllerWebServerRuntimeTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "OcrResultCacheTest[jvm]",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationSessionTest[jvm]",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "SkillPathsTest[jvm]",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "SkillsToolsTest[jvm]",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "SkillsVMImportTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "PromptInjectionTransformerTest[jvm]",
+        "tests": "40",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "InvalidMessageCleanupPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "BackupVMContractTest[jvm]",
+        "tests": "14",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationSuggestionGeneratorTest[jvm]",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "TextReplacersTest[jvm]",
+        "tests": "14",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "TimeReminderTransformerTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "SkillDetailVMTest[jvm]",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "TranslatorVMContractTest[jvm]",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationRepositoryPersistenceTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "MessageTranslationManagerTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "McpOAuthCoordinatorTest[jvm]",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "InterruptedToolCompletionPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "InterruptedToolCompletionTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationCompressorTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "UserInputPreprocessorTest[jvm]",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "HslColorTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "FolderRepositoryPersistenceTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationCompressionPersistenceTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "MessageNodeSelectionPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationTitleGeneratorTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "MessageDeletionPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ConversationMessageDeleteTest[jvm]",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "SkillFileSystemTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "ChatRuntimeMessageNodeSelectionTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "TextTranslationGeneratorTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  },
+  {
+    "directory": "composeApp/build/test-results/iosSimulatorArm64Test",
+    "total": 19,
+    "failures": 0,
+    "suites": [
+      {
+        "name": "iosSimulatorArm64Test.me.rerere.rikkahub.data.files.SkillFileSystemTest",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "iosSimulatorArm64Test.me.rerere.rikkahub.data.ai.tools.SkillsToolsTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "iosSimulatorArm64Test.me.rerere.rikkahub.data.files.SkillSymlinkTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "iosSimulatorArm64Test.me.rerere.rikkahub.ui.pages.extensions.skills.SkillDetailVMTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  },
+  {
+    "directory": "app/build/test-results/testDebugUnitTest",
+    "total": 60,
+    "failures": 0,
+    "suites": [
+      {
+        "name": "me.rerere.rikkahub.ExampleUnitTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.service.ChatServiceTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigureConvertToTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.data.datastore.DefaultProvidersTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.utils.VersionTest",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.ShareSheetTest",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.utils.StringUtilsTest",
+        "tests": "19",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.ui.components.webview.WebViewContentCacheTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "me.rerere.rikkahub.data.ai.RequestLoggingInterceptorTest",
+        "tests": "10",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  }
+]

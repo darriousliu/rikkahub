@@ -1,0 +1,18 @@
+{
+  "baseline": "2.4.5",
+  "same_after_mechanical_api_substitution": true,
+  "original_normalized_sha256": "0259db0b1694b1c8d3773259fde46c3822d4f84bc9c26ecfc0eb21073fecb79f",
+  "common_class_sha256": "0259db0b1694b1c8d3773259fde46c3822d4f84bc9c26ecfc0eb21073fecb79f",
+  "substitutions": [
+    "Context.filesDir -> constructor filesDir: Path",
+    "java.io.File -> kotlinx.io.files.Path",
+    "parentFile -> parent",
+    "String.toByteArray -> encodeToByteArray",
+    "log absolutePath -> toString",
+    "logging imports -> RikkaLog"
+  ],
+  "skill_paths_same_after_mechanical_api_substitution": true,
+  "manager_baseline_test_scenarios_and_assertions_unchanged": true,
+  "test_fixture_comparison_ignores_only_outside_literal_whitespace_and_optional_trailing_commas": true,
+  "frontmatter_parser_matches_tag": true
+}

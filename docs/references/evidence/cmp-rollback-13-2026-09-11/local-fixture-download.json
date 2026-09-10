@@ -1,0 +1,10 @@
+{
+  "scope": "loopback only; fixed iOS ZIP",
+  "request_count": 1,
+  "successful_responses": 1,
+  "bytes": 862,
+  "fixture_sha256": "e61bda12ee0bc78673965d1d95bd6a51b16bea4dcbd7bcf846e3c74feacda520",
+  "server_stop_requested": true,
+  "external_model_requests": 0,
+  "server_stopped": true
+}

@@ -1,5 +1,10 @@
 package me.rerere.rikkahub.data.ai.tools
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import me.rerere.rikkahub.utils.isFile
+import me.rerere.rikkahub.utils.readText
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -8,15 +13,15 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
-import me.rerere.rikkahub.data.files.SkillStore
-import me.rerere.rikkahub.data.files.SkillSummary
+import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.files.SkillMetadata
 
 private const val SKILL_FILE_NAME = "SKILL.md"
 
 fun createSkillTools(
     enabledSkills: Set<String>,
-    allSkills: List<SkillSummary>,
-    skillStore: SkillStore,
+    allSkills: List<SkillMetadata>,
+    skillManager: SkillManager,
 ): List<Tool> {
     val available = allSkills.filter { it.name in enabledSkills }
     if (available.isEmpty()) return emptyList()
@@ -67,14 +72,18 @@ fun createSkillTools(
                 val skill = available.firstOrNull { skill -> skill.name == name }
                     ?: error("Skill '$name' is not available. Available skills: ${available.joinToString { it.name }}")
                 val path = it.jsonObject["path"]?.jsonPrimitive?.content
-                val content = if (path.isNullOrBlank()) {
-                    val instructions = skillStore.readSkillFile(skill.directoryName, SKILL_FILE_NAME)
-                        ?: error("Skill '$name' not found")
-                    SkillFrontmatterParser.extractBody(instructions)
-                } else {
-                    // readSkillFile 拒绝越界路径，与不存在一样返回 null
-                    skillStore.readSkillFile(skill.directoryName, path)
-                        ?: error("File '$path' not found in skill '$name'")
+                val content = withContext(Dispatchers.IO) {
+                    if (path.isNullOrBlank()) {
+                        val instructions = skillManager.resolveSkillFile(skill.skillDir.name, SKILL_FILE_NAME)
+                            ?.takeIf { it.isFile }?.readText()
+                            ?: error("Skill '$name' not found")
+                        SkillFrontmatterParser.extractBody(instructions)
+                    } else {
+                        // resolveSkillFile 拒绝越界路径，与不存在一样返回 null
+                        skillManager.resolveSkillFile(skill.skillDir.name, path)
+                            ?.takeIf { it.isFile }?.readText()
+                            ?: error("File '$path' not found in skill '$name'")
+                    }
                 }
                 listOf(UIMessagePart.Text(content))
             }

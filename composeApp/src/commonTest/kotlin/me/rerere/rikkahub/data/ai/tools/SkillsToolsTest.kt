@@ -4,74 +4,49 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.data.files.SkillStore
-import me.rerere.rikkahub.data.files.SkillSummary
-import me.rerere.rikkahub.data.files.StoredSkillFile
+import me.rerere.rikkahub.data.files.SkillTestFixture
+import me.rerere.rikkahub.data.files.SkillMetadata
+import me.rerere.rikkahub.utils.exists
+import me.rerere.rikkahub.utils.resolve
+import kotlin.test.AfterTest
+import kotlin.test.assertFalse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.test.fail
-
-/** Only the read paths matter here; anything else fails loudly if a test reaches it. */
-private class FakeSkillStore(
-    private val files: Map<Pair<String, String>, String>,
-) : SkillStore {
-    val reads = mutableListOf<Pair<String, String>>()
-
-    override suspend fun readSkillFile(name: String, relativePath: String): String? {
-        reads += name to relativePath
-        return files[name to relativePath]
-    }
-
-    override suspend fun listSkills(): List<SkillSummary> = fail("unused")
-    override suspend fun saveSkill(name: String, content: String): Boolean = fail("unused")
-    override suspend fun saveSkillFiles(name: String, files: Map<String, String>): Boolean = fail("unused")
-    override suspend fun saveSkillFileBytes(name: String, files: Map<String, ByteArray>): Boolean = fail("unused")
-    override suspend fun deleteSkill(name: String): Boolean = fail("unused")
-    override suspend fun listSkillFiles(name: String): List<StoredSkillFile> = fail("unused")
-    override suspend fun saveSkillFile(name: String, relativePath: String, content: String): Boolean = fail("unused")
-    override suspend fun deleteSkillFile(name: String, relativePath: String): Boolean = fail("unused")
-}
-
-private fun skill(name: String, directoryName: String) = SkillSummary(
-    name = name,
-    directoryName = directoryName,
-    description = "Test skill",
-)
 
 class SkillsToolsTest {
+    private val fixture = SkillTestFixture()
+    private val store = fixture.manager
+
+    @AfterTest
+    fun close() = fixture.close()
+
+    private fun skill(name: String, directoryName: String) = SkillMetadata(
+        name = name, description = "Test skill", skillDir = store.getSkillDir(directoryName)!!,
+    )
+
     @Test
     fun testUseSkillReadsSkillDirectoryWhenDisplayNameDiffers() = runTest {
-        val store = FakeSkillStore(
-            mapOf(
-                ("directory-name" to "SKILL.md") to """
-                    ---
-                    name: Display Name
-                    description: Test skill
-                    ---
-                    Skill instructions
-                """.trimIndent(),
-            ),
-        )
+        store.saveSkill("directory-name", "---\nname: Display Name\ndescription: Test skill\n---\nSkill instructions")
         val tool = createSkillTools(
             enabledSkills = setOf("Display Name"),
             allSkills = listOf(skill(name = "Display Name", directoryName = "directory-name")),
-            skillStore = store,
+            skillManager = store,
         ).single()
 
         val result = tool.execute(buildJsonObject { put("name", "Display Name") })
 
         assertEquals("Skill instructions", (result.single() as UIMessagePart.Text).text)
-        assertEquals(listOf("directory-name" to "SKILL.md"), store.reads)
+        assertFalse(fixture.root.resolve("skills/Display Name").exists())
     }
 
     @Test
     fun testUseSkillReadsExtraFileByRelativePath() = runTest {
-        val store = FakeSkillStore(mapOf(("dir" to "docs/guide.md") to "Guide body"))
+        store.saveSkillFile("dir", "docs/guide.md", "Guide body")
         val tool = createSkillTools(
             enabledSkills = setOf("Skill"),
             allSkills = listOf(skill(name = "Skill", directoryName = "dir")),
-            skillStore = store,
+            skillManager = store,
         ).single()
 
         val result = tool.execute(
@@ -86,14 +61,13 @@ class SkillsToolsTest {
 
     @Test
     fun testUseSkillRejectsSkillThatIsNotEnabled() = runTest {
-        val store = FakeSkillStore(emptyMap())
         val tool = createSkillTools(
             enabledSkills = setOf("Enabled"),
             allSkills = listOf(
                 skill(name = "Enabled", directoryName = "enabled"),
                 skill(name = "Disabled", directoryName = "disabled"),
             ),
-            skillStore = store,
+            skillManager = store,
         ).single()
 
         val error = runCatching {
@@ -105,11 +79,10 @@ class SkillsToolsTest {
 
     @Test
     fun testUseSkillSurfacesMissingFile() = runTest {
-        val store = FakeSkillStore(emptyMap())
         val tool = createSkillTools(
             enabledSkills = setOf("Skill"),
             allSkills = listOf(skill(name = "Skill", directoryName = "dir")),
-            skillStore = store,
+            skillManager = store,
         ).single()
 
         val error = runCatching {

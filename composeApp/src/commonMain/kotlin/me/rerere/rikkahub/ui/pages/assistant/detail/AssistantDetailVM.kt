@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -21,8 +24,8 @@ import me.rerere.rikkahub.data.model.Tag
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.db.dao.WorkspaceDAO
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
-import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
-import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
+import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.files.SkillMetadata
 import kotlin.uuid.Uuid
 
 private const val TAG = "AssistantDetailVM"
@@ -32,17 +35,17 @@ class AssistantDetailVM(
     private val settingsStore: SettingsStore,
     private val memoryRepository: MemoryRepository,
     private val assetCleaner: AssistantAssetCleaner,
-    private val skillCatalog: AssistantSkillCatalog,
+    private val skillManager: SkillManager,
     private val workspaceDao: WorkspaceDAO,
 ) : ViewModel() {
     private val assistantId = Uuid.parse(id)
 
-    private val _skills = MutableStateFlow<List<AssistantSkillMetadata>>(emptyList())
+    private val _skills = MutableStateFlow<List<SkillMetadata>>(emptyList())
     val skills = _skills.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _skills.value = skillCatalog.listSkills()
+            _skills.value = withContext(Dispatchers.IO) { skillManager.listSkills() }
         }
     }
 

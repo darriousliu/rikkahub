@@ -30,7 +30,7 @@ import me.rerere.rikkahub.ui.components.ai.LorebooksContent
 import me.rerere.rikkahub.ui.components.ai.ModeInjectionsContent
 import me.rerere.rikkahub.ui.components.ai.QuickMessagesContent
 import me.rerere.rikkahub.ui.components.ai.SkillsContent
-import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
+import me.rerere.rikkahub.data.files.SkillMetadata
 import me.rerere.rikkahub.ui.resources.stringResource
 import org.koin.compose.koinInject
 
@@ -48,18 +48,12 @@ fun ExtensionSelector(
     onNavigateToSkills: () -> Unit = {},
 ) {
     val skillManager: SkillManager = koinInject()
-    var skills by remember { mutableStateOf<List<AssistantSkillMetadata>>(emptyList()) }
+    var skills by remember { mutableStateOf<List<SkillMetadata>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         // 打开扩展面板时清理运行时被删除的技能（残留的 enabledSkills 引用），
         // prune 顺带返回现存技能列表，避免重复读盘
-        skills = skillManager.pruneOrphanedEnabledSkills().map { skill ->
-            AssistantSkillMetadata(
-                key = skill.skillDir.absolutePath,
-                name = skill.name,
-                description = skill.description,
-            )
-        }
+        skills = skillManager.pruneOrphanedEnabledSkills()
     }
 
     val useConversationInjections =

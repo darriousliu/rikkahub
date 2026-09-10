@@ -64,7 +64,7 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
-import me.rerere.rikkahub.data.files.SkillStore
+import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.chat_page_compress_not_enough_messages
@@ -99,7 +99,7 @@ internal class SharedChatRuntime(
     private val templateTransformer: TemplateTransformer,
     private val localTools: LocalTools,
     private val memoryRepository: MemoryRepository,
-    private val skillStore: SkillStore,
+    private val skillManager: SkillManager,
 ) : ChatRuntime {
     private val titleGenerator = ConversationTitleGenerator(
         providerManager = providerManager,
@@ -554,8 +554,8 @@ internal class SharedChatRuntime(
                 addAll(
                     createSkillTools(
                         enabledSkills = assistant.enabledSkills,
-                        allSkills = skillStore.listSkills(),
-                        skillStore = skillStore,
+                        allSkills = skillManager.listSkills(),
+                        skillManager = skillManager,
                     ),
                 )
             }

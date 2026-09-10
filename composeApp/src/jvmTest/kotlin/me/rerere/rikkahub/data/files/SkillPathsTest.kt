@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.files
 
 import java.io.File
+import kotlinx.io.files.Path
 import java.nio.file.Files
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -24,10 +25,10 @@ class SkillPathsTest {
         val skillsRoot = Files.createTempDirectory("skills-root").toFile()
 
         try {
-            assertNull(SkillPaths.resolveSkillDir(skillsRoot, "../upload"))
-            assertNull(SkillPaths.resolveSkillDir(skillsRoot, "foo/bar"))
-            assertNull(SkillPaths.resolveSkillDir(skillsRoot, "foo\\bar"))
-            assertNotNull(SkillPaths.resolveSkillDir(skillsRoot, "valid-skill"))
+            assertNull(SkillPaths.resolveSkillDir(Path(skillsRoot.path), "../upload"))
+            assertNull(SkillPaths.resolveSkillDir(Path(skillsRoot.path), "foo/bar"))
+            assertNull(SkillPaths.resolveSkillDir(Path(skillsRoot.path), "foo\\bar"))
+            assertNotNull(SkillPaths.resolveSkillDir(Path(skillsRoot.path), "valid-skill"))
         } finally {
             skillsRoot.deleteRecursively()
         }
@@ -40,10 +41,10 @@ class SkillPathsTest {
         File(skillsRoot, "foobar").apply { mkdirs() }
 
         try {
-            val safeFile = SkillPaths.resolveSkillFile(skillDir, "notes.md")
-            val escapedFile = SkillPaths.resolveSkillFile(skillDir, "../foobar/secret.md")
+            val safeFile = SkillPaths.resolveSkillFile(Path(skillDir.path), "notes.md")
+            val escapedFile = SkillPaths.resolveSkillFile(Path(skillDir.path), "../foobar/secret.md")
 
-            assertEquals(File(skillDir, "notes.md").canonicalFile, safeFile)
+            assertEquals(File(skillDir, "notes.md").canonicalPath, safeFile.toString())
             assertNull(escapedFile)
         } finally {
             skillsRoot.deleteRecursively()

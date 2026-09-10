@@ -18,6 +18,7 @@ import me.rerere.common.archive.addText
 import me.rerere.common.archive.readText
 import me.rerere.common.time.toCompactFileTimestamp
 import me.rerere.rikkahub.data.files.FileFolders
+import kotlinx.io.files.Path
 import me.rerere.rikkahub.data.files.SkillPaths
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -361,12 +362,12 @@ class S3Sync(
         }
 
         val skillsRoot = File(context.filesDir, FileFolders.SKILLS).apply { mkdirs() }
-        val skillDir = SkillPaths.resolveSkillDir(skillsRoot, skillName)
+        val skillDir = SkillPaths.resolveSkillDir(Path(skillsRoot.path), skillName)
             ?: throw Exception("Invalid skill directory: $entryName")
-        val targetFile = SkillPaths.resolveSkillFile(skillDir, skillRelativePath)
+        val targetFile = SkillPaths.resolveSkillFile(skillDir, skillRelativePath)?.let { File(it.toString()) }
             ?: throw Exception("Invalid skill file path: $entryName")
 
-        skillDir.mkdirs()
+        File(skillDir.toString()).mkdirs()
         targetFile.parentFile?.mkdirs()
 
         try {

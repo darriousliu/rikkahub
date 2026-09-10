@@ -59,6 +59,7 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.CustomColors
+import me.rerere.rikkahub.utils.length
 import me.rerere.rikkahub.utils.plus
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -225,7 +226,7 @@ private fun FileItem(
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = skillFile.name,
+                text = skillFile.file.name,
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Monospace,
                 modifier = Modifier
@@ -233,7 +234,7 @@ private fun FileItem(
                     .padding(start = 8.dp),
             )
             Text(
-                text = "${skillFile.size} B",
+                text = "${skillFile.file.length()} B",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

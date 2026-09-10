@@ -52,7 +52,7 @@ val viewModelModule = module {
             settingsStore = get(),
             memoryRepository = get(),
             assetCleaner = get(),
-            skillCatalog = get(),
+            skillManager = get(),
             workspaceDao = get(),
         )
     }

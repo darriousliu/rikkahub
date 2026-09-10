@@ -22,8 +22,10 @@ import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
-import me.rerere.rikkahub.data.files.FileKitSkillStore
-import me.rerere.rikkahub.data.files.SkillStore
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.FileKitBackupLocalFileService
 import me.rerere.rikkahub.data.repository.ConversationFileStore
@@ -50,8 +52,6 @@ import me.rerere.rikkahub.service.SharedChatRuntime
 import me.rerere.rikkahub.service.SharedImageGenerationRuntime
 import me.rerere.rikkahub.service.TextTranslationGenerator
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
-import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
-import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.SharedChatInputPlatformContent
@@ -188,24 +188,13 @@ internal fun sharedProductModule(
             templateTransformer = get(),
             localTools = get(),
             memoryRepository = get(),
-            skillStore = get(),
+            skillManager = get(),
         )
     }
     single { MemoryRepository(get()) }
     single { FavoriteRepository(get()) }
-    single<SkillStore> { FileKitSkillStore(settingsStore) }
+    single { SkillManager(FileKit.filesDir.toKotlinxIoPath(), settingsStore) }
     single<AssistantAssetCleaner> { AssistantAssetCleaner { } }
-    single<AssistantSkillCatalog> {
-        AssistantSkillCatalog {
-            get<SkillStore>().listSkills().map { skill ->
-                AssistantSkillMetadata(
-                    key = skill.name,
-                    name = skill.name,
-                    description = skill.description,
-                )
-            }
-        }
-    }
     single { TextTranslationGenerator(providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }
@@ -225,7 +214,7 @@ internal fun sharedProductModule(
             settingsStore = get(),
             memoryRepository = get(),
             assetCleaner = get(),
-            skillCatalog = get(),
+            skillManager = get(),
             workspaceDao = get(),
         )
     }

@@ -11,6 +11,9 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -24,14 +27,14 @@ import me.rerere.common.archive.PlatformZipArchive
 import me.rerere.common.archive.ZipEntryPathPolicy
 import me.rerere.common.archive.readBytes
 import me.rerere.rikkahub.data.files.SkillFrontmatterParser
-import me.rerere.rikkahub.data.files.SkillStore
-import me.rerere.rikkahub.data.files.SkillSummary
+import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.files.SkillMetadata
 
 class SkillsVM(
-    private val skillStore: SkillStore,
+    private val skillManager: SkillManager,
     private val httpClient: HttpClient,
 ) : ViewModel() {
-    private val _skills = MutableStateFlow<List<SkillSummary>>(emptyList())
+    private val _skills = MutableStateFlow<List<SkillMetadata>>(emptyList())
     val skills = _skills.asStateFlow()
 
     init {
@@ -39,28 +42,28 @@ class SkillsVM(
     }
 
     private fun loadSkills() {
-        viewModelScope.launch {
-            _skills.value = skillStore.listSkills()
+        viewModelScope.launch(Dispatchers.IO) {
+            _skills.value = skillManager.listSkills()
         }
     }
 
     fun saveSkill(name: String, content: String, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val success = skillStore.saveSkill(name, content)
-            _skills.value = skillStore.listSkills()
-            onResult(success)
+        viewModelScope.launch(Dispatchers.IO) {
+            val success = skillManager.saveSkill(name, content) != null
+            _skills.value = skillManager.listSkills()
+            withContext(Dispatchers.Main) { onResult(success) }
         }
     }
 
     fun deleteSkill(name: String) {
-        viewModelScope.launch {
-            skillStore.deleteSkill(name)
-            _skills.value = skillStore.listSkills()
+        viewModelScope.launch(Dispatchers.IO) {
+            skillManager.deleteSkill(name)
+            _skills.value = skillManager.listSkills()
         }
     }
 
     fun importSkillFromFile(file: PlatformFile, onResult: (Boolean, String) -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val bytes = file.readBytes()
                 if (isZipFile(file.name, bytes)) {
@@ -69,16 +72,16 @@ class SkillsVM(
                     importSkillMarkdown(bytes)
                 }
             }.onSuccess { importedNames ->
-                _skills.value = skillStore.listSkills()
-                onResult(true, importedNames.joinToString())
+                _skills.value = skillManager.listSkills()
+                withContext(Dispatchers.Main) { onResult(true, importedNames.joinToString()) }
             }.onFailure { error ->
-                onResult(false, error.message ?: "未知错误")
+                withContext(Dispatchers.Main) { onResult(false, error.message ?: "未知错误") }
             }
         }
     }
 
     fun importSkillFromGitHub(repoUrl: String, onResult: (Boolean, String) -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val info = parseGitHubUrl(repoUrl) ?: error("无效的 GitHub 仓库链接")
                 val files = mutableListOf<Pair<String, String>>()
@@ -99,13 +102,13 @@ class SkillsVM(
                     fileContents[relativePath] = downloadText(downloadUrl)
                         ?: error("下载文件失败：$relativePath")
                 }
-                check(skillStore.saveSkillFiles(name, fileContents)) { "保存失败" }
+                check(skillManager.saveSkillFilesAtomically(name, fileContents)) { "保存失败" }
                 name
             }.onSuccess { name ->
-                _skills.value = skillStore.listSkills()
-                onResult(true, name)
+                _skills.value = skillManager.listSkills()
+                withContext(Dispatchers.Main) { onResult(true, name) }
             }.onFailure { error ->
-                onResult(false, error.message ?: "未知错误")
+                withContext(Dispatchers.Main) { onResult(false, error.message ?: "未知错误") }
             }
         }
     }
@@ -118,7 +121,7 @@ class SkillsVM(
         if (frontmatter["description"].isNullOrBlank()) {
             error("SKILL.md 格式错误：缺少 description 字段")
         }
-        check(skillStore.saveSkill(name, content)) { "保存失败，请检查技能格式" }
+        check(skillManager.saveSkill(name, content) != null) { "保存失败，请检查技能格式" }
         return listOf(name)
     }
 
@@ -159,7 +162,7 @@ class SkillsVM(
                 skillFiles[targetPath] = content
             }
 
-            check(skillStore.saveSkillFileBytes(name, skillFiles)) { "保存失败：$name" }
+            check(skillManager.saveSkillFileBytesAtomically(name, skillFiles)) { "保存失败：$name" }
             importedNames += name
         }
         return importedNames.distinct()

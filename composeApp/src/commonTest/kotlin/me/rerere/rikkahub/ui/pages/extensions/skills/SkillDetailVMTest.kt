@@ -1,145 +1,109 @@
 package me.rerere.rikkahub.ui.pages.extensions.skills
 
+import androidx.lifecycle.ViewModelStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import me.rerere.rikkahub.data.files.SkillStore
-import me.rerere.rikkahub.data.files.SkillSummary
-import me.rerere.rikkahub.data.files.StoredSkillFile
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import me.rerere.rikkahub.data.files.SkillTestFixture
+import me.rerere.rikkahub.utils.exists
+import me.rerere.rikkahub.utils.readText
+import me.rerere.rikkahub.utils.resolve
+import me.rerere.rikkahub.utils.writeText
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.test.fail
 
 private const val DISPLAY_NAME = "Display Skill"
 private const val DIRECTORY_NAME = "my-skill"
 
-/** Records the skill key every call receives so tests can assert it is the directory name. */
-private class RecordingSkillStore : SkillStore {
-    val listedKeys = mutableListOf<String>()
-    val readKeys = mutableListOf<String>()
-    val savedKeys = mutableListOf<String>()
-    val deletedKeys = mutableListOf<String>()
-
-    override suspend fun listSkills(): List<SkillSummary> = listOf(
-        SkillSummary(name = DISPLAY_NAME, directoryName = DIRECTORY_NAME, description = "d"),
-    )
-
-    override suspend fun listSkillFiles(name: String): List<StoredSkillFile> {
-        listedKeys += name
-        if (name != DIRECTORY_NAME) return emptyList()
-        return listOf(
-            StoredSkillFile(name = "SKILL.md", relativePath = "SKILL.md", size = 12, isDirectory = false),
-        )
-    }
-
-    override suspend fun readSkillFile(name: String, relativePath: String): String? {
-        readKeys += name
-        return if (name == DIRECTORY_NAME) "body" else null
-    }
-
-    override suspend fun saveSkillFile(name: String, relativePath: String, content: String): Boolean {
-        savedKeys += name
-        return name == DIRECTORY_NAME
-    }
-
-    override suspend fun deleteSkillFile(name: String, relativePath: String): Boolean {
-        deletedKeys += name
-        return name == DIRECTORY_NAME
-    }
-
-    override suspend fun saveSkill(name: String, content: String): Boolean = fail("unused")
-    override suspend fun saveSkillFiles(name: String, files: Map<String, String>): Boolean = fail("unused")
-    override suspend fun saveSkillFileBytes(name: String, files: Map<String, ByteArray>): Boolean = fail("unused")
-    override suspend fun deleteSkill(name: String): Boolean = fail("unused")
-}
-
 class SkillDetailVMTest {
-    private val dispatcher = StandardTestDispatcher()
+    private val fixture = SkillTestFixture()
+    private val models = ViewModelStore()
+    private lateinit var vm: SkillDetailVM
+    private val original = "---\nname: $DISPLAY_NAME\ndescription: d\n---\nbody"
+    private val directory get() = fixture.manager.getSkillDir(DIRECTORY_NAME)!!
 
     @BeforeTest
-    fun setUp() = Dispatchers.setMain(dispatcher)
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        fixture.manager.saveSkill(DIRECTORY_NAME, original)
+        vm = SkillDetailVM(fixture.manager).also { models.put("skill", it) }
+        vm.init(DISPLAY_NAME)
+    }
 
     @AfterTest
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() {
+        models.clear()
+        Dispatchers.resetMain()
+        fixture.close()
+    }
 
-    private fun skillFile() = SkillFile(name = "SKILL.md", relativePath = "SKILL.md", size = 12)
+    private suspend fun ready() = withContext(Dispatchers.Default) {
+        withTimeout(10_000) { vm.tree.first { it.isNotEmpty() } }
+    }
+
+    private fun skillFile() = SkillFile(directory.resolve("SKILL.md"), "SKILL.md")
 
     @Test
-    fun testListsFilesFromDirectoryWhenDisplayNameDiffers() = runTest(dispatcher) {
-        val store = RecordingSkillStore()
-        val vm = SkillDetailVM(store)
-
-        vm.init(DISPLAY_NAME)
-        advanceUntilIdle()
-
-        assertEquals(listOf(DIRECTORY_NAME), store.listedKeys)
-        assertEquals(1, vm.tree.value.size)
+    fun testListsFilesFromDirectoryWhenDisplayNameDiffers() = runTest {
+        val tree = ready()
+        assertEquals(1, tree.size)
+        assertEquals(directory.resolve("SKILL.md"), (tree.single() as SkillFileNode.FileNode).skillFile.file)
     }
 
     @Test
-    fun testReadUsesDirectoryName() = runTest(dispatcher) {
-        val store = RecordingSkillStore()
-        val vm = SkillDetailVM(store)
-        vm.init(DISPLAY_NAME)
-        advanceUntilIdle()
-
-        var content: String? = null
-        vm.readFile(skillFile()) { content = it }
-        advanceUntilIdle()
-
-        assertEquals(listOf(DIRECTORY_NAME), store.readKeys)
-        assertEquals("body", content)
+    fun testReadUsesDirectoryName() = runTest {
+        ready()
+        val content = CompletableDeferred<String?>()
+        vm.readFile(skillFile()) { content.complete(it) }
+        assertEquals(original, withContext(Dispatchers.Default) { withTimeout(10_000) { content.await() } })
     }
 
     @Test
-    fun testSaveUsesDirectoryName() = runTest(dispatcher) {
-        val store = RecordingSkillStore()
-        val vm = SkillDetailVM(store)
-        vm.init(DISPLAY_NAME)
-        advanceUntilIdle()
-
-        var error: String? = "unset"
-        vm.saveFile("docs/guide.md", "content") { error = it }
-        advanceUntilIdle()
-
-        assertEquals(listOf(DIRECTORY_NAME), store.savedKeys)
-        assertNull(error)
+    fun testReadStillRejectsFileOutsideTheSkill() = runTest {
+        ready()
+        val outside = fixture.root.resolve("outside.md").apply { writeText("outside") }
+        val content = CompletableDeferred<String?>()
+        vm.readFile(SkillFile(outside, "../../outside.md")) { content.complete(it) }
+        assertNull(withContext(Dispatchers.Default) { withTimeout(10_000) { content.await() } })
     }
 
     @Test
-    fun testDeleteUsesDirectoryName() = runTest(dispatcher) {
-        val store = RecordingSkillStore()
-        val vm = SkillDetailVM(store)
-        vm.init(DISPLAY_NAME)
-        advanceUntilIdle()
-
-        var success = false
-        vm.deleteFile(skillFile()) { success = it }
-        advanceUntilIdle()
-
-        assertEquals(listOf(DIRECTORY_NAME), store.deletedKeys)
-        assertTrue(success)
+    fun testSaveUsesDirectoryName() = runTest {
+        ready()
+        val result = CompletableDeferred<String?>()
+        vm.saveFile("docs/guide.md", "content") { result.complete(it) }
+        assertNull(withContext(Dispatchers.Default) { withTimeout(10_000) { result.await() } })
+        assertEquals("content", directory.resolve("docs/guide.md").readText())
+        assertFalse(fixture.root.resolve("skills/$DISPLAY_NAME").exists())
     }
 
     @Test
-    fun testRenamingTheSkillInFrontmatterIsStillRejected() = runTest(dispatcher) {
-        val store = RecordingSkillStore()
-        val vm = SkillDetailVM(store)
-        vm.init(DISPLAY_NAME)
-        advanceUntilIdle()
+    fun testDeleteUsesDirectoryName() = runTest {
+        ready()
+        val result = CompletableDeferred<Boolean>()
+        vm.deleteFile(skillFile()) { result.complete(it) }
+        assertTrue(withContext(Dispatchers.Default) { withTimeout(10_000) { result.await() } })
+        assertFalse(directory.resolve("SKILL.md").exists())
+    }
 
-        var error: String? = null
-        vm.saveFile("SKILL.md", "---\nname: Renamed\ndescription: d\n---\nbody") { error = it }
-        advanceUntilIdle()
-
+    @Test
+    fun testRenamingTheSkillInFrontmatterIsStillRejected() = runTest {
+        ready()
+        val result = CompletableDeferred<String?>()
+        vm.saveFile("SKILL.md", "---\nname: Renamed\ndescription: d\n---\nbody") { result.complete(it) }
+        val error = withContext(Dispatchers.Default) { withTimeout(10_000) { result.await() } }
         assertTrue(error?.contains(DISPLAY_NAME) == true, "unexpected: $error")
-        assertTrue(store.savedKeys.isEmpty())
+        assertEquals(original, directory.resolve("SKILL.md").readText())
     }
 }

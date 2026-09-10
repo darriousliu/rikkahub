@@ -1,22 +1,33 @@
 package me.rerere.rikkahub.data.files
 
-import android.content.Context
-import me.rerere.common.logging.RikkaLog as Log
-import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
+import kotlinx.io.files.Path
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.utils.delete
+import me.rerere.rikkahub.utils.deleteRecursively
+import me.rerere.rikkahub.utils.exists
+import me.rerere.rikkahub.utils.isDirectory
+import me.rerere.rikkahub.utils.listFiles
+import me.rerere.rikkahub.utils.mkdirs
+import me.rerere.rikkahub.utils.readText
+import me.rerere.rikkahub.utils.renameTo
+import me.rerere.rikkahub.utils.resolve
+import me.rerere.rikkahub.utils.writeBytes
+import me.rerere.rikkahub.utils.writeText
 
 class SkillManager(
-    private val context: Context,
+    private val filesDir: Path,
     private val settingsStore: SettingsStore,
 ) {
     companion object {
         private const val TAG = "SkillManager"
     }
 
-    fun getSkillsDir(): File {
-        val dir = context.filesDir.resolve(FileFolders.SKILLS)
+    fun getSkillsDir(): Path {
+        val dir = filesDir.resolve(FileFolders.SKILLS)
         if (!dir.exists()) dir.mkdirs()
         return dir
     }
@@ -48,7 +59,7 @@ class SkillManager(
     fun saveSkill(name: String, content: String): SkillMetadata? {
         // 通过原子写入(staging + rename)落盘，避免直接 mkdirs 失败时
         // writeText 抛出 FileNotFoundException 导致崩溃
-        if (!saveSkillFileBytesAtomically(name, mapOf("SKILL.md" to content.toByteArray()))) {
+        if (!saveSkillFileBytesAtomically(name, mapOf("SKILL.md" to content.encodeToByteArray()))) {
             return null
         }
         val skillDir = resolveSkillDir(name) ?: return null
@@ -99,12 +110,12 @@ class SkillManager(
         skills
     }
 
-    fun getSkillDir(skillName: String): File? = resolveSkillDir(skillName)
+    fun getSkillDir(skillName: String): Path? = resolveSkillDir(skillName)
 
     fun saveSkillFile(skillName: String, relativePath: String, content: String): Boolean {
         val skillDir = resolveSkillDir(skillName) ?: return false
         val target = SkillPaths.resolveSkillFile(skillDir, relativePath) ?: return false
-        target.parentFile?.mkdirs()
+        target.parent?.mkdirs()
         target.writeText(content)
         return true
     }
@@ -112,7 +123,7 @@ class SkillManager(
     fun saveSkillFilesAtomically(skillName: String, files: Map<String, String>): Boolean {
         return saveSkillFileBytesAtomically(
             skillName = skillName,
-            files = files.mapValues { it.value.toByteArray() },
+            files = files.mapValues { it.value.encodeToByteArray() },
         )
     }
 
@@ -120,12 +131,12 @@ class SkillManager(
         val skillsDir = getSkillsDir()
         val targetDir = resolveSkillDir(skillName) ?: return false
         val stagingDir = createTempSkillDir(skillsDir, skillName, "staging") ?: return false
-        var backupDir: File? = null
+        var backupDir: Path? = null
 
         try {
             for ((relativePath, content) in files) {
                 val target = SkillPaths.resolveSkillFile(stagingDir, relativePath) ?: return false
-                target.parentFile?.mkdirs()
+                target.parent?.mkdirs()
                 target.writeBytes(content)
             }
 
@@ -167,16 +178,16 @@ class SkillManager(
         return target.delete()
     }
 
-    fun resolveSkillFile(skillName: String, relativePath: String): File? {
+    fun resolveSkillFile(skillName: String, relativePath: String): Path? {
         val skillDir = resolveSkillDir(skillName) ?: return null
         return SkillPaths.resolveSkillFile(skillDir, relativePath)
     }
 
-    private fun resolveSkillDir(skillName: String): File? {
+    private fun resolveSkillDir(skillName: String): Path? {
         return SkillPaths.resolveSkillDir(getSkillsDir(), skillName)
     }
 
-    private fun createTempSkillDir(skillsRoot: File, skillName: String, suffix: String): File? {
+    private fun createTempSkillDir(skillsRoot: Path, skillName: String, suffix: String): Path? {
         repeat(100) { attempt ->
             val candidate = skillsRoot.resolve(".$skillName.$suffix.$attempt.tmp")
             if (!candidate.exists() && candidate.mkdirs()) {
@@ -186,7 +197,7 @@ class SkillManager(
         return null
     }
 
-    private fun parseSkillFile(skillFile: File, skillDir: File): SkillMetadata? {
+    private fun parseSkillFile(skillFile: Path, skillDir: Path): SkillMetadata? {
         return runCatching {
             val content = skillFile.readText()
             val frontmatter = SkillFrontmatterParser.parse(content)
@@ -200,7 +211,7 @@ class SkillManager(
                 skillDir = skillDir,
             )
         }.getOrElse {
-            Log.w(TAG, "parseSkillFile: Failed to parse ${skillFile.absolutePath}", it)
+            Log.w(TAG, "parseSkillFile: Failed to parse ${skillFile.toString()}", it)
             null
         }
     }
@@ -211,7 +222,7 @@ data class SkillMetadata(
     val description: String,
     val compatibility: String? = null,
     val allowedTools: List<String> = emptyList(),
-    val skillDir: File,
+    val skillDir: Path,
 ) {
-    val skillFile: File get() = skillDir.resolve("SKILL.md")
+    val skillFile: Path get() = skillDir.resolve("SKILL.md")
 }
