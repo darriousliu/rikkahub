@@ -11,6 +11,7 @@ import io.github.vinceglb.filekit.PlatformFile
 import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
@@ -82,10 +83,12 @@ fun main(args: Array<String>) {
         ) {
             val appScope = rememberCoroutineScope()
             val settingsDataStore = remember(appScope) { createJvmSettingsDataStore(appScope) }
-            val settingsStore = remember(appScope, settingsDataStore) {
+            val templateEngine = remember { createMessageTemplateEngine() }
+            val settingsStore = remember(appScope, settingsDataStore, templateEngine) {
                 SettingsStore(
                     dataStore = settingsDataStore,
                     scope = appScope,
+                    onSettingsChanged = templateEngine::invalidateCache,
                 )
             }
             val webServerRuntime = remember(appScope) {
@@ -97,6 +100,7 @@ fun main(args: Array<String>) {
             val externalUriOpener = remember { JvmExternalUriOpener() }
             SharedProductApp(
                 settingsStore = settingsStore,
+                templateEngine = templateEngine,
                 database = database,
                 buildInfo = currentDesktopPlatformBuildInfo(),
                 externalUriOpener = externalUriOpener,

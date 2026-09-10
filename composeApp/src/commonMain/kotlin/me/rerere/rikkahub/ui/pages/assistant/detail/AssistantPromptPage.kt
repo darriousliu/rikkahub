@@ -65,8 +65,11 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.ai.core.MessageRole
+import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
+import me.rerere.rikkahub.data.ai.transformers.TransformerContext
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantAffectScope
@@ -149,7 +152,7 @@ private fun AssistantPromptContent(
     settings: Settings,
     onUpdate: (Assistant) -> Unit
 ) {
-    val previewRuntime = koinInject<AssistantPromptPreviewRuntime>()
+    val templateTransformer = koinInject<TemplateTransformer>()
 
     Column(
         modifier = Modifier
@@ -365,9 +368,12 @@ private fun AssistantPromptContent(
                 ) {
                     value = runCatching {
                         UiState.Success(
-                            previewRuntime.transform(
-                                assistant = assistant,
-                                settings = settings,
+                            templateTransformer.transform(
+                                ctx = TransformerContext(
+                                    model = Model(modelId = "gpt-4o", displayName = "GPT-4o"),
+                                    assistant = assistant,
+                                    settings = settings,
+                                ),
                                 messages = rawMessages
                             )
                         )

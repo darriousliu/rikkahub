@@ -109,7 +109,7 @@ kotlin {
             implementation(libs.jetbrains.markdown)
             implementation(libs.fleeksoft.ksoup)
             implementation(libs.ksoup.entities)
-            implementation(libs.korlibs.template)
+            api(libs.korlibs.template)
             implementation(libs.fast.kotlin.diff.core)
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)

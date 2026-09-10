@@ -1,0 +1,12 @@
+{
+  "mode": "A",
+  "id": "9070a2d6-c80c-46bc-b5fd-386f53412ea8",
+  "templateBefore": "{{ message }}CMP09-A | {{ role }} | {{ message }} | {{ time }} | {{ date }}",
+  "templateAfter": "CMP09-A | {{ role }} | {{ message }} | {{ time }} | {{ date }}",
+  "otherPreferencesByteIdentical": 45,
+  "otherAssistantsJsonBytesIdentical": true,
+  "otherAssistantFieldsUnchanged": true,
+  "unknownProtobufFieldsPreserved": true,
+  "beforeSha256": "7324b6ed493083eb977d0441fa6a8b2a9905f39a1adc5b19a587760d63e96f54",
+  "afterSha256": "0883be06031ad3f9fd8e7ec65f99b428c57ab5e001d6803725340f96d7e593b6"
+}

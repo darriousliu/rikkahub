@@ -9,6 +9,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
+import korlibs.template.KorteTemplates
 import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
@@ -19,7 +20,7 @@ import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.GenerationHandler
-import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
+import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
@@ -36,11 +37,9 @@ import me.rerere.rikkahub.data.ai.mcp.AndroidMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
-import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
-import me.rerere.rikkahub.shared.template.MessageTemplateSource
-import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
+import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.search.SearchService
 import me.rerere.rikkahub.data.sync.S3Sync
 import okhttp3.OkHttpClient
@@ -54,7 +53,7 @@ val dataSourceModule = module {
             dataStore = createAndroidSettingsDataStore(context = get(), scope = get<AppScope>()),
             scope = get<AppScope>(),
             defaultProviderDescriptions = ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS,
-            onSettingsChanged = { get<TemplateCacheInvalidator>().invalidateCache() },
+            onSettingsChanged = { get<KorteTemplates>().invalidateCache() },
         )
     }
 
@@ -63,24 +62,16 @@ val dataSourceModule = module {
         createAndroidAppDatabase(context)
     }
 
-    single<MessageTemplateSource> {
-        val settingsStore = get<SettingsStore>()
-        MessageTemplateSource { templateName ->
-            settingsStore.settingsFlow.value.assistants
-                .find { it.id.toString() == templateName }
-                ?.messageTemplate
-        }
-    }
-
+    single { createMessageTemplateEngine() }
+    single { AssistantTemplateLoader(settingsStore = get()) }
     single {
-        DefaultMessageTemplateRenderer(templateSource = get())
+        val engine = get<KorteTemplates>()
+        val loader = get<AssistantTemplateLoader>()
+        engine.root = loader
+        engine.includes = loader
+        engine.layouts = loader
+        TemplateTransformer(engine = engine)
     }
-
-    single<MessageTemplateRenderer> { get<DefaultMessageTemplateRenderer>() }
-
-    single<TemplateCacheInvalidator> { get<DefaultMessageTemplateRenderer>() }
-
-    single { TemplateTransformer(renderer = get()) }
 
     single {
         get<AppDatabase>().conversationDao()

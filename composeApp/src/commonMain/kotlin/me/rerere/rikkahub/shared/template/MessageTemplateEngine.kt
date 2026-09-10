@@ -11,40 +11,15 @@ import korlibs.template.KorteTemplateProvider
 import korlibs.template.KorteTemplates
 import korlibs.template.expectEnd
 
-class KorteMessageTemplateRenderer(
-    templateSource: MessageTemplateSource,
-    uppercase: (String) -> String,
-    lowercase: (String) -> String,
-) : MessageTemplateRenderer, TemplateCacheInvalidator {
-    private val provider = object : KorteTemplateProvider {
-        override suspend fun get(template: String): String? = templateSource.get(template)
-    }
-
-    private val templates = KorteTemplates(
-        root = provider,
-        config = KorteTemplateConfig(
-            extraTags = listOf(pebbleForTag),
-            extraFilters = pebbleFilters(uppercase, lowercase),
-            autoEscapeMode = KorteAutoEscapeMode.RAW,
-        ),
-        cache = true,
-    )
-
-    override suspend fun get(templateName: String): MessageTemplate {
-        val template = try {
-            templates.get(templateName)
-        } catch (error: Throwable) {
-            // Korte retains failed deferreds in its cache; Pebble only cached successful compilation.
-            templates.invalidateCache()
-            throw error
-        }
-        return MessageTemplate { context -> template(context) }
-    }
-
-    override fun invalidateCache() {
-        templates.invalidateCache()
-    }
-}
+fun createMessageTemplateEngine(): KorteTemplates = KorteTemplates(
+    root = KorteTemplateProvider(emptyMap()),
+    config = KorteTemplateConfig(
+        extraTags = listOf(pebbleForTag),
+        extraFilters = pebbleFilters(String::uppercase, String::lowercase),
+        autoEscapeMode = KorteAutoEscapeMode.RAW,
+    ),
+    cache = true,
+)
 
 private val pebbleForTag = KorteTag(
     name = "for",

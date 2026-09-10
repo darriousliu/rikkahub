@@ -1,0 +1,9 @@
+{
+  "templateRestored": "{{ message }}",
+  "assistantId": "7ea787a3-d880-43ad-afaa-944c19fd0337",
+  "assistantValuesExactlyEqualToBeforeFixture": true,
+  "otherPreferencesByteIdenticalExceptLaunchCount": 43,
+  "launchCountBeforeFixture": 2,
+  "launchCountAfterVerification": 5,
+  "finalBeforeDeleteSha256": "8196b5b70b063a4db77939545c922a2f21d6ed3b393d9754364caba0ce3bd8f0"
+}

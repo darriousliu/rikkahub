@@ -19,6 +19,7 @@ import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.ktor.client.HttpClient
+import korlibs.template.KorteTemplates
 import me.rerere.common.logging.RequestLoggingPlugin
 import me.rerere.search.SearchService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,6 +69,7 @@ import kotlin.uuid.Uuid
 @Composable
 fun SharedProductApp(
     settingsStore: SettingsStore,
+    templateEngine: KorteTemplates,
     database: AppDatabase,
     buildInfo: PlatformBuildInfo,
     externalUriOpener: ExternalUriOpener,
@@ -118,6 +120,7 @@ fun SharedProductApp(
     }
     val productModule = remember(
         settingsStore,
+        templateEngine,
         database,
         buildInfo,
         externalUriOpener,
@@ -136,6 +139,7 @@ fun SharedProductApp(
     ) {
         sharedProductModule(
             settingsStore = settingsStore,
+            templateEngine = templateEngine,
             database = database,
             buildInfo = buildInfo,
             externalUriOpener = externalUriOpener,

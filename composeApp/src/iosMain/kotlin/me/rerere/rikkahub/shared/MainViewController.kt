@@ -11,6 +11,7 @@ import me.rerere.rikkahub.data.datastore.createIosSettingsDataStore
 import me.rerere.rikkahub.data.db.createIosAppDatabase
 import me.rerere.rikkahub.data.db.defaultIosDatabaseFilePath
 import me.rerere.rikkahub.data.sync.BackupFileLayout
+import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.rikkahub.platform.IosExternalUriOpener
 import me.rerere.rikkahub.platform.IosFirebaseAnalyticsTracker
 import me.rerere.rikkahub.platform.IosFirebaseCrashReporter
@@ -26,10 +27,12 @@ import platform.UIKit.UIViewController
 public fun MainViewController(): UIViewController = ComposeUIViewController {
     val appScope = rememberCoroutineScope()
     val settingsDataStore = remember(appScope) { createIosSettingsDataStore(appScope) }
-    val settingsStore = remember(appScope, settingsDataStore) {
+    val templateEngine = remember { createMessageTemplateEngine() }
+    val settingsStore = remember(appScope, settingsDataStore, templateEngine) {
         SettingsStore(
             dataStore = settingsDataStore,
             scope = appScope,
+            onSettingsChanged = templateEngine::invalidateCache,
         )
     }
     val webServerRuntime = remember(appScope) {
@@ -38,6 +41,7 @@ public fun MainViewController(): UIViewController = ComposeUIViewController {
     val database = remember { createIosAppDatabase() }
     SharedProductApp(
         settingsStore = settingsStore,
+        templateEngine = templateEngine,
         database = database,
         buildInfo = currentIosPlatformBuildInfo(),
         externalUriOpener = IosExternalUriOpener(),

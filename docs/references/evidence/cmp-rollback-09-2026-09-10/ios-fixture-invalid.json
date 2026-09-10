@@ -1,0 +1,12 @@
+{
+  "mode": "invalid",
+  "id": "9070a2d6-c80c-46bc-b5fd-386f53412ea8",
+  "templateBefore": "{{ message }}",
+  "templateAfter": "{% unsupported_tag %}",
+  "otherPreferencesByteIdentical": 45,
+  "otherAssistantsJsonBytesIdentical": true,
+  "otherAssistantFieldsUnchanged": true,
+  "unknownProtobufFieldsPreserved": true,
+  "beforeSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+  "afterSha256": "01f6d0a2cd80adf8f3d965bca9bb92cd57137e73ce2550cfce118f17c1474485"
+}

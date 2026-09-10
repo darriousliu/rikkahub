@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.shared
 
 import io.ktor.client.HttpClient
+import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.mcp.McpRuntime
@@ -9,7 +10,7 @@ import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
-import me.rerere.rikkahub.data.ai.transformers.DefaultMessageTemplateRenderer
+import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
@@ -38,9 +39,6 @@ import me.rerere.rikkahub.data.sync.SharedS3BackupTransport
 import me.rerere.rikkahub.data.sync.SharedWebDavBackupTransport
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.shared.template.MessageTemplateRenderer
-import me.rerere.rikkahub.shared.template.MessageTemplateSource
-import me.rerere.rikkahub.shared.template.TemplateCacheInvalidator
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
@@ -55,8 +53,6 @@ import me.rerere.rikkahub.service.TranslationRuntime
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillCatalog
 import me.rerere.rikkahub.ui.pages.assistant.AssistantSkillMetadata
-import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPreviewRuntime
-import me.rerere.rikkahub.ui.pages.assistant.detail.CommonAssistantPromptPreviewRuntime
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.SharedChatInputPlatformContent
@@ -91,6 +87,7 @@ import org.koin.dsl.module
 
 internal fun sharedProductModule(
     settingsStore: SettingsStore,
+    templateEngine: KorteTemplates,
     database: AppDatabase,
     buildInfo: PlatformBuildInfo,
     externalUriOpener: ExternalUriOpener,
@@ -167,17 +164,16 @@ internal fun sharedProductModule(
     single<Base64ImageStore> { SharedBase64ImageStore() }
     single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
     single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
-    single<MessageTemplateSource> {
-        MessageTemplateSource { templateName ->
-            settingsStore.settingsFlow.value.assistants
-                .find { assistant -> assistant.id.toString() == templateName }
-                ?.messageTemplate
-        }
+    single { templateEngine }
+    single { AssistantTemplateLoader(settingsStore = get()) }
+    single {
+        val engine = get<KorteTemplates>()
+        val loader = get<AssistantTemplateLoader>()
+        engine.root = loader
+        engine.includes = loader
+        engine.layouts = loader
+        TemplateTransformer(engine = engine)
     }
-    single { DefaultMessageTemplateRenderer(templateSource = get()) }
-    single<MessageTemplateRenderer> { get<DefaultMessageTemplateRenderer>() }
-    single<TemplateCacheInvalidator> { get<DefaultMessageTemplateRenderer>() }
-    single { TemplateTransformer(renderer = get()) }
     single<ChatRuntime> {
         SharedChatRuntime(
             scope = appScope,
@@ -211,7 +207,6 @@ internal fun sharedProductModule(
             }
         }
     }
-    single<AssistantPromptPreviewRuntime> { CommonAssistantPromptPreviewRuntime }
     single<TranslationRuntime> { SharedTranslationRuntime(settingsStore, providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }

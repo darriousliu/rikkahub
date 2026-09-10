@@ -1,0 +1,115 @@
+{
+  "01a08a2e-df09-7a30-b483-c0cde138b719": [
+    {
+      "turn_id": "01a08a2e-df68-7ab3-a7f5-25e54b34cabd",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a30-99d1-7a31-a019-94ee0b7100fc",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a3b-8f95-76d0-ae0a-a1e908616602",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a49-3118-7d51-873f-f70a10abfdbc",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a51-2fcf-72f0-af49-455551ef6563",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a56-0d71-70e2-9bf3-ea743991017e",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a56-0d71-70e2-9bf3-ea743991017e",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ],
+  "01a08a2f-7bab-7f91-bc0f-c0aab4adbbbf": [
+    {
+      "turn_id": "01a08a2f-7c06-7f31-8a88-d780fc838426",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a32-0a2d-7de3-94e0-e12b8c1d9e96",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a3c-9a54-7fe1-8c44-e4e526f2cdda",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a3f-8645-7f12-b2c2-b9279a748ca6",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a46-5e4d-7cc3-ad7c-e2e8b207adf6",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a4a-5284-72a0-aa9e-af9322451db6",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a4b-bfe1-7e72-aecb-a2193cdb16b5",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ],
+  "01a08a2f-d7c5-75b2-8f73-7357c48f3208": [
+    {
+      "turn_id": "01a08a2f-d852-7763-936a-367b149df963",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a31-0213-7af1-bcae-7d874afbb80c",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a34-6a63-7011-bfbc-35ab2e56940c",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08a4b-bfe9-7ab0-ac2e-3c629fe150dd",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ],
+  "01a08b28-28ab-7410-ac0c-1b3b4ee260b1": [
+    {
+      "turn_id": "01a08b28-290f-7b43-bf5a-e4cad876669c",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b2e-b0d0-7621-b9cd-6cdf470cec1a",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    },
+    {
+      "turn_id": "01a08b32-4193-74d2-88ba-ca23456b647f",
+      "model": "gpt-5.6-terra",
+      "effort": "high"
+    }
+  ]
+}
