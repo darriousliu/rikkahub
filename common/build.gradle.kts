@@ -7,13 +7,17 @@ plugins {
 }
 
 kotlin {
+    applyDefaultHierarchyTemplate()
+
     android {
         namespace = "me.rerere.common"
         compileSdk = 37
         minSdk = 26
 
         withHostTest {}
-        withDeviceTest {
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }.configure {
             instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
 
@@ -43,6 +47,15 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
+        // Android host tests cannot load the Android JNI runtime; use device tests there.
+        val javaScriptTest by creating {
+            dependsOn(commonTest.get())
+            dependencies {
+                implementation(libs.ktor.client.mock)
+            }
+        }
+        named("jvmTest") { dependsOn(javaScriptTest) }
+        named("iosTest") { dependsOn(javaScriptTest) }
         androidMain.dependencies {
             api(libs.okhttp)
             api(libs.okhttp.sse)
@@ -58,6 +71,7 @@ kotlin {
             }
         }
         named("androidDeviceTest") {
+            dependsOn(javaScriptTest)
             dependencies {
                 implementation(libs.androidx.junit)
                 implementation(libs.androidx.espresso.core)

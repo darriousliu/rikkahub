@@ -396,6 +396,7 @@ Android 仅正常启动计数变化。独立 profile、测试进程、服务、�
 ## 第 11 项：MCP Runtime 与闲置资源 API 收敛
 
 起点：`f6010b2619ba6b59705aca93d0f359fd42035433`。状态：已完成回退、代码/三端 GUI 验证和独立测试资料清理。
+提交：`28568f63`（`refactor(cmp): 移除 MCP Runtime 与闲置资源包装`）。
 
 原 McpManager 已是 common 实现，不需要另一层 McpRuntime。页面、McpPicker 和 SharedChatRuntime 直接
 注入 Manager；原客户端可用性判断恢复 getClient(config) == null。删除没有产品调用点的 McpResource/
@@ -419,3 +420,32 @@ Android 和 iOS 测试偏好已恢复并回读；独立桌面 profile、服务�
 
 下一项建议：第 12 项检查 JavaScript executor 中的测试 Observer、Transport 和镜像 DTO，按同一原则收敛，
 保留 QuickJS-KT 必需的平台能力与原脚本错误、超时、取消和 fetch 语义。
+
+
+## 第 12 项：JavaScript HTTP 包装与空观察器
+
+起点：`28568f63f25e678ec555b20c5c175bd80e9dee57`。状态：回退、代码/三端 GUI 验证及全部本轮临时资料清理完成。
+
+移除空 RuntimeObserver/NoOp、HTTP Transport/Call 及镜像请求/响应，共 7 个类型。执行器直接接收已有
+HttpClient，原 Ktor 请求方法体归入同名 QuickJSFetch；活动请求以原生 Job 保存并保留既有取消流程。
+单个 QuickJS-KT 兼容执行器及结果、console、超时语义继续保留；传给 JavaScript 的 HttpResponseDto 与
+fetch polyfill 原本就在 tag 中，不作多余抽象删除。未添加生产依赖、平台接口、锁、校验或空值兜底。
+
+生产代码共 5 文件，增加 102 行、删除 191 行，净减少 89 行。fetch polyfill 与 tag 逐字节一致；
+bodyForMethod 的方法体保持，CustomJsSearchService 仅更换构造接线。新增 13 项真实 QuickJS/Ktor 契约测试，
+JVM、iOS 原生、Android 设备的前后测试体/断言完全相同，仅夹具去掉 Transport 构造。最后完整回归共
+351 次跨平台测试执行通过，失败/错误/跳过均 0（包含相同测试在不同平台的执行次数）。
+
+代码步骤与预期、平台打包、GUI 实际范围及清理结果见
+[第 12 项验证记录](evidence/cmp-rollback-12-2026-09-11/verification.md)。三端采用 gpt-5.6-terra/high，
+Android 使用 android-cli，iOS 使用 Build iOS Apps/iPhone 17 Pro Max，桌面使用独立 profile。
+真实模型聊天工具和抓取脚本 GUI 不在本项通过范围；它们的业务方法/入口未改，无 fetch 执行与共同契约由
+真实引擎代码测试覆盖。改动构造接线的自定义搜索页验证成功、错误重试、离页取消、重入及冷启动。
+
+三端最终各 6 次真实 GUI 请求，共 18 次，固定方法、平台头和参数一致；取消分别为 Android 10.926 秒、
+iOS 10.149 秒、桌面 1.279 秒。18 张原始截图经父 agent 复核。移动端偏好与临时权限已恢复，独立桌面 profile、
+测试服务/日志/原生 helper 已清理；本轮全部测试进程和子 agent 已结束，未读取模型密钥或发送模型请求。
+
+下一项建议：第 13 项 E09 + E11，收敛 SkillManager/SkillStore 与目录镜像业务。先对照 tag 恢复原 SkillManager
+职责，将能通用的原方法体迁入 common，仅保留文件系统平台适配；用临时目录验证解析、导入、覆盖、删除、
+失败和设置清理，再做三端导入/查看/编辑/删除及冷启动验证。

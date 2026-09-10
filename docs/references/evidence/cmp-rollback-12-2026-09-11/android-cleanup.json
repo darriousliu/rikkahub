@@ -1,0 +1,14 @@
+{
+  "platform": "android",
+  "searchServicesRestored": true,
+  "ownedFixtureAbsent": true,
+  "sha256": "d0e180485c7bf5ba4065a0f347f2142d5db0dad6549f6a288220b70a69ddaa3c",
+  "wholeFileOriginal": false,
+  "otherChangedKeys": [
+    "launch_count"
+  ],
+  "localNetworkPermissionRestored": true,
+  "localNetworkGranted": false,
+  "appStopped": true,
+  "emulatorStopped": true
+}

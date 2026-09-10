@@ -13,7 +13,6 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.common.js.DefaultJavaScriptExecutor
 import me.rerere.common.js.JavaScriptExecutionRequest
 import me.rerere.common.js.JavaScriptExecutor
-import me.rerere.common.js.KtorJavaScriptHttpTransport
 import me.rerere.common.js.textOrNull
 import me.rerere.search.SearchService.Companion.httpClient
 import me.rerere.search.SearchService.Companion.json
@@ -113,7 +112,7 @@ object CustomJsSearchService : SearchService<SearchServiceOptions.CustomJsOption
         invocation: String,
     ): String {
         return executeCustomJavaScript(
-            executor = DefaultJavaScriptExecutor(KtorJavaScriptHttpTransport(httpClient)),
+            executor = DefaultJavaScriptExecutor(httpClient),
             userScript = userScript,
             invocation = invocation,
         )

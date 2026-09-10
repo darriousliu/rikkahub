@@ -3,6 +3,7 @@ package me.rerere.common.js
 import com.dokar.quickjs.QuickJs
 import com.dokar.quickjs.QuickJsInterruptedException
 import com.dokar.quickjs.binding.function
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,15 +18,9 @@ import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
-class DefaultJavaScriptExecutor internal constructor(
-    private val httpTransport: JavaScriptHttpTransport? = null,
-    private val runtimeObserver: JavaScriptRuntimeObserver,
+class DefaultJavaScriptExecutor(
+    private val httpClient: HttpClient? = null,
 ) : JavaScriptExecutor {
-    constructor(httpTransport: JavaScriptHttpTransport? = null) : this(
-        httpTransport = httpTransport,
-        runtimeObserver = NoOpJavaScriptRuntimeObserver,
-    )
-
     override suspend fun execute(request: JavaScriptExecutionRequest): JavaScriptExecution =
         if (request.timeoutMillis > 0) {
             withTimeoutOrNull(request.timeoutMillis) { executeCancellable(request) }
@@ -49,7 +44,6 @@ class DefaultJavaScriptExecutor internal constructor(
         val console = mutableListOf<JavaScriptConsoleMessage>()
         val quickJs = QuickJs.create(jobDispatcher = runtimeDispatcher)
         try {
-            runtimeObserver.onCreated()
             quickJs.evaluationTimeoutMillis = request.timeoutMillis
             val cancellationSignal = Job(currentCoroutineContext().job)
             cancellationSignal.invokeOnCompletion { cause ->
@@ -63,9 +57,9 @@ class DefaultJavaScriptExecutor internal constructor(
                     "runtime-bootstrap.js",
                 )
                 quickJs.installConsole(console)
-                httpTransport?.let {
+                httpClient?.let {
                     quickJs.installFetch(
-                        transport = it,
+                        httpClient = it,
                         executionState = executionState,
                         fetchDispatcher = fetchDispatcher,
                     )
@@ -91,11 +85,7 @@ class DefaultJavaScriptExecutor internal constructor(
             }
         } finally {
             executionState.cancelActiveCall()
-            try {
-                quickJs.close()
-            } finally {
-                runtimeObserver.onClosed()
-            }
+            quickJs.close()
         }
     }
 
@@ -161,9 +151,9 @@ private fun JavaScriptEvaluationEnvelope.toJavaScriptValue(): JavaScriptValue = 
 @OptIn(ExperimentalAtomicApi::class)
 internal class JavaScriptExecutionState {
     private val cancelled = AtomicBoolean(false)
-    private val activeCall = AtomicReference<JavaScriptHttpCall?>(null)
+    private val activeCall = AtomicReference<Job?>(null)
 
-    fun install(call: JavaScriptHttpCall) {
+    fun install(call: Job) {
         check(activeCall.compareAndSet(null, call)) { "Nested fetch calls are not supported" }
         if (cancelled.load()) {
             call.cancel()
@@ -171,7 +161,7 @@ internal class JavaScriptExecutionState {
         }
     }
 
-    fun clear(call: JavaScriptHttpCall) {
+    fun clear(call: Job) {
         activeCall.compareAndSet(call, null)
     }
 

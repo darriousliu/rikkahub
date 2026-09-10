@@ -1,0 +1,44 @@
+[
+  {
+    "platform": "android",
+    "originalSha256": "40d6f4828ef0bb9302b5da34138cf270e1046ebae6c962696315ce525b3dd8d5",
+    "seededSha256": "41d59ee1062fc181fc39f44d43f2074a9d61dc6fc1d1f87d81c9c8dd0cee897c",
+    "providerName": "CMP12 JS",
+    "fixture": {
+      "type": "custom_js",
+      "id": "cc121212-1212-4121-8121-121212121212",
+      "name": "CMP12 JS",
+      "searchScript": "function search(query, resultSize) {\n  var response = fetch(\"http://10.0.2.2:18772/android/search\", {\n    method: \"POST\",\n    headers: {\"Content-Type\": \"application/json\", \"X-CMP12-Platform\": \"android\"},\n    body: {query: query, limit: resultSize}\n  });\n  if (!response.ok) throw new Error(\"CMP12_HTTP_\" + response.status + \" \" + response.text());\n  return response.json();\n}",
+      "scrapeScript": ""
+    },
+    "preservedOtherEntries": true
+  },
+  {
+    "platform": "desktop",
+    "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "seededSha256": "71d86780a48b4a1333415a10d18c13e21c17d94ed1d47c8ebf09d5b6467d5e12",
+    "providerName": "CMP12 JS",
+    "fixture": {
+      "type": "custom_js",
+      "id": "cc121212-1212-4121-8121-121212121212",
+      "name": "CMP12 JS",
+      "searchScript": "function search(query, resultSize) {\n  var response = fetch(\"http://127.0.0.1:18772/desktop/search\", {\n    method: \"POST\",\n    headers: {\"Content-Type\": \"application/json\", \"X-CMP12-Platform\": \"desktop\"},\n    body: {query: query, limit: resultSize}\n  });\n  if (!response.ok) throw new Error(\"CMP12_HTTP_\" + response.status + \" \" + response.text());\n  return response.json();\n}",
+      "scrapeScript": ""
+    },
+    "preservedOtherEntries": true
+  },
+  {
+    "platform": "ios",
+    "originalSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3",
+    "seededSha256": "02f6cff0b3345b4273900019c6e324242b98216625fdb618fc61c4f30da87345",
+    "providerName": "CMP12 JS",
+    "fixture": {
+      "type": "custom_js",
+      "id": "cc121212-1212-4121-8121-121212121212",
+      "name": "CMP12 JS",
+      "searchScript": "function search(query, resultSize) {\n  var response = fetch(\"http://127.0.0.1:18772/ios/search\", {\n    method: \"POST\",\n    headers: {\"Content-Type\": \"application/json\", \"X-CMP12-Platform\": \"ios\"},\n    body: {query: query, limit: resultSize}\n  });\n  if (!response.ok) throw new Error(\"CMP12_HTTP_\" + response.status + \" \" + response.text());\n  return response.json();\n}",
+      "scrapeScript": ""
+    },
+    "preservedOtherEntries": true
+  }
+]
