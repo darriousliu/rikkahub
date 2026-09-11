@@ -63,7 +63,7 @@ fun ImportExportTab(
             scope.launch {
                 isExporting = true
                 runCatching {
-                    val exportFile = vm.prepareExportFile()
+                    val exportFile = vm.exportToFile()
                     try {
                         target.write(exportFile)
                     } finally {
@@ -88,8 +88,8 @@ fun ImportExportTab(
                 runCatching {
                     when (importType) {
                         BackupImportType.LOCAL -> vm.restoreFromLocalFile(source)
-                        BackupImportType.CHATBOX -> vm.restoreFromChatboxFile(source)
-                        BackupImportType.CHERRY -> vm.restoreFromCherryStudioFile(source)
+                        BackupImportType.CHATBOX -> vm.restoreFromChatBox(source)
+                        BackupImportType.CHERRY -> vm.restoreFromCherryStudio(source)
                     }
                     toaster.show(restoreSuccess, type = ToastType.Success)
                     onShowRestartDialog()

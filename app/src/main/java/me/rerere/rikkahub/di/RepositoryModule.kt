@@ -7,8 +7,6 @@ import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.repository.AndroidConversationFileStore
-import me.rerere.rikkahub.data.repository.AndroidBackupLocalFileService
-import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.AndroidMessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.ConversationFileStore
@@ -64,10 +62,6 @@ val repositoryModule = module {
     single<WebDavBackupTransport> { get<WebDavSync>() }
 
     single<S3BackupTransport> { get<S3Sync>() }
-
-    single<BackupLocalFileService> {
-        AndroidBackupLocalFileService(get(), get(), get(), get())
-    }
 
     single {
         val context: Context = get()

@@ -5,23 +5,27 @@ import androidx.lifecycle.viewModelScope
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.repository.BackupLocalFileService
+import me.rerere.rikkahub.data.datastore.WebDavConfig
+import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.sync.S3BackupItem
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
+import me.rerere.rikkahub.data.sync.importer.ChatboxImporter
+import me.rerere.rikkahub.data.sync.importer.CherryStudioProviderImporter
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import me.rerere.rikkahub.utils.UiState
 import kotlin.time.Clock
 
-typealias ChatboxRestoreResult = me.rerere.rikkahub.data.repository.ChatboxRestoreResult
+private const val TAG = "BackupVM"
 
 class BackupVM(
     private val settingsStore: SettingsStore,
     private val webDavSync: WebDavBackupTransport,
     private val s3Sync: S3BackupTransport,
-    private val localFileService: BackupLocalFileService,
+    private val conversationRepository: ConversationRepository,
     private val clock: Clock = Clock.System,
 ) : ViewModel() {
     val settings = settingsStore.settingsFlow
@@ -64,14 +68,82 @@ class BackupVM(
     suspend fun deleteWebDavBackupFile(item: WebDavBackupItem) =
         webDavSync.deleteBackupFile(settings.value.webDavConfig, item)
 
-    suspend fun prepareExportFile(): PlatformFile = localFileService.prepareExport()
+    suspend fun exportToFile(): PlatformFile {
+        val file = webDavSync.prepareBackupFile(
+            settings.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries)
+        )
+        recordBackupTime()
+        return file
+    }
 
-    suspend fun restoreFromLocalFile(source: PlatformFile) = localFileService.restoreBackup(source)
+    suspend fun restoreFromLocalFile(file: PlatformFile) {
+        webDavSync.restoreFromLocalFile(
+            file,
+            settings.value.webDavConfig.copy(items = WebDavConfig.BackupItem.entries),
+        )
+    }
 
-    suspend fun restoreFromChatboxFile(source: PlatformFile): ChatboxRestoreResult =
-        localFileService.restoreChatbox(source)
+    suspend fun restoreFromChatBox(file: PlatformFile): ChatboxRestoreResult {
+        var importedConversations = 0
+        var skippedExistingConversations = 0
+        val result = ChatboxImporter.importStreaming(
+            file = file,
+            assistantId = settings.value.assistantId,
+            providers = settings.value.providers,
+            onConversation = { conversation ->
+                if (conversationRepository.existsConversationById(conversation.id)) {
+                    skippedExistingConversations++
+                } else {
+                    conversationRepository.insertConversation(conversation)
+                    importedConversations++
+                }
+            }
+        )
 
-    suspend fun restoreFromCherryStudioFile(source: PlatformFile) = localFileService.restoreCherryStudio(source)
+        val targetAssistantId = settings.value.assistantId
+        settingsStore.update(
+            settings.value.copy(
+                providers = result.providers + settings.value.providers,
+                assistants = settings.value.assistants.map { assistant ->
+                    if (result.hasConversationSystemPrompt && assistant.id == targetAssistantId) {
+                        assistant.copy(allowConversationSystemPrompt = true)
+                    } else {
+                        assistant
+                    }
+                }
+            )
+        )
+
+        Log.i(
+            TAG,
+            "restoreFromChatBox: import ${result.providers.size} providers, " +
+                "$importedConversations conversations, skip $skippedExistingConversations existing, " +
+                "drop ${result.skippedImageParts} images"
+        )
+        return ChatboxRestoreResult(
+            importedProviders = result.providers.size,
+            importedConversations = importedConversations,
+            skippedExistingConversations = skippedExistingConversations,
+            skippedImageParts = result.skippedImageParts,
+            skippedEmptyMessages = result.skippedEmptyMessages,
+        )
+    }
+
+    suspend fun restoreFromCherryStudio(file: PlatformFile) {
+        val importProviders = CherryStudioProviderImporter.importProviders(file)
+
+        if (importProviders.isEmpty()) {
+            throw IllegalArgumentException("No importable providers found in Cherry Studio backup")
+        }
+
+        Log.i(TAG, "restoreFromCherryStudio: import ${importProviders.size} providers")
+
+        updateSettings(
+            settings.value.copy(
+                providers = importProviders + settings.value.providers,
+            )
+        )
+    }
 
     fun loadS3BackupFileItems() {
         viewModelScope.launch {
@@ -105,3 +177,11 @@ class BackupVM(
         }
     }
 }
+
+data class ChatboxRestoreResult(
+    val importedProviders: Int,
+    val importedConversations: Int,
+    val skippedExistingConversations: Int,
+    val skippedImageParts: Int,
+    val skippedEmptyMessages: Int,
+)

@@ -26,8 +26,6 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import me.rerere.rikkahub.data.files.SkillManager
-import me.rerere.rikkahub.data.repository.BackupLocalFileService
-import me.rerere.rikkahub.data.repository.FileKitBackupLocalFileService
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FavoriteRepository
@@ -202,7 +200,6 @@ internal fun sharedProductModule(
     single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }
     single<WebDavBackupTransport> { SharedWebDavBackupTransport(httpClient, get()) }
     single<S3BackupTransport> { SharedS3BackupTransport(httpClient, get()) }
-    single<BackupLocalFileService> { FileKitBackupLocalFileService(get(), get(), get()) }
 
     viewModelOf(::SettingVM)
     viewModelOf(::SearchVM)

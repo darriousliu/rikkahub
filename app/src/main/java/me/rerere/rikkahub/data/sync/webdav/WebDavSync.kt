@@ -1,11 +1,15 @@
 package me.rerere.rikkahub.data.sync.webdav
 
 import android.content.Context
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.source
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import me.rerere.common.logging.RikkaLog as Log
 import io.ktor.client.HttpClient
 import io.ktor.util.cio.readChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.io.Buffer
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
@@ -54,7 +58,7 @@ class WebDavSync(
     }
 
     override suspend fun backup(config: WebDavConfig) = withContext(Dispatchers.IO) {
-        val file = prepareBackupFile(config)
+        val file = File(prepareBackupFile(config).toKotlinxIoPath().toString())
         val client = getClient(config)
 
         // Ensure the backup directory exists
@@ -127,6 +131,28 @@ class WebDavSync(
         Log.i(TAG, "deleteBackupFile: Deleted ${item.displayName}")
     }
 
+    override suspend fun restoreFromLocalFile(file: PlatformFile, config: WebDavConfig) {
+        withContext(Dispatchers.IO) {
+            val temporary = File.createTempFile("restore_", ".zip", context.cacheDir)
+            try {
+                file.source().use { input ->
+                    FileOutputStream(temporary).asSink().use { output ->
+                        val buffer = Buffer()
+                        while (true) {
+                            val count = input.readAtMostTo(buffer, 8_192L)
+                            if (count == -1L) break
+                            output.write(buffer, count)
+                        }
+                        output.flush()
+                    }
+                }
+                restoreFromLocalFile(temporary, config)
+            } finally {
+                temporary.delete()
+            }
+        }
+    }
+
     suspend fun restoreFromLocalFile(file: File, config: WebDavConfig) = withContext(Dispatchers.IO) {
         Log.i(TAG, "restoreFromLocalFile: Starting restore from ${file.absolutePath}")
 
@@ -147,7 +173,7 @@ class WebDavSync(
         }
     }
 
-    suspend fun prepareBackupFile(config: WebDavConfig): File = withContext(Dispatchers.IO) {
+    override suspend fun prepareBackupFile(config: WebDavConfig): PlatformFile = withContext(Dispatchers.IO) {
         val timestamp = Clock.System.now().toCompactFileTimestamp()
         val backupFile = File(context.cacheDir, "backup_$timestamp.zip")
 
@@ -229,7 +255,7 @@ class WebDavSync(
             TAG,
             "prepareBackupFile: Created backup file ${backupFile.name} (${backupFile.length().fileSizeToString()})"
         )
-        backupFile
+        PlatformFile(backupFile)
     }
 
     private suspend fun restoreFromBackupFile(backupFile: File, config: WebDavConfig) = withContext(Dispatchers.IO) {

@@ -1,0 +1,438 @@
+{
+  "jvm": {
+    "totals": {
+      "tests": 325,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "suites": [
+      {
+        "name": "McpConnectionKeyTest[jvm]",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:42.668Z"
+      },
+      {
+        "name": "McpManagerContractTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:42.692Z"
+      },
+      {
+        "name": "McpOAuthCoordinatorTest[jvm]",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.618Z"
+      },
+      {
+        "name": "SkillsToolsTest[jvm]",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.784Z"
+      },
+      {
+        "name": "TextReplacersTest[jvm]",
+        "tests": "14",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.808Z"
+      },
+      {
+        "name": "OcrResultCacheTest[jvm]",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.814Z"
+      },
+      {
+        "name": "PromptInjectionTransformerTest[jvm]",
+        "tests": "40",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.820Z"
+      },
+      {
+        "name": "TemplateTransformerContractTest[jvm]",
+        "tests": "12",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.870Z"
+      },
+      {
+        "name": "TimeReminderTransformerTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.950Z"
+      },
+      {
+        "name": "LegacyIosFileMigrationTest[jvm]",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.957Z"
+      },
+      {
+        "name": "SkillFileSystemTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.218Z"
+      },
+      {
+        "name": "SkillManagerContractTest[jvm]",
+        "tests": "18",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.258Z"
+      },
+      {
+        "name": "SkillPathsTest[jvm]",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.344Z"
+      },
+      {
+        "name": "ConversationRepositoryPersistenceTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.348Z"
+      },
+      {
+        "name": "FolderRepositoryPersistenceTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.496Z"
+      },
+      {
+        "name": "AttachmentArchiveTest[jvm]",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.557Z"
+      },
+      {
+        "name": "FileKitFileCleanerTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.618Z"
+      },
+      {
+        "name": "ChatAttachmentFilesTest[jvm]",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.687Z"
+      },
+      {
+        "name": "ChatAttachmentPersistenceTest[jvm]",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.754Z"
+      },
+      {
+        "name": "ChatRuntimeMessageNodeSelectionTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.825Z"
+      },
+      {
+        "name": "ConversationCompressionPersistenceTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.835Z"
+      },
+      {
+        "name": "ConversationCompressorTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.871Z"
+      },
+      {
+        "name": "ConversationMessageDeleteTest[jvm]",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.892Z"
+      },
+      {
+        "name": "ConversationSessionTest[jvm]",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.894Z"
+      },
+      {
+        "name": "ConversationSuggestionGeneratorTest[jvm]",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.909Z"
+      },
+      {
+        "name": "ConversationTitleGeneratorTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.927Z"
+      },
+      {
+        "name": "InterruptedToolCompletionPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.944Z"
+      },
+      {
+        "name": "InterruptedToolCompletionTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.960Z"
+      },
+      {
+        "name": "InvalidMessageCleanupPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.968Z"
+      },
+      {
+        "name": "InvalidMessageCleanupTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.980Z"
+      },
+      {
+        "name": "MessageDeletionPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.981Z"
+      },
+      {
+        "name": "MessageNodeSelectionPersistenceTest[jvm]",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.995Z"
+      },
+      {
+        "name": "MessageTranslationManagerTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.006Z"
+      },
+      {
+        "name": "MessageTranslationPersistenceTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.020Z"
+      },
+      {
+        "name": "TextTranslationGeneratorTest[jvm]",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.033Z"
+      },
+      {
+        "name": "UserInputPreprocessorTest[jvm]",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.044Z"
+      },
+      {
+        "name": "BackupVMContractTest[jvm]",
+        "tests": "22",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.051Z"
+      },
+      {
+        "name": "SkillDetailVMTest[jvm]",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.197Z"
+      },
+      {
+        "name": "SkillsVMImportTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.219Z"
+      },
+      {
+        "name": "StatsVMPersistenceTest[jvm]",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.259Z"
+      },
+      {
+        "name": "TranslatorVMContractTest[jvm]",
+        "tests": "9",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.319Z"
+      },
+      {
+        "name": "HslColorTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.358Z"
+      },
+      {
+        "name": "ControllerWebServerRuntimeTest[jvm]",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:45.392Z"
+      }
+    ]
+  },
+  "androidHost": {
+    "totals": {
+      "tests": 60,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "suites": [
+      {
+        "name": "me.rerere.rikkahub.ExampleUnitTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:43.960Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.ShareSheetTest",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.054Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.data.ai.RequestLoggingInterceptorTest",
+        "tests": "10",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.190Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.data.datastore.DefaultProvidersTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.528Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.service.ChatServiceTest",
+        "tests": "1",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.533Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.ui.components.webview.WebViewContentCacheTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.537Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.ui.pages.setting.components.ProviderConfigureConvertToTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.563Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.utils.StringUtilsTest",
+        "tests": "19",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.586Z"
+      },
+      {
+        "name": "me.rerere.rikkahub.utils.VersionTest",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-11T06:26:44.595Z"
+      }
+    ]
+  }
+}

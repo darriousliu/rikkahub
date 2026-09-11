@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.sync
 
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.delete
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.sink
@@ -17,6 +18,19 @@ class SharedWebDavBackupTransport(
     private val httpClient: HttpClient,
     private val archives: BackupArchiveService,
 ) : WebDavBackupTransport {
+    override suspend fun prepareBackupFile(config: WebDavConfig): PlatformFile = archives.prepareArchive(
+        includeDatabase = WebDavConfig.BackupItem.DATABASE in config.items,
+        includeFiles = WebDavConfig.BackupItem.FILES in config.items,
+    )
+
+    override suspend fun restoreFromLocalFile(file: PlatformFile, config: WebDavConfig) {
+        archives.restoreArchive(
+            archive = file,
+            includeDatabase = WebDavConfig.BackupItem.DATABASE in config.items,
+            includeFiles = WebDavConfig.BackupItem.FILES in config.items,
+        )
+    }
+
     override suspend fun testConnection(config: WebDavConfig): Int {
         WebDavClient(config, httpClient).propfind(depth = 0).getOrThrow()
         return 0

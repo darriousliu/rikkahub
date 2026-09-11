@@ -516,7 +516,8 @@ GUI 发现 Android 裁剪输出在异步保存前被删除；该迁移既有问�
 iOS TXT 离线发送补试发生 TLS 失败，不计作通过；具体分平台构建版本及验证范围在记录中单列。
 原方法比对、详细用例、GUI 依据与实际范围见 [第 14 项验证记录](evidence/cmp-rollback-14-2026-09-11/verification.md)。
 
-**14B：存量兼容与删除接线。** 已完成；以 `6785ac7999` 为起点，代码、构建和本项所需三端 GUI 均通过。
+**14B：存量兼容与删除接线。** 已签名提交 `0e8f36b8`，签名校验通过；以 `6785ac7999` 为起点，
+代码、构建和本项所需三端 GUI 均通过。
 
 - 用具体文件清理实现替换非 Android 的 `ConversationFileStore` / `AssistantAssetCleaner` 两处空接线。
 - 旧 fork 保持原文件和引用；清理时检查剩余消息（含所有分支与工具结果）、收藏快照及设置中的本地资产，
@@ -539,3 +540,27 @@ Android/iOS 原设置已按字节恢复，iOS 原会话/消息/收藏散列未�
 
 下一项建议：第 15 项 E08，将本地备份导入导出业务收回原 BackupVM；先用固定备份样本核对映射、设置、文件结果和失败行为，
 再由 Terra 在三端验证系统选择器导入、导出重读及取消选择。
+
+## 第 15 项：本地备份业务归位
+
+起点：`0e8f36b8582661bdc1bca56d374787a097c34e44`；审计 E08。状态：本项回退完成，代码、构建及三端 GUI 验证通过，数据恢复和测试文件清理已核对。
+
+删除 BackupLocalFileService 接口及 Android/FileKit 两套实现，将原四个本地方法与 ChatboxRestoreResult 归回 BackupVM。
+VM 直接使用原 ConversationRepository 和 SettingsStore，原方法名恢复；ImportExportTab 仅调整对应方法调用名称。
+WebDavBackupTransport 暂时暴露原有 prepareBackupFile/restoreFromLocalFile 两个入口，平台仍接现有归档实现；
+Android 原生恢复保留 URI 转临时文件的必要 I/O，Chatbox/Cherry 直接交给已有 FileKit importer。
+不新增生产文件或接口，10 个生产文件增加 139 行、删除 268 行，净减少 129 行。
+
+Chatbox 设置读取位置、Cherry 的异步 updateSettings、导出更新时间与异常传播按 tag 原方法恢复。
+Cherry 旧日志可能打印提供商密钥，因此只保留计数日志。原 importer、Archive 和 S3 方法未在本项重写。
+改动前 14 项 BackupVM 契约测试通过；本轮增加 8 项固定样本及实际 SQLite 闸口测试，22 项全部通过。
+完整 JVM 325 项、Android host 60 项通过；common/iOS 两架构编译、Android APK 与 macOS distributable 构建通过。
+
+GUI 必须验证三端文件选择器和真实 VM/平台接线。Terra 负责取消选择、Chatbox 重复导入、Cherry 导入、
+原生标记 ZIP 导入和导出 ZIP 独立读取；实际结果与边界在 [第 15 项说明](evidence/cmp-rollback-15-2026-09-11/verification.md)。
+Chatbox 的整文件解析与 tag 的流式读取不在本项宣称等价；原生覆写数据库后的完整恢复归第 16 项测试。
+
+iOS 的正式 GUI 通过 Build iOS Apps 插件执行临时 XCTest 驱动完成；设置/数据库及辅助文件恢复后散列匹配 5/5。
+三端导出均独立读取 SQLite 主库与 WAL，核对唯一会话、两条消息及原生标记；临时驱动和测试资料已清理。
+
+下一项建议：第 16 项 E07，统一原 S3Sync/WebDavSync 和两套归档编排。

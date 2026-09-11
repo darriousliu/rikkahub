@@ -1,11 +1,16 @@
 package me.rerere.rikkahub.data.sync
 
+import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import me.rerere.rikkahub.data.sync.s3.S3Config
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import kotlin.time.Instant
 
 interface WebDavBackupTransport {
+    suspend fun prepareBackupFile(config: WebDavConfig): PlatformFile
+
+    suspend fun restoreFromLocalFile(file: PlatformFile, config: WebDavConfig)
+
     suspend fun testConnection(config: WebDavConfig): Int
 
     suspend fun backup(config: WebDavConfig): Boolean

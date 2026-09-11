@@ -6,7 +6,12 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModelStore
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
+import androidx.sqlite.SQLiteStatement
 import io.github.vinceglb.filekit.PlatformFile
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -23,20 +29,23 @@ import kotlinx.coroutines.test.setMain
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
+import me.rerere.ai.core.MessageRole
+import me.rerere.ai.provider.ProviderSetting
+import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
-import me.rerere.rikkahub.data.repository.BackupLocalFileService
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
-import me.rerere.rikkahub.data.repository.FileKitBackupLocalFileService
 import me.rerere.rikkahub.data.sync.BackupArchiveService
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.data.sync.S3BackupItem
 import me.rerere.rikkahub.data.sync.S3BackupTransport
 import me.rerere.rikkahub.data.sync.WebDavBackupTransport
+import me.rerere.rikkahub.data.sync.SharedWebDavBackupTransport
 import me.rerere.rikkahub.data.sync.s3.S3Config
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import me.rerere.rikkahub.utils.JsonInstant
@@ -44,6 +53,10 @@ import me.rerere.rikkahub.utils.UiState
 import java.io.File
 import java.nio.file.Files
 import java.util.zip.ZipFile
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -51,8 +64,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlin.uuid.Uuid
 
 class BackupVMContractTest {
     private val dispatcher = StandardTestDispatcher()
@@ -285,8 +301,8 @@ class BackupVMContractTest {
         runTest(dispatcher) {
             val f = fixture()
             f.store.update { it.copy(webDavConfig = webConfig, s3Config = s3Config) }
-            val local = f.localFiles()
-            val archive = local.prepareExport()
+            val local = f.localVm()
+            val archive = local.exportToFile()
             val zip = f.cache.listFiles()!!.single { it.extension == "zip" }
             val archived = ZipFile(zip).use { file ->
                 JsonInstant.decodeFromString<Settings>(file.getInputStream(file.getEntry("settings.json"))
@@ -297,7 +313,7 @@ class BackupVMContractTest {
             assertEquals(0, archived.backupReminderConfig.lastBackupTime)
             assertEquals(f.now, f.store.settingsFlow.value.backupReminderConfig.lastBackupTime)
             f.store.update { it.copy(webDavConfig = WebDavConfig(), s3Config = S3Config()) }
-            local.restoreBackup(archive)
+            local.restoreFromLocalFile(archive)
             assertEquals(webConfig, f.store.settingsFlow.value.webDavConfig)
             assertEquals(s3Config, f.store.settingsFlow.value.s3Config)
             assertEquals(0, f.store.settingsFlow.value.backupReminderConfig.lastBackupTime)
@@ -307,7 +323,7 @@ class BackupVMContractTest {
     fun `archive creation failure does not record a backup time`() = runTest(dispatcher) {
         val f = fixture()
         f.cache.writeText("not a directory")
-        assertTrue(runCatching { f.localFiles().prepareExport() }.isFailure)
+        assertTrue(runCatching { f.localVm().exportToFile() }.isFailure)
         assertEquals(0, f.preferences.writes)
         assertEquals(0, f.store.settingsFlow.value.backupReminderConfig.lastBackupTime)
     }
@@ -317,10 +333,200 @@ class BackupVMContractTest {
         val f = fixture()
         val error = IllegalStateException("disk failure")
         f.preferences.failure = error
-        assertSame(error, runCatching { f.localFiles().prepareExport() }.exceptionOrNull())
+        assertSame(error, runCatching { f.localVm().exportToFile() }.exceptionOrNull())
         assertTrue(f.cache.listFiles()!!.any { it.extension == "zip" })
         assertEquals(f.now, f.store.settingsFlow.value.backupReminderConfig.lastBackupTime)
     }
+
+    @Test
+    fun `local VM forces every backup item and records time only after archive preparation`() = runTest(dispatcher) {
+        val f = fixture()
+        val vm = f.vm()
+        runCurrent()
+        f.store.update { it.copy(webDavConfig = webConfig.copy(items = emptyList())) }
+        val expected = webConfig.copy(items = WebDavConfig.BackupItem.entries)
+        val exported = vm.exportToFile()
+        assertEquals("local-export" to expected, f.calls.last())
+        assertEquals(f.now, vm.settings.value.backupReminderConfig.lastBackupTime)
+        val writes = f.preferences.writes
+        vm.restoreFromLocalFile(exported)
+        assertEquals("local-restore" to expected, f.calls.last())
+        assertEquals(exported, f.items.last())
+        assertEquals(writes, f.preferences.writes)
+        val error = CancellationException("local operation cancelled")
+        f.webFailure = error
+        assertSame(error, runCatching { vm.exportToFile() }.exceptionOrNull())
+        assertSame(error, runCatching { vm.restoreFromLocalFile(exported) }.exceptionOrNull())
+        assertEquals(writes, f.preferences.writes)
+    }
+
+    @Test
+    fun `Chatbox import preserves original mapping counters timestamps and selected assistant settings`() =
+        runTest(dispatcher) {
+            val f = fixture()
+            f.configureImportSettings()
+            val vm = f.vm()
+            val result = vm.restoreFromChatBox(f.chatboxFile())
+            assertEquals(ChatboxRestoreResult(1, 1, 0, 2, 1), result)
+            val conversation = requireNotNull(f.conversations.getConversationById(chatboxConversationId))
+            assertEquals("CMP15 fixed conversation", conversation.title)
+            assertEquals(assistantA.id, conversation.assistantId)
+            assertEquals("CMP15 system", conversation.customSystemPrompt)
+            assertEquals(1_700_000_000_000, conversation.createAt.toEpochMilliseconds())
+            assertEquals(1_700_000_004_000, conversation.updateAt.toEpochMilliseconds())
+            assertEquals(2, conversation.messageNodes.size)
+            val user = conversation.messageNodes[0].currentMessage
+            val answer = conversation.messageNodes[1].currentMessage
+            assertEquals(MessageRole.USER, user.role)
+            assertEquals(listOf(UIMessagePart.Text("CMP15 question 中文")), user.parts)
+            assertEquals(MessageRole.ASSISTANT, answer.role)
+            assertEquals("CMP15 answer", assertIs<UIMessagePart.Text>(answer.parts.last()).text)
+            assertEquals(7, answer.usage?.promptTokens)
+            assertEquals(11, answer.usage?.completionTokens)
+            val imported = vm.settings.value.providers.filterIsInstance<ProviderSetting.OpenAI>()
+                .single { it.baseUrl == "https://cmp15.invalid/v1" }
+            assertEquals("https://cmp15.invalid/v1", imported.baseUrl)
+            assertEquals(imported.models.single().id, answer.modelId)
+            assertEquals(existingProvider, vm.settings.value.providers.single { it.id == existingProvider.id })
+            assertTrue(vm.settings.value.assistants.single { it.id == assistantA.id }.allowConversationSystemPrompt)
+            assertEquals(assistantB, vm.settings.value.assistants.single { it.id == assistantB.id })
+            assertEquals(0, vm.settings.value.backupReminderConfig.lastBackupTime)
+        }
+
+    @Test
+    fun `reimporting Chatbox skips existing conversation without merging or changing its messages`() =
+        runTest(dispatcher) {
+            val f = fixture()
+            f.configureImportSettings()
+            val vm = f.vm()
+            val file = f.chatboxFile()
+            val providerCount = vm.settings.value.providers.size
+            vm.restoreFromChatBox(file)
+            val first = requireNotNull(f.conversations.getConversationById(chatboxConversationId))
+            f.conversations.updateConversation(first.copy(title = "keep original saved title"))
+            val result = vm.restoreFromChatBox(file)
+            assertEquals(ChatboxRestoreResult(1, 0, 1, 2, 1), result)
+            val second = requireNotNull(f.conversations.getConversationById(chatboxConversationId))
+            assertEquals("keep original saved title", second.title)
+            assertEquals(first.messageNodes, second.messageNodes)
+            // 原导入仅对会话去重，提供商继续追加。
+            assertEquals(providerCount + 2, vm.settings.value.providers.size)
+        }
+
+    @Test
+    fun `Chatbox keeps settings changed while the original repository insertion is waiting`() = runTest(dispatcher) {
+        val f = fixture()
+        f.configureImportSettings()
+        val vm = f.vm()
+        val reached = CountDownLatch(1)
+        val resume = CountDownLatch(1)
+        f.beforeStatement = { sql ->
+            if (sql.contains("SELECT EXISTS", ignoreCase = true) &&
+                sql.contains("conversationentity", ignoreCase = true)) {
+                f.beforeStatement = null
+                reached.countDown()
+                check(resume.await(10, TimeUnit.SECONDS))
+            }
+        }
+        val pending = async { vm.restoreFromChatBox(f.chatboxFile()) }
+        runCurrent()
+        try {
+            withContext(Dispatchers.IO) { assertTrue(reached.await(10, TimeUnit.SECONDS)) }
+            f.store.update { it.copy(assistantId = assistantB.id, launchCount = 77) }
+        } finally {
+            resume.countDown()
+        }
+        pending.await()
+        assertEquals(assistantA.id, f.conversations.getConversationById(chatboxConversationId)?.assistantId)
+        assertEquals(assistantB.id, vm.settings.value.assistantId)
+        assertEquals(77, vm.settings.value.launchCount)
+        assertFalse(vm.settings.value.assistants.single { it.id == assistantA.id }.allowConversationSystemPrompt)
+        assertTrue(vm.settings.value.assistants.single { it.id == assistantB.id }.allowConversationSystemPrompt)
+    }
+
+    @Test
+    fun `invalid Chatbox input leaves conversations and settings unchanged`() = runTest(dispatcher) {
+        val f = fixture()
+        f.configureImportSettings()
+        val vm = f.vm()
+        val before = vm.settings.value
+        val writes = f.preferences.writes
+        val file = File(f.root, "bad.json").apply { writeText("{broken") }
+        assertTrue(runCatching { vm.restoreFromChatBox(PlatformFile(file)) }.isFailure)
+        assertFalse(f.conversations.existsConversationById(chatboxConversationId))
+        assertEquals(before, vm.settings.value)
+        assertEquals(writes, f.preferences.writes)
+    }
+
+    @Test
+    fun `Cherry import uses original launched settings update and deduplicates only inside the input`() =
+        runTest(dispatcher) {
+            val f = fixture()
+            f.configureImportSettings()
+            val vm = f.vm()
+            val before = vm.settings.value
+            vm.restoreFromCherryStudio(f.cherryFile())
+            assertEquals(before, vm.settings.value)
+            runCurrent()
+            val providers = vm.settings.value.providers
+            assertEquals(before.providers.size + 1, providers.size)
+            val imported = assertIs<ProviderSetting.OpenAI>(providers.single { it.name == "CMP15 Cherry" })
+            assertEquals("CMP15 Cherry", imported.name)
+            assertEquals("https://cmp15.invalid/v1", imported.baseUrl)
+            assertEquals("cmp15-model", imported.models.single().modelId)
+            assertTrue(imported.useResponseApi)
+            assertFalse(imported.enabled)
+            assertEquals(existingProvider, providers.single { it.id == existingProvider.id })
+            assertEquals(before.assistants, vm.settings.value.assistants)
+            assertEquals(0, vm.settings.value.backupReminderConfig.lastBackupTime)
+        }
+
+    @Test
+    fun `empty or malformed Cherry backup preserves original errors without settings writes`() = runTest(dispatcher) {
+        val f = fixture()
+        f.configureImportSettings()
+        val vm = f.vm()
+        val before = vm.settings.value
+        val writes = f.preferences.writes
+        val empty = f.cherryFile(empty = true)
+        val failure = assertFailsWith<IllegalArgumentException> { vm.restoreFromCherryStudio(empty) }
+        assertEquals("No importable providers found in Cherry Studio backup", failure.message)
+        val missing = File(f.root, "missing-data.zip")
+        ZipOutputStream(missing.outputStream()).use { it.putNextEntry(ZipEntry("unrelated.txt")); it.closeEntry() }
+        val invalid = assertFailsWith<IllegalArgumentException> {
+            vm.restoreFromCherryStudio(PlatformFile(missing))
+        }
+        assertEquals("Invalid Cherry Studio backup: data.json not found", invalid.message)
+        runCurrent()
+        assertEquals(before, vm.settings.value)
+        assertEquals(writes, f.preferences.writes)
+    }
+
+    @Test
+    fun `real local restore writes archive files and export includes them without changing caller source`() =
+        runTest(dispatcher) {
+            val f = fixture()
+            val source = File(f.root, "native.zip")
+            val payload = "CMP15 native bytes 中文".encodeToByteArray()
+            ZipOutputStream(source.outputStream()).use {
+                it.putNextEntry(ZipEntry("upload/cmp15-native.txt"))
+                it.write(payload)
+                it.closeEntry()
+            }
+            val bytes = source.readBytes()
+            val vm = f.localVm()
+            vm.restoreFromLocalFile(PlatformFile(source))
+            assertTrue(payload.contentEquals(File(f.root, "files/upload/cmp15-native.txt").readBytes()))
+            assertTrue(bytes.contentEquals(source.readBytes()))
+            val exported = vm.exportToFile()
+            val zip = f.cache.listFiles()!!.single { it.extension == "zip" }
+            ZipFile(zip).use {
+                assertTrue(payload.contentEquals(it.getInputStream(it.getEntry("upload/cmp15-native.txt")).readBytes()))
+                assertTrue(it.getEntry("settings.json") != null)
+            }
+            vm.restoreFromLocalFile(exported)
+            assertTrue(payload.contentEquals(File(f.root, "files/upload/cmp15-native.txt").readBytes()))
+        }
 
     private fun fixture() = Fixture().also { fixtures += it }
 
@@ -343,6 +549,34 @@ class BackupVMContractTest {
         val root: File = Files.createTempDirectory("backup-vm-contract-").toFile()
         val cache = File(root, "cache")
         private var database: AppDatabase? = null
+        var beforeStatement: ((String) -> Unit)? = null
+
+        suspend fun configureImportSettings() {
+            store.update { it.copy(assistantId = assistantA.id, assistants = listOf(assistantA, assistantB),
+                providers = listOf(existingProvider)) }
+        }
+
+        fun chatboxFile(): PlatformFile = PlatformFile(File(root, "chatbox.json").apply {
+            writeText(requireNotNull(BackupVMContractTest::class.java.getResourceAsStream("/backup/cmp15-chatbox.json"))
+                .bufferedReader().use { it.readText() })
+        })
+
+        fun cherryFile(empty: Boolean = false): PlatformFile = PlatformFile(File(root, "cherry.zip").apply {
+            val providers = if (empty) "[]" else """[
+                {"name":"CMP15 Cherry","type":"openai-response","apiHost":"https://cmp15.invalid/v1/",
+                 "apiKey":"cmp15-offline-only","enabled":false,"models":[{"id":"cmp15-model"}]},
+                {"name":"duplicate","type":"openai-response","apiHost":"https://cmp15.invalid/v1/",
+                 "apiKey":"cmp15-offline-only","models":[{"id":"cmp15-model"}]}
+            ]"""
+            val llm = "{\"providers\":$providers}"
+            val persisted = "{\"llm\":${JsonInstant.encodeToString(llm)}}"
+            val data = "{\"localStorage\":{\"persist:cherry-studio\":${JsonInstant.encodeToString(persisted)}}}"
+            ZipOutputStream(outputStream()).use {
+                it.putNextEntry(ZipEntry("data.json"))
+                it.write(data.encodeToByteArray())
+                it.closeEntry()
+            }
+        })
 
         private fun webCall(name: String, config: WebDavConfig, item: Any? = null) {
             calls += name to config
@@ -357,6 +591,14 @@ class BackupVMContractTest {
         }
 
         val web = object : WebDavBackupTransport {
+            override suspend fun prepareBackupFile(config: WebDavConfig): PlatformFile {
+                webCall("local-export", config)
+                return PlatformFile(File(root, "prepared.zip"))
+            }
+            override suspend fun restoreFromLocalFile(file: PlatformFile, config: WebDavConfig) {
+                webCall("local-restore", config, file)
+            }
+
             override suspend fun listBackupFiles(config: WebDavConfig): List<WebDavBackupItem> {
                 webCall("web-list", config)
                 listGate?.await()
@@ -392,33 +634,46 @@ class BackupVMContractTest {
                 83.also { s3Call("s3-delete", config, item) }
         }
 
-        fun vm() = BackupVM(store, web, s3, object : BackupLocalFileService {
-            override suspend fun prepareExport(): PlatformFile = error("not used")
-            override suspend fun restoreBackup(source: PlatformFile): Unit = error("not used")
-            override suspend fun restoreChatbox(source: PlatformFile): ChatboxRestoreResult = error("not used")
-            override suspend fun restoreCherryStudio(source: PlatformFile): Unit = error("not used")
-        }, clock).also { viewModels.put("backup", it) }
+        fun vm(transport: WebDavBackupTransport = web) = BackupVM(store, transport, s3, conversations, clock)
+            .also { viewModels.put("backup", it) }
 
-        fun localFiles(): FileKitBackupLocalFileService {
+        val conversations: ConversationRepository by lazy {
+            val driver = BundledSQLiteDriver()
             val db = buildAppDatabase(
                 Room.inMemoryDatabaseBuilder<AppDatabase>(AppDatabaseConstructor::initialize),
-                BundledSQLiteDriver(), MessageFtsDialect.UNICODE61,
+                object : SQLiteDriver by driver {
+                    override fun open(fileName: String): SQLiteConnection {
+                        val connection = driver.open(fileName)
+                        return object : SQLiteConnection by connection {
+                            override fun prepare(sql: String): SQLiteStatement {
+                                beforeStatement?.invoke(sql)
+                                return connection.prepare(sql)
+                            }
+                        }
+                    }
+                }, MessageFtsDialect.UNICODE61,
             ).also { database = it }
-            val conversations = ConversationRepository(
+            ConversationRepository(
                 db.conversationDao(), db.messageNodeDao(), db.favoriteDao(), db, ConversationFileStore {},
                 MessageFtsManager(db, MessageFtsDialect.UNICODE61),
             )
+        }
+
+        private val httpClient = HttpClient(MockEngine { error("No network in local backup tests") })
+
+        fun localVm(): BackupVM {
             val archives = BackupArchiveService(
                 store, JsonInstant,
                 BackupFileLayout(PlatformFile(File(root, "files")), PlatformFile(cache)),
             )
-            return FileKitBackupLocalFileService(archives, store, conversations, clock)
+            return vm(SharedWebDavBackupTransport(httpClient, archives))
         }
 
         fun close() {
             viewModels.clear()
             scope.cancel()
             database?.close()
+            httpClient.close()
             root.deleteRecursively()
         }
     }
@@ -434,6 +689,12 @@ class BackupVMContractTest {
     }
 
     private companion object {
+        val assistantA = Assistant(id = Uuid.parse("15000000-0000-4000-8000-000000000001"),
+            name = "CMP15 A", allowConversationSystemPrompt = false)
+        val assistantB = Assistant(id = Uuid.parse("15000000-0000-4000-8000-000000000002"),
+            name = "CMP15 B", allowConversationSystemPrompt = false)
+        val existingProvider = ProviderSetting.OpenAI(name = "CMP15 existing", baseUrl = "https://existing.invalid/v1")
+        val chatboxConversationId = Uuid.parse("cc1f24b1-4cc0-3f65-adac-ce33ee775e25")
         val webConfig = WebDavConfig("https://unit.invalid/dav", "test-user", "test-only", "folder / 中文",
             listOf(WebDavConfig.BackupItem.FILES, WebDavConfig.BackupItem.DATABASE))
         val s3Config = S3Config("https://unit.invalid", "test-id", "test-only", "test-bucket", "region-x", false,

@@ -1,0 +1,87 @@
+{
+  "settings": {
+    "providers": {
+      "openai": {
+        "apiHost": "https://cmp15.invalid",
+        "apiKey": "cmp15-offline-only",
+        "models": [
+          {
+            "modelId": "cmp15-model"
+          }
+        ]
+      }
+    }
+  },
+  "chat-sessions-list": [
+    {
+      "id": "cmp15-test"
+    }
+  ],
+  "session:cmp15-test": {
+    "id": "cmp15-test",
+    "name": "fallback",
+    "threadName": "CMP15 fixed conversation",
+    "settings": {
+      "provider": "openai",
+      "modelId": "cmp15-model"
+    },
+    "messages": [
+      {
+        "id": "system",
+        "role": "system",
+        "timestamp": 1700000000000,
+        "contentParts": [
+          {
+            "type": "text",
+            "text": "CMP15 system"
+          }
+        ]
+      },
+      {
+        "id": "user",
+        "role": "user",
+        "timestamp": 1700000001000,
+        "contentParts": [
+          {
+            "type": "text",
+            "text": "CMP15 question 中文"
+          },
+          {
+            "type": "image",
+            "storageKey": "not-exported"
+          }
+        ]
+      },
+      {
+        "id": "empty",
+        "role": "user",
+        "timestamp": 1700000002000,
+        "contentParts": [
+          {
+            "type": "image",
+            "storageKey": "not-exported"
+          },
+          {
+            "type": "text",
+            "text": "   "
+          }
+        ]
+      },
+      {
+        "id": "answer",
+        "role": "assistant",
+        "timestamp": 1700000004000,
+        "contentParts": [
+          {
+            "type": "text",
+            "text": "CMP15 answer"
+          }
+        ],
+        "usage": {
+          "inputTokens": 7,
+          "outputTokens": 11
+        }
+      }
+    ]
+  }
+}

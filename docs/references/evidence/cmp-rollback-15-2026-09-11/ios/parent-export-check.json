@@ -1,0 +1,29 @@
+{
+  "archiveSha256": "4d1244a17c4d7af6425886e64beb318ccc23c62c1603b345b4d7ec6ffb48b09c",
+  "zipCrcPassed": true,
+  "settingsJsonReadable": true,
+  "databaseEntryHasSqliteHeader": true,
+  "fixtureProvidersInExport": 3,
+  "entryCount": 5,
+  "databaseOnlySupplement": false,
+  "nativeMarker": "upload/cmp15-ios-native.txt",
+  "nativeMarkerSha256": "7d59b35c9e22d28fc1eb5fda18efed992baa0bd118439ef3a96571d216d45fc5",
+  "databaseWalIncluded": true,
+  "databaseSidecarBasenameNormalized": true,
+  "fixedConversationCount": 1,
+  "fixedConversationTitleMatches": true,
+  "fixedMessageNodeCount": 2,
+  "fixedChineseBodyAndAnswerMatch": true,
+  "cherryProviderFieldsMatch": true,
+  "checks": [
+    {
+      "matchingProviderCount": 1,
+      "baseUrlMatchesOriginalImportRule": true,
+      "keyMatchesFixture": true,
+      "enabledMatchesFixture": true,
+      "modelIdsMatchFixture": true
+    }
+  ],
+  "parentRechecked": true,
+  "originalUrlNormalizationVerifiedAgainstTag": "2.4.5"
+}

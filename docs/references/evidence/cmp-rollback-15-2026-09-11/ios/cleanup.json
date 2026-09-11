@@ -1,0 +1,22 @@
+{
+  "parentReviewedIosScreenshots": 4,
+  "reviewedScreenshotSha256": {
+    "chatbox-duplicate-deduplicated.jpg": "350c1e9729ccd3a41e9cb9a1364fbe67d05a191abb3ee639800cb8454cb193c1",
+    "cherry-provider-visible.jpg": "d071af6680750f4edde3372454089c3e1c7e755254b75ec4bee3406fc0fef1a6",
+    "gui-export-save-panel.jpg": "3cc567682f417bcdd63b715c15be6774b861ca6f9192a7e88e1c34b9ac83af01",
+    "chatbox-imported-conversation.jpg": "84135c2500b41441cc973529bcff6a3288afce23eb9446adb7fdf56e2e9ffaf6"
+  },
+  "dataContainerFixtureNamesRemaining": 0,
+  "filesFixtureDirectoryRemoved": true,
+  "installedProductHashesStillMatch": true,
+  "temporaryXCTestRunnerUninstalled": true,
+  "temporaryXCTestProjectAndPrivateToolsRemoved": true,
+  "ownedToolArtifactsRemoved": 155,
+  "registeredToolArtifactsRemaining": 0,
+  "ownAdditionalDeviceHubProcessStopped": true,
+  "userDeviceHubProcessesUntouched": [
+    1360,
+    72046
+  ],
+  "simulatorState": "Booted"
+}
