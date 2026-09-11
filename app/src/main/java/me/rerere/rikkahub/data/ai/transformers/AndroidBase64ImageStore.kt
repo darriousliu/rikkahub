@@ -13,9 +13,9 @@ import me.rerere.rikkahub.data.files.FilesManager
 class AndroidBase64ImageStore(
     private val filesManager: FilesManager,
 ) : Base64ImageStore {
-    override suspend fun storeAsPng(bytes: ByteArray): String? = withContext(Dispatchers.IO) {
-        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@withContext null
+    override suspend fun storeAsPng(bytes: ByteArray): String = withContext(Dispatchers.IO) {
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         val png = FileUtils.compressBitmapToPng(bitmap)
-        filesManager.createChatFilesByByteArrays(listOf(png)).firstOrNull()?.toString()
+        filesManager.createChatFilesByByteArrays(listOf(png)).first().toString()
     }
 }

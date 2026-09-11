@@ -1,6 +1,9 @@
 package me.rerere.rikkahub.data.ai.transformers
 
 import kotlin.io.encoding.Base64
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
@@ -18,15 +21,14 @@ private const val STORED_IMAGE_NAME = "image.png"
  * Images are normalized to PNG on the way in, which keeps every stored attachment in one format.
  */
 fun interface Base64ImageStore {
-    /** Returns the file uri of the stored image, or null when the payload is not a usable image. */
-    suspend fun storeAsPng(bytes: ByteArray): String?
+    suspend fun storeAsPng(bytes: ByteArray): String
 }
 
 class SharedBase64ImageStore(
     private val fileStore: FileKitPlatformFileStore = FileKitPlatformFileStore(),
 ) : Base64ImageStore {
-    override suspend fun storeAsPng(bytes: ByteArray): String? {
-        val png = encodeImageToPng(bytes) ?: return null
+    override suspend fun storeAsPng(bytes: ByteArray): String {
+        val png = encodeImageToPng(bytes)!!
         return fileStore
             .writeIntoSandbox(png, STORED_IMAGE_NAME)
             .toFileUri()
@@ -41,18 +43,17 @@ object Base64ImageToLocalFileTransformer : OutputMessageTransformer, KoinCompone
     ): List<UIMessage> {
         val store = get<Base64ImageStore>()
         return messages.map { message ->
-            message.copy(
-                parts = message.parts.map { part ->
-                    if (part !is UIMessagePart.Image || !part.url.startsWith(BASE64_IMAGE_PREFIX)) {
-                        return@map part
-                    }
-                    val decoded = runCatching {
-                        Base64.decode(part.url.substringAfter("base64,"))
-                    }.getOrNull() ?: return@map part
-                    val storedUrl = runCatching { store.storeAsPng(decoded) }.getOrNull()
-                    if (storedUrl == null) part else part.copy(url = storedUrl)
-                },
-            )
+            withContext(Dispatchers.IO) {
+                message.copy(
+                    parts = message.parts.map { part ->
+                        if (part !is UIMessagePart.Image || !part.url.startsWith(BASE64_IMAGE_PREFIX)) {
+                            return@map part
+                        }
+                        val decoded = Base64.decode(part.url.substringAfter("base64,").encodeToByteArray())
+                        part.copy(url = store.storeAsPng(decoded))
+                    },
+                )
+            }
         }
     }
 }
