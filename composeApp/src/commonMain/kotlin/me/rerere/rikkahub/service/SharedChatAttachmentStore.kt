@@ -5,22 +5,21 @@ import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.delete
 import io.github.vinceglb.filekit.extension
 import io.github.vinceglb.filekit.mimeType
+import io.github.vinceglb.filekit.name
 import io.ktor.http.decodeURLPart
 import io.ktor.http.encodeURLPath
 import kotlinx.coroutines.CancellationException
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.FileStoreArea
-import me.rerere.rikkahub.platform.PlatformFileStore
 
 internal class SharedChatAttachmentStore(
-    private val fileStore: PlatformFileStore = FileKitPlatformFileStore(),
+    private val fileStore: FileKitPlatformFileStore = FileKitPlatformFileStore(),
 ) {
     suspend fun import(files: List<PlatformFile>): List<UIMessagePart> = buildList {
         files.forEach { source ->
-            val stored = fileStore.copyIntoSandbox(source, FileStoreArea.ATTACHMENTS).getOrNull()
+            val stored = fileStore.copyIntoSandbox(source).getOrNull()
                 ?: return@forEach
-            val uri = stored.file.toFileUri()
+            val uri = stored.toFileUri()
             val mime = source.mimeType()?.toString() ?: mimeTypeForExtension(source.extension)
             add(
                 when {
@@ -29,7 +28,7 @@ internal class SharedChatAttachmentStore(
                     mime.startsWith("audio/") -> UIMessagePart.Audio(uri)
                     else -> UIMessagePart.Document(
                         url = uri,
-                        fileName = stored.originalName,
+                        fileName = source.name,
                         mime = mime,
                     )
                 },
@@ -43,6 +42,9 @@ internal class SharedChatAttachmentStore(
         },
     )
 
+    suspend fun copyIntoSandbox(location: String): String? =
+        fileStore.copyIntoSandbox(PlatformFile(location.toLocalFilePath())).getOrNull()?.toFileUri()
+
     suspend fun delete(locations: List<String>) {
         locations.forEach { location ->
             try {
@@ -54,9 +56,10 @@ internal class SharedChatAttachmentStore(
     }
 }
 
-internal fun PlatformFile.toFileUri(): String = "file://${absolutePath().encodeURLPath()}"
+internal fun PlatformFile.toFileUri(): String = "file://${absolutePath().toLocalFilePath().encodeURLPath()}"
 
-internal fun String.toLocalFilePath(): String = removePrefix("file://").decodeURLPart()
+internal fun String.toLocalFilePath(): String =
+    if (startsWith("file:")) removePrefix("file:").removePrefix("//").decodeURLPart() else this
 
 private fun mimeTypeForExtension(extension: String): String = when (extension.lowercase()) {
     "png" -> "image/png"

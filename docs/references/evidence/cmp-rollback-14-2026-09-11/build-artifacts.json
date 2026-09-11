@@ -1,0 +1,30 @@
+{
+  "beforeCropLifetimeFix": {
+    "app/build/outputs/apk/debug/app-arm64-v8a-debug.apk": "c2ebed069ccd9ddf4a244ea5720d84a4cdbcfddd0ff891a8cdf2056e836dea11",
+    "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/MacOS/RikkaHub": "9b29c7b2227b1b2d89508ff5e2c9f2f889917417012dcfb61cec6139222688ef",
+    "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/app/composeApp-jvm-21d193add314708c2c629f9b9540e61a.jar": "22c736be7d87f7e2aa74d0a104fa8387dc2f04c0407bf0a23fb40ca7f6a9df17",
+    "ios": {
+      "RikkaHub": "4a6d25331151fa725f34d354a7d09aed33e07569c37cb4eae6108e201b0be8bd",
+      "RikkaHub.debug.dylib": "520dbf11b9c35d30640e28a369a826eae460b95976d6601615b4500e538626b2"
+    }
+  },
+  "final": {
+    "app/build/outputs/apk/debug/app-arm64-v8a-debug.apk": "17ecc9c4fe25c3005cfa1753667a3da7b7efb97fcbdc0615a9cf4c55d886c4af",
+    "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/MacOS/RikkaHub": "c8fae8ebe831e8299871c4cc54eb571ce7e4f18886006ebb84c5777babe781ba",
+    "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/app/composeApp-jvm-f015905426541663e481894eab5d7076.jar": "aa47e48298939b7b9a5cf7e805477acbc4180ebb3d72df7425aed788c4ead6f1",
+    "ios": [
+      {
+        "file": "RikkaHub",
+        "built_sha256": "f51787721d5d0a8e9979b1ed07f0f0ed92d6765fd8e9407b0d6431baef807283",
+        "installed_sha256": "f51787721d5d0a8e9979b1ed07f0f0ed92d6765fd8e9407b0d6431baef807283",
+        "equal": true
+      },
+      {
+        "file": "RikkaHub.debug.dylib",
+        "built_sha256": "4792e47818e2cfb9657aa73d14754d5ee0bd74120bf760053d3ad0477aa7f664",
+        "installed_sha256": "4792e47818e2cfb9657aa73d14754d5ee0bd74120bf760053d3ad0477aa7f664",
+        "equal": true
+      }
+    ]
+  }
+}

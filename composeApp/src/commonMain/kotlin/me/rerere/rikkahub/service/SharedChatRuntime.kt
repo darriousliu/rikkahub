@@ -61,6 +61,7 @@ import me.rerere.rikkahub.data.ai.transformers.transforms
 import me.rerere.rikkahub.data.ai.transformers.visualTransforms
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.web.NotFoundException
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
@@ -298,22 +299,58 @@ internal class SharedChatRuntime(
 
     override suspend fun forkConversationAtMessage(
         conversationId: Uuid,
-        messageId: Uuid,
+        messageId: Uuid
     ): Conversation {
-        val source = conversationState(conversationId).value
-        val nodeIndex = source.messageNodes.indexOfFirst { node -> node.messages.any { it.id == messageId } }
-        require(nodeIndex >= 0) { "Message $messageId is not part of conversation $conversationId" }
-        val fork = source.copy(
+        val currentConversation = getConversationFlow(conversationId).value
+        val targetNodeIndex = currentConversation.messageNodes.indexOfFirst { node ->
+            node.messages.any { it.id == messageId }
+        }
+        if (targetNodeIndex == -1) {
+            throw NotFoundException("Message not found")
+        }
+
+        val copiedNodes = currentConversation.messageNodes
+            .subList(0, targetNodeIndex + 1)
+            .map { node ->
+                node.copy(
+                    id = Uuid.random(),
+                    messages = node.messages.map { message ->
+                        message.copy(
+                            parts = message.parts.map { part ->
+                                part.copyWithForkedFileUrl()
+                            }
+                        )
+                    }
+                )
+            }
+
+        val forkConversation = Conversation(
             id = Uuid.random(),
-            title = source.title.takeIf(String::isNotBlank)?.let { "$it (Fork)" }.orEmpty(),
-            messageNodes = source.messageNodes.take(nodeIndex + 1).map { node -> node.copy(id = Uuid.random()) },
-            createAt = Clock.System.now(),
-            updateAt = Clock.System.now(),
-            newConversation = false,
+            assistantId = currentConversation.assistantId,
+            messageNodes = copiedNodes,
+            customSystemPrompt = currentConversation.customSystemPrompt,
+            modeInjectionIds = currentConversation.modeInjectionIds,
+            lorebookIds = currentConversation.lorebookIds,
         )
-        conversationRepository.insertConversation(fork)
-        conversations[fork.id] = MutableStateFlow(fork)
-        return fork
+
+        saveConversation(forkConversation.id, forkConversation)
+        return forkConversation
+    }
+
+    private suspend fun UIMessagePart.copyWithForkedFileUrl(): UIMessagePart {
+        suspend fun copyLocalFileIfNeeded(url: String): String {
+            if (!url.startsWith("file:")) return url
+            val copied = attachmentStore.copyIntoSandbox(url)
+            return copied ?: url
+        }
+
+        return when (this) {
+            is UIMessagePart.Image -> copy(url = copyLocalFileIfNeeded(url))
+            is UIMessagePart.Document -> copy(url = copyLocalFileIfNeeded(url))
+            is UIMessagePart.Video -> copy(url = copyLocalFileIfNeeded(url))
+            is UIMessagePart.Audio -> copy(url = copyLocalFileIfNeeded(url))
+            else -> this
+        }
     }
 
     override suspend fun deleteMessage(conversationId: Uuid, message: UIMessage) {

@@ -28,5 +28,5 @@ public fun interface ImageCropper {
 
 @Composable
 public expect fun rememberImageCropper(
-    onResult: (ImageCropResult) -> Unit,
+    onResult: suspend (ImageCropResult) -> Unit,
 ): ImageCropper

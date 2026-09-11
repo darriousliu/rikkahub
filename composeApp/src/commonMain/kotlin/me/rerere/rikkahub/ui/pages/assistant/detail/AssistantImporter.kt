@@ -19,7 +19,7 @@ import com.dokar.sonner.ToastType
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.path
+import me.rerere.rikkahub.service.toFileUri
 import io.github.vinceglb.filekit.readBytes
 import io.github.vinceglb.filekit.readString
 import kotlin.io.encoding.Base64
@@ -37,7 +37,6 @@ import me.rerere.rikkahub.generated.resources.assistant_importer_import_tavern_j
 import me.rerere.rikkahub.generated.resources.assistant_importer_import_tavern_png
 import me.rerere.rikkahub.generated.resources.assistant_importer_importing
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.FileStoreArea
 import me.rerere.rikkahub.platform.createCharacterCardMetadataReader
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.context.LocalToaster
@@ -59,7 +58,7 @@ fun AssistantImporter(
         scope.launch {
             runCatching {
                 val background = if (png) {
-                    fileStore.copyIntoSandbox(file, FileStoreArea.IMAGES).getOrThrow().file.path
+                    fileStore.copyIntoSandbox(file).getOrThrow().toFileUri()
                 } else {
                     null
                 }

@@ -10,23 +10,9 @@ import android.webkit.MimeTypeMap
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
-import kotlin.uuid.Uuid
 
 object FileUtils {
     private const val TAG = "FileUtils"
-
-    fun buildUuidFileName(displayName: String?, mimeType: String?): String {
-        val extFromName = displayName
-            ?.substringAfterLast('.', "")
-            ?.takeIf { it.isNotBlank() && it != displayName }
-            ?.lowercase()
-        val extFromMime = mimeType
-            ?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it.lowercase()) }
-            ?.takeIf { it.isNotBlank() }
-            ?.lowercase()
-        val ext = extFromName ?: extFromMime ?: "bin"
-        return "${Uuid.random()}.$ext"
-    }
 
     fun buildRelativePath(folder: String, file: File): String =
         "$folder/${file.name}"

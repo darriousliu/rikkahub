@@ -378,11 +378,8 @@ class FilesManager(
         if (!dir.exists()) {
             dir.mkdirs()
         }
-        return File(dir, FileUtils.buildUuidFileName(displayName = displayName, mimeType = mimeType))
+        return File(dir, buildUuidFileName(displayName = displayName, mimeType = mimeType))
     }
-
-    private fun buildUuidFileName(displayName: String?, mimeType: String?): String =
-        FileUtils.buildUuidFileName(displayName, mimeType)
 
     private suspend fun createManagedFileEntity(
         folder: String,

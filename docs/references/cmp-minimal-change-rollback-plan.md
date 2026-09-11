@@ -457,6 +457,8 @@ iOS 10.149 秒、桌面 1.279 秒。18 张原始截图经父 agent 复核。移�
 
 起点：`6ac2e6e9db098250a718dd2b4a43931135c79b92`。审计 E09 + E11。状态：代码回退、测试、三端 GUI 与测试资料清理完成。
 
+提交：`6211dd359e055d157292330bb6832180501ff1c9`（`refactor(cmp): 将技能业务收回原 SkillManager`），SSH 签名已验证。
+
 将 tag 原 SkillManager/SkillMetadata、SkillPaths 迁入 common；删除 SkillStore、SkillSummary、StoredSkillFile、
 AndroidSkillStore、FileKitSkillStore、AssistantSkillCatalog、AssistantSkillMetadata、AndroidAssistantSkillCatalog，
 共 8 个额外类型。调用点直接依赖原 Manager/Metadata；文件树恢复原目录递归，保留已经修复的显示名/目录名映射。
@@ -489,3 +491,35 @@ Android 偏好仅启动计数变化；iOS 本轮技能引用归零，未逐键�
 测试技能、下载件、私有备份、独立桌面 profile、临时工具/日志与本轮测试进程均已清理。未动原有 Xcode 配置改动。
 
 下一项建议：第 14 项 B09，恢复原附件目录约定，接通会话删除文件清理，验证已有数据、fork 独立性与备份文件集合。
+
+## 第 14 项：附件目录、fork 与清理
+
+起点：`6211dd359e055d157292330bb6832180501ff1c9`。审计 B09。
+本项拆为连续的 14A、14B：当前迁移版本的非 Android fork 共用附件路径，恢复删除前必须先明确存量兼容方式。
+已询问用户旧附件/fork 是否需要保留；未收到答复前不启用新的删除接线，也不清除旧目录。
+
+**14A：写入、复制与备份。** 状态：已完成（本提交），代码、构建及本项所需三端 GUI 已验证。
+
+- 恢复 `upload/UUID.扩展名`，头像/背景/角色卡背景恢复文件 URI。
+- 删除 `FileStoreArea`、`PlatformFileStore` 接口和 `StoredPlatformFile`，保留多处复用的 FileKit I/O 工具。
+- 原 `buildUuidFileName` 方法移入 common；只有 MimeTypeMap 查询使用窄 expect/actual，Android 实现保持原样。
+- 恢复复制逐个失败、失败目标不额外清理、字节写入异常传播的原约定；移除统一 Result/取消包装。
+- 原 fork 主方法恢复，四类本地附件生成独立副本，保留原 message ID、节点选择与元数据规则。
+- 新文件回到原备份范围；旧 `platform-files/attachments`、`platform-files/images` 保留原路径并加入备份/恢复。
+- 修正 FileKit iOS `absolutePath()` 返回 URI 引起的重复前缀/编码，并验证中文/空格/百分号等路径。
+
+代码验证最终 **378 次执行**（JVM 303、Android 60、Pro Max 原生 15），均通过。
+真实 Runtime/Room 测试使用实际文件复制和删除验证 fork 独立性；测试注入的清理实现不代表非 Android 产品 DI 已接通。
+GUI 发现 Android 裁剪输出在异步保存前被删除；该迁移既有问题一并按原“先保存、后清理”顺序作最小平台适配。
+生产代码共 18 个文件，增加 189 行、删除 190 行；另增 3 个测试文件、479 行。
+最终包的三端头像/背景均完成实际显示与冷启动验证；临时日志、测试资料和本轮上传件已清理。
+iOS TXT 离线发送补试发生 TLS 失败，不计作通过；具体分平台构建版本及验证范围在记录中单列。
+原方法比对、详细用例、GUI 依据与实际范围见 [第 14 项验证记录](evidence/cmp-rollback-14-2026-09-11/verification.md)。
+
+**14B：存量兼容与删除接线。** 尚未开始恢复产品删除，待用户明确旧数据保留要求。
+需要保留时先解决已经共享的本地附件引用；均为可丢弃测试资料时，也只清理已确认的测试数据范围。
+同时核对旧 iOS 重复前缀 URI、重新安装后的旧容器绝对路径；14A 修正新 URI 的生成，不宣称已修复存量引用。
+随后恢复 ConversationFileStore / 助手资产清理的原调用效果，验证全分支文件集合、删除源会话后 fork 冷启动可读，
+并由 Terra 在受影响平台补做真实 GUI 删除与精确磁盘核验。不能只凭会话列表中消失判定附件清理通过。
+
+14B 完成后再继续第 15 项 E08：将本地备份导入导出业务收回原 BackupVM。

@@ -1,0 +1,21 @@
+{
+  "verification": "Parent read only the four exact paths recorded from the isolated test database; no directory listing or default database/settings access.",
+  "pairs": [
+    {
+      "kind": "png",
+      "source": "a6049dea-6ad6-44d9-af77-4ebef641970d.png",
+      "fork": "e2fd3305-3390-4978-81e9-abfc3fc08d87.png",
+      "bytes": 171,
+      "sha256": "cfa59c9ffeb583baa12d9d609f8bc76c0bae6207bac34bdeca6d7c3a65996f6b",
+      "equal": true
+    },
+    {
+      "kind": "txt",
+      "source": "2e68c515-d712-4b83-bc89-1fe1e7217208.txt",
+      "fork": "27627bac-c97e-483a-b416-f3dbab41210e.txt",
+      "bytes": 39,
+      "sha256": "917f1c2e3799dd0c59095fb9cb002fb7e78f392de724529f61976a09c2d30684",
+      "equal": true
+    }
+  ]
+}

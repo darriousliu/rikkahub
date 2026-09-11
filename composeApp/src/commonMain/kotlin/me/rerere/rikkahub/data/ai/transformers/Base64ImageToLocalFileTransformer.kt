@@ -4,8 +4,6 @@ import kotlin.io.encoding.Base64
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.FileStoreArea
-import me.rerere.rikkahub.platform.PlatformFileStore
 import me.rerere.rikkahub.platform.encodeImageToPng
 import me.rerere.rikkahub.service.toFileUri
 import org.koin.core.component.KoinComponent
@@ -25,15 +23,13 @@ fun interface Base64ImageStore {
 }
 
 class SharedBase64ImageStore(
-    private val fileStore: PlatformFileStore = FileKitPlatformFileStore(),
+    private val fileStore: FileKitPlatformFileStore = FileKitPlatformFileStore(),
 ) : Base64ImageStore {
     override suspend fun storeAsPng(bytes: ByteArray): String? {
         val png = encodeImageToPng(bytes) ?: return null
         return fileStore
-            .writeIntoSandbox(png, STORED_IMAGE_NAME, FileStoreArea.ATTACHMENTS)
-            .getOrNull()
-            ?.file
-            ?.toFileUri()
+            .writeIntoSandbox(png, STORED_IMAGE_NAME)
+            .toFileUri()
     }
 }
 

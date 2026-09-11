@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +40,6 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.path
-import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Edit03
 import me.rerere.rikkahub.data.model.Avatar
@@ -57,10 +54,10 @@ import me.rerere.rikkahub.generated.resources.avatar_url_confirm
 import me.rerere.rikkahub.generated.resources.avatar_url_dialog_title
 import me.rerere.rikkahub.generated.resources.avatar_url_hint
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.FileStoreArea
 import me.rerere.rikkahub.platform.ImageCropRequest
 import me.rerere.rikkahub.platform.ImageCropResult
 import me.rerere.rikkahub.platform.rememberImageCropper
+import me.rerere.rikkahub.service.toFileUri
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
 
@@ -98,18 +95,15 @@ fun UIAvatar(
     onUpdate: ((Avatar) -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    val scope = rememberCoroutineScope()
     val fileStore = remember { FileKitPlatformFileStore() }
     var showPicker by remember { mutableStateOf(false) }
     var showTextInput by remember { mutableStateOf<AvatarInput?>(null) }
     var input by remember { mutableStateOf("") }
 
-    fun storeAvatar(result: ImageCropResult) {
+    suspend fun storeAvatar(result: ImageCropResult) {
         val file = (result as? ImageCropResult.Success)?.file ?: return
-        scope.launch {
-            fileStore.copyIntoSandbox(file, FileStoreArea.IMAGES)
-                .onSuccess { onUpdate?.invoke(Avatar.Image(it.file.path)) }
-        }
+        fileStore.copyIntoSandbox(file)
+            .onSuccess { onUpdate?.invoke(Avatar.Image(it.toFileUri())) }
     }
 
     val cropper = rememberImageCropper(::storeAvatar)

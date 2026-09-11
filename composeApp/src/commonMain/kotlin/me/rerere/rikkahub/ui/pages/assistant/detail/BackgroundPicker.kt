@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.path
+import me.rerere.rikkahub.service.toFileUri
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.assistant_page_background_set
@@ -39,7 +39,6 @@ import me.rerere.rikkahub.generated.resources.assistant_page_select_from_gallery
 import me.rerere.rikkahub.generated.resources.assistant_page_cancel
 import me.rerere.rikkahub.generated.resources.assistant_page_confirm
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.FileStoreArea
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import org.jetbrains.compose.resources.stringResource
 
@@ -58,8 +57,8 @@ fun BackgroundPicker(
     val imagePicker = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
         file?.let {
             scope.launch {
-                fileStore.copyIntoSandbox(it, FileStoreArea.IMAGES)
-                    .onSuccess { stored -> onUpdate(stored.file.path) }
+                fileStore.copyIntoSandbox(it)
+                    .onSuccess { stored -> onUpdate(stored.toFileUri()) }
             }
         }
     }

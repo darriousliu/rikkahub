@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import com.yalantis.ucrop.UCrop
@@ -16,47 +17,51 @@ import io.github.vinceglb.filekit.AndroidFile
 import io.github.vinceglb.filekit.PlatformFile
 import java.io.File
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.launch
 
 @Composable
 public actual fun rememberImageCropper(
-    onResult: (ImageCropResult) -> Unit,
+    onResult: suspend (ImageCropResult) -> Unit,
 ): ImageCropper {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val currentOnResult = rememberUpdatedState(onResult)
     val outputFile = remember { mutableStateOf<File?>(null) }
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         val cropOutput = outputFile.value
-        try {
-            when (result.resultCode) {
-                Activity.RESULT_OK -> {
-                    if (cropOutput == null) {
+        scope.launch {
+            try {
+                when (result.resultCode) {
+                    Activity.RESULT_OK -> {
+                        if (cropOutput == null) {
+                            currentOnResult.value(
+                                ImageCropResult.Failed("Crop output is unavailable"),
+                            )
+                        } else {
+                            currentOnResult.value(
+                                ImageCropResult.Success(PlatformFile(cropOutput)),
+                            )
+                        }
+                    }
+
+                    UCrop.RESULT_ERROR -> {
+                        val error = result.data?.let(UCrop::getError)
                         currentOnResult.value(
-                            ImageCropResult.Failed("Crop output is unavailable"),
-                        )
-                    } else {
-                        currentOnResult.value(
-                            ImageCropResult.Success(PlatformFile(cropOutput)),
+                            ImageCropResult.Failed(
+                                message = error?.message ?: "Unknown crop error",
+                                cause = error,
+                            ),
                         )
                     }
-                }
 
-                UCrop.RESULT_ERROR -> {
-                    val error = result.data?.let(UCrop::getError)
-                    currentOnResult.value(
-                        ImageCropResult.Failed(
-                            message = error?.message ?: "Unknown crop error",
-                            cause = error,
-                        ),
-                    )
+                    else -> currentOnResult.value(ImageCropResult.Cancelled)
                 }
-
-                else -> currentOnResult.value(ImageCropResult.Cancelled)
+            } finally {
+                cropOutput?.delete()
+                outputFile.value = null
             }
-        } finally {
-            cropOutput?.delete()
-            outputFile.value = null
         }
     }
 

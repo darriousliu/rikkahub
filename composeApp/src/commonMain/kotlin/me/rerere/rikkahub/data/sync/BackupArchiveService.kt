@@ -140,6 +140,8 @@ class BackupArchiveService(
         addDirectChildren(layout.filesRoot / FileFolders.UPLOAD, "${FileFolders.UPLOAD}/")
         addTree(layout.filesRoot / FileFolders.SKILLS, "${FileFolders.SKILLS}/")
         addDirectChildren(layout.filesRoot / FileFolders.FONTS, "${FileFolders.FONTS}/")
+        addDirectChildren(layout.filesRoot / LEGACY_ATTACHMENTS_DIRECTORY, "$LEGACY_ATTACHMENTS_DIRECTORY/")
+        addDirectChildren(layout.filesRoot / LEGACY_IMAGES_DIRECTORY, "$LEGACY_IMAGES_DIRECTORY/")
     }
 
     private fun ZipArchiveWriter.addDirectChildren(directory: PlatformFile, prefix: String) {
@@ -179,6 +181,8 @@ class BackupArchiveService(
     private fun isRestorableApplicationPath(path: String): Boolean =
         ZipEntryPathPolicy.directChildOfOrNull(path, FileFolders.UPLOAD) != null ||
             ZipEntryPathPolicy.directChildOfOrNull(path, FileFolders.FONTS) != null ||
+            ZipEntryPathPolicy.directChildOfOrNull(path, LEGACY_ATTACHMENTS_DIRECTORY) != null ||
+            ZipEntryPathPolicy.directChildOfOrNull(path, LEGACY_IMAGES_DIRECTORY) != null ||
             ZipEntryPathPolicy.relativeToRootOrNull(path, FileFolders.SKILLS)
                 ?.let(::isValidSkillRelativePath) == true
 
@@ -220,6 +224,9 @@ private fun PlatformFile.resolvedPathOrNull(): String? =
     runCatching { SystemFileSystem.resolve(toKotlinxIoPath()).toString() }.getOrNull()
 
 private const val SETTINGS_ENTRY = "settings.json"
+// 迁移版本已写入的文件保留原路径；新文件统一使用 upload。
+private const val LEGACY_ATTACHMENTS_DIRECTORY = "platform-files/attachments"
+private const val LEGACY_IMAGES_DIRECTORY = "platform-files/images"
 private const val DATABASE_ENTRY = "rikka_hub.db"
 private const val DATABASE_WAL_ENTRY = "rikka_hub-wal"
 private const val DATABASE_SHM_ENTRY = "rikka_hub-shm"
