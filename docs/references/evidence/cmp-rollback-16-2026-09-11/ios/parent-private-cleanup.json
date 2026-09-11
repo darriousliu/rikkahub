@@ -1,0 +1,9 @@
+{
+  "exactToolPathsRecoveredFromOwnToolRecords": 194,
+  "remainingToolPathsRemovedByParent": 67,
+  "exactOwnedToolPathsStillPresent": 0,
+  "remainingPrivateArtifactFilesRemoved": 30,
+  "remainingPrivateArtifactBytesRemoved": 508057,
+  "privateIosDirectoryRemoved": true,
+  "baselineAndArchivesCheckedBeforeRemoval": true
+}

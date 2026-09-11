@@ -1,0 +1,16 @@
+[
+  {
+    "name": "BackupVMContractTest[jvm]",
+    "tests": "22",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "AttachmentArchiveTest[jvm]",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

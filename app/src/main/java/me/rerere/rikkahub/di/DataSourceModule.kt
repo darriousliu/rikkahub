@@ -40,6 +40,8 @@ import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.search.SearchService
+import me.rerere.rikkahub.data.sync.BackupFileLayout
+import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.rikkahub.data.sync.S3Sync
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -196,10 +198,23 @@ val dataSourceModule = module {
     }
 
     single {
+        val context: Context = get()
+        BackupFileLayout(
+            filesRoot = PlatformFile(context.filesDir),
+            cacheRoot = PlatformFile(context.cacheDir),
+            databaseFiles = mapOf(
+                "rikka_hub.db" to PlatformFile(context.getDatabasePath("rikka_hub")),
+                "rikka_hub-wal" to PlatformFile(context.getDatabasePath("rikka_hub-wal")),
+                "rikka_hub-shm" to PlatformFile(context.getDatabasePath("rikka_hub-shm")),
+            ),
+        )
+    }
+
+    single {
         WebDavSync(
             settingsStore = get(),
             json = get(),
-            context = get(),
+            layout = get(),
             httpClient = get()
         )
     }
@@ -228,7 +243,7 @@ val dataSourceModule = module {
         S3Sync(
             settingsStore = get(),
             json = get(),
-            context = get(),
+            layout = get(),
             httpClient = get()
         )
     }

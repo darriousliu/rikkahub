@@ -1,0 +1,26 @@
+{
+  "archiveSha256": "ddfe7bd717ed01ba69430bdbbccf94ded0211728545329eb8b9f08d4233cc876",
+  "crcValid": true,
+  "entryCount": 6,
+  "databaseWithWal": true,
+  "conversationId": "2085081c-d8e3-3555-878c-9ea42270ced0",
+  "conversationCount": 1,
+  "titleMatches": true,
+  "messageCount": 2,
+  "messagesMatch": true,
+  "files": {
+    "upload/cmp16-desktop-upload.bin": {
+      "sha256": "20bc931573371891174a8ed7028b3796d17253676152a72d23bd6a1f9dfef280",
+      "matches": true
+    },
+    "platform-files/attachments/cmp16-desktop-legacy.bin": {
+      "sha256": "cc568f2a189d0dad57d8fb2f12169c644d8165cd09195dcd5ef2956ecec85557",
+      "matches": true
+    }
+  },
+  "settingsMatch": {
+    "webDavConfig.url": true,
+    "webDavConfig.path": true,
+    "s3Config.bucket": true
+  }
+}

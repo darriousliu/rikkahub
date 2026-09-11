@@ -1,0 +1,34 @@
+{
+  "freshbaseline": {
+    "expectedFileCount": 41,
+    "observedFileCount": 41,
+    "individuallyComparedSha256Count": 41,
+    "missingPathCount": 0,
+    "unexpectedPathCount": 0,
+    "mismatchedSha256Count": 0,
+    "allFileHashesMatch": true
+  },
+  "appStopped": {
+    "packageProcessPresent": false,
+    "agentOwnedLongLivedProcessPresent": false
+  },
+  "localPicker": {
+    "sourceZipPreserved": true,
+    "markerSha256": "b9a68609626df297b7909a5bf7b4c872acf9a615045090cfb7c62418c590260e",
+    "restoreTemporaryFileCount": 0
+  },
+  "externalTestFileCleanup": {
+    "downloadsSourceZipAbsent": true,
+    "sdcardWindowXmlAbsent": true,
+    "dataLocalTmpFreshbaselineAbsent": true,
+    "dataLocalTmpPatchedSettingsAbsent": true,
+    "adbReverseTcp18776Removed": true,
+    "displayOverrideRetained": "2560x1600"
+  },
+  "parentPrivateArtifactsCleanup": {
+    "removed": true,
+    "fileCount": 7,
+    "bytes": 21236,
+    "archiveChecksRecordedBeforeRemoval": true
+  }
+}

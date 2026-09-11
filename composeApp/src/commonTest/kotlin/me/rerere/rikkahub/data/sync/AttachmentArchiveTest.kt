@@ -3,6 +3,10 @@ package me.rerere.rikkahub.data.sync
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import me.rerere.rikkahub.data.datastore.WebDavConfig
+import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes as readFileBytes
@@ -45,11 +49,13 @@ class AttachmentArchiveTest {
             transform(data.value).also { data.value = it }
     }
     private val settings = SettingsStore(preferences, scope)
+    private val httpClient = HttpClient(MockEngine { error("No HTTP expected") })
     private val originalPaths = listOf("upload/original.txt", "fonts/font.ttf", "skills/example/SKILL.md")
     private val legacyPaths = listOf("platform-files/attachments/old.txt", "platform-files/images/avatar.png")
 
     @AfterTest
     fun cleanUp() {
+        httpClient.close()
         scope.cancel()
         root.deleteRecursively()
     }
@@ -59,7 +65,7 @@ class AttachmentArchiveTest {
         (originalPaths + legacyPaths + listOf("private/ignored.txt", "upload/nested/ignored.txt"))
             .forEach { write(it) }
         val stored = FileKitPlatformFileStore(platform(root)).writeIntoSandbox(byteArrayOf(3, 2, 1), "new.png")
-        val entries = entries(service(root).prepareArchive(includeDatabase = false, includeFiles = true))
+        val entries = entries(service(root).prepareBackupFile(config(true)))
         assertEquals((originalPaths + legacyPaths + listOf("settings.json", "upload/${stored.name}")).toSet(), entries.keys)
         (originalPaths + legacyPaths).forEach { assertContentEquals(it.encodeToByteArray(), entries.getValue(it)) }
         assertContentEquals(byteArrayOf(3, 2, 1), entries.getValue("upload/${stored.name}"))
@@ -68,9 +74,9 @@ class AttachmentArchiveTest {
     @Test
     fun restoreRetainsLegacyRelativeNamesAndBytesWithoutMovingExistingFiles() = runTest {
         (originalPaths + legacyPaths).forEach { write(it) }
-        val archive = service(root).prepareArchive(includeDatabase = false, includeFiles = true)
+        val archive = service(root).prepareBackupFile(config(true))
         val restored = root.resolve("restored")
-        service(restored).restoreArchive(archive, includeDatabase = false, includeFiles = true)
+        service(restored).restoreFromLocalFile(archive, config(true))
         (originalPaths + legacyPaths).forEach { path ->
             assertTrue(root.resolve(path).exists())
             assertContentEquals(path.encodeToByteArray(), platform(restored.resolve(path)).readFileBytes())
@@ -80,20 +86,25 @@ class AttachmentArchiveTest {
     @Test
     fun excludingFilesLeavesBothOriginalAndMigratedAttachmentSetsOutOfTheBackup() = runTest {
         (originalPaths + legacyPaths).forEach { write(it) }
-        assertEquals(setOf("settings.json"), entries(service(root).prepareArchive(false, false)).keys)
+        assertEquals(setOf("settings.json"), entries(service(root).prepareBackupFile(config(false))).keys)
     }
 
     @Test
     fun excludingFilesOnRestoreDoesNotWriteEitherAttachmentDirectory() = runTest {
         (originalPaths + legacyPaths).forEach { write(it) }
-        val archive = service(root).prepareArchive(false, true)
+        val archive = service(root).prepareBackupFile(config(true))
         val restored = root.resolve("restored")
-        service(restored).restoreArchive(archive, false, false)
+        service(restored).restoreFromLocalFile(archive, config(false))
         (originalPaths + legacyPaths).forEach { assertFalse(restored.resolve(it).exists()) }
     }
 
-    private fun service(files: Path) = BackupArchiveService(
-        settings, JsonInstant, BackupFileLayout(platform(files), platform(root.resolve("cache"))),
+    private fun service(files: Path) = WebDavSync(
+        settings, JsonInstant,
+        BackupFileLayout(platform(files), platform(root.resolve("cache").apply { mkdirs() })), httpClient,
+    )
+
+    private fun config(files: Boolean) = WebDavConfig(
+        items = if (files) listOf(WebDavConfig.BackupItem.FILES) else emptyList(),
     )
 
     private fun write(path: String) {

@@ -1,0 +1,23 @@
+{
+  "fixture": "cmp-rollback-16",
+  "implementation": "Python standard-library ThreadingHTTPServer on loopback only",
+  "cloud_vendor_verified": false,
+  "selftest_client": "independent Python standard-library HTTP client and SigV4 signer",
+  "archive_sha256": "2b7e08612e3c48dce6211bf24f8eda34ce8fcb55835d0028469d990a5bcf05c3",
+  "passed": true,
+  "statuses": {
+    "dav_delete": 204,
+    "dav_get": 200,
+    "dav_head": 200,
+    "dav_mkcol": 201,
+    "dav_propfind_absent": 404,
+    "dav_propfind_list": 207,
+    "dav_put": 201,
+    "s3_delete": 204,
+    "s3_get": 200,
+    "s3_head": 200,
+    "s3_list": 200,
+    "s3_list_absent": 200,
+    "s3_put": 200
+  }
+}

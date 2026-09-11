@@ -32,12 +32,9 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
-import me.rerere.rikkahub.data.sync.S3BackupTransport
-import me.rerere.rikkahub.data.sync.BackupArchiveService
+import me.rerere.rikkahub.data.sync.S3Sync
+import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.data.sync.BackupFileLayout
-import me.rerere.rikkahub.data.sync.SharedS3BackupTransport
-import me.rerere.rikkahub.data.sync.SharedWebDavBackupTransport
-import me.rerere.rikkahub.data.sync.WebDavBackupTransport
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.CrashReporter
@@ -197,9 +194,8 @@ internal fun sharedProductModule(
     single<AssistantAssetCleaner> { get<FileKitFileCleaner>() }
     single { TextTranslationGenerator(providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
-    single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }
-    single<WebDavBackupTransport> { SharedWebDavBackupTransport(httpClient, get()) }
-    single<S3BackupTransport> { SharedS3BackupTransport(httpClient, get()) }
+    single { WebDavSync(get(), JsonInstant, backupFileLayout, httpClient) }
+    single { S3Sync(get(), JsonInstant, backupFileLayout, httpClient) }
 
     viewModelOf(::SettingVM)
     viewModelOf(::SearchVM)

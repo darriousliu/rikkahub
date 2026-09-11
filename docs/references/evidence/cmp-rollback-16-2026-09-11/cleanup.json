@@ -1,0 +1,11 @@
+{
+  "privateRootRemoved": true,
+  "remainingPrivateFileCountRemoved": 163,
+  "remainingPrivateBytesRemoved": 26690435,
+  "testServerProcessAbsent": true,
+  "testPort18776NotListening": true,
+  "remoteArchivesRemovedByGui": 6,
+  "guiAgentsClosed": 3,
+  "temporaryProductionLogsAdded": false,
+  "note": "Android/iOS私有资料已在独立核对后分阶段清理；本次清理剩余桌面、离线服务、父端检查器、构建日志和夹具。关闭桌面子agent后服务已退出，父端确认进程和监听均不存在。"
+}

@@ -17,10 +17,6 @@ import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
-import me.rerere.rikkahub.data.sync.S3BackupTransport
-import me.rerere.rikkahub.data.sync.S3Sync
-import me.rerere.rikkahub.data.sync.WebDavBackupTransport
-import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummary
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.workspace.ProotShellRunner
@@ -58,10 +54,6 @@ val repositoryModule = module {
     single {
         FavoriteRepository(get())
     }
-
-    single<WebDavBackupTransport> { get<WebDavSync>() }
-
-    single<S3BackupTransport> { get<S3Sync>() }
 
     single {
         val context: Context = get()

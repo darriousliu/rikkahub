@@ -3,6 +3,11 @@ package me.rerere.rikkahub.utils
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.io.files.Path
 import platform.Foundation.NSURL
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileType
+import platform.Foundation.NSFileTypeSymbolicLink
+import platform.posix.R_OK
+import platform.posix.access
 import platform.posix.rename
 
 actual val Path.canonicalFile: Path
@@ -19,3 +24,10 @@ actual val Path.canonicalFile: Path
 
 @OptIn(ExperimentalForeignApi::class)
 actual fun Path.renameTo(destination: Path): Boolean = rename(toString(), destination.toString()) == 0
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun Path.canRead(): Boolean = access(toString(), R_OK) == 0
+
+@OptIn(ExperimentalForeignApi::class)
+actual fun Path.isSymbolicLink(): Boolean =
+    NSFileManager.defaultManager.attributesOfItemAtPath(toString(), null)?.get(NSFileType) == NSFileTypeSymbolicLink

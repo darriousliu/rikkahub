@@ -543,6 +543,8 @@ Android/iOS 原设置已按字节恢复，iOS 原会话/消息/收藏散列未�
 
 ## 第 15 项：本地备份业务归位
 
+提交：`056166f8`（`refactor(cmp): 将本地备份业务归回原 BackupVM`）。
+
 起点：`0e8f36b8582661bdc1bca56d374787a097c34e44`；审计 E08。状态：本项回退完成，代码、构建及三端 GUI 验证通过，数据恢复和测试文件清理已核对。
 
 删除 BackupLocalFileService 接口及 Android/FileKit 两套实现，将原四个本地方法与 ChatboxRestoreResult 归回 BackupVM。
@@ -564,3 +566,23 @@ iOS 的正式 GUI 通过 Build iOS Apps 插件执行临时 XCTest 驱动完成�
 三端导出均独立读取 SQLite 主库与 WAL，核对唯一会话、两条消息及原生标记；临时驱动和测试资料已清理。
 
 下一项建议：第 16 项 E07，统一原 S3Sync/WebDavSync 和两套归档编排。
+
+## 第 16 项：原 S3Sync / WebDavSync 统一到 common
+
+状态：本项回退、400 次代码测试、三端构建及所需 GUI 验证完成，测试资料已清理。
+原 Sync 文件和 ZIP 路径工具迁入 common；删除 SharedS3BackupTransport、SharedWebDavBackupTransport、
+BackupArchiveService、两个 Transport 接口和重复 JdkSha256Crypto。保留 Ktor/平台 engine、
+实际文件路径/权限/符号链接边界、现有 ZIP I/O 及第 14 项旧附件兼容。
+
+原上传成功后清理、失败包保留、按显示名下载、恢复异常包装和 VM 完成时间均有契约验证。
+原始 S3/WebDAV 各自的归档方法留在原类中，不新增统一业务服务。
+生产范围 23 个路径，增加 1026 行、删除 1406 行，净减少 380 行；实际文件数净减少五个。
+三端由 Terra/high 操作，WebDAV/S3 均完成上传、删除测试会话、恢复重启及远端删除，
+另完成本地 ZIP 系统选择器。六份上传归档独立核对通过；桌面设置恢复采用实际备份时间的变化验证。
+Android 原 41 个文件逐项恢复一致；iOS 原数据按 16 张表及 schema 的逻辑摘要、settings 散列独立核对，
+其唯一私有基线曾被 schema 读取触发 checkpoint，因此不报告原始数据库物理文件散列全部相同。
+配置文本输入和 Android WebDAV 可见设置断言的边界、逐项步骤与预期结果见
+[第 16 项说明](evidence/cmp-rollback-16-2026-09-11/verification.md)。
+
+下一项建议：第 17 项 B06，评估并收敛手写 ZIP 内部实现；先做与原归档的双向读写、中文路径、
+数据库侧文件、压缩方法和异常行为兼容测试，再决定使用成熟库或必要的平台 ZIP 实现。

@@ -1,0 +1,1201 @@
+{
+  "source": "本任务 Terra 的 GUI 工具调用及 XCTest 实际返回摘要",
+  "records": [
+    {
+      "timestamp": "2026-09-11T10:32:34.850Z",
+      "artifact": "",
+      "assertions": [],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 1173,
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:33:08.007Z",
+      "artifact": "smoke-20260911T000002.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 15689,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:51:25.238Z",
+      "artifact": "nav-settings-20260911T000003.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 11966,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:51:54.628Z",
+      "artifact": "open-settings-20260911T000004.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6762,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:52:19.975Z",
+      "artifact": "open-settings-label-20260911T000005.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 12147,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:53:15.176Z",
+      "artifact": "open-settings-settled-20260911T000006.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5910,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:53:46.258Z",
+      "artifact": "backup-entry-20260911T000007.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 10101,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:54:08.160Z",
+      "artifact": "open-backup-20260911T000008.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7752,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:54:48.380Z",
+      "artifact": "webdav-url-20260911T000009.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5818,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T10:55:35.963Z",
+      "artifact": "webdav-path-20260911T000010.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 10536,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:02:07.479Z",
+      "artifact": "webdav-fixture-visible-20260911T000011.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7807,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:02:28.143Z",
+      "artifact": "webdav-fixture-drawer-20260911T000012.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 12620,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:06:40.477Z",
+      "artifact": "open-chatbox-picker-20260911T000013.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 15980,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:07:07.920Z",
+      "artifact": "chatbox-picker-open-20260911T000014.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5578,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:08:20.637Z",
+      "artifact": "chatbox-picker-folder-20260911T000015.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7283,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:08:40.879Z",
+      "artifact": "chatbox-picker-folder-open-20260911T000016.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7201,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:09:01.975Z",
+      "artifact": "chatbox-picker-select-20260911T000017.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6438,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:09:31.478Z",
+      "artifact": "chatbox-restart-confirm-20260911T000018.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6547,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:11:04.776Z",
+      "artifact": "chatbox-restart-confirm-fixed-20260911T000020.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 8684,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:11:34.604Z",
+      "artifact": "chatbox-fixture-ui-verified-20260911T000021.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 14376,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:12:07.061Z",
+      "artifact": "webdav-backup-page-20260911T000022.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 11134,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:12:25.879Z",
+      "artifact": "webdav-url-final-20260911T000023.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 12361,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:12:43.631Z",
+      "artifact": "webdav-path-final-20260911T000024.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 9665,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:14:15.847Z",
+      "artifact": "config-patched-activate-20260911T000025.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 10133,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:14:45.384Z",
+      "artifact": "webdav-config-visible-20260911T000026.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 11298,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:15:11.923Z",
+      "artifact": "webdav-test-connection-20260911T000027.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5797,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:17:55.712Z",
+      "artifact": "webdav-backup-20260911T000028.xcresult",
+      "assertions": [
+        "备份成功"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 9106,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:19:23.770Z",
+      "artifact": "webdav-backup-back-settings-20260911T000029.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7554,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:19:40.951Z",
+      "artifact": "webdav-history-20260911T000030.xcresult",
+      "assertions": [
+        "聊天历史",
+        "聊天历史"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 34255,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:20:58.185Z",
+      "artifact": "webdav-history-corrected-20260911T000031.xcresult",
+      "assertions": [
+        "聊天历史",
+        "聊天历史"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 8905,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:21:39.675Z",
+      "artifact": "webdav-history-swipe-20260911T000032.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5972,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:22:13.119Z",
+      "artifact": "webdav-history-absent-20260911T000033.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7779,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:23:08.587Z",
+      "artifact": "webdav-restore-page-20260911T000034.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 17678,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:23:38.816Z",
+      "artifact": "webdav-restore-20260911T000035.xcresult",
+      "assertions": [
+        "恢复成功",
+        "重启应用"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 78023,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:25:12.210Z",
+      "artifact": "webdav-selected-restore-20260911T000036.xcresult",
+      "assertions": [
+        "恢复成功",
+        "重启应用"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 63801,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:26:43.023Z",
+      "artifact": "webdav-restart-verify-chat-20260911T000037.xcresult",
+      "assertions": [
+        "cmp16-ios-webdav-20260911",
+        "cmp16-ios-webdav-message-one",
+        "cmp16-ios-webdav-message-two"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 44603,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:27:46.565Z",
+      "artifact": "webdav-restored-messages-visible-20260911T000038.xcresult",
+      "assertions": [
+        "cmp16-ios-webdav-message-one",
+        "cmp16-ios-webdav-message-two"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 34740,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:28:43.394Z",
+      "artifact": "webdav-close-drawer-20260911T000039.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6009,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:28:54.613Z",
+      "artifact": "webdav-restored-messages-visible-20260911T000040.xcresult",
+      "assertions": [
+        "cmp16-ios-webdav-message-one",
+        "cmp16-ios-webdav-message-two"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 8362,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:29:30.386Z",
+      "artifact": "webdav-list-delete-20260911T000041.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份",
+        "WebDav备份文件列表"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 14750,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:30:07.075Z",
+      "artifact": "webdav-gui-remote-delete-20260911T000042.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 20703,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:32:16.497Z",
+      "artifact": "s3-chatbox-picker-20260911T000043.xcresult",
+      "assertions": [
+        "WebDAV备份",
+        "从ChatBox导入"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 46718,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:33:24.041Z",
+      "artifact": "s3-chatbox-picker-corrected-20260911T000044.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份",
+        "从ChatBox导入"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 16164,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:33:57.674Z",
+      "artifact": "s3-chatbox-imported-20260911T000045.xcresult",
+      "assertions": [
+        "重启应用",
+        "cmp16-ios-s3-20260911",
+        "cmp16-ios-s3-message-one",
+        "cmp16-ios-s3-message-two"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 16479,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:34:32.379Z",
+      "artifact": "s3-backup-20260911T000046.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份",
+        "S3备份",
+        "备份成功"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 16869,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:35:20.632Z",
+      "artifact": "s3-backup-items-20260911T000047.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5780,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:35:40.964Z",
+      "artifact": "s3-setting-mutated-20260911T000048.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6669,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:36:09.636Z",
+      "artifact": "s3-back-settings-20260911T000049.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 21607,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:36:49.487Z",
+      "artifact": "s3-scroll-top-20260911T000050.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7884,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:37:12.340Z",
+      "artifact": "s3-back-settings-corrected-20260911T000051.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7691,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:37:25.745Z",
+      "artifact": "s3-back-chat-20260911T000052.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6661,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:37:53.932Z",
+      "artifact": "s3-conversation-deleted-20260911T000053.xcresult",
+      "assertions": [
+        "聊天历史"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 17978,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:38:44.604Z",
+      "artifact": "s3-restore-list-20260911T000054.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份",
+        "S3备份",
+        "S3备份文件列表"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 34494,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:39:34.280Z",
+      "artifact": "s3-selected-restore-20260911T000055.xcresult",
+      "assertions": [
+        "重启应用"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6509,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:39:49.033Z",
+      "artifact": "s3-restart-verify-chat-20260911T000056.xcresult",
+      "assertions": [
+        "cmp16-ios-s3-20260911",
+        "cmp16-ios-s3-message-one",
+        "cmp16-ios-s3-message-two"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 16580,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:40:38.078Z",
+      "artifact": "s3-settings-after-restore-20260911T000057.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 25578,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:42:26.849Z",
+      "artifact": "local-picker-20260911T000058.xcresult",
+      "assertions": [
+        "设置",
+        "WebDAV备份",
+        "备份文件导入"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 25577,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:45:21.217Z",
+      "artifact": "s3-recheck-list-20260911T000059.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 20148,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:45:51.853Z",
+      "artifact": "s3-recheck-restore-20260911T000060.xcresult",
+      "assertions": [
+        "重启应用"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6772,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:46:17.008Z",
+      "artifact": "s3-recheck-restarted-20260911T000061.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 8947,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:46:58.335Z",
+      "artifact": "local-picker-recheck-20260911T000062.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置",
+        "WebDAV备份",
+        "备份文件导入"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 15810,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:47:25.734Z",
+      "artifact": "local-picker-import-20260911T000063.xcresult",
+      "assertions": [
+        "重启应用"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 6556,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:47:38.797Z",
+      "artifact": "local-picker-restarted-20260911T000064.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 11146,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:48:44.860Z",
+      "artifact": "local-picker-corrected-20260911T000065.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 25748,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:50:42.480Z",
+      "artifact": "local-settings-open-20260911T000066.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 5423,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:51:01.809Z",
+      "artifact": "local-settings-scroll-20260911T000067.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7768,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:51:25.990Z",
+      "artifact": "local-corrected-picker-20260911T000068.xcresult",
+      "assertions": [
+        "WebDAV备份"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 9217,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:51:42.070Z",
+      "artifact": "local-corrected-import-20260911T000069.xcresult",
+      "assertions": [
+        "重启应用"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 11000,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:52:26.522Z",
+      "artifact": "s3-gui-remote-delete-20260911T000070.xcresult",
+      "assertions": [
+        "设置"
+      ],
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 24378,
+        "counts": {
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:56:55.141Z",
+      "artifact": "s3-delete-settings-20260911T000071.xcresult",
+      "assertions": [
+        "聊天历史",
+        "设置"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 9885,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:57:10.938Z",
+      "artifact": "s3-delete-scroll-20260911T000072.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 7540,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:57:24.430Z",
+      "artifact": "s3-delete-list-20260911T000073.xcresult",
+      "assertions": [
+        "WebDAV备份"
+      ],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 9203,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    },
+    {
+      "timestamp": "2026-09-11T11:57:38.723Z",
+      "artifact": "s3-delete-20260911T000074.xcresult",
+      "assertions": [],
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 22744,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      }
+    }
+  ]
+}

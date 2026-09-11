@@ -1,0 +1,230 @@
+{
+  "loopbackOnly": true,
+  "cloudVendorVerified": false,
+  "allFinalProtocolRequestsAuthenticated": true,
+  "operations": {
+    "android/webdav": {
+      "PUT": 1,
+      "GET": 1,
+      "DELETE": 1
+    },
+    "android/s3": {
+      "PUT": 1,
+      "GET": 1,
+      "DELETE": 1
+    },
+    "ios/webdav": {
+      "PUT": 1,
+      "GET": 1,
+      "DELETE": 1
+    },
+    "ios/s3": {
+      "PUT": 1,
+      "GET": 2,
+      "DELETE": 1
+    },
+    "desktop/webdav": {
+      "PUT": 1,
+      "GET": 1,
+      "DELETE": 1
+    },
+    "desktop/s3": {
+      "PUT": 1,
+      "GET": 1,
+      "DELETE": 1
+    }
+  },
+  "storedArchivesRemaining": 0,
+  "requestByteFieldsDescribeRequestBodyNotDownloadedResponse": true,
+  "platformRequestCounts": [
+    {
+      "count": 1,
+      "method": "DELETE",
+      "platform": "android",
+      "protocol": "s3",
+      "status": 204
+    },
+    {
+      "count": 12,
+      "method": "GET",
+      "platform": "android",
+      "protocol": "s3",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "PUT",
+      "platform": "android",
+      "protocol": "s3",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "DELETE",
+      "platform": "android",
+      "protocol": "webdav",
+      "status": 204
+    },
+    {
+      "count": 1,
+      "method": "GET",
+      "platform": "android",
+      "protocol": "webdav",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "MKCOL",
+      "platform": "android",
+      "protocol": "webdav",
+      "status": 201
+    },
+    {
+      "count": 21,
+      "method": "PROPFIND",
+      "platform": "android",
+      "protocol": "webdav",
+      "status": 207
+    },
+    {
+      "count": 2,
+      "method": "PROPFIND",
+      "platform": "android",
+      "protocol": "webdav",
+      "status": 404
+    },
+    {
+      "count": 1,
+      "method": "PUT",
+      "platform": "android",
+      "protocol": "webdav",
+      "status": 201
+    },
+    {
+      "count": 1,
+      "method": "DELETE",
+      "platform": "desktop",
+      "protocol": "s3",
+      "status": 204
+    },
+    {
+      "count": 12,
+      "method": "GET",
+      "platform": "desktop",
+      "protocol": "s3",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "PUT",
+      "platform": "desktop",
+      "protocol": "s3",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "DELETE",
+      "platform": "desktop",
+      "protocol": "webdav",
+      "status": 204
+    },
+    {
+      "count": 1,
+      "method": "GET",
+      "platform": "desktop",
+      "protocol": "webdav",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "MKCOL",
+      "platform": "desktop",
+      "protocol": "webdav",
+      "status": 201
+    },
+    {
+      "count": 21,
+      "method": "PROPFIND",
+      "platform": "desktop",
+      "protocol": "webdav",
+      "status": 207
+    },
+    {
+      "count": 1,
+      "method": "PROPFIND",
+      "platform": "desktop",
+      "protocol": "webdav",
+      "status": 404
+    },
+    {
+      "count": 1,
+      "method": "PUT",
+      "platform": "desktop",
+      "protocol": "webdav",
+      "status": 201
+    },
+    {
+      "count": 1,
+      "method": "DELETE",
+      "platform": "ios",
+      "protocol": "s3",
+      "status": 204
+    },
+    {
+      "count": 17,
+      "method": "GET",
+      "platform": "ios",
+      "protocol": "s3",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "PUT",
+      "platform": "ios",
+      "protocol": "s3",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "DELETE",
+      "platform": "ios",
+      "protocol": "webdav",
+      "status": 204
+    },
+    {
+      "count": 1,
+      "method": "GET",
+      "platform": "ios",
+      "protocol": "webdav",
+      "status": 200
+    },
+    {
+      "count": 1,
+      "method": "MKCOL",
+      "platform": "ios",
+      "protocol": "webdav",
+      "status": 201
+    },
+    {
+      "count": 29,
+      "method": "PROPFIND",
+      "platform": "ios",
+      "protocol": "webdav",
+      "status": 207
+    },
+    {
+      "count": 1,
+      "method": "PROPFIND",
+      "platform": "ios",
+      "protocol": "webdav",
+      "status": 404
+    },
+    {
+      "count": 1,
+      "method": "PUT",
+      "platform": "ios",
+      "protocol": "webdav",
+      "status": 201
+    }
+  ]
+}

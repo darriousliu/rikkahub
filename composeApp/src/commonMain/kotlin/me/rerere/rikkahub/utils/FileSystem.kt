@@ -11,6 +11,10 @@ fun Path.resolve(child: String): Path = Path(child).let { if (it.isAbsolute) it 
 
 expect val Path.canonicalFile: Path
 
+expect fun Path.canRead(): Boolean
+
+expect fun Path.isSymbolicLink(): Boolean
+
 fun Path.exists(): Boolean = SystemFileSystem.exists(this)
 
 val Path.isDirectory: Boolean get() = SystemFileSystem.metadataOrNull(this)?.isDirectory == true

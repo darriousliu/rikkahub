@@ -11,8 +11,8 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.WebDavConfig
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.sync.S3BackupItem
-import me.rerere.rikkahub.data.sync.S3BackupTransport
-import me.rerere.rikkahub.data.sync.WebDavBackupTransport
+import me.rerere.rikkahub.data.sync.S3Sync
+import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.data.sync.importer.ChatboxImporter
 import me.rerere.rikkahub.data.sync.importer.CherryStudioProviderImporter
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
@@ -23,8 +23,8 @@ private const val TAG = "BackupVM"
 
 class BackupVM(
     private val settingsStore: SettingsStore,
-    private val webDavSync: WebDavBackupTransport,
-    private val s3Sync: S3BackupTransport,
+    private val webDavSync: WebDavSync,
+    private val s3Sync: S3Sync,
     private val conversationRepository: ConversationRepository,
     private val clock: Clock = Clock.System,
 ) : ViewModel() {

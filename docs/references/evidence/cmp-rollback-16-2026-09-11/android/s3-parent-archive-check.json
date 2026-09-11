@@ -1,0 +1,26 @@
+{
+  "archiveSha256": "a8713f6f868dc03fdfd3b09a9e5df500a946aa20b856dce69abb0fe09b2acb79",
+  "crcValid": true,
+  "entryCount": 6,
+  "databaseWithWal": true,
+  "conversationId": "d261d6b8-2a55-4c01-9fe7-43e53c93e9cb",
+  "conversationCount": 1,
+  "titleMatches": true,
+  "messageCount": 2,
+  "messagesMatch": true,
+  "files": {
+    "platform-files/attachments/cmp16-android-legacy.txt": {
+      "sha256": "93c72063aefcd5cde45ca9d8978a819fe63cc8f9eb04b5b5140c502bd6f8e083",
+      "matches": true
+    },
+    "upload/cmp16-android-upload.txt": {
+      "sha256": "a72ec9535b01a7ff87bd0ff76a5a0784d8ecb0f9b2b5c1ee70fa05be60701882",
+      "matches": true
+    }
+  },
+  "settingsMatch": {
+    "webDavConfig.url": true,
+    "webDavConfig.path": true,
+    "s3Config.bucket": true
+  }
+}

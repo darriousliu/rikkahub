@@ -1,0 +1,87 @@
+{
+  "note": "The original private iOS baseline was checkpointed by a subagent SQLite schema query before formal backup tests. This freezes that logically equivalent baseline; it does not claim original physical db/WAL/SHM byte equality.",
+  "sourceFiles": {
+    "rikka_hub.db": "b222d6d8abd8312aaf5e126e5982bc42b149818bb7ff5952b189b492e168c2da",
+    "rikka_hub.db-wal": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rikka_hub.db-shm": "a68243c739880ae83d586298c2b7d05db66c518bed92a26f2c19486a0841d352"
+  },
+  "sourceUnchangedDuringIndependentCheck": true,
+  "logicalData": {
+    "schemaSha256": "256205285d01b0651aca199d06bf0cc021a23e24854df8af06e3fd7be49679d7",
+    "tables": {
+      "ConversationEntity": {
+        "rowCount": 1,
+        "sha256": "c77cdbaae1b3e1d0dc9801f7a07f5a6560c762926f62924378b5cb204e8bf658"
+      },
+      "GenMediaEntity": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "MemoryEntity": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "conversation_folder": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "favorites": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "managed_files": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "message_fts": {
+        "rowCount": 2,
+        "sha256": "cddf807ee25da6ef799230d7be17891a03a1c6768e4c3f40e7e3e74693d665a8"
+      },
+      "message_fts_config": {
+        "rowCount": 1,
+        "sha256": "159a3a234ab1c29d9778fe2b3202339793f9a1430ae3c608fc686747622aba7d"
+      },
+      "message_fts_content": {
+        "rowCount": 2,
+        "sha256": "878986ab66fbedd6a6b2cee67bc6d401e551733cfed55c835854a8aeb72d8218"
+      },
+      "message_fts_data": {
+        "rowCount": 3,
+        "sha256": "801f467b97bded5b0ce79deb28a545309e9f32a340b757ca40b901feb424a45d"
+      },
+      "message_fts_docsize": {
+        "rowCount": 2,
+        "sha256": "72af9b827dd72f29dd0e6bbae634cc9fb6079308a6ebb665ccc9e90348da3556"
+      },
+      "message_fts_idx": {
+        "rowCount": 1,
+        "sha256": "cdfdbfaa38c74948207bfd78ff3f032423f79b7749ddacc3bc8e6055a1d677ae"
+      },
+      "message_node": {
+        "rowCount": 2,
+        "sha256": "3fcdf0ac9739bd65f8867a52ca099a2ee310e144644db69eff3fabdb1155c3c7"
+      },
+      "room_master_table": {
+        "rowCount": 1,
+        "sha256": "3e2a5b013886d45d1edeb2bc4910f19f79b1604984fb809111fc16bbb244926c"
+      },
+      "sqlite_sequence": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "workspaces": {
+        "rowCount": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "logicalSha256": "ec5a49f1da35c5c1eb8896ddfd85e518a76a108c7444c7e60cd1a86228e53e78",
+  "triggeringOperation": {
+    "toolTimestampUtc": "2026-09-11T10:55:58.972Z",
+    "command": "sqlite3 <private baseline>/rikka_hub.db .schema",
+    "parentCheckedAgentToolCode": true,
+    "sqlDataWritesRequested": false
+  },
+  "settingsSha256": "c0f39584b3d2e3bca04498bc63644ee61d3885abaa5a9dfa31fbe0e8d25edc92",
+  "settingsCopiesMatch": true
+}

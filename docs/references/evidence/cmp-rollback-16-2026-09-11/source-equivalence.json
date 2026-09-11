@@ -1,0 +1,67 @@
+{
+  "baseline": "2.4.5",
+  "normalization": [
+    "whitespace/comments",
+    "Instant.EPOCH -> Instant.fromEpochMilliseconds(0)"
+  ],
+  "methods": [
+    {
+      "file": "S3Sync.kt",
+      "method": "testS3",
+      "matchesTagBodyAfterNormalization": true
+    },
+    {
+      "file": "S3Sync.kt",
+      "method": "listBackupFiles",
+      "matchesTagBodyAfterNormalization": true
+    },
+    {
+      "file": "S3Sync.kt",
+      "method": "deleteS3BackupFile",
+      "matchesTagBodyAfterNormalization": true
+    },
+    {
+      "file": "webdav/WebDavSync.kt",
+      "method": "testConnection",
+      "matchesTagBodyAfterNormalization": true
+    },
+    {
+      "file": "webdav/WebDavSync.kt",
+      "method": "listBackupFiles",
+      "matchesTagBodyAfterNormalization": true
+    },
+    {
+      "file": "webdav/WebDavSync.kt",
+      "method": "deleteBackupFile",
+      "matchesTagBodyAfterNormalization": true
+    },
+    {
+      "file": "S3Sync.kt",
+      "method": "backupToS3",
+      "matchesTagBodyAfterNormalization": true,
+      "additionalNormalization": [
+        "Ktor file body -> length/hash/Source channel",
+        "PlatformFile output -> Path for file I/O"
+      ]
+    },
+    {
+      "file": "webdav/WebDavSync.kt",
+      "method": "backup",
+      "matchesTagBodyAfterNormalization": true,
+      "additionalNormalization": [
+        "Ktor file body -> length/hash/Source channel",
+        "PlatformFile output -> Path for file I/O"
+      ]
+    },
+    {
+      "file": "webdav/WebDavSync.kt",
+      "method": "restoreFromLocalFile(Path)",
+      "matchesTagBodyAfterNormalization": true,
+      "additionalNormalization": [
+        "File.absolutePath log -> Path.toString log",
+        "File -> Path I/O utilities"
+      ]
+    }
+  ],
+  "scope": "Only listed bodies are claimed mechanically equal. ZIP, streams, database physical paths and legacy attachment compatibility are reviewed separately."
+}
