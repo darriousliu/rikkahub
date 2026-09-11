@@ -34,6 +34,14 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    swiftPMDependencies {
+        iosMinimumDeploymentTarget.set("15.0")
+        localSwiftPackage(
+            directory = layout.projectDirectory.dir("src/nativeInterop/ZipArchiveBridge"),
+            products = listOf(product("ZipArchiveBridge")),
+        )
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.kotlinx.serialization.json)

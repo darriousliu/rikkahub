@@ -16,7 +16,8 @@ let package = Package(
     .package(
       url: "https://github.com/firebase/firebase-ios-sdk.git",
       exact: "12.17.0"
-    )
+    ),
+    .package(path: "subpackages/_common")
   ],
   targets: [
     .target(
@@ -29,7 +30,8 @@ let package = Package(
         .product(
           name: "FirebaseCrashlytics",
           package: "firebase-ios-sdk"
-        )
+        ),
+        .product(name: "_common", package: "_common")
       ]
     )
   ]
