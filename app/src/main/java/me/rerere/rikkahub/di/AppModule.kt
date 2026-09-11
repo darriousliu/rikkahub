@@ -12,6 +12,10 @@ import me.rerere.rikkahub.data.datastore.AndroidBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.AndroidStringPreferenceStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.event.AppEventBus
@@ -19,6 +23,7 @@ import me.rerere.rikkahub.platform.AndroidExternalUriOpener
 import me.rerere.rikkahub.platform.AndroidFirebaseAnalyticsTracker
 import me.rerere.rikkahub.platform.AndroidFirebaseCrashReporter
 import me.rerere.rikkahub.platform.AndroidOAuthCallbackSessionFactory
+import me.rerere.rikkahub.platform.AndroidJmDnsServiceRegistrar
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.platform.CrashReporter
@@ -52,6 +57,8 @@ import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.web.WebServerManager
 import me.rerere.rikkahub.web.AndroidWebServerRuntime
 import me.rerere.rikkahub.web.WebServerRuntime
+import me.rerere.rikkahub.web.KtorWebServerHost
+import me.rerere.rikkahub.web.configureWebApi
 import me.rerere.tts.provider.TTSManager
 import me.rerere.tts.provider.providers.SystemTTSProvider
 import org.koin.dsl.module
@@ -168,14 +175,19 @@ val appModule = module {
     single { TextTranslationGenerator(get()) }
 
     single {
+        val context = get<Context>()
+        val appScope = get<AppScope>()
+        val chatService = get<ChatService>()
+        val conversationRepo = get<ConversationRepository>()
+        val folderRepo = get<FolderRepository>()
+        val settingsStore = get<SettingsStore>()
+        val filesManager = get<FilesManager>()
         WebServerManager(
-            context = get(),
-            appScope = get(),
-            chatService = get(),
-            conversationRepo = get(),
-            folderRepo = get(),
-            settingsStore = get(),
-            filesManager = get()
+            appScope = appScope,
+            host = KtorWebServerHost {
+                configureWebApi(context, chatService, conversationRepo, folderRepo, settingsStore, filesManager)
+            },
+            nsdRegistrar = AndroidJmDnsServiceRegistrar(context),
         )
     }
     single<WebServerRuntime> {

@@ -3,8 +3,9 @@ package me.rerere.rikkahub.web
 class UnavailableWebServerHost(
     private val reason: String = "Web server hosting is unavailable on iOS",
 ) : WebServerHost {
-    override suspend fun start(config: WebServerConfig): WebServerHostStartResult =
-        WebServerHostStartResult.Unavailable(reason)
+    override fun isPortAvailable(port: Int): Boolean = throw UnsupportedOperationException(reason)
 
-    override suspend fun stop() = Unit
+    override suspend fun start(port: Int, host: String): Unit = throw UnsupportedOperationException(reason)
+
+    override suspend fun stop(gracePeriodMillis: Long, timeoutMillis: Long) = Unit
 }

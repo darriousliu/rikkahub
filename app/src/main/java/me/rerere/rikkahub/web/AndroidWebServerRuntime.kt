@@ -14,7 +14,7 @@ class AndroidWebServerRuntime(
     private val settingsStore: SettingsStore,
     private val scope: CoroutineScope,
 ) : WebServerRuntime {
-    override val state: StateFlow<WebServerManagerState>
+    override val state: StateFlow<WebServerState>
         get() = manager.state
 
     override fun start(port: Int, localhostOnly: Boolean) {
