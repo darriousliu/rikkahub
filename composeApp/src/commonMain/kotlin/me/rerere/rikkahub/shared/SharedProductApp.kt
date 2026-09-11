@@ -35,7 +35,7 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.AnalyticsTracker
-import me.rerere.rikkahub.platform.ChatNotificationManager
+import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.platform.ChatNotificationPresenter
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
@@ -105,9 +105,6 @@ fun SharedProductApp(
     val ttsManager = remember(httpClient, systemTtsProvider) {
         systemTtsProvider?.let { TTSManager(httpClient = httpClient, systemProvider = it) }
     }
-    val notificationManager = remember(chatNotificationPresenter) {
-        chatNotificationPresenter?.let { ChatNotificationManager() }
-    }
     val resolvedChatMessagePlatformActions = remember(externalUriOpener, chatMessagePlatformActions) {
         chatMessagePlatformActions ?: SharedChatMessagePlatformActions(externalUriOpener)
     }
@@ -167,14 +164,9 @@ fun SharedProductApp(
     DisposableEffect(httpClient) {
         onDispose { httpClient.close() }
     }
-    DisposableEffect(notificationManager, chatNotificationPresenter, appScope, eventBus, settingsStore) {
-        if (notificationManager != null && chatNotificationPresenter != null) {
-            notificationManager.start(
-                scope = appScope,
-                eventBus = eventBus,
-                settingsStore = settingsStore,
-                presenter = chatNotificationPresenter,
-            )
+    DisposableEffect(chatNotificationPresenter, appScope, eventBus, settingsStore) {
+        val notificationManager = chatNotificationPresenter?.let {
+            ChatNotificationManager(appScope, eventBus, settingsStore, it)
         }
         onDispose { notificationManager?.close() }
     }

@@ -20,7 +20,7 @@ import me.rerere.rikkahub.platform.AndroidFirebaseAnalyticsTracker
 import me.rerere.rikkahub.platform.AndroidFirebaseCrashReporter
 import me.rerere.rikkahub.platform.AndroidOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.AnalyticsTracker
-import me.rerere.rikkahub.platform.ChatNotificationManager
+import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
@@ -137,14 +137,12 @@ val appModule = module {
     // 生成通知与业务解耦：ChatService 只发事件，通知由这里消费；
     // createdAtStart 保证进程启动即订阅，否则后台生成的事件会因无订阅者而丢失
     single(createdAtStart = true) {
-        ChatNotificationManager().apply {
-            start(
-                scope = get<AppScope>(),
-                presenter = AndroidChatNotificationPresenter(get()),
-                settingsStore = get(),
-                eventBus = get(),
-            )
-        }
+        ChatNotificationManager(
+            appScope = get<AppScope>(),
+            presenter = AndroidChatNotificationPresenter(get()),
+            settingsStore = get(),
+            eventBus = get(),
+        )
     }
 
     single {
