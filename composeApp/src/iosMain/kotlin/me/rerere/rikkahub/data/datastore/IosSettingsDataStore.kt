@@ -2,8 +2,12 @@ package me.rerere.rikkahub.data.datastore
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
+import me.rerere.rikkahub.data.files.LegacyIosFileMigration
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
 
@@ -18,7 +22,7 @@ fun createIosSettingsDataStore(
         attributes = null,
         error = null,
     )
-    return createSettingsDataStore(scope) {
+    return createSettingsDataStore(scope, listOf(LegacyIosFileMigration(FileKit.filesDir.toKotlinxIoPath()))) {
         "$directory/$SETTINGS_DATA_STORE_FILE_NAME"
     }
 }

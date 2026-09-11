@@ -1,0 +1,31 @@
+{
+  "phase": "fork-deleted",
+  "files": {
+    "shared": {
+      "exists": false,
+      "sha256": null
+    },
+    "unique": {
+      "exists": false,
+      "sha256": null
+    },
+    "avatar": {
+      "exists": true,
+      "sha256": "d90a0d751f4a3dd197abdb33d80a2a474c8fd472ab6742414babb231c1ef3fcd"
+    },
+    "background": {
+      "exists": true,
+      "sha256": "d7077c375e7948a8d71402029e6e9026fc88f35c5baf0fe85df5e95657859c9d"
+    }
+  },
+  "conversations": {
+    "source": 0,
+    "fork": 0,
+    "backgroundConversation": 1
+  },
+  "legacyContainerReferences": 0,
+  "assetsInPreferences": {
+    "assetA": true,
+    "assetB": true
+  }
+}

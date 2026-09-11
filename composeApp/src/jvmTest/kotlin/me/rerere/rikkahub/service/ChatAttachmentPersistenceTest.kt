@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.Path
 import me.rerere.ai.provider.ProviderManager
@@ -35,11 +34,11 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
+import me.rerere.rikkahub.platform.FileKitFileCleaner
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.rikkahub.web.NotFoundException
@@ -74,7 +73,7 @@ class ChatAttachmentPersistenceTest {
     private val attachments = SharedChatAttachmentStore(FileKitPlatformFileStore(PlatformFile(root)))
     private val repository = ConversationRepository(
         database.conversationDao(), database.messageNodeDao(), database.favoriteDao(), database,
-        ConversationFileStore { urls -> runBlocking { attachments.delete(urls) } },
+        FileKitFileCleaner(database, settings),
         MessageFtsManager(database, MessageFtsDialect.UNICODE61),
     )
     private val client = HttpClient(MockEngine { error("Attachment tests must not make network requests") })

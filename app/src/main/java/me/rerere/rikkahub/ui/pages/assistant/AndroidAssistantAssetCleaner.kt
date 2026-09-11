@@ -6,7 +6,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 class AndroidAssistantAssetCleaner(
     private val filesManager: FilesManager,
 ) : AssistantAssetCleaner {
-    override fun deleteLocalAssets(locations: List<String>) {
+    override suspend fun deleteLocalAssets(locations: List<String>) {
         filesManager.deleteChatFiles(
             locations
                 .filter(::isLocalLocation)

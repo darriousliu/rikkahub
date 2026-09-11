@@ -1,0 +1,20 @@
+{
+  "android/05-history-fixtures.png": "ac0f9d212fd75cc526a8152bb77b5673054970791c67af52c2b3fd02408f4537",
+  "android/09-source-deleted-gui.png": "c2ce1404cf59c4977c89bb7d732f5ed15d87c2f19c6f3782754cea725a6bb70d",
+  "android/11-fork-cold-readable.png": "1e7bba403942d0fe18be0b4ec9cb390e842939b7b2166a4272714ae0fd2be3c9",
+  "android/12-fork-deleted-gui.png": "e5459a63f22990993ee88b1c9fd214b9c337cfa56a02d2b1d366608adde9a0a7",
+  "android/35-assistant-assets-applied.png": "12bb19bde60705db2850d15c210e35048063a64534a36836418c04445895e2ec",
+  "android/36-assistant-detail-before-delete.png": "015070ba0391e552d9ed642703080a86a604df1a9bac8a10dbe6d51b2f20d946",
+  "android/40-assistant-deleted-gui.png": "612ab10fb72166e2868aaf3a2839f24d80bd746d46594150d1f75837d0592b81",
+  "desktop/01-source-before-delete.png": "499411e7933b88905d8956908ffcfb9f77b830512c2a2d5e0ccca03a170e7e59",
+  "desktop/02-source-deleted-retained-present.png": "313ffa455e0a08d467c10be45a0cbfc5959db5beaed2b4a4e8a30fac3665057f",
+  "desktop/03-retained-before-cold-restart.png": "a647d69a31e78051a080962b5a038ce8277d0ce770f87c9a37715d814e5f8180",
+  "desktop/04-retained-cold-start.png": "a647d69a31e78051a080962b5a038ce8277d0ce770f87c9a37715d814e5f8180",
+  "desktop/05-retained-deleted.png": "8ff7fb92fa995134110ec70c63990a13edd0bb106bb2901e14e72eec3cae3646",
+  "desktop/06-assistant-a-background-cleared.png": "bb831005b551b0ae847ffdd16f2cb57d2917adbf692e84c9e1ac352feced4a7c",
+  "desktop/07-assistant-a-deleted.png": "ce17a9ae6f75b6d6e0adcc039bb8408a6b5a9d3e0aac73b61e8aca86055fd70b",
+  "desktop/08-assistant-b-deleted-background-cleaned.png": "2dad732a3005ad4e518c28c4ecc97a4f802952d925518c727532a52759ce8914",
+  "ios/03-retained-visible-checker-cold-start.jpg": "65890a1786f160c03687e51f3600fdf6a22c87b92bc05093d0f43927038b22b0",
+  "ios/04-assistant-assets-before.jpg": "52302769760a5d298cbd508b49c50b328b19720d765cce25d15d334013d8a9a6",
+  "ios/05-asset-b-background-visible.jpg": "57fafe89bfff007cbb14cc3e9bd0c717dad37b8d9d8e1b1e22a8bd0d3f65fdfc"
+}

@@ -7,7 +7,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 class AndroidConversationFileStore(
     private val filesManager: FilesManager,
 ) : ConversationFileStore {
-    override fun deleteChatFiles(urls: List<String>) {
+    override suspend fun deleteChatFiles(urls: List<String>) {
         filesManager.deleteChatFiles(urls.map { it.toUri() })
     }
 }

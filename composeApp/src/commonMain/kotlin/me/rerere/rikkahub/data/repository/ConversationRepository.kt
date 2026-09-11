@@ -25,7 +25,7 @@ import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
 fun interface ConversationFileStore {
-    fun deleteChatFiles(urls: List<String>)
+    suspend fun deleteChatFiles(urls: List<String>)
 }
 
 fun interface MessageNodeReadErrorPolicy {

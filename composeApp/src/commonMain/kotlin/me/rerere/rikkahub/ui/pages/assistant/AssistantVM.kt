@@ -54,7 +54,7 @@ class AssistantVM(
         }
     }
 
-    private fun cleanupAssistantFiles(assistant: Assistant) {
+    private suspend fun cleanupAssistantFiles(assistant: Assistant) {
         val locations = buildList {
             (assistant.avatar as? Avatar.Image)?.let { add(it.url) }
             assistant.background?.let(::add)

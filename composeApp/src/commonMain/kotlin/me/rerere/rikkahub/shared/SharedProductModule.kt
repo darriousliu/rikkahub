@@ -83,6 +83,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import me.rerere.rikkahub.platform.FileKitFileCleaner
 
 internal fun sharedProductModule(
     settingsStore: SettingsStore,
@@ -144,7 +145,8 @@ internal fun sharedProductModule(
     single { database.workspaceDao() }
     single { database.folderDao() }
     single { MessageFtsManager(database, MessageFtsDialect.UNICODE61) }
-    single<ConversationFileStore> { ConversationFileStore { } }
+    single { FileKitFileCleaner(database, settingsStore) }
+    single<ConversationFileStore> { get<FileKitFileCleaner>() }
     single<MessageNodeReadErrorPolicy> { MessageNodeReadErrorPolicy.Default }
     single {
         ConversationRepository(
@@ -194,7 +196,7 @@ internal fun sharedProductModule(
     single { MemoryRepository(get()) }
     single { FavoriteRepository(get()) }
     single { SkillManager(FileKit.filesDir.toKotlinxIoPath(), settingsStore) }
-    single<AssistantAssetCleaner> { AssistantAssetCleaner { } }
+    single<AssistantAssetCleaner> { get<FileKitFileCleaner>() }
     single { TextTranslationGenerator(providerManager) }
     single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single { BackupArchiveService(get(), JsonInstant, backupFileLayout) }

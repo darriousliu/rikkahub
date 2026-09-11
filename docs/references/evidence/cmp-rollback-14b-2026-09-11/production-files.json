@@ -1,0 +1,15 @@
+{
+  "app/src/main/java/me/rerere/rikkahub/data/repository/AndroidConversationRepositoryPlatform.kt": "0247841ae217de571a4c5676d13de18f00081a2cb8e4ec9a2551104479703c67",
+  "app/src/main/java/me/rerere/rikkahub/ui/pages/assistant/AndroidAssistantAssetCleaner.kt": "23f447f6f559618cf2081c7743f66ce6a99f181677f7cfb6c97f876a3a76239f",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/datastore/SettingsDataStore.kt": "5335fa546479612f9947c8798310d9183400b2f5aaff91dc5ff45e1f44762b95",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/db/dao/MessageNodeDAO.kt": "d91fbb5c9eb2ec8f98c67a32a4916536261c13cb4ee06db23378f30d97dcf38e",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/repository/ConversationRepository.kt": "c6b4a2629dc8742f105c738a37d81575046aa0095dae8a4d86f14c98da2d2f34",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/shared/SharedProductModule.kt": "ead195f5ee39f41653921229260b19e1abe8ab7fab63088f41f20f2880f5a920",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/AssistantAssetCleaner.kt": "8b9d9aefb26ae23c3c261914b05c33c31709447cf5fd67082d27ce86a38d7966",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/AssistantVM.kt": "81b5b88b5d1604efb53d67a5dae63b464da61047831b012f26036f628abb6330",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantDetailVM.kt": "94af9f508b18aa1663114de7b050c862b0926d5f08f95ec2b322c149cebce6e5",
+  "composeApp/src/iosMain/kotlin/me/rerere/rikkahub/data/datastore/IosSettingsDataStore.kt": "2c4525cf847d4af9799d72907e1ce0d8583d99933b594d136c67bd210cf70462",
+  "composeApp/src/iosMain/kotlin/me/rerere/rikkahub/data/db/IosAppDatabase.kt": "48a27e41f7c8cbf2c2e86600a54c813cdf6e658745955d5f43e633bf8ab5a482",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/data/files/LegacyIosFileMigration.kt": "9240bcaff5ff8fd57e540649f45bd9e37deb5041806dce6f9b2f849065013f4c",
+  "composeApp/src/commonMain/kotlin/me/rerere/rikkahub/platform/FileKitFileCleaner.kt": "ac9a52e95d9f482c5e6f92b1b0e50882031020da7227d97a30297b507d744fa0"
+}

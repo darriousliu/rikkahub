@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.data.datastore
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.DataMigration
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -15,6 +16,7 @@ const val SETTINGS_DATA_STORE_FILE_NAME = "settings.preferences_pb"
 
 fun createSettingsDataStore(
     scope: CoroutineScope,
+    platformMigrations: List<DataMigration<Preferences>> = emptyList(),
     producePath: () -> String,
 ): DataStore<Preferences> = PreferenceDataStoreFactory.createWithPath(
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
@@ -22,7 +24,7 @@ fun createSettingsDataStore(
         PreferenceStoreV1Migration(),
         PreferenceStoreV2Migration(),
         PreferenceStoreV3Migration(),
-    ),
+    ) + platformMigrations,
     scope = scope,
     produceFile = { producePath().toPath() },
 )

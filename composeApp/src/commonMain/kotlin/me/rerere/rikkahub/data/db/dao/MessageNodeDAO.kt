@@ -11,6 +11,13 @@ import me.rerere.rikkahub.data.db.entity.MessageNodeEntity
 
 @Dao
 interface MessageNodeDAO {
+    // 包含未选中的消息分支及工具结果，旧 CMP fork 可能仍共用这些文件。
+    @Query("SELECT DISTINCT j.value FROM message_node, json_tree(message_node.messages) j " +
+        "WHERE j.key = 'url' AND j.type = 'text' " +
+        "UNION SELECT j.value FROM favorites, json_tree(favorites.snapshot_json) j " +
+        "WHERE j.key = 'url' AND j.type = 'text'")
+    suspend fun getFileUrls(): List<String>
+
     @Query("SELECT * FROM message_node WHERE conversation_id = :conversationId ORDER BY node_index ASC")
     suspend fun getNodesOfConversation(conversationId: String): List<MessageNodeEntity>
 

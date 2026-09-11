@@ -205,14 +205,14 @@ class AssistantDetailVM(
         }
     }
 
-    fun checkAvatarDelete(old: Assistant, new: Assistant) {
+    suspend fun checkAvatarDelete(old: Assistant, new: Assistant) {
         val oldAvatar = old.avatar
         if (oldAvatar is Avatar.Image && oldAvatar != new.avatar) {
             assetCleaner.deleteLocalAssets(listOf(oldAvatar.url))
         }
     }
 
-    fun checkBackgroundDelete(old: Assistant, new: Assistant) {
+    suspend fun checkBackgroundDelete(old: Assistant, new: Assistant) {
         val oldBackground = old.background
         val newBackground = new.background
 

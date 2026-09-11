@@ -2,8 +2,12 @@ package me.rerere.rikkahub.data.db
 
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.cinterop.ExperimentalForeignApi
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
+import me.rerere.rikkahub.data.files.LegacyIosFileMigration
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
 
@@ -24,6 +28,7 @@ fun createIosAppDatabase(
         ),
         driver = BundledSQLiteDriver(),
         ftsDialect = MessageFtsDialect.UNICODE61,
+        platformOnOpen = LegacyIosFileMigration(FileKit.filesDir.toKotlinxIoPath())::migrateDatabase,
     )
 }
 

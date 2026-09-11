@@ -1,0 +1,33 @@
+{
+  "androidApk": {
+    "path": "app/build/outputs/apk/debug/app-arm64-v8a-debug.apk",
+    "sha256": "5824fc5f08c4d7a6f0f8aafbd8f17c3abfe616a20ae2e4107f60d5f82e67dca0"
+  },
+  "desktopExecutable": {
+    "path": "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/MacOS/RikkaHub",
+    "sha256": "47e94214978380da758e8b7324415c4f748023aba7648034b260e9cb9f96c3a4"
+  },
+  "desktopComposeJar": {
+    "path": "desktopApp/build/compose/binaries/main/app/RikkaHub.app/Contents/app/composeApp-jvm-582a847528d6fd5a5791f17aa0944195.jar",
+    "sha256": "5aac59322233e3575c1403c32956ea03857635e47b2ce023826ec75a2c2666d6"
+  },
+  "ios": {
+    "simulator": {
+      "name": "iPhone 17 Pro Max",
+      "udid": "03C090DA-107B-4F9F-BCCD-8D5265D32820",
+      "state": "Booted"
+    },
+    "builtApp": "/Users/liuzhenhui/Library/Developer/XcodeBuildMCP/workspaces/rikkahub-2353818a8111/DerivedData/iosApp-5ff671450a50/Build/Products/Debug-iphonesimulator/RikkaHub.app",
+    "installedApp": "/Users/liuzhenhui/Library/Developer/CoreSimulator/Devices/03C090DA-107B-4F9F-BCCD-8D5265D32820/data/Containers/Bundle/Application/EBFA64AA-E533-4AF1-AA99-372087567CCD/RikkaHub.app",
+    "binaryHashes": {
+      "RikkaHub": {
+        "built": "41167edb3acd5d6f0e8293f21e4794fa3fc4180a33fad3b182355ed5c45ce06f",
+        "installed": "41167edb3acd5d6f0e8293f21e4794fa3fc4180a33fad3b182355ed5c45ce06f"
+      },
+      "RikkaHub.debug.dylib": {
+        "built": "c590b2611b1f636d6b6a30afb94a13f0dbfd84bec7ac6597703e4ace8b3e9768",
+        "installed": "c590b2611b1f636d6b6a30afb94a13f0dbfd84bec7ac6597703e4ace8b3e9768"
+      }
+    }
+  }
+}
