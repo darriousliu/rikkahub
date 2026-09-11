@@ -25,10 +25,8 @@ import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.AndroidChatNotificationPresenter
-import me.rerere.rikkahub.service.AndroidImageGenerationRuntime
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.service.ChatRuntime
-import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.TextTranslationGenerator
 import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.data.ai.transformers.AndroidBase64ImageStore
@@ -170,15 +168,6 @@ val appModule = module {
     }
     single<ChatRuntime> { get<ChatService>() }
     single { TextTranslationGenerator(get()) }
-    single<ImageGenerationRuntime> {
-        AndroidImageGenerationRuntime(
-            context = get(),
-            settingsStore = get(),
-            providerManager = get(),
-            genMediaRepository = get(),
-            filesManager = get(),
-        )
-    }
 
     single {
         WebServerManager(

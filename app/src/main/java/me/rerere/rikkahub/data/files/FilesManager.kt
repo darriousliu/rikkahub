@@ -230,17 +230,8 @@ class FilesManager(
 
     @OptIn(ExperimentalEncodingApi::class)
     fun createImageFileFromBase64(base64Data: String, filePath: String): File {
-        val data = if (base64Data.startsWith("data:image")) {
-            base64Data.substringAfter("base64,")
-        } else {
-            base64Data
-        }
-
-        val byteArray = Base64.decode(data.toByteArray())
-        val file = File(filePath)
-        file.parentFile?.mkdirs()
-        file.writeBytes(byteArray)
-        return file
+        me.rerere.rikkahub.data.files.createImageFileFromBase64(base64Data, kotlinx.io.files.Path(filePath))
+        return File(filePath)
     }
 
     fun listImageFiles(): List<File> {

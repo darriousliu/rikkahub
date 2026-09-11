@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.di
 
+import android.content.Context
+import kotlinx.io.files.Path
+import me.rerere.common.android.appTempFolder
 import kotlinx.coroutines.Dispatchers
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
@@ -64,7 +67,10 @@ val viewModelModule = module {
         )
     }
     viewModel { BackupVM(get(), get(), get(), get()) }
-    viewModelOf(::ImgGenVM)
+    viewModel {
+        val context: Context = get()
+        ImgGenVM(get(), get(), get(), Path(context.filesDir.path), Path(context.appTempFolder.path))
+    }
     viewModelOf(::PromptVM)
     viewModelOf(::QuickMessagesVM)
     viewModelOf(::SkillsVM)

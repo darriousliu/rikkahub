@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.shared
 
+import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.cacheDir
 import io.ktor.client.HttpClient
 import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +32,7 @@ import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
+import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.sync.S3Sync
@@ -41,10 +44,8 @@ import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.service.ChatRuntime
-import me.rerere.rikkahub.service.ImageGenerationRuntime
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.service.SharedChatRuntime
-import me.rerere.rikkahub.service.SharedImageGenerationRuntime
 import me.rerere.rikkahub.service.TextTranslationGenerator
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
@@ -189,11 +190,11 @@ internal fun sharedProductModule(
         )
     }
     single { MemoryRepository(get()) }
+    single { GenMediaRepository(get()) }
     single { FavoriteRepository(get()) }
     single { SkillManager(FileKit.filesDir.toKotlinxIoPath(), settingsStore) }
     single<AssistantAssetCleaner> { get<FileKitFileCleaner>() }
     single { TextTranslationGenerator(providerManager) }
-    single<ImageGenerationRuntime> { SharedImageGenerationRuntime(settingsStore, providerManager, get()) }
     single { WebDavSync(get(), JsonInstant, backupFileLayout, httpClient) }
     single { S3Sync(get(), JsonInstant, backupFileLayout, httpClient) }
 
@@ -218,7 +219,13 @@ internal fun sharedProductModule(
     viewModelOf(::SkillsVM)
     viewModelOf(::SkillDetailVM)
     viewModel { BackupVM(get(), get(), get(), get()) }
-    viewModelOf(::ImgGenVM)
+    viewModel {
+        ImgGenVM(
+            get(), get(), get(),
+            FileKit.filesDir.toKotlinxIoPath(),
+            (FileKit.cacheDir / "imggen").toKotlinxIoPath(),
+        )
+    }
     viewModel { TranslatorVM(get(), get(), Dispatchers.Default) }
     viewModel<ChatVM> { parameters ->
         ChatVM(
