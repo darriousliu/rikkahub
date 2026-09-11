@@ -47,6 +47,12 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
+        // The Android and desktop ZIP adapters use the same Java API as 2.4.5.
+        val javaZipTest by creating {
+            dependsOn(commonTest.get())
+        }
+        named("jvmTest") { dependsOn(javaZipTest) }
+        named("androidHostTest") { dependsOn(javaZipTest) }
         // Android host tests cannot load the Android JNI runtime; use device tests there.
         val javaScriptTest by creating {
             dependsOn(commonTest.get())

@@ -2,101 +2,54 @@ package me.rerere.common.archive
 
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import java.util.zip.DataFormatException
-import java.util.zip.Deflater
-import java.util.zip.Inflater
+import kotlinx.io.asInputStream
+import kotlinx.io.asOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 
-actual object PlatformZipArchive : ZipArchive by CommonZipArchive(JvmRawDeflateCodec)
+actual object PlatformZipArchive : ZipArchive {
+    actual override fun create(sink: Sink, writeEntries: ZipArchiveWriter.() -> Unit) {
+        ZipOutputStream(sink.asOutputStream()).use { zipOut ->
+            val writer = object : ZipArchiveWriter {
+                override fun add(name: String, source: Source) {
+                    source.asInputStream().use { input ->
+                        zipOut.putNextEntry(ZipEntry(normalizeName(name)))
+                        input.copyTo(zipOut)
+                        zipOut.closeEntry()
+                    }
+                }
 
-private object JvmRawDeflateCodec : RawDeflateCodec {
-    override fun deflate(
-        source: Source,
-        sink: Sink,
-        onUncompressedBytes: (ByteArray, Int) -> Unit,
-    ): RawDeflateResult {
-        val deflater = Deflater(Deflater.DEFAULT_COMPRESSION, true)
-        val input = ByteArray(DEFAULT_BUFFER_SIZE)
-        val output = ByteArray(DEFAULT_BUFFER_SIZE)
-        var inputByteCount = 0L
-        var outputByteCount = 0L
-        try {
+                override fun addDirectory(name: String) {
+                    zipOut.putNextEntry(ZipEntry("${normalizeName(name)}/"))
+                    zipOut.closeEntry()
+                }
+            }
+            writer.writeEntries()
+        }
+    }
+
+    actual override suspend fun read(source: Source, readEntry: suspend (ZipArchiveEntry) -> Unit) {
+        ZipInputStream(source.asInputStream()).use { zipIn ->
             while (true) {
-                val read = source.readAtMostTo(input)
-                if (read == -1) break
-                onUncompressedBytes(input, read)
-                inputByteCount += read
-                deflater.setInput(input, 0, read)
-                while (!deflater.needsInput()) {
-                    val produced = deflater.deflate(output)
-                    if (produced > 0) {
-                        sink.write(output, 0, produced)
-                        outputByteCount += produced
-                    } else if (!deflater.needsInput()) {
-                        throw ZipArchiveException("Raw deflate encoder made no progress")
-                    }
-                }
-            }
+                val entry = zipIn.nextEntry ?: break
+                val normalizedName = normalizeName(entry.name)
+                readEntry(object : ZipArchiveEntry {
+                    override val name = if (entry.isDirectory) "$normalizedName/" else normalizedName
+                    override val isDirectory = entry.isDirectory
+                    private var consumed = false
 
-            deflater.finish()
-            while (!deflater.finished()) {
-                val produced = deflater.deflate(output)
-                if (produced == 0) throw ZipArchiveException("Raw deflate encoder did not finish")
-                sink.write(output, 0, produced)
-                outputByteCount += produced
+                    override fun copyTo(sink: Sink): Long {
+                        check(!consumed) { "ZIP entry content can only be consumed once: $name" }
+                        consumed = true
+                        return zipIn.copyTo(sink.asOutputStream()).also { sink.flush() }
+                    }
+                })
+                zipIn.closeEntry()
             }
-            return RawDeflateResult(inputByteCount, outputByteCount)
-        } finally {
-            deflater.end()
         }
     }
 
-    override fun inflate(
-        source: Source,
-        sink: Sink,
-        onUncompressedBytes: (ByteArray, Int) -> Unit,
-    ): RawDeflateResult {
-        val inflater = Inflater(true)
-        val input = ByteArray(DEFAULT_BUFFER_SIZE)
-        val output = ByteArray(DEFAULT_BUFFER_SIZE)
-        var inputByteCount = 0L
-        var outputByteCount = 0L
-        try {
-            while (!inflater.finished()) {
-                if (inflater.needsInput()) {
-                    val peek = source.peek()
-                    val read = try {
-                        peek.readAtMostTo(input)
-                    } finally {
-                        peek.close()
-                    }
-                    if (read == -1) throw ZipArchiveException("Truncated raw-deflate ZIP entry")
-                    inflater.setInput(input, 0, read)
-                }
-
-                val remainingBefore = inflater.remaining
-                val produced = try {
-                    inflater.inflate(output)
-                } catch (error: DataFormatException) {
-                    throw ZipArchiveException("Invalid raw-deflate ZIP entry", error)
-                }
-                val consumed = remainingBefore - inflater.remaining
-                if (consumed > 0) {
-                    source.skip(consumed.toLong())
-                    inputByteCount += consumed
-                }
-                if (produced > 0) {
-                    onUncompressedBytes(output, produced)
-                    sink.write(output, 0, produced)
-                    outputByteCount += produced
-                } else if (inflater.needsDictionary()) {
-                    throw ZipArchiveException("Raw-deflate ZIP entry requires a dictionary")
-                } else if (!inflater.finished() && !inflater.needsInput() && consumed == 0) {
-                    throw ZipArchiveException("Raw deflate decoder made no progress")
-                }
-            }
-            return RawDeflateResult(inputByteCount, outputByteCount)
-        } finally {
-            inflater.end()
-        }
-    }
+    private fun normalizeName(name: String): String = ZipEntryPathPolicy.normalizeOrNull(name)
+        ?: throw ZipArchiveException("Unsafe ZIP entry path: $name")
 }
