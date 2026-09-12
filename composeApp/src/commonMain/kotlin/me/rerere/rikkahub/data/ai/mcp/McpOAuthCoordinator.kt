@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import me.rerere.common.concurrent.AtomicSnapshotMap
+import me.rerere.common.concurrent.ConcurrentHashMap
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.platform.OAuthCallbackSession
@@ -32,8 +32,8 @@ internal class McpOAuthCoordinator(
     private val updateStatus: (Uuid, McpStatus) -> Unit,
     private val clock: Clock = Clock.System,
 ) : McpAuthorizationCoordinator {
-    private val authorizationJobs = AtomicSnapshotMap<Uuid, Job>()
-    private val refreshLocks = AtomicSnapshotMap<Uuid, Mutex>()
+    private val authorizationJobs = ConcurrentHashMap<Uuid, Job>()
+    private val refreshLocks = ConcurrentHashMap<Uuid, Mutex>()
 
     fun startAuthorization(config: McpServerConfig) {
         authorizationJobs.remove(config.id)?.cancel()
@@ -69,7 +69,7 @@ internal class McpOAuthCoordinator(
     }
 
     override suspend fun ensureFreshToken(configInput: McpServerConfig): McpServerConfig {
-        val lock = refreshLocks.getOrPut(configInput.id) { Mutex() }
+        val lock = refreshLocks.computeIfAbsent(configInput.id) { Mutex() }
         return lock.withLock {
             val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == configInput.id }
                 ?: configInput

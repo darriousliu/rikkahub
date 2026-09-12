@@ -43,6 +43,11 @@ kotlin {
     }
 
     sourceSets {
+        val androidJvmMain by creating {
+            dependsOn(commonMain.get())
+        }
+        androidMain { dependsOn(androidJvmMain) }
+        jvmMain { dependsOn(androidJvmMain) }
         commonMain.dependencies {
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)
