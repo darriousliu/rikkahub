@@ -35,6 +35,8 @@ import me.rerere.ai.provider.TextGenerationParams
 import me.rerere.ai.provider.providers.openai.ChatCompletionsAPI
 import me.rerere.ai.provider.providers.openai.ResponseAPI
 import me.rerere.ai.provider.providers.openai.configureOpenAIRequest
+import io.ktor.client.request.header
+import me.rerere.common.text.formatFixedDecimal
 import me.rerere.ai.provider.providers.openai.toOpenAIJsonContent
 import me.rerere.ai.ui.ImageGenerationItem
 import me.rerere.ai.ui.MessageChunk
@@ -47,8 +49,6 @@ import me.rerere.ai.util.readLocalFile
 import me.rerere.common.http.getByKey
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.math.absoluteValue
-import kotlin.math.round
 
 private const val TAG = "OpenAIProvider"
 
@@ -61,8 +61,9 @@ class OpenAIProvider(
 
 
     override suspend fun listModels(providerSetting: ProviderSetting.OpenAI): List<Model> {
+        val key = keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())
         val response = client.get("${providerSetting.baseUrl}/models") {
-            configureOpenAIRequest(providerSetting, keyRoulette, emptyList())
+            header("Authorization", "Bearer $key")
         }
         val bodyStr = response.bodyAsText()
         if (!response.status.isSuccess()) {
@@ -76,13 +77,14 @@ class OpenAIProvider(
     }
 
     override suspend fun getBalance(providerSetting: ProviderSetting.OpenAI): String {
+        val key = keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())
         val url = if (providerSetting.balanceOption.apiPath.startsWith("http")) {
             providerSetting.balanceOption.apiPath
         } else {
             "${providerSetting.baseUrl}${providerSetting.balanceOption.apiPath}"
         }
         val response = client.get(url) {
-            configureOpenAIRequest(providerSetting, keyRoulette, emptyList())
+            header("Authorization", "Bearer $key")
         }
         val bodyStr = response.bodyAsText()
         if (!response.status.isSuccess()) {
@@ -92,7 +94,7 @@ class OpenAIProvider(
         val value = bodyJson.getByKey(providerSetting.balanceOption.resultPath)
         val digitalValue = value.toFloatOrNull()
         return if (digitalValue != null) {
-            digitalValue.toFixedTwoDecimals()
+            formatFixedDecimal(digitalValue.toDouble(), 2)
         } else {
             value
         }
@@ -139,6 +141,7 @@ class OpenAIProvider(
         params: EmbeddingGenerationParams
     ): EmbeddingGenerationResult {
         require(params.input.isNotEmpty()) { "Embedding input cannot be empty" }
+        val key = keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())
 
         val requestBody = buildJsonObject {
                 put("model", params.model.modelId)
@@ -152,7 +155,8 @@ class OpenAIProvider(
                 params.dimensions?.let { put("dimensions", it) }
             }.mergeCustomBody(params.customBody)
         val response = client.post("${providerSetting.baseUrl}/embeddings") {
-            configureOpenAIRequest(providerSetting, keyRoulette, params.customHeaders)
+            params.customHeaders.filter { it.name.isNotBlank() }.forEach { header(it.name, it.value) }
+            header("Authorization", "Bearer $key")
             setBody(requestBody.toOpenAIJsonContent())
         }
         val bodyStr = response.bodyAsText()
@@ -311,11 +315,4 @@ class OpenAIProvider(
     companion object {
         private val SUPPORTED_EDIT_IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "webp")
     }
-}
-
-private fun Float.toFixedTwoDecimals(): String {
-    val scaled = round(toDouble() * 100.0).toLong()
-    val absolute = scaled.absoluteValue
-    val sign = if (scaled < 0) "-" else ""
-    return "$sign${absolute / 100}.${(absolute % 100).toString().padStart(2, '0')}"
 }
