@@ -41,12 +41,10 @@ import me.rerere.rikkahub.generated.resources.assistant_page_local_tools_tts_tit
 import me.rerere.rikkahub.generated.resources.assistant_page_tab_local_tools
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
-import me.rerere.rikkahub.ui.components.ui.CardGroupScope
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.CustomColors
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -118,75 +116,118 @@ private fun AssistantLocalToolContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CardGroup {
-            localToolItem(
-                option = LocalToolOption.JavascriptEngine,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_javascript_engine_title,
-                description = Res.string.assistant_page_local_tools_javascript_engine_desc,
-                onToggle = ::toggleLocalTool,
-            )
-            localToolItem(
-                option = LocalToolOption.TimeInfo,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_time_info_title,
-                description = Res.string.assistant_page_local_tools_time_info_desc,
-                onToggle = ::toggleLocalTool,
-            )
-            localToolItem(
-                option = LocalToolOption.Clipboard,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_clipboard_title,
-                description = Res.string.assistant_page_local_tools_clipboard_desc,
-                onToggle = ::toggleLocalTool,
-            )
-            localToolItem(
-                option = LocalToolOption.Tts,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_tts_title,
-                description = Res.string.assistant_page_local_tools_tts_desc,
-                onToggle = ::toggleLocalTool,
-            )
-            localToolItem(
-                option = LocalToolOption.AskUser,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_ask_user_title,
-                description = Res.string.assistant_page_local_tools_ask_user_desc,
-                onToggle = ::toggleLocalTool,
-            )
-            localToolItem(
-                option = LocalToolOption.ScreenTime,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_screen_time_title,
-                description = Res.string.assistant_page_local_tools_screen_time_desc,
-                onToggle = ::toggleLocalTool,
-            )
-            localToolItem(
-                option = LocalToolOption.Calendar,
-                assistant = assistant,
-                title = Res.string.assistant_page_local_tools_calendar_title,
-                description = Res.string.assistant_page_local_tools_calendar_desc,
-                onToggle = ::toggleLocalTool,
-            )
+            if (LocalToolOption.JavascriptEngine in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_javascript_engine_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_javascript_engine_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.JavascriptEngine),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.JavascriptEngine, it) }
+                        )
+                    }
+                )
+            }
+            if (LocalToolOption.TimeInfo in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_time_info_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_time_info_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.TimeInfo),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.TimeInfo, it) }
+                        )
+                    }
+                )
+            }
+            if (LocalToolOption.Clipboard in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_clipboard_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_clipboard_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.Clipboard),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.Clipboard, it) }
+                        )
+                    }
+                )
+            }
+            if (LocalToolOption.Tts in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_tts_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_tts_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.Tts),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.Tts, it) }
+                        )
+                    }
+                )
+            }
+            if (LocalToolOption.AskUser in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_ask_user_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_ask_user_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.AskUser),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.AskUser, it) }
+                        )
+                    }
+                )
+            }
+            if (LocalToolOption.ScreenTime in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_screen_time_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_screen_time_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.ScreenTime),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.ScreenTime, it) }
+                        )
+                    }
+                )
+            }
+            if (LocalToolOption.Calendar in platformLocalToolOptions) {
+                item(
+                    headlineContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_calendar_title))
+                    },
+                    supportingContent = {
+                        Text(stringResource(Res.string.assistant_page_local_tools_calendar_desc))
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = assistant.localTools.contains(LocalToolOption.Calendar),
+                            onCheckedChange = { toggleLocalTool(LocalToolOption.Calendar, it) }
+                        )
+                    }
+                )
+            }
         }
     }
-}
-
-private fun CardGroupScope.localToolItem(
-    option: LocalToolOption,
-    assistant: Assistant,
-    title: StringResource,
-    description: StringResource,
-    onToggle: (LocalToolOption, Boolean) -> Unit,
-) {
-    if (option !in platformLocalToolOptions) return
-    item(
-        headlineContent = { Text(stringResource(title)) },
-        supportingContent = { Text(stringResource(description)) },
-        trailingContent = {
-            Switch(
-                checked = option in assistant.localTools,
-                onCheckedChange = { onToggle(option, it) },
-            )
-        },
-    )
 }
