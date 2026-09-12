@@ -3,6 +3,8 @@ package me.rerere.rikkahub.ui.pages.extensions.skills
 import androidx.lifecycle.ViewModelStore
 import io.github.vinceglb.filekit.PlatformFile
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpTimeoutCapability
+import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
@@ -35,11 +37,17 @@ class SkillsVMImportTest {
     private val models = ViewModelStore()
     private val requests = mutableListOf<String>()
     private val responses = mutableMapOf<String, String>()
+    private val responseStatuses = mutableMapOf<String, HttpStatusCode>()
     private val client = HttpClient(MockEngine { request ->
         val url = request.url.toString()
         requests += url
         assertEquals("application/vnd.github+json", request.headers["Accept"])
-        responses[url]?.let { respond(it) } ?: respond("not found", HttpStatusCode.NotFound)
+        val timeouts = request.getCapabilityOrNull(HttpTimeoutCapability)
+        assertEquals(10_000L, timeouts?.connectTimeoutMillis)
+        assertEquals(30_000L, timeouts?.socketTimeoutMillis)
+        assertEquals(HttpTimeoutConfig.INFINITE_TIMEOUT_MS, timeouts?.requestTimeoutMillis)
+        responses[url]?.let { respond(it, responseStatuses[url] ?: HttpStatusCode.OK) }
+            ?: respond("not found", HttpStatusCode.NotFound)
     })
     private lateinit var vm: SkillsVM
 
@@ -149,6 +157,28 @@ class SkillsVMImportTest {
         assertFalse(result.first)
         assertTrue(result.second.contains("missing.md"))
         assertEquals("old", fixture.manager.readSkillBody("github"))
+    }
+
+    @Test
+    fun githubDirectoryRequiresStatus200AsInOriginalDownloader() = runTest {
+        val url = "https://api.github.com/repos/owner/repo/contents/?ref=HEAD"
+        responses[url] = "[]"
+        responseStatuses[url] = HttpStatusCode.PartialContent
+        assertEquals(false to "读取 GitHub 目录失败", github("https://github.com/owner/repo"))
+        assertTrue(vm.skills.value.isEmpty())
+    }
+
+    @Test
+    fun githubValidationAndSaveFailureReturnOriginalMessagesWithoutReplacingFiles() = runTest {
+        assertEquals(false to "无效的 GitHub 仓库链接", github("invalid"))
+        assertTrue(requests.isEmpty())
+        fixture.manager.saveSkill("old", markdown("old"))
+        responses["https://api.github.com/repos/owner/repo/contents/?ref=HEAD"] =
+            """[{"type":"file","path":"SKILL.md","download_url":"https://fixture/SKILL.md"}]"""
+        responses["https://fixture/SKILL.md"] = markdown("../escape")
+        assertEquals(false to "保存失败", github("https://github.com/owner/repo"))
+        assertEquals("body", fixture.manager.readSkillBody("old"))
+        assertFalse(fixture.root.resolve("escape").exists())
     }
 
     private suspend fun import(name: String, bytes: ByteArray): Pair<Boolean, String> {

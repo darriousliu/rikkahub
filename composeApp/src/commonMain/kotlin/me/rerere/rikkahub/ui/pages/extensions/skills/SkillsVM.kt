@@ -10,7 +10,8 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
-import io.ktor.http.isSuccess
+import io.ktor.client.plugins.HttpTimeoutConfig
+import io.ktor.client.plugins.timeout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -49,9 +50,11 @@ class SkillsVM(
 
     fun saveSkill(name: String, content: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            val success = skillManager.saveSkill(name, content) != null
+            val result = skillManager.saveSkill(name, content)
             _skills.value = skillManager.listSkills()
-            withContext(Dispatchers.Main) { onResult(success) }
+            withContext(Dispatchers.Main) {
+                onResult(result != null)
+            }
         }
     }
 
@@ -62,53 +65,84 @@ class SkillsVM(
         }
     }
 
+    fun getSkillsDir() = skillManager.getSkillsDir()
+
     fun importSkillFromFile(file: PlatformFile, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
+            try {
+                val fileName = file.name
                 val bytes = file.readBytes()
-                if (isZipFile(file.name, bytes)) {
+
+                val importedNames = if (isZipFile(fileName, bytes)) {
                     importSkillsFromZip(bytes)
                 } else {
                     importSkillMarkdown(bytes)
                 }
-            }.onSuccess { importedNames ->
+
                 _skills.value = skillManager.listSkills()
-                withContext(Dispatchers.Main) { onResult(true, importedNames.joinToString()) }
-            }.onFailure { error ->
-                withContext(Dispatchers.Main) { onResult(false, error.message ?: "未知错误") }
+                withContext(Dispatchers.Main) {
+                    onResult(true, importedNames.joinToString())
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onResult(false, e.message ?: "未知错误") }
             }
         }
     }
 
     fun importSkillFromGitHub(repoUrl: String, onResult: (Boolean, String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                val info = parseGitHubUrl(repoUrl) ?: error("无效的 GitHub 仓库链接")
-                val files = mutableListOf<Pair<String, String>>()
-                check(listFilesRecursively(info.owner, info.repo, info.branch, info.path, info.path, files)) {
-                    "读取 GitHub 目录失败"
+            try {
+                val info = parseGitHubUrl(repoUrl) ?: run {
+                    withContext(Dispatchers.Main) { onResult(false, "无效的 GitHub 仓库链接") }
+                    return@launch
                 }
 
-                val skillMdEntry = files.find { it.first == "SKILL.md" }
-                    ?: error("目录中未找到 SKILL.md")
-                val skillMdContent = downloadText(skillMdEntry.second)
-                    ?: error("下载 SKILL.md 失败，请检查链接或网络")
-                val name = SkillFrontmatterParser.parse(skillMdContent)["name"]
-                    ?.takeIf { it.isNotBlank() }
-                    ?: error("SKILL.md 格式错误：缺少 name 字段")
+                // Collect all files recursively via GitHub Contents API
+                val files = mutableListOf<Pair<String, String>>() // relativePath -> downloadUrl
+                val listed = listFilesRecursively(info.owner, info.repo, info.branch, info.path, info.path, files)
+                if (!listed) {
+                    withContext(Dispatchers.Main) { onResult(false, "读取 GitHub 目录失败") }
+                    return@launch
+                }
+
+                val skillMdEntry = files.find { it.first == "SKILL.md" } ?: run {
+                    withContext(Dispatchers.Main) { onResult(false, "目录中未找到 SKILL.md") }
+                    return@launch
+                }
+
+                val skillMdContent = downloadText(skillMdEntry.second) ?: run {
+                    withContext(Dispatchers.Main) { onResult(false, "下载 SKILL.md 失败，请检查链接或网络") }
+                    return@launch
+                }
+
+                val frontmatter = SkillFrontmatterParser.parse(skillMdContent)
+                val name = frontmatter["name"]
+                if (name.isNullOrBlank()) {
+                    withContext(Dispatchers.Main) { onResult(false, "SKILL.md 格式错误：缺少 name 字段") }
+                    return@launch
+                }
 
                 val fileContents = LinkedHashMap<String, String>()
                 for ((relativePath, downloadUrl) in files) {
-                    fileContents[relativePath] = downloadText(downloadUrl)
-                        ?: error("下载文件失败：$relativePath")
+                    val content = downloadText(downloadUrl)
+                    if (content == null) {
+                        withContext(Dispatchers.Main) { onResult(false, "下载文件失败：$relativePath") }
+                        return@launch
+                    }
+                    fileContents[relativePath] = content
                 }
-                check(skillManager.saveSkillFilesAtomically(name, fileContents)) { "保存失败" }
-                name
-            }.onSuccess { name ->
+
+                val saved = skillManager.saveSkillFilesAtomically(name, fileContents)
+                if (!saved) {
+                    withContext(Dispatchers.Main) { onResult(false, "保存失败") }
+                    return@launch
+                }
+
                 _skills.value = skillManager.listSkills()
                 withContext(Dispatchers.Main) { onResult(true, name) }
-            }.onFailure { error ->
-                withContext(Dispatchers.Main) { onResult(false, error.message ?: "未知错误") }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) { onResult(false, e.message ?: "未知错误") }
             }
         }
     }
@@ -117,12 +151,14 @@ class SkillsVM(
         val content = bytes.decodeToString()
         val frontmatter = SkillFrontmatterParser.parse(content)
         val name = frontmatter["name"]?.trim()
-        if (name.isNullOrBlank()) error("SKILL.md 格式错误：缺少 name 字段")
+        if (name.isNullOrBlank()) {
+            error("SKILL.md 格式错误：缺少 name 字段")
+        }
         if (frontmatter["description"].isNullOrBlank()) {
             error("SKILL.md 格式错误：缺少 description 字段")
         }
-        check(skillManager.saveSkill(name, content) != null) { "保存失败，请检查技能格式" }
-        return listOf(name)
+        val saved = skillManager.saveSkill(name, content) ?: error("保存失败，请检查技能格式")
+        return listOf(saved.name)
     }
 
     private suspend fun importSkillsFromZip(bytes: ByteArray): List<String> {
@@ -136,15 +172,22 @@ class SkillsVM(
         val skillMdPaths = files.keys
             .filter { it.substringAfterLast('/').equals("SKILL.md", ignoreCase = true) }
             .sorted()
-        if (skillMdPaths.isEmpty()) error("压缩包中未找到 SKILL.md")
-        val skillBasePaths = skillMdPaths.map { it.substringBeforeLast('/', missingDelimiterValue = "") }
+        if (skillMdPaths.isEmpty()) {
+            error("压缩包中未找到 SKILL.md")
+        }
+        val skillBasePaths = skillMdPaths.map {
+            it.substringBeforeLast('/', missingDelimiterValue = "")
+        }
 
         val importedNames = mutableListOf<String>()
         for (skillMdPath in skillMdPaths) {
-            val skillContent = files[skillMdPath]?.decodeToString() ?: error("读取失败：$skillMdPath")
+            val skillContent = files[skillMdPath]?.decodeToString()
+                ?: error("读取失败：$skillMdPath")
             val frontmatter = SkillFrontmatterParser.parse(skillContent)
             val name = frontmatter["name"]?.trim()
-            if (name.isNullOrBlank()) error("$skillMdPath 格式错误：缺少 name 字段")
+            if (name.isNullOrBlank()) {
+                error("$skillMdPath 格式错误：缺少 name 字段")
+            }
             if (frontmatter["description"].isNullOrBlank()) {
                 error("$skillMdPath 格式错误：缺少 description 字段")
             }
@@ -162,7 +205,10 @@ class SkillsVM(
                 skillFiles[targetPath] = content
             }
 
-            check(skillManager.saveSkillFileBytesAtomically(name, skillFiles)) { "保存失败：$name" }
+            val saved = skillManager.saveSkillFileBytesAtomically(name, skillFiles)
+            if (!saved) {
+                error("保存失败：$name")
+            }
             importedNames += name
         }
         return importedNames.distinct()
@@ -208,22 +254,22 @@ class SkillsVM(
     ): Boolean {
         val apiUrl = "https://api.github.com/repos/$owner/$repo/contents/$dirPath?ref=$branch"
         val json = downloadText(apiUrl) ?: return false
-        val items = Json.parseToJsonElement(json).jsonArray
-        for (item in items) {
-            val value = item.jsonObject
-            val type = value.getValue("type").jsonPrimitive.content
-            val itemPath = value.getValue("path").jsonPrimitive.content
+        val array = Json.parseToJsonElement(json).jsonArray
+        for (itemValue in array) {
+            val item = itemValue.jsonObject
+            val type = item.getValue("type").jsonPrimitive.content
+            val itemPath = item.getValue("path").jsonPrimitive.content
             val relativePath = itemPath.removePrefix("$basePath/").removePrefix(basePath)
             when (type) {
                 "file" -> {
-                    val downloadUrl = value["download_url"]?.jsonPrimitive?.contentOrNull
-                        ?.takeIf { it.isNotBlank() }
+                    val downloadUrl = item["download_url"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
                         ?: return false
-                    result += relativePath to downloadUrl
+                    result.add(relativePath to downloadUrl)
                 }
 
                 "dir" -> {
-                    if (!listFilesRecursively(owner, repo, branch, itemPath, basePath, result)) return false
+                    val ok = listFilesRecursively(owner, repo, branch, itemPath, basePath, result)
+                    if (!ok) return false
                 }
             }
         }
@@ -239,20 +285,27 @@ class SkillsVM(
 
     private fun parseGitHubUrl(url: String): GitHubRepoInfo? {
         val trimmed = url.trim().trimEnd('/')
+        // https://github.com/owner/repo
+        // https://github.com/owner/repo/tree/branch
+        // https://github.com/owner/repo/tree/branch/sub/path
         val regex = Regex("""https://github\.com/([^/]+)/([^/]+)(?:/tree/([^/]+)(/.*)?)?""")
         val match = regex.matchEntire(trimmed) ?: return null
-        return GitHubRepoInfo(
-            owner = match.groupValues[1],
-            repo = match.groupValues[2],
-            branch = match.groupValues[3].ifBlank { "HEAD" },
-            path = match.groupValues[4].trimStart('/'),
-        )
+        val owner = match.groupValues[1]
+        val repo = match.groupValues[2]
+        val branch = match.groupValues[3].ifBlank { "HEAD" }
+        val subPath = match.groupValues[4].trimStart('/')
+        return GitHubRepoInfo(owner, repo, branch, subPath)
     }
 
     private suspend fun downloadText(url: String): String? {
         val response = httpClient.get(url) {
+            timeout {
+                connectTimeoutMillis = 10_000
+                socketTimeoutMillis = 30_000
+                requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
+            }
             header(HttpHeaders.Accept, "application/vnd.github+json")
         }
-        return response.takeIf { it.status.isSuccess() }?.bodyAsText()
+        return if (response.status.value == 200) response.bodyAsText() else null
     }
 }
