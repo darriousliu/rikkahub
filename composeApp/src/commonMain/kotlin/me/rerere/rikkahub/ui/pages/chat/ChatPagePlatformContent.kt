@@ -3,7 +3,6 @@ package me.rerere.rikkahub.ui.pages.chat
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,9 +69,6 @@ interface ChatPagePlatformContent {
         conversation: Conversation,
         selectedMessages: List<UIMessage>,
     )
-
-    @Composable
-    fun RenderLoading(modifier: Modifier)
 }
 
 object UnavailableChatPagePlatformContent : ChatPagePlatformContent {
@@ -112,11 +108,6 @@ object UnavailableChatPagePlatformContent : ChatPagePlatformContent {
         conversation: Conversation,
         selectedMessages: List<UIMessage>,
     ) = Unit
-
-    @Composable
-    override fun RenderLoading(modifier: Modifier) {
-        CircularProgressIndicator(modifier = modifier)
-    }
 }
 
 internal class SharedChatPagePlatformContent(

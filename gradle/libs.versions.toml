@@ -13,6 +13,7 @@ lifecycle = "2.11.0"
 activityCompose = "1.13.0"
 composeBom = "2026.08.00"
 material3 = "1.5.0-alpha27"
+material3Multiplatform = "1.10.0-alpha05"
 media3 = "1.11.0"
 metadataExtractor = "2.21.0"
 nav2 = "2.10.0"
@@ -97,6 +98,7 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3",
 androidx-navigation2 = { group = "androidx.navigation", name = "navigation-compose", version.ref = "nav2" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 jetbrains-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "multiplatformNav3Ui" }
+jetbrains-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3Multiplatform" }
 jetbrains-material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "composeMultiplatformAdaptive" }
 jetbrains-material3-adaptive-layout = { module = "org.jetbrains.compose.material3.adaptive:adaptive-layout", version.ref = "composeMultiplatformAdaptive" }
 jetbrains-material3-adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "composeMultiplatformAdaptive" }

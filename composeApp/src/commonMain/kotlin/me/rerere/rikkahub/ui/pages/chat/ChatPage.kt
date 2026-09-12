@@ -453,9 +453,6 @@ private fun ChatPageContent(
                         selectedMessages = selectedMessages,
                     )
                 },
-                loadingRenderer = { modifier ->
-                    platformContent.RenderLoading(modifier)
-                },
             )
         }
 

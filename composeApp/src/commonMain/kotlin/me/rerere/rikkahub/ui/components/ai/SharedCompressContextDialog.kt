@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -29,13 +28,13 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
+import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SharedCompressContextDialog(
     onDismiss: () -> Unit,
     onConfirm: (additionalPrompt: String, targetTokens: Int, keepRecentMessages: Int) -> Job,
-    loadingIndicator: @Composable (Modifier) -> Unit = { CircularProgressIndicator(modifier = it) },
 ) {
     var additionalPrompt by remember { mutableStateOf("") }
     var selectedTokens by remember { mutableIntStateOf(2000) }
@@ -73,7 +72,7 @@ fun SharedCompressContextDialog(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        loadingIndicator(Modifier.size(32.dp))
+                        RabbitLoadingIndicator(Modifier.size(32.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(stringResource(Res.string.chat_page_compressing))
                     }

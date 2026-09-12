@@ -2,9 +2,8 @@ package me.rerere.rikkahub.ui.components.ai
 
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.Job
-import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 
-/** Android facade preserves the existing call and loading indicator. */
+/** Android facade preserves the existing call. */
 @Composable
 fun CompressContextDialog(
     onDismiss: () -> Unit,
@@ -13,6 +12,5 @@ fun CompressContextDialog(
     SharedCompressContextDialog(
         onDismiss = onDismiss,
         onConfirm = onConfirm,
-        loadingIndicator = { RabbitLoadingIndicator(modifier = it) },
     )
 }
