@@ -106,6 +106,7 @@ import me.rerere.rikkahub.ui.components.ui.ErrorCardsDisplay
 import me.rerere.rikkahub.ui.components.ui.ListSelectableItem
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.hooks.ImeLazyListAutoScroller
+import me.rerere.rikkahub.ui.theme.ChatFontProvider
 import me.rerere.rikkahub.utils.plus
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
@@ -308,7 +309,6 @@ fun ChatList(
     messageRenderer: @Composable (ChatMessagePresentation) -> Unit = { BasicChatMessage(it) },
     exportRenderer: @Composable (ChatExportPresentation) -> Unit = {},
     loadingRenderer: @Composable (Modifier) -> Unit = { CircularProgressIndicator(modifier = it) },
-    chatFontWrapper: @Composable (@Composable () -> Unit) -> Unit = { content -> content() },
 ) {
     AnimatedContent(
         targetState = previewMode,
@@ -356,7 +356,6 @@ fun ChatList(
                 messageRenderer = messageRenderer,
                 exportRenderer = exportRenderer,
                 loadingRenderer = loadingRenderer,
-                chatFontWrapper = chatFontWrapper,
             )
         }
     }
@@ -392,7 +391,6 @@ private fun ChatListNormal(
     messageRenderer: @Composable (ChatMessagePresentation) -> Unit,
     exportRenderer: @Composable (ChatExportPresentation) -> Unit,
     loadingRenderer: @Composable (Modifier) -> Unit,
-    chatFontWrapper: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val loadingState by rememberUpdatedState(loading)
@@ -491,7 +489,7 @@ private fun ChatListNormal(
             }
         }
 
-        chatFontWrapper {
+        ChatFontProvider(displaySetting = settings.displaySetting) {
             LazyColumn(
                 state = state,
                 contentPadding = PaddingValues(16.dp) + PaddingValues(bottom = 32.dp + innerPadding.calculateBottomPadding()),

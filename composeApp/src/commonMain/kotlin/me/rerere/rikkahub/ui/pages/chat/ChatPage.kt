@@ -66,7 +66,6 @@ import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.layout.currentWindowDpSize
 import org.jetbrains.compose.resources.stringResource
-import me.rerere.rikkahub.ui.theme.ChatFontProvider
 import me.rerere.rikkahub.utils.base64Decode
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
@@ -473,9 +472,6 @@ private fun ChatPageContent(
                 },
                 loadingRenderer = { modifier ->
                     platformContent.RenderLoading(modifier)
-                },
-                chatFontWrapper = { content ->
-                    ChatFontProvider(displaySetting = setting.displaySetting, content = content)
                 },
             )
         }
