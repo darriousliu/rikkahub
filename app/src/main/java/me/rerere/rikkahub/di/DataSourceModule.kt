@@ -38,6 +38,7 @@ import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
+import me.rerere.rikkahub.shared.applyAppTimeouts
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.search.SearchService
 import me.rerere.rikkahub.data.sync.BackupFileLayout
@@ -46,7 +47,6 @@ import me.rerere.rikkahub.data.sync.S3Sync
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
-import java.util.concurrent.TimeUnit
 
 val dataSourceModule = module {
     single {
@@ -132,9 +132,7 @@ val dataSourceModule = module {
             .build()
         val buildInfo = get<PlatformBuildInfo>()
         OkHttpClient.Builder()
-            .connectTimeout(20, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.MINUTES)
-            .writeTimeout(120, TimeUnit.SECONDS)
+            .applyAppTimeouts()
             .followSslRedirects(true)
             .followRedirects(true)
             .retryOnConnectionFailure(true)
@@ -228,9 +226,7 @@ val dataSourceModule = module {
             }
             engine {
                 config {
-                    connectTimeout(20, TimeUnit.SECONDS)
-                    readTimeout(10, TimeUnit.MINUTES)
-                    writeTimeout(120, TimeUnit.SECONDS)
+                    applyAppTimeouts()
                     followSslRedirects(true)
                     followRedirects(true)
                     retryOnConnectionFailure(true)

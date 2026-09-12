@@ -134,8 +134,15 @@ kotlin {
         val mobileMain by creating {
             dependsOn(commonMain.get())
         }
+        val androidJvmMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.ktor.client.okhttp)
+            }
+        }
         androidMain {
             dependsOn(mobileMain)
+            dependsOn(androidJvmMain)
             dependencies {
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.appcompat)
@@ -145,7 +152,6 @@ kotlin {
                 implementation(libs.coil.svg)
                 implementation(libs.floatingx)
                 implementation(libs.jmdns)
-                implementation(libs.ktor.client.okhttp)
                 implementation(libs.metadata.extractor)
                 implementation(libs.ucrop)
                 implementation(libs.zxing.core)
@@ -157,19 +163,31 @@ kotlin {
                 implementation(libs.ktor.client.darwin)
             }
         }
-        jvmMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.ktor.server.core)
-            implementation(libs.ktor.server.cio)
-            implementation(libs.sentry)
-            implementation(libs.jmdns)
-            implementation(libs.metadata.extractor)
-            implementation(libs.zxing.core)
+        jvmMain {
+            dependsOn(androidJvmMain)
+            dependencies {
+                implementation(libs.ktor.server.core)
+                implementation(libs.ktor.server.cio)
+                implementation(libs.sentry)
+                implementation(libs.jmdns)
+                implementation(libs.metadata.extractor)
+                implementation(libs.zxing.core)
+            }
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
+        }
+        val androidJvmTest by creating {
+            dependsOn(commonTest.get())
+        }
+        named("jvmTest") { dependsOn(androidJvmTest) }
+        named("androidHostTest") {
+            dependsOn(androidJvmTest)
+            dependencies {
+                implementation(libs.junit)
+            }
         }
     }
 }

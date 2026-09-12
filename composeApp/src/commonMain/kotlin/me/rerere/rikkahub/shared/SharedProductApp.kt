@@ -18,9 +18,7 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.div
 import io.github.vinceglb.filekit.toKotlinxIoPath
-import io.ktor.client.HttpClient
 import korlibs.template.KorteTemplates
-import me.rerere.common.logging.RequestLoggingPlugin
 import me.rerere.search.SearchService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,7 +94,7 @@ fun SharedProductApp(
         KeyRoulette.persistentLru((FileKit.cacheDir / "lru_key_roulette.json").toKotlinxIoPath())
     }
     val httpClient = remember(keyRoulette) {
-        HttpClient { install(RequestLoggingPlugin) }.also { client ->
+        createAppHttpClient().also { client ->
             // 搜索服务是全局单例，未初始化时 SearchService.httpClient 会直接抛错。
             SearchService.init(client = client, keyRoulette = keyRoulette)
         }
