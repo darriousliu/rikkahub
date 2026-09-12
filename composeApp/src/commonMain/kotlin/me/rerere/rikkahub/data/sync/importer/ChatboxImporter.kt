@@ -1,7 +1,12 @@
 package me.rerere.rikkahub.data.sync.importer
 
 import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.readString
+import io.github.vinceglb.filekit.source
+import kotlinx.io.Buffer
+import kotlinx.io.Source
+import kotlinx.io.buffered
+import kotlinx.io.readString
+import kotlinx.serialization.json.Json
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.JsonArray
@@ -69,22 +74,39 @@ internal fun createStableChatboxUuid(
  * - Stable UUIDs are derived from Chatbox ids so importing the same file again can skip existing conversations.
  */
 object ChatboxImporter {
-    suspend fun import(
-        file: PlatformFile,
-        assistantId: Uuid,
-        providers: List<ProviderSetting>,
-    ): ChatboxImportPayload {
-        val root = readRoot(file)
-        val importedProviders = importProviders(root)
+    suspend fun import(file: PlatformFile, assistantId: Uuid, providers: List<ProviderSetting>): ChatboxImportPayload {
+        val importedProviders = importProviders(file)
         val allProviders = importedProviders + providers
+        var skippedImageParts = 0
+        var skippedEmptyMessages = 0
+        val conversations = arrayListOf<Conversation>()
+
+        file.source().buffered().use { reader ->
+            forEachSession(reader) { session ->
+                val result = parseSession(session, assistantId, allProviders)
+                skippedImageParts += result.skippedImageParts
+                skippedEmptyMessages += result.skippedEmptyMessages
+                result.conversation?.let(conversations::add)
+            }
+        }
 
         return ChatboxImportPayload(
             providers = importedProviders,
-            conversations = importConversations(root, assistantId, allProviders),
+            conversations = ChatboxConversationImport(
+                conversations = conversations,
+                skippedImageParts = skippedImageParts,
+                skippedEmptyMessages = skippedEmptyMessages,
+            ),
         )
     }
 
-    suspend fun importProviders(file: PlatformFile): List<ProviderSetting> = importProviders(readRoot(file))
+    suspend fun importProviders(file: PlatformFile): List<ProviderSetting> {
+        return file.source().buffered().use { reader ->
+            readSettings(reader)
+                ?.let { settings -> importProviders(JsonObject(mapOf("settings" to settings))) }
+                ?: emptyList()
+        }
+    }
 
     suspend fun importStreaming(
         file: PlatformFile,
@@ -92,24 +114,25 @@ object ChatboxImporter {
         providers: List<ProviderSetting>,
         onConversation: suspend (Conversation) -> Unit,
     ): ChatboxStreamingImportResult {
-        val root = readRoot(file)
-        val importedProviders = importProviders(root)
+        val importedProviders = importProviders(file)
         val allProviders = importedProviders + providers
         var parsedConversations = 0
         var skippedImageParts = 0
         var skippedEmptyMessages = 0
         var hasConversationSystemPrompt = false
 
-        sessionObjects(root).forEach { session ->
-            val result = parseSession(session, assistantId, allProviders)
-            skippedImageParts += result.skippedImageParts
-            skippedEmptyMessages += result.skippedEmptyMessages
-            result.conversation?.let { conversation ->
-                parsedConversations++
-                if (!conversation.customSystemPrompt.isNullOrBlank()) {
-                    hasConversationSystemPrompt = true
+        file.source().buffered().use { reader ->
+            forEachSession(reader) { session ->
+                val result = parseSession(session, assistantId, allProviders)
+                skippedImageParts += result.skippedImageParts
+                skippedEmptyMessages += result.skippedEmptyMessages
+                result.conversation?.let { conversation ->
+                    parsedConversations++
+                    if (!conversation.customSystemPrompt.isNullOrBlank()) {
+                        hasConversationSystemPrompt = true
+                    }
+                    onConversation(conversation)
                 }
-                onConversation(conversation)
             }
         }
 
@@ -317,8 +340,33 @@ object ChatboxImporter {
         )
     }
 
-    private suspend fun readRoot(file: PlatformFile): JsonObject =
-        JsonInstant.parseToJsonElement(file.readString()).jsonObject
+    private fun readSettings(reader: Source): JsonObject? {
+        val jsonReader = JsonObjectStreamReader(reader)
+        while (jsonReader.hasNext()) {
+            when (jsonReader.nextName()) {
+                "settings" -> return jsonReader.nextJsonElement().jsonObjectOrNull
+                else -> jsonReader.skipValue()
+            }
+        }
+        jsonReader.endObject()
+        return null
+    }
+
+    private suspend fun forEachSession(
+        reader: Source,
+        onSession: suspend (JsonObject) -> Unit,
+    ) {
+        val jsonReader = JsonObjectStreamReader(reader)
+        while (jsonReader.hasNext()) {
+            val name = jsonReader.nextName()
+            if (name.startsWith("session:")) {
+                jsonReader.nextJsonElement().jsonObjectOrNull?.let { onSession(it) }
+            } else {
+                jsonReader.skipValue()
+            }
+        }
+        jsonReader.endObject()
+    }
 
     private fun parseParts(message: JsonObject): ChatboxPartParseResult {
         var skippedImageParts = 0
@@ -522,3 +570,111 @@ data class ChatboxPartParseResult(
     val parts: List<UIMessagePart>,
     val skippedImageParts: Int,
 )
+
+/** Splits a UTF-8 root object into individual values; kotlinx.serialization decodes each retained value. */
+internal class JsonObjectStreamReader(private val source: Source) {
+    private var first = true
+    private var pendingByte = -1
+
+    init {
+        // FileKit keeps the underlying platform resource open until the caller closes the source.
+        if (source.request(3)) {
+            val probe = source.peek()
+            if (probe.readByte() == 0xef.toByte() && probe.readByte() == 0xbb.toByte() &&
+                probe.readByte() == 0xbf.toByte()
+            ) source.skip(3)
+            probe.close()
+        }
+        expect('{')
+    }
+
+    fun hasNext(): Boolean = peek() != '}'.code
+
+    fun nextName(): String {
+        if (!first) expect(',')
+        first = false
+        check(peek() == '"'.code) { "Expected a JSON property name" }
+        val name = Json.decodeFromString<String>(readValue(keep = true))
+        expect(':')
+        return name
+    }
+
+    fun nextJsonElement(): JsonElement = normalizeNumbers(Json.parseToJsonElement(readValue(keep = true)))
+
+    // The original token reader converted integer tokens to Long, then fell back to Double.
+    private fun normalizeNumbers(value: JsonElement): JsonElement = when (value) {
+        is JsonObject -> JsonObject(value.mapValues { normalizeNumbers(it.value) })
+        is JsonArray -> JsonArray(value.map(::normalizeNumbers))
+        is JsonPrimitive -> if (value.isString) value else {
+            value.content.toLongOrNull()?.let(::JsonPrimitive)
+                ?: value.content.toDoubleOrNull()?.let(::JsonPrimitive)
+                ?: value
+        }
+    }
+
+    fun skipValue() {
+        readValue(keep = false)
+    }
+
+    fun endObject() = expect('}')
+
+    private fun expect(character: Char) {
+        check(peek() == character.code) { "Expected '$character' in JSON object" }
+        takeByte()
+    }
+
+    private fun peekByte(): Int {
+        if (pendingByte < 0 && !source.exhausted()) pendingByte = source.readByte().toInt() and 0xff
+        return pendingByte
+    }
+
+    private fun takeByte(): Byte = peekByte().toByte().also { pendingByte = -1 }
+
+    private fun peek(): Int {
+        while (true) {
+            val byte = peekByte()
+            check(byte >= 0) { "Unexpected end of JSON input" }
+            if (byte != 0x20 && byte != 0x09 && byte != 0x0a && byte != 0x0d) return byte
+            takeByte()
+        }
+    }
+
+    private fun readValue(keep: Boolean): String {
+        val firstByte = peek()
+        val output = if (keep) Buffer() else null
+        val endings = ArrayList<Int>()
+        var quoted = false
+        var escaped = false
+        val structured = firstByte == '{'.code || firstByte == '['.code
+        val string = firstByte == '"'.code
+        check(firstByte != ','.code && firstByte != '}'.code && firstByte != ']'.code) { "Expected a JSON value" }
+        while (peekByte() >= 0) {
+            val next = peekByte()
+            if (!structured && !string && (next == ','.code || next == '}'.code || next == ']'.code ||
+                    next == 0x20 || next == 0x09 || next == 0x0a || next == 0x0d)
+            ) break
+            val byte = takeByte()
+            output?.writeByte(byte)
+            if (quoted) {
+                if (escaped) escaped = false
+                else if (next == '\\'.code) escaped = true
+                else if (next == '"'.code) {
+                    quoted = false
+                    if (string) return output?.readString().orEmpty()
+                }
+            } else {
+                when (next) {
+                    '"'.code -> quoted = true
+                    '{'.code -> endings.add('}'.code)
+                    '['.code -> endings.add(']'.code)
+                    '}'.code, ']'.code -> {
+                        check(endings.removeLastOrNull() == next) { "Mismatched JSON container" }
+                        if (endings.isEmpty()) return output?.readString().orEmpty()
+                    }
+                }
+            }
+        }
+        check(!quoted && endings.isEmpty()) { "Unexpected end of JSON value" }
+        return output?.readString().orEmpty()
+    }
+}
