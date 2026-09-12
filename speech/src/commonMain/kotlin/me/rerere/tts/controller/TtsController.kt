@@ -2,9 +2,10 @@ package me.rerere.tts.controller
 
 import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -34,8 +35,8 @@ private const val TAG = "TtsController"
 class TtsController(
     private val ttsManager: TTSManager,
     private val audio: PlatformAudioPlayer,
-    dispatcher: CoroutineDispatcher = Dispatchers.Main,
-    private val synthesisDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    dispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
+    private val synthesisDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     // 协程作用域
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -50,7 +51,9 @@ class TtsController(
     private var isPaused = false
 
     // 队列与缓存（基于稳定 ID）
-    private val scheduling = TtsSchedulingStore<TtsChunk, Uuid, TTSResponse>()
+    private val queue: ConcurrentLinkedQueue<TtsChunk> = ConcurrentLinkedQueue()
+    private val allChunks: MutableList<TtsChunk> = mutableListOf()
+    private val cache = ConcurrentHashMap<Uuid, kotlinx.coroutines.Deferred<TTSResponse>>()
     private var lastPrefetchedIndex: Int = -1
 
     // 行为参数
@@ -117,15 +120,17 @@ class TtsController(
 
         if (flush) {
             internalReset()
-            scheduling.append(newChunks)
+            allChunks.addAll(newChunks)
+            queue.addAll(newChunks)
             _currentChunk.update { 0 }
         } else {
             // 追加时，重映射 index 以保持全局顺序
-            val startIndex = (scheduling.lastChunkOrNull()?.index ?: -1) + 1
+            val startIndex = (allChunks.lastOrNull()?.index ?: -1) + 1
             val remapped = newChunks.mapIndexed { i, c -> c.copy(index = startIndex + i) }
-            scheduling.append(remapped)
+            allChunks.addAll(remapped)
+            queue.addAll(remapped)
         }
-        _totalChunks.update { scheduling.queuedSize }
+        _totalChunks.update { queue.size }
         _error.update { null }
 
         _playbackState.update {
@@ -146,8 +151,10 @@ class TtsController(
         audio.stop()
         audio.clear()
         isPaused = false
-        scheduling.clearChunks()
-        scheduling.cancelAndClearCache("Reset")
+        queue.clear()
+        allChunks.clear()
+        cache.values.forEach { it.cancel(CancellationException("Reset")) }
+        cache.clear()
         lastPrefetchedIndex = -1
         _isSpeaking.update { false }
         _currentChunk.update { 0 }
@@ -182,8 +189,9 @@ class TtsController(
 
     /** 跳过下一段（不打断当前正在播放） */
     fun skipNext() {
-        if (scheduling.skipNext()) {
-            _totalChunks.update { scheduling.queuedSize }
+        if (queue.isNotEmpty()) {
+            queue.poll()
+            _totalChunks.update { queue.size }
         }
     }
 
@@ -193,8 +201,10 @@ class TtsController(
         audio.stop()
         audio.clear()
         isPaused = false
-        scheduling.clearChunks()
-        scheduling.cancelAndClearCache("Stopped")
+        queue.clear()
+        allChunks.clear()
+        cache.values.forEach { it.cancel(CancellationException("Stopped")) }
+        cache.clear()
         lastPrefetchedIndex = -1
         _isSpeaking.update { false }
         _currentChunk.update { 0 }
@@ -227,11 +237,11 @@ class TtsController(
                         continue
                     }
 
-                    val chunk = scheduling.poll() ?: break
+                    val chunk = queue.poll() ?: break
 
                     // 更新状态（1-based）
                     _currentChunk.update { processedCount + 1 }
-                    _totalChunks.update { scheduling.queuedSize + 1 }
+                    _totalChunks.update { queue.size + 1 }
                     _playbackState.update {
                         it.copy(
                             currentChunkIndex = _currentChunk.value,
@@ -261,13 +271,13 @@ class TtsController(
                         _error.update { e.message ?: "Audio playback error" }
                     }
 
-                    if (!scheduling.isQueueEmpty) delay(chunkDelayMs)
+                    if (queue.isNotEmpty()) delay(chunkDelayMs)
 
                     processedCount++
                 }
             } finally {
                 _isSpeaking.update { false }
-                if (scheduling.isQueueEmpty) {
+                if (queue.isEmpty()) {
                     _playbackState.update { it.copy(status = PlaybackStatus.Ended) }
                 }
             }
@@ -277,12 +287,12 @@ class TtsController(
     private fun prefetchFrom(startIndex: Int) {
         val provider = currentProvider ?: return
         val begin = startIndex.coerceAtLeast(lastPrefetchedIndex + 1)
-        val endExclusive = (begin + prefetchCount).coerceAtMost(scheduling.chunkCount)
+        val endExclusive = (begin + prefetchCount).coerceAtMost(allChunks.size)
         if (begin >= endExclusive) return
 
         for (i in begin until endExclusive) {
-            val chunk = scheduling.chunkAtOrNull(i) ?: continue
-            scheduling.getOrPut(chunk.id) {
+            val chunk = allChunks.getOrNull(i) ?: continue
+            cache.computeIfAbsent(chunk.id) {
                 scope.async(synthesisDispatcher) { synthesizer.synthesize(provider, chunk) }
             }
         }
@@ -290,7 +300,7 @@ class TtsController(
     }
 
     private suspend fun awaitOrCreate(chunk: TtsChunk, provider: TTSProviderSetting): TTSResponse {
-        val deferred = scheduling.getOrPut(chunk.id) {
+        val deferred = cache.computeIfAbsent(chunk.id) {
             scope.async(synthesisDispatcher) { synthesizer.synthesize(provider, chunk) }
         }
         return try {

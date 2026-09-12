@@ -40,7 +40,15 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
+    applyDefaultHierarchyTemplate()
+
     sourceSets {
+        val androidJvmMain by creating {
+            dependsOn(commonMain.get())
+        }
+        androidMain { dependsOn(androidJvmMain) }
+        jvmMain { dependsOn(androidJvmMain) }
+
         commonMain.dependencies {
             implementation(project(":common"))
             implementation(libs.ktor.client.core)
@@ -51,6 +59,8 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
