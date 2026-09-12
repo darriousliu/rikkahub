@@ -25,21 +25,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import me.rerere.highlight.HighlightTextColorPalette
@@ -54,15 +57,29 @@ import me.rerere.hugeicons.stroke.Copy01
 import me.rerere.hugeicons.stroke.Download04
 import me.rerere.hugeicons.stroke.Eye
 import me.rerere.hugeicons.stroke.View
-import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.ui.components.webview.WebView
+import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
+import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
+import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.modifier.onClick
 import me.rerere.rikkahub.ui.theme.AtomOneDarkPalette
 import me.rerere.rikkahub.ui.theme.AtomOneLightPalette
+import me.rerere.rikkahub.ui.theme.jetbrainsMonoFontFamily
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.toDp
-import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.writeString
+import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.utils.createPlainTextClipEntry
+import org.jetbrains.compose.resources.stringResource
 
 private const val COLLAPSE_LINES = 10
 private val PREVIEWABLE_LANGUAGES = setOf("html", "svg")
@@ -81,13 +98,12 @@ fun HighlightCodeBlock(
     val darkMode = LocalDarkMode.current
     val colorPalette = if (darkMode) AtomOneDarkPalette else AtomOneLightPalette
     val scrollState = rememberScrollState()
-    val clipboardManager = LocalClipboardManager.current
-    val platformActions = LocalRichTextPlatformActions.current
+    val clipboardManager = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val navController = LocalNavController.current
     val settings = LocalSettings.current
     val normalizedLanguage = remember(language) { language.lowercase() }
-    val canInlinePreview = completeCodeBlock &&
-        normalizedLanguage in PREVIEWABLE_LANGUAGES &&
-        platformActions.codeBlockPreviewRenderer != null
+    val canInlinePreview = completeCodeBlock && normalizedLanguage in PREVIEWABLE_LANGUAGES
     var previewMode by remember(canInlinePreview, code, normalizedLanguage) {
         mutableStateOf(canInlinePreview)
     }
@@ -97,6 +113,18 @@ fun HighlightCodeBlock(
     }
     val autoWrap = settings.displaySetting.codeBlockAutoWrap
     val showLineNumbers = settings.displaySetting.showLineNumbers
+
+    val createDocumentLauncher = rememberFileSaverLauncher(dialogSettings = FileKitDialogSettings.createDefault()) { target ->
+        target?.let {
+            scope.launch {
+                try {
+                    it.writeString(code)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -112,16 +140,14 @@ fun HighlightCodeBlock(
         ) {
             HighlightCodeActions(
                 language = language,
+                scope = scope,
+                clipboardManager = clipboardManager,
+                code = code,
+                createDocument = { name -> createDocumentLauncher.launch(suggestedName = name, defaultExtension = null) },
+                navController = navController,
                 completeCodeBlock = completeCodeBlock,
                 previewMode = previewMode,
                 canInlinePreview = canInlinePreview,
-                canSave = platformActions.saveCode != null,
-                canOpenPreview = platformActions.openCodePreview != null,
-                onSave = { fileName -> platformActions.saveCode?.invoke(fileName, code) },
-                onCopy = { clipboardManager.setText(AnnotatedString(code)) },
-                onOpenPreview = {
-                    platformActions.openCodePreview?.invoke(code, normalizedLanguage)
-                },
                 onTogglePreviewMode = {
                     previewMode = !previewMode
                 },
@@ -135,14 +161,16 @@ fun HighlightCodeBlock(
                     CodeBlockPreview(
                         code = code,
                         language = normalizedLanguage,
-                        renderer = platformActions.codeBlockPreviewRenderer,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp),
                     )
                 }
-                completeCodeBlock && normalizedLanguage == "mermaid" && platformActions.mermaidRenderer != null -> {
-                    platformActions.mermaidRenderer.invoke(code, Modifier.fillMaxWidth())
+                completeCodeBlock && normalizedLanguage == "mermaid" -> {
+                    Mermaid(
+                        code = code,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 else -> {
                     val textStyle = LocalTextStyle.current.merge(style)
@@ -236,7 +264,7 @@ private fun CodeBlockWithLineNumbersWrapped(
                         text = (index + 1).toString().padStart(lineNumberWidth, ' '),
                         fontSize = textStyle.fontSize,
                         lineHeight = textStyle.lineHeight,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = jetbrainsMonoFontFamily(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                         softWrap = false,
                         modifier = Modifier.padding(end = 8.dp)
@@ -249,7 +277,7 @@ private fun CodeBlockWithLineNumbersWrapped(
                         colors = colorPalette,
                         overflow = TextOverflow.Visible,
                         softWrap = true,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = jetbrainsMonoFontFamily(),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -291,7 +319,7 @@ private fun CodeBlockDefault(
                         text = (index + 1).toString().padStart(lineNumberWidth, ' '),
                         fontSize = textStyle.fontSize,
                         lineHeight = textStyle.lineHeight,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = jetbrainsMonoFontFamily(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                         softWrap = false,
                     )
@@ -310,7 +338,7 @@ private fun CodeBlockDefault(
                 colors = colorPalette,
                 overflow = TextOverflow.Visible,
                 softWrap = autoWrap,
-                fontFamily = FontFamily.Monospace
+                fontFamily = jetbrainsMonoFontFamily()
             )
         }
     }
@@ -319,14 +347,14 @@ private fun CodeBlockDefault(
 @Composable
 private fun HighlightCodeActions(
     language: String,
+    scope: CoroutineScope,
+    clipboardManager: Clipboard,
+    code: String,
+    createDocument: (String) -> Unit,
+    navController: Navigator,
     completeCodeBlock: Boolean = true,
     previewMode: Boolean = false,
     canInlinePreview: Boolean = false,
-    canSave: Boolean = false,
-    canOpenPreview: Boolean = false,
-    onSave: (String) -> Unit = {},
-    onCopy: () -> Unit = {},
-    onOpenPreview: () -> Unit = {},
     onTogglePreviewMode: () -> Unit = {},
 ) {
     Row(
@@ -337,7 +365,7 @@ private fun HighlightCodeActions(
             text = language,
             fontSize = 12.sp,
             lineHeight = 12.sp,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = jetbrainsMonoFontFamily(),
             color = MaterialTheme.colorScheme.onSurfaceVariant
                 .copy(alpha = 0.5f),
         )
@@ -349,14 +377,13 @@ private fun HighlightCodeActions(
             val iconSize = 16.dp
             val iconTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
 
-            if (canSave) {
-                Icon(
-                    imageVector = HugeIcons.Download04,
-                    contentDescription = stringResource(Res.string.chat_page_save),
-                    tint = iconTint,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .onClick {
+            Icon(
+                imageVector = HugeIcons.Download04,
+                contentDescription = stringResource(Res.string.chat_page_save),
+                tint = iconTint,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .onClick {
                         val extension = when (language.lowercase()) {
                             "kotlin" -> "kt"
                             "java" -> "java"
@@ -376,16 +403,15 @@ private fun HighlightCodeActions(
                             "svg" -> "svg"
                             else -> "txt"
                         }
-                        onSave(
+                        createDocument(
                             "code_${
                                 Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                             }.$extension"
                         )
-                        }
-                        .padding(4.dp)
-                        .size(iconSize)
-                )
-            }
+                    }
+                    .padding(4.dp)
+                    .size(iconSize)
+            )
 
             Icon(
                 imageVector = HugeIcons.Copy01,
@@ -393,7 +419,11 @@ private fun HighlightCodeActions(
                 tint = iconTint,
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .onClick(onClick = onCopy)
+                    .onClick {
+                        scope.launch {
+                            clipboardManager.setClipEntry(createPlainTextClipEntry("code", code))
+                        }
+                    }
                     .padding(4.dp)
                     .size(iconSize)
             )
@@ -414,14 +444,18 @@ private fun HighlightCodeActions(
                 )
             }
 
-            if (completeCodeBlock && normalizedLanguage in PREVIEWABLE_LANGUAGES && canOpenPreview) {
+            if (completeCodeBlock && normalizedLanguage in PREVIEWABLE_LANGUAGES) {
                 Icon(
                     imageVector = HugeIcons.Eye,
                     contentDescription = stringResource(Res.string.code_block_preview),
                     tint = iconTint,
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .onClick(onClick = onOpenPreview)
+                        .onClick {
+                            val content = buildCodePreviewHtml(code = code, language = normalizedLanguage)
+                            val contentId = WebViewContentCache.store(FileKit.cacheDir.toKotlinxIoPath(), content)
+                            navController.navigate(Screen.WebView(contentId = contentId))
+                        }
                         .padding(4.dp)
                         .size(iconSize)
                 )
@@ -434,10 +468,26 @@ private fun HighlightCodeActions(
 private fun CodeBlockPreview(
     code: String,
     language: String,
-    renderer: CodeBlockPreviewRenderer?,
     modifier: Modifier = Modifier,
 ) {
-    renderer?.invoke(code, language, modifier.clip(RoundedCornerShape(4.dp)))
+    val state = rememberWebViewStateWithHTMLData(
+        data = buildCodePreviewHtml(code = code, language = language),
+        baseUrl = "https://rikkahub.local",
+        mimeType = "text/html",
+    )
+
+    WebView(
+        state = state,
+        modifier = modifier.clip(RoundedCornerShape(4.dp)),
+    )
+}
+
+internal fun buildCodePreviewHtml(code: String, language: String): String {
+    return if (language == "svg") {
+        """<!DOCTYPE html><html><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;">$code</body></html>"""
+    } else {
+        code
+    }
 }
 
 class HighlightCodeVisualTransformation(

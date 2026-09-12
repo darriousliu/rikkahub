@@ -1,4 +1,4 @@
-package me.rerere.rikkahub.shared
+package me.rerere.rikkahub
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionLayout
@@ -36,9 +36,13 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
 import com.dokar.sonner.Toaster
-import com.dokar.sonner.ToasterState
 import com.dokar.sonner.rememberToasterState
-import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.ui.components.nav.BackButton
+import me.rerere.rikkahub.ui.pages.webview.WebViewPage
+import androidx.navigation3.runtime.EntryProviderScope
+import androidx.navigation3.runtime.NavEntry
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
 import me.rerere.rikkahub.data.db.MigrationState
@@ -46,9 +50,6 @@ import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.db_migrating
-import me.rerere.rikkahub.ui.components.richtext.LocalRichTextPlatformActions
-import me.rerere.rikkahub.ui.components.richtext.RichTextPlatformActions
-import me.rerere.rikkahub.ui.components.ui.LocalImageSaveHandler
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
@@ -105,12 +106,6 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import kotlin.uuid.Uuid
 
-/** Renders routes that intentionally remain in a platform application shell. */
-interface PlatformRouteContent {
-    @Composable
-    fun Render(screen: Screen)
-}
-
 private val navigationSavedStateConfiguration = SavedStateConfiguration {
     serializersModule = SerializersModule {
         polymorphic(NavKey::class) {
@@ -166,19 +161,12 @@ private val navigationSavedStateConfiguration = SavedStateConfiguration {
     }
 }
 
-/**
- * Shared product navigation and application-level UI context.
- *
- * Platform shells provide only system actions and the routes that cannot live in common code.
- */
 @Composable
-fun ProductNavigationHost(
+fun AppRoutes(
     startScreen: Screen,
     ttsState: CustomTtsState,
-    platformRoutes: PlatformRouteContent,
+    platformEntries: EntryProviderScope<NavKey>.() -> Unit = {},
     modifier: Modifier = Modifier,
-    richTextPlatformActions: @Composable (Navigator) -> RichTextPlatformActions = { RichTextPlatformActions() },
-    imageSaveHandler: (suspend (String, ToasterState) -> Unit)? = null,
     onOpenUsageAccessSettings: () -> Unit = {},
     onBackStackChanged: (MutableList<NavKey>) -> Unit = {},
 ) {
@@ -190,7 +178,6 @@ fun ProductNavigationHost(
     val migrationState by DatabaseMigrationTracker.state.collectAsStateWithLifecycle()
     val backStack = rememberNavBackStack(navigationSavedStateConfiguration, startScreen)
     val navigator = remember(backStack) { Navigator(backStack) }
-    val resolvedRichTextPlatformActions = richTextPlatformActions(navigator)
 
     SideEffect { onBackStackChanged(backStack) }
     LaunchedEffect(ttsState, onOpenUsageAccessSettings) {
@@ -212,10 +199,6 @@ fun ProductNavigationHost(
             LocalSettings provides settings,
             LocalToaster provides toastState,
             LocalTTSState provides ttsState,
-            LocalImageSaveHandler provides imageSaveHandler?.let { handler ->
-                { imageUrl -> handler(imageUrl, toastState) }
-            },
-            LocalRichTextPlatformActions provides resolvedRichTextPlatformActions,
         ) {
             Toaster(
                 state = toastState,
@@ -254,7 +237,9 @@ fun ProductNavigationHost(
                         slideInHorizontally { -it / 2 } + scaleIn(initialScale = 0.7f) + fadeIn() togetherWith
                             slideOutHorizontally { it }
                     },
-                    entryProvider = entryProvider {
+                    entryProvider = entryProvider(
+                        fallback = { key -> NavEntry(key) { UnavailableRoute(it) } },
+                    ) {
                         entry<Screen.Chat> {
                             ChatPage(
                                 id = Uuid.parse(it.id),
@@ -263,7 +248,6 @@ fun ProductNavigationHost(
                                 nodeId = it.nodeId?.let(Uuid::parse),
                             )
                         }
-                        entry<Screen.ShareHandler> { platformRoutes.Render(it) }
                         entry<Screen.History> { HistoryPage() }
                         entry<Screen.Favorite> { FavoritePage() }
                         entry<Screen.Assistant> { AssistantPage() }
@@ -279,7 +263,7 @@ fun ProductNavigationHost(
                         entry<Screen.Setting> { SettingPage() }
                         entry<Screen.Backup> { BackupPage() }
                         entry<Screen.ImageGen> { ImageGenPage() }
-                        entry<Screen.WebView> { platformRoutes.Render(it) }
+                        entry<Screen.WebView> { WebViewPage(it.url, it.contentId) }
                         entry<Screen.SettingTheme> { SettingThemePage() }
                         entry<Screen.SettingPreferences> { SettingPreferencesPage() }
                         entry<Screen.SettingPreferencesTheme> { SettingPreferencesThemePage() }
@@ -295,20 +279,13 @@ fun ProductNavigationHost(
                         entry<Screen.SettingSpeech> { SettingSpeechPage() }
                         entry<Screen.SettingMcp> { SettingMcpPage() }
                         entry<Screen.SettingDonate> { SettingDonatePage() }
-                        entry<Screen.SettingFiles> { platformRoutes.Render(it) }
                         entry<Screen.SettingWeb> { SettingWebPage() }
-                        entry<Screen.Debug> { platformRoutes.Render(it) }
                         entry<Screen.Log> { LogPage() }
                         entry<Screen.Extensions> { ExtensionsPage() }
                         entry<Screen.QuickMessages> { QuickMessagesPage() }
                         entry<Screen.Prompts> { PromptPage() }
                         entry<Screen.Skills> { SkillsPage() }
-                        if (hasCapability(currentPlatformKind, PlatformCapability.WORKSPACE)) {
-                            entry<Screen.Workspaces> { platformRoutes.Render(it) }
-                            entry<Screen.WorkspaceDetail> { platformRoutes.Render(it) }
-                            entry<Screen.WorkspaceTerminal> { platformRoutes.Render(it) }
-                            entry<Screen.WorkspaceFileEditor> { platformRoutes.Render(it) }
-                        }
+                        platformEntries()
                         entry<Screen.SkillDetail> { SkillDetailPage(it.skillName) }
                         entry<Screen.MessageSearch> { SearchPage() }
                         entry<Screen.Stats> { StatsPage() }
@@ -358,5 +335,21 @@ fun ProductNavigationHost(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun UnavailableRoute(screen: NavKey) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        BackButton()
+        Text(screen::class.simpleName ?: "Unavailable route", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            "This feature is not available on ${currentPlatformKind.displayName} yet.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyLarge,
+        )
     }
 }

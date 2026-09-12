@@ -10,3 +10,7 @@ actual fun Path.canRead(): Boolean = File(toString()).canRead()
 actual fun Path.isSymbolicLink(): Boolean = java.nio.file.Files.isSymbolicLink(File(toString()).toPath())
 
 actual fun Path.renameTo(destination: Path): Boolean = File(toString()).renameTo(File(destination.toString()))
+
+actual fun Path.lastModified(): Long = File(toString()).lastModified()
+
+actual fun Path.setLastModified(timeMillis: Long): Boolean = File(toString()).setLastModified(timeMillis)

@@ -47,6 +47,10 @@ fun Path.writeText(content: String) = writeBytes(content.encodeToByteArray())
 
 expect fun Path.renameTo(destination: Path): Boolean
 
+expect fun Path.lastModified(): Long
+
+expect fun Path.setLastModified(timeMillis: Long): Boolean
+
 fun Path.delete(): Boolean = try {
     SystemFileSystem.delete(this)
     true

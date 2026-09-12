@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import android.graphics.BitmapFactory
-import android.webkit.JavascriptInterface
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,161 +11,130 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
+import io.github.kdroidfilter.webview.jsbridge.IJsMessageHandler
+import io.github.kdroidfilter.webview.jsbridge.JsMessage
+import io.github.kdroidfilter.webview.jsbridge.rememberWebViewJsBridge
+import io.github.kdroidfilter.webview.web.WebViewNavigator
+import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
+import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import io.github.vinceglb.filekit.write
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Download01
 import me.rerere.hugeicons.stroke.View
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.components.webview.WEB_VIEW_ASSET_URL
 import me.rerere.rikkahub.ui.components.webview.WEB_VIEW_BASE_URL
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
-import me.rerere.rikkahub.ui.components.webview.rememberWebViewState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.resources.stringResource
-import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.utils.escapeHtml
-import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.toCssHex
+import me.rerere.rikkahub.platform.encodeImageToPng
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.stringResource
 import kotlin.io.encoding.Base64
+import kotlin.time.Clock
 
+@OptIn(ExperimentalResourceApi::class)
 @Composable
-fun Mermaid(
-    code: String,
-    modifier: Modifier = Modifier,
-) {
+fun Mermaid(code: String, modifier: Modifier = Modifier) {
     val colorScheme = MaterialTheme.colorScheme
-    val darkMode = LocalDarkMode.current
-    val context = LocalContext.current
-    val activity = LocalActivity.current
     val toaster = LocalToaster.current
     val navController = LocalNavController.current
-
-    val jsInterface = remember {
-        MermaidInterface(
-            onExportImage = { base64Image ->
-                runCatching {
-                    activity?.let {
-                        try {
-                            val imageBytes = Base64.Default
-                                .withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
-                                .decode(base64Image.filterNot(Char::isWhitespace))
-                            val bitmap =
-                                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                            context.exportImage(
-                                it,
-                                bitmap,
-                                "mermaid_${System.currentTimeMillis()}.png"
-                            )
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                    toaster.show(
-                        context.getString(R.string.mermaid_export_success),
-                        type = ToastType.Success
-                    )
-                }.onFailure {
-                    it.printStackTrace()
-                    toaster.show(
-                        context.getString(R.string.mermaid_export_failed),
-                        type = ToastType.Error
-                    )
-                }
+    val scope = rememberCoroutineScope()
+    val success = stringResource(Res.string.mermaid_export_success)
+    val failure = stringResource(Res.string.mermaid_export_failed)
+    var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    val saveLauncher = rememberFileSaverLauncher(dialogSettings = FileKitDialogSettings.createDefault()) { target ->
+        val bytes = imageBytes
+        if (target != null && bytes != null) {
+            scope.launch {
+                runCatching { target.write(bytes) }
+                    .onSuccess { toaster.show(success, type = ToastType.Success) }
+                    .onFailure { toaster.show(failure, type = ToastType.Error) }
             }
-        )
-    }
-
-    val html = remember(code, colorScheme, darkMode) {
-        buildMermaidHtml(
-            code = code,
-            colorScheme = colorScheme,
-        )
-    }
-
-    val webViewState = rememberWebViewState(
-        data = html,
-        baseUrl = WEB_VIEW_BASE_URL,
-        mimeType = "text/html",
-        encoding = "UTF-8",
-        interfaces = mapOf(
-            "AndroidInterface" to jsInterface
-        ),
-        settings = {
-            builtInZoomControls = true
-            displayZoomControls = false
-            useWideViewPort = true
-            loadWithOverviewMode = true
         }
-    )
-
-    Column(
-        modifier = modifier
-    ) {
-        WebView(
-            state = webViewState,
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .height(200.dp),
-        )
-
-        if (activity != null) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                IconButton(
-                    onClick = {
-                        val contentId = WebViewContentCache.store(context.cacheDir, html)
-                        navController.navigate(Screen.WebView(contentId = contentId))
-                    },
-                ) {
-                    Icon(
-                        HugeIcons.View,
-                        contentDescription = "Preview"
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        webViewState.webView?.evaluateJavascript(
-                            "exportSvgToPng();",
-                            null
+        imageBytes = null
+    }
+    val navigator = rememberWebViewNavigator()
+    val bridge = rememberWebViewJsBridge(navigator)
+    DisposableEffect(bridge, saveLauncher) {
+        val handler = object : IJsMessageHandler {
+            override fun methodName(): String = "exportImage"
+            override fun handle(message: JsMessage, navigator: WebViewNavigator?, callback: (String) -> Unit) {
+                scope.launch {
+                    runCatching {
+                        val decoded = Base64.Default.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+                            .decode(message.params.filterNot(Char::isWhitespace))
+                        imageBytes = encodeImageToPng(decoded)!!
+                        saveLauncher.launch(
+                            suggestedName = "mermaid_${Clock.System.now().toEpochMilliseconds()}",
+                            defaultExtension = "png",
                         )
-                    },
-                ) {
-                    Icon(
-                        HugeIcons.Download01,
-                        contentDescription = stringResource(Res.string.mermaid_export)
-                    )
+                    }.onFailure {
+                        it.printStackTrace()
+                        toaster.show(failure, type = ToastType.Error)
+                    }
                 }
+            }
+        }
+        bridge.register(handler)
+        onDispose { bridge.unregister(handler) }
+    }
+    val script by produceState<String?>(null) {
+        value = Res.readBytes("files/html/mermaid.min.js").decodeToString()
+    }
+    val html = remember(code, colorScheme, script) {
+        script?.let { buildMermaidHtml(code, colorScheme, it) }
+    } ?: return
+    val state = rememberWebViewStateWithHTMLData(html, baseUrl = WEB_VIEW_BASE_URL, mimeType = "text/html")
+    Column(modifier) {
+        WebView(
+            state = state,
+            navigator = navigator,
+            webViewJsBridge = bridge,
+            modifier = Modifier.clip(RoundedCornerShape(4.dp)).height(200.dp),
+        )
+        Row(
+            modifier = Modifier.align(Alignment.End).padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            IconButton(onClick = {
+                val contentId = WebViewContentCache.store(FileKit.cacheDir.toKotlinxIoPath(), html)
+                navController.navigate(Screen.WebView(contentId = contentId))
+            }) {
+                Icon(HugeIcons.View, contentDescription = "Preview")
+            }
+            IconButton(onClick = { navigator.evaluateJavaScript("exportSvgToPng();") }) {
+                Icon(HugeIcons.Download01, contentDescription = stringResource(Res.string.mermaid_export))
             }
         }
     }
 }
 
-private class MermaidInterface(
-    private val onExportImage: (String) -> Unit
-) {
-    @JavascriptInterface
-    fun exportImage(base64Image: String) {
-        onExportImage(base64Image)
-    }
-}
-
-private fun buildMermaidHtml(
+internal fun buildMermaidHtml(
     code: String,
     colorScheme: ColorScheme,
+    mermaidScript: String,
 ): String {
     val primaryColor = colorScheme.primaryContainer.toCssHex()
     val secondaryColor = colorScheme.secondaryContainer.toCssHex()
@@ -188,7 +154,7 @@ private fun buildMermaidHtml(
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=1024">
-            <script src="${WEB_VIEW_ASSET_URL}/html/mermaid.min.js"></script>
+            <script>$mermaidScript</script>
             <style>
                 body {
                     margin: 0;
@@ -260,7 +226,7 @@ private fun buildMermaidHtml(
                 try {
                     const svgElement = document.querySelector('.mermaid svg');
                     if (!svgElement) {
-                        AndroidInterface.exportImage('');
+                        window.kmpJsBridge.callNative('exportImage', '');
                         return;
                     }
 
@@ -289,14 +255,14 @@ private fun buildMermaidHtml(
                         ctx.fillText('rikka-ai.com', 20, canvas.height - 10);
 
                         const pngBase64 = canvas.toDataURL('image/png').split(',')[1];
-                        AndroidInterface.exportImage(pngBase64);
+                        window.kmpJsBridge.callNative('exportImage', pngBase64);
                     };
                     img.onerror = function(e) {
-                        AndroidInterface.exportImage('');
+                        window.kmpJsBridge.callNative('exportImage', '');
                     }
                     img.src = 'data:image/svg+xml;base64,' + svgBase64;
                 } catch (e) {
-                    AndroidInterface.exportImage('');
+                    window.kmpJsBridge.callNative('exportImage', '');
                 }
               };
             </script>

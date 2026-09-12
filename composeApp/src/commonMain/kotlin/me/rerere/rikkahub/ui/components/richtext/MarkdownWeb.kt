@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import android.content.Context
+import me.rerere.rikkahub.generated.resources.Res
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 import androidx.compose.material3.ColorScheme
 import me.rerere.rikkahub.utils.base64Encode
 import me.rerere.rikkahub.utils.toCssHex
@@ -12,8 +13,9 @@ import me.rerere.rikkahub.utils.toCssHex
  * - Mermaid diagrams
  * - Syntax highlighting via highlight.js
  */
-fun buildMarkdownPreviewHtml(context: Context, markdown: String, colorScheme: ColorScheme): String {
-    val htmlTemplate = context.assets.open("html/mark.html").bufferedReader().use { it.readText() }
+@OptIn(ExperimentalResourceApi::class)
+suspend fun buildMarkdownPreviewHtml(markdown: String, colorScheme: ColorScheme): String {
+    val htmlTemplate = Res.readBytes("files/html/mark.html").decodeToString()
 
     return htmlTemplate
         .replace("{{MARKDOWN_BASE64}}", markdown.base64Encode())

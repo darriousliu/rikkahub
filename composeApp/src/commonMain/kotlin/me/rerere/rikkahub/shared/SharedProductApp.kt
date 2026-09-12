@@ -1,19 +1,11 @@
 package me.rerere.rikkahub.shared
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.div
@@ -26,6 +18,7 @@ import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.persistentLru
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.AppRoutes
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
@@ -41,9 +34,6 @@ import me.rerere.rikkahub.platform.NoOpMonitoring
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
-import me.rerere.rikkahub.ui.components.nav.BackButton
-import me.rerere.rikkahub.ui.components.richtext.RichTextPlatformActions
-import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.hooks.CustomTtsState
 import me.rerere.rikkahub.ui.hooks.rememberSharedCustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
@@ -81,9 +71,7 @@ fun SharedProductApp(
     chatNotificationPresenter: ChatNotificationPresenter? = null,
     systemTtsProvider: TTSProvider<TTSProviderSetting.SystemTTS>? = null,
     platformAudioPlayer: PlatformAudioPlayer? = null,
-    platformRoutes: PlatformRouteContent = SharedUnavailableRouteContent,
     chatMessagePlatformActions: ChatMessagePlatformActions? = null,
-    richTextPlatformActions: @Composable (Navigator) -> RichTextPlatformActions = { RichTextPlatformActions() },
     startScreen: Screen? = null,
     backupFileLayout: BackupFileLayout = BackupFileLayout.create(),
     oauthCallbackSessionFactory: OAuthCallbackSessionFactory,
@@ -182,40 +170,15 @@ fun SharedProductApp(
 
     KoinApplication(configuration = koinConfiguration) {
         RikkahubTheme {
-            ProductNavigationHost(
+            AppRoutes(
                 startScreen = initialScreen,
                 ttsState = ttsState,
-                platformRoutes = platformRoutes,
-                richTextPlatformActions = richTextPlatformActions,
             )
         }
     }
 }
 
 private const val LAST_CONVERSATION_KEY = "lastConversationId"
-
-private object SharedUnavailableRouteContent : PlatformRouteContent {
-    @Composable
-    override fun Render(screen: Screen) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            BackButton()
-            Text(
-                text = screen::class.simpleName ?: "Unavailable route",
-                style = MaterialTheme.typography.headlineSmall,
-            )
-            Text(
-                text = "This feature is not available on ${currentPlatformKind.displayName} yet.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
-    }
-}
 
 private object UnavailableCustomTtsState : CustomTtsState {
     override val isAvailable: StateFlow<Boolean> = MutableStateFlow(false)

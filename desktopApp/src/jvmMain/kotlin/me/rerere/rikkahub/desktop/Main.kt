@@ -23,14 +23,12 @@ import me.rerere.rikkahub.platform.JvmOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.JvmSentryMonitoring
 import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
 import me.rerere.rikkahub.shared.CapabilityState
-import me.rerere.rikkahub.shared.JvmPlatformRouteContent
 import me.rerere.rikkahub.shared.PlatformCapability
 import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.SharedProductApp
 import me.rerere.rikkahub.shared.capabilityMatrix
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.shared.currentPlatformKind
-import me.rerere.rikkahub.ui.components.richtext.rememberSharedRichTextPlatformActions
 import me.rerere.rikkahub.web.createJvmWebServerRuntime
 import me.rerere.tts.controller.JvmAudioPlayer
 import me.rerere.tts.provider.providers.JvmSystemTTSProvider
@@ -116,8 +114,6 @@ fun main(args: Array<String>) {
                 chatNotificationPresenter = remember { JvmSystemTrayChatNotificationPresenter() },
                 systemTtsProvider = remember { JvmSystemTTSProvider() },
                 platformAudioPlayer = remember { JvmAudioPlayer() },
-                platformRoutes = JvmPlatformRouteContent,
-                richTextPlatformActions = { navigator -> rememberSharedRichTextPlatformActions(navigator) },
                 startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null,
                 backupFileLayout = remember(databaseFile) {
                     BackupFileLayout.create(PlatformFile(databaseFile))

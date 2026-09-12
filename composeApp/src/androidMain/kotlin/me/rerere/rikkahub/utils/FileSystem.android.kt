@@ -14,6 +14,10 @@ actual fun Path.isSymbolicLink(): Boolean = java.nio.file.Files.isSymbolicLink(F
 
 actual fun Path.renameTo(destination: Path): Boolean = File(toString()).renameTo(File(destination.toString()))
 
+actual fun Path.lastModified(): Long = File(toString()).lastModified()
+
+actual fun Path.setLastModified(timeMillis: Long): Boolean = File(toString()).setLastModified(timeMillis)
+
 fun PlatformFile.toAndroidUri(): Uri = when (val file = androidFile) {
     is AndroidFile.FileWrapper -> Uri.fromFile(file.file)
     is AndroidFile.UriWrapper -> file.uri

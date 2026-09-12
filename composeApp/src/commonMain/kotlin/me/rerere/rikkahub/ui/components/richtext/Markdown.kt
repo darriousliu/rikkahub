@@ -32,6 +32,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
+import io.github.vinceglb.filekit.writeString
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -806,11 +811,22 @@ private fun TableNode(node: ASTNode, content: String, modifier: Modifier = Modif
     }
 
     val clipboardManager = LocalClipboardManager.current
-    val platformActions = LocalRichTextPlatformActions.current
 
     // 表格原始markdown文本（用于复制）和CSV内容（用于下载）
     val tableMarkdown = remember(node, content) { node.getTextInNode(content).trim() }
     val tableCsv = remember(headerCells, rows) { buildTableCsv(headerCells, rows) }
+    val scope = rememberCoroutineScope()
+    val createDocumentLauncher = rememberFileSaverLauncher(dialogSettings = FileKitDialogSettings.createDefault()) { target ->
+        target?.let {
+            scope.launch {
+                try {
+                    it.writeString(tableCsv)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 
     // 渲染表格卡片（工具栏 + 表格）
     Column(
@@ -855,25 +871,21 @@ private fun TableNode(node: ASTNode, content: String, modifier: Modifier = Modif
                         .size(iconSize)
                 )
 
-                if (platformActions.saveCode != null) {
-                    Icon(
-                        imageVector = HugeIcons.Download04,
-                        contentDescription = "Download",
-                        tint = iconTint,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .onClick {
-                                platformActions.saveCode.invoke(
-                                "table_${
-                                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                                }.csv",
-                                tableCsv,
-                                )
-                            }
-                            .padding(4.dp)
-                            .size(iconSize)
-                    )
-                }
+                Icon(
+                    imageVector = HugeIcons.Download04,
+                    contentDescription = "Download",
+                    tint = iconTint,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .onClick {
+                            createDocumentLauncher.launch(
+                                suggestedName = "table_${Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())}.csv",
+                                defaultExtension = null,
+                            )
+                        }
+                        .padding(4.dp)
+                        .size(iconSize)
+                )
             }
         }
         DataTable(

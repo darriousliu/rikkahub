@@ -22,13 +22,9 @@ import coil3.network.cachecontrol.CacheControlCacheStrategy
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import coil3.svg.SvgDecoder
-import com.dokar.sonner.ToastType
 import io.ktor.client.HttpClient
-import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.platform.addPlatformGifDecoder
-import me.rerere.rikkahub.shared.ProductNavigationHost
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
-import me.rerere.rikkahub.ui.components.richtext.rememberAndroidRichTextPlatformActions
 import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.readStringPreference
@@ -38,7 +34,14 @@ import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.openUsageAccessSettings
 import org.koin.android.ext.android.inject
-import org.koin.compose.koinInject
+import me.rerere.rikkahub.ui.pages.debug.DebugPage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceDetailPage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceFileEditorPage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalPage
+import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
+import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
+import me.rerere.workspace.WorkspaceStorageArea
 import kotlin.uuid.Uuid
 
 class RouteActivity : ComponentActivity() {
@@ -123,7 +126,6 @@ class RouteActivity : ComponentActivity() {
     private fun AppRoutes() {
         val tts = rememberCustomTtsState()
         val asr = rememberCustomAsrState()
-        val filesManager = koinInject<FilesManager>()
         val startScreen = remember {
             Screen.Chat(
                 id = if (readBooleanPreference("create_new_conversation_on_start", true)) {
@@ -140,21 +142,18 @@ class RouteActivity : ComponentActivity() {
         var shareHandled by remember { mutableStateOf(false) }
 
         CompositionLocalProvider(LocalASRState provides asr) {
-            ProductNavigationHost(
+            me.rerere.rikkahub.AppRoutes(
                 startScreen = startScreen,
                 ttsState = tts,
-                platformRoutes = AndroidPlatformRouteContent,
-                richTextPlatformActions = { navigator ->
-                    rememberAndroidRichTextPlatformActions(navigator)
-                },
-                imageSaveHandler = { imageUrl, toastState ->
-                    toastState.show("正在保存")
-                    runCatching {
-                        filesManager.saveMessageImage(this@RouteActivity, imageUrl)
-                    }.onSuccess {
-                        toastState.show("已保存图片", type = ToastType.Success)
-                    }.onFailure { error ->
-                        toastState.show(error.toString(), type = ToastType.Error)
+                platformEntries = {
+                    entry<Screen.ShareHandler> { ShareHandlerPage(it.text, it.streamUri) }
+                    entry<Screen.SettingFiles> { SettingFilesPage() }
+                    entry<Screen.Debug> { DebugPage() }
+                    entry<Screen.Workspaces> { WorkspacePage() }
+                    entry<Screen.WorkspaceDetail> { WorkspaceDetailPage(it.id) }
+                    entry<Screen.WorkspaceTerminal> { WorkspaceTerminalPage(it.id) }
+                    entry<Screen.WorkspaceFileEditor> {
+                        WorkspaceFileEditorPage(it.id, WorkspaceStorageArea.valueOf(it.area), it.path)
                     }
                 },
                 onOpenUsageAccessSettings = { openUsageAccessSettings() },

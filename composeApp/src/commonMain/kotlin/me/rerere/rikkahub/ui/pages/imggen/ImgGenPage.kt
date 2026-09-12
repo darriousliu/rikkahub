@@ -51,6 +51,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
+import me.rerere.rikkahub.ui.hooks.rememberImageSaver
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -97,7 +98,6 @@ import me.rerere.rikkahub.ui.components.ai.ModelSelector
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.ImagePreviewDialog
-import me.rerere.rikkahub.ui.components.ui.LocalImageSaveHandler
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
 import me.rerere.rikkahub.ui.context.LocalToaster
 import org.koin.compose.viewmodel.koinViewModel
@@ -482,7 +482,7 @@ private fun ImageGalleryScreen(
     vm: ImgGenVM,
 ) {
     val generatedImages = vm.generatedImages.collectAsLazyPagingItems()
-    val imageSaveHandler = LocalImageSaveHandler.current
+    val imageSaveHandler = rememberImageSaver()
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -587,7 +587,7 @@ private fun ImageGalleryScreen(
 
                                         IconButton(
                                             onClick = {
-                                                scope.launch { imageSaveHandler?.invoke(it.filePath) }
+                                                scope.launch { imageSaveHandler.invoke(it.filePath) }
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {

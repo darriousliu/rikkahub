@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import me.rerere.rikkahub.ui.hooks.rememberImageSaver
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -29,7 +30,7 @@ fun ImagePreviewDialog(
     onDismissRequest: () -> Unit,
 ) {
     val state = rememberZoomablePagerState { images.size }
-    val saveImage = LocalImageSaveHandler.current
+    val saveImage = rememberImageSaver()
     val scope = rememberCoroutineScope()
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -55,16 +56,14 @@ fun ImagePreviewDialog(
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (saveImage != null) {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                saveImage(images[state.currentPage])
-                            }
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            saveImage(images[state.currentPage])
                         }
-                    ) {
-                        Icon(HugeIcons.Download01, null, tint = Color.White)
                     }
+                ) {
+                    Icon(HugeIcons.Download01, null, tint = Color.White)
                 }
             }
         }

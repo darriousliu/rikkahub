@@ -5,7 +5,7 @@ import me.rerere.hugeicons.stroke.ArrowRight01
 import me.rerere.hugeicons.stroke.Bug01
 import me.rerere.hugeicons.stroke.Earth
 import me.rerere.hugeicons.stroke.Refresh01
-import androidx.activity.compose.BackHandler
+import me.rerere.rikkahub.platform.PlatformBackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,62 +23,51 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import me.rerere.hugeicons.stroke.MoreVertical
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.webview.WEB_VIEW_BASE_URL
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
-import me.rerere.rikkahub.ui.components.webview.rememberWebViewState
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import io.github.kdroidfilter.webview.web.rememberWebViewState
+import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
+import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
+import io.github.kdroidfilter.webview.web.WebContent
+import androidx.compose.runtime.mutableStateListOf
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import me.rerere.rikkahub.ui.components.webview.WebViewConsoleMessage
+import me.rerere.rikkahub.ui.theme.jetbrainsMonoFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WebViewPage(url: String, contentId: String) {
-    val context = LocalContext.current
     val state = if (url.isNotEmpty()) {
-        rememberWebViewState(
-            url = url,
-            settings = {
-                builtInZoomControls = true
-                displayZoomControls = false
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            })
+        rememberWebViewState(url = url)
     } else {
         val content = remember(contentId) {
-            WebViewContentCache.load(context.cacheDir, contentId).orEmpty()
+            WebViewContentCache.load(FileKit.cacheDir.toKotlinxIoPath(), contentId).orEmpty()
         }
-        rememberWebViewState(
-            data = content,
-            baseUrl = WEB_VIEW_BASE_URL,
-            mimeType = "text/html",
-            settings = {
-                builtInZoomControls = true
-                displayZoomControls = false
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            }
-        )
+        rememberWebViewStateWithHTMLData(data = content, baseUrl = WEB_VIEW_BASE_URL, mimeType = "text/html")
     }
+    val navigator = rememberWebViewNavigator()
+    val consoleMessages = remember { mutableStateListOf<WebViewConsoleMessage>() }
 
     var showDropdown by remember { mutableStateOf(false) }
     var showConsoleSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val sheetState = rememberModalBottomSheetState()
 
-    BackHandler(state.canGoBack) {
-        state.goBack()
+    PlatformBackHandler(navigator.canGoBack) {
+        navigator.navigateBack()
     }
 
     Scaffold(
@@ -86,7 +75,7 @@ fun WebViewPage(url: String, contentId: String) {
             TopAppBar(
                 title = {
                     Text(
-                        text = state.pageTitle?.takeIf { it.isNotEmpty() } ?: state.currentUrl
+                        text = state.pageTitle?.takeIf { it.isNotEmpty() } ?: state.lastLoadedUrl
                         ?: "",
                         maxLines = 1,
                         style = MaterialTheme.typography.titleSmall
@@ -96,13 +85,22 @@ fun WebViewPage(url: String, contentId: String) {
                     BackButton()
                 },
                 actions = {
-                    IconButton(onClick = { state.reload() }) {
+                    IconButton(onClick = {
+                        val content = state.content
+                        if (content is WebContent.Data) {
+                            navigator.loadHtml(
+                                content.data, content.baseUrl, content.mimeType, content.encoding, content.historyUrl,
+                            )
+                        } else {
+                            navigator.reload()
+                        }
+                    }) {
                         Icon(HugeIcons.Refresh01, contentDescription = "Refresh")
                     }
 
                     IconButton(
-                        onClick = { state.goForward() },
-                        enabled = state.canGoForward
+                        onClick = { navigator.navigateForward() },
+                        enabled = navigator.canGoForward
                     ) {
                         Icon(HugeIcons.ArrowRight01, contentDescription = "Forward")
                     }
@@ -122,7 +120,7 @@ fun WebViewPage(url: String, contentId: String) {
                                 leadingIcon = { Icon(HugeIcons.Earth, contentDescription = null) },
                                 onClick = {
                                     showDropdown = false
-                                    state.currentUrl?.let { url ->
+                                    state.lastLoadedUrl?.let { url ->
                                         if (url.isNotBlank()) {
                                             urlHandler.openUri(url)
                                         }
@@ -145,6 +143,11 @@ fun WebViewPage(url: String, contentId: String) {
     ) {
         WebView(
             state = state,
+            navigator = navigator,
+            onConsoleMessage = { message ->
+                consoleMessages.add(message)
+                if (consoleMessages.size > 64) consoleMessages.removeAt(0)
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it),
@@ -169,16 +172,16 @@ fun WebViewPage(url: String, contentId: String) {
 
                 SelectionContainer {
                     LazyColumn {
-                        items(state.consoleMessages) { message ->
+                        items(consoleMessages) { message ->
                             Text(
-                                text = "${message.messageLevel().name}: ${message.message()}\n" +
-                                    "Source: ${message.sourceId()}:${message.lineNumber()}",
+                                text = "${message.level}: ${message.message}\n" +
+                                    "Source: ${message.sourceId}:${message.lineNumber}",
                                 style = MaterialTheme.typography.bodySmall,
-                                fontFamily = JetbrainsMono,
+                                fontFamily = jetbrainsMonoFontFamily(),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp),
-                                color = when (message.messageLevel().name) {
+                                color = when (message.level) {
                                     "ERROR" -> MaterialTheme.colorScheme.error
                                     "WARNING" -> MaterialTheme.colorScheme.secondary
                                     else -> MaterialTheme.colorScheme.onSurface
@@ -188,7 +191,7 @@ fun WebViewPage(url: String, contentId: String) {
                     }
                 }
 
-                if (state.consoleMessages.isEmpty()) {
+                if (consoleMessages.isEmpty()) {
                     Text(
                         text = "No console messages",
                         style = MaterialTheme.typography.bodyMedium,

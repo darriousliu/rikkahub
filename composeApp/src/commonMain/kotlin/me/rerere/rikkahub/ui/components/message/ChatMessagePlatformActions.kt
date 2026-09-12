@@ -1,24 +1,14 @@
 package me.rerere.rikkahub.ui.components.message
 
-import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.model.Assistant
-import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.platform.ExternalUriOpener
-import me.rerere.rikkahub.ui.components.richtext.buildSharedMarkdownPreviewHtml
-import me.rerere.rikkahub.ui.components.webview.WebViewContentStore
-import me.rerere.rikkahub.ui.context.Navigator
 
 /** Platform operations used by the shared chat message renderer. */
 interface ChatMessagePlatformActions {
     fun openAttachment(uri: String): Result<Unit>
 
-    fun openMarkdownPreview(
-        markdown: String,
-        colorScheme: ColorScheme,
-        navigator: Navigator,
-    ): Result<Unit>
 
     @Composable
     fun RenderEditedFiles(
@@ -32,11 +22,6 @@ object UnavailableChatMessagePlatformActions : ChatMessagePlatformActions {
     override fun openAttachment(uri: String): Result<Unit> =
         Result.failure(UnsupportedOperationException("Opening local attachments is unavailable"))
 
-    override fun openMarkdownPreview(
-        markdown: String,
-        colorScheme: ColorScheme,
-        navigator: Navigator,
-    ): Result<Unit> = Result.failure(UnsupportedOperationException("Markdown WebView preview is unavailable"))
 
     @Composable
     override fun RenderEditedFiles(
@@ -50,14 +35,6 @@ internal class SharedChatMessagePlatformActions(
 ) : ChatMessagePlatformActions {
     override fun openAttachment(uri: String): Result<Unit> = externalUriOpener.open(uri)
 
-    override fun openMarkdownPreview(
-        markdown: String,
-        colorScheme: ColorScheme,
-        navigator: Navigator,
-    ): Result<Unit> = runCatching {
-        val contentId = WebViewContentStore.store(buildSharedMarkdownPreviewHtml(markdown, colorScheme))
-        navigator.navigate(Screen.WebView(contentId = contentId))
-    }
 
     @Composable
     override fun RenderEditedFiles(

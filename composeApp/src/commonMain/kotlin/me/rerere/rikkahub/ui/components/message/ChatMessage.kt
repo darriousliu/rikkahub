@@ -26,6 +26,14 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.ui.components.richtext.buildMarkdownPreviewHtml
+import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -123,6 +131,7 @@ fun ChatMessage(
     val navController = LocalNavController.current
     val platformActions = koinInject<ChatMessagePlatformActions>()
     val colorScheme = MaterialTheme.colorScheme
+    val previewScope = rememberCoroutineScope()
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = if (message.role == MessageRole.USER) Alignment.End else Alignment.Start,
@@ -228,11 +237,11 @@ fun ChatMessage(
                     .joinToString("\n\n") { it.text }
                     .trim()
                 if (textContent.isNotBlank()) {
-                    platformActions.openMarkdownPreview(
-                        markdown = textContent,
-                        colorScheme = colorScheme,
-                        navigator = navController,
-                    )
+                    previewScope.launch {
+                        val htmlContent = buildMarkdownPreviewHtml(textContent, colorScheme)
+                        val contentId = WebViewContentCache.store(FileKit.cacheDir.toKotlinxIoPath(), htmlContent)
+                        navController.navigate(Screen.WebView(contentId = contentId))
+                    }
                 }
             },
             onDismissRequest = {

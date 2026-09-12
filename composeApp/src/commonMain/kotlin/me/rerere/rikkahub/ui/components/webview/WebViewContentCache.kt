@@ -1,7 +1,8 @@
 package me.rerere.rikkahub.ui.components.webview
 
-import java.io.File
-import java.security.MessageDigest
+import kotlinx.io.files.Path
+import me.rerere.common.crypto.PlatformSha256Crypto
+import me.rerere.rikkahub.utils.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
@@ -12,17 +13,17 @@ internal object WebViewContentCache {
     private val hexDigits = "0123456789abcdef".toCharArray()
 
     fun store(
-        cacheDir: File,
+        cacheDir: Path,
         content: String,
         nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     ): String {
         val id = content.sha256()
-        val directory = File(cacheDir, DIRECTORY_NAME)
+        val directory = Path(cacheDir, DIRECTORY_NAME)
         check(directory.isDirectory || directory.mkdirs()) {
             "Unable to create WebView content cache directory"
         }
 
-        val file = File(directory, id)
+        val file = Path(directory, id)
         if (!file.isFile) {
             file.writeText(content)
         }
@@ -33,13 +34,13 @@ internal object WebViewContentCache {
     }
 
     fun load(
-        cacheDir: File,
+        cacheDir: Path,
         id: String,
         nowMillis: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     ): String? {
         if (!id.isSha256()) return null
 
-        val file = File(File(cacheDir, DIRECTORY_NAME), id)
+        val file = Path(Path(cacheDir, DIRECTORY_NAME), id)
         if (!file.isFile) return null
 
         return runCatching {
@@ -49,7 +50,7 @@ internal object WebViewContentCache {
         }.getOrNull()
     }
 
-    private fun removeExpiredFiles(directory: File, nowMillis: () -> Long) {
+    private fun removeExpiredFiles(directory: Path, nowMillis: () -> Long) {
         val expirationTime = nowMillis() - maxAgeMillis
         directory.listFiles()?.forEach { file ->
             if (file.isFile && file.lastModified() < expirationTime) {
@@ -59,7 +60,7 @@ internal object WebViewContentCache {
     }
 
     private fun String.sha256(): String {
-        val bytes = MessageDigest.getInstance("SHA-256").digest(toByteArray())
+        val bytes = PlatformSha256Crypto.digest(encodeToByteArray())
         return CharArray(bytes.size * 2).also { result ->
             bytes.forEachIndexed { index, byte ->
                 val value = byte.toInt() and 0xff
