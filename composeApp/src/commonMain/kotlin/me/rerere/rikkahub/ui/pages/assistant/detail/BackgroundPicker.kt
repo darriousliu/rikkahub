@@ -15,46 +15,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import me.rerere.rikkahub.generated.resources.*
+import androidx.compose.runtime.rememberCoroutineScope
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import me.rerere.rikkahub.service.toFileUri
 import kotlinx.coroutines.launch
-import me.rerere.rikkahub.generated.resources.Res
-import me.rerere.rikkahub.generated.resources.assistant_page_background_set
-import me.rerere.rikkahub.generated.resources.assistant_page_change_background
-import me.rerere.rikkahub.generated.resources.assistant_page_chat_background
-import me.rerere.rikkahub.generated.resources.assistant_page_chat_background_desc
-import me.rerere.rikkahub.generated.resources.assistant_page_enter_image_url
-import me.rerere.rikkahub.generated.resources.assistant_page_image_url
-import me.rerere.rikkahub.generated.resources.assistant_page_remove
-import me.rerere.rikkahub.generated.resources.assistant_page_select_background
-import me.rerere.rikkahub.generated.resources.assistant_page_select_from_gallery
-import me.rerere.rikkahub.generated.resources.assistant_page_cancel
-import me.rerere.rikkahub.generated.resources.assistant_page_confirm
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
+import me.rerere.rikkahub.service.toFileUri
 import me.rerere.rikkahub.ui.components.ui.FormItem
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun BackgroundPicker(
     modifier: Modifier = Modifier,
     background: String?,
-    backgroundOpacity: Float = 1f,
-    onUpdate: (String?) -> Unit,
+    backgroundOpacity: Float = 1.0f,
+    onUpdate: (String?) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val fileStore = remember { FileKitPlatformFileStore() }
-    var showPicker by remember { mutableStateOf(false) }
+    var showPickOption by remember { mutableStateOf(false) }
     var showUrlInput by remember { mutableStateOf(false) }
     var urlInput by remember { mutableStateOf("") }
-    val imagePicker = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
+
+    val imagePickerLauncher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
         file?.let {
             scope.launch {
                 fileStore.copyIntoSandbox(it)
@@ -63,22 +53,32 @@ fun BackgroundPicker(
         }
     }
 
+    val previewOpacity = backgroundOpacity.coerceIn(0f, 1f)
+
     FormItem(
         modifier = modifier,
-        label = { Text(stringResource(Res.string.assistant_page_chat_background)) },
-        description = { Text(stringResource(Res.string.assistant_page_chat_background_desc)) },
+        label = {
+            Text(stringResource(Res.string.assistant_page_chat_background))
+        },
+        description = {
+            Text(stringResource(Res.string.assistant_page_chat_background_desc))
+        }
     ) {
-        Button(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = {
+                showPickOption = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text(
-                stringResource(
-                    if (background == null) {
-                        Res.string.assistant_page_select_background
-                    } else {
-                        Res.string.assistant_page_change_background
-                    },
-                ),
+                text = if (background != null) {
+                    stringResource(Res.string.assistant_page_change_background)
+                } else {
+                    stringResource(Res.string.assistant_page_select_background)
+                }
             )
         }
+
         if (background != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -86,76 +86,125 @@ fun BackgroundPicker(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    stringResource(Res.string.assistant_page_background_set),
+                    text = stringResource(Res.string.assistant_page_background_set),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
                 )
-                TextButton(onClick = { onUpdate(null) }) {
+                TextButton(
+                    onClick = {
+                        onUpdate(null)
+                    }
+                ) {
                     Text(stringResource(Res.string.assistant_page_remove))
                 }
             }
+
             AsyncImage(
                 model = background,
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth().alpha(backgroundOpacity.coerceIn(0f, 1f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(previewOpacity)
             )
         }
     }
 
-    if (showPicker) {
+    if (showPickOption) {
         AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text(stringResource(Res.string.assistant_page_select_background)) },
+            onDismissRequest = {
+                showPickOption = false
+            },
+            title = {
+                Text(stringResource(Res.string.assistant_page_select_background))
+            },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Button(
                         onClick = {
-                            showPicker = false
-                            imagePicker.launch()
+                            showPickOption = false
+                            imagePickerLauncher.launch()
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.assistant_page_select_from_gallery)) }
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(Res.string.assistant_page_select_from_gallery))
+                    }
                     Button(
                         onClick = {
-                            showPicker = false
-                            urlInput = background.orEmpty()
+                            showPickOption = false
+                            urlInput = ""
                             showUrlInput = true
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.assistant_page_enter_image_url)) }
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(Res.string.assistant_page_enter_image_url))
+                    }
+                    if (background != null) {
+                        Button(
+                            onClick = {
+                                showPickOption = false
+                                onUpdate(null)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(Res.string.assistant_page_remove_background))
+                        }
+                    }
                 }
             },
-            confirmButton = {},
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPickOption = false
+                    }
+                ) {
+                    Text(stringResource(Res.string.assistant_page_cancel))
+                }
+            }
         )
     }
 
     if (showUrlInput) {
         AlertDialog(
-            onDismissRequest = { showUrlInput = false },
-            title = { Text(stringResource(Res.string.assistant_page_enter_image_url)) },
+            onDismissRequest = {
+                showUrlInput = false
+            },
+            title = {
+                Text(stringResource(Res.string.assistant_page_enter_image_url))
+            },
             text = {
                 OutlinedTextField(
                     value = urlInput,
                     onValueChange = { urlInput = it },
                     label = { Text(stringResource(Res.string.assistant_page_image_url)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    placeholder = { Text("https://example.com/image.jpg") },
+                    singleLine = true
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onUpdate(urlInput.trim().takeIf(String::isNotEmpty))
-                        showUrlInput = false
-                    },
-                ) { Text(stringResource(Res.string.assistant_page_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showUrlInput = false }) {
-                    Text(stringResource(Res.string.assistant_page_cancel))
+                        if (urlInput.isNotBlank()) {
+                            onUpdate(urlInput.trim())
+                            showUrlInput = false
+                        }
+                    }
+                ) {
+                    Text(stringResource(Res.string.assistant_page_confirm))
                 }
             },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUrlInput = false
+                    }
+                ) {
+                    Text(stringResource(Res.string.assistant_page_cancel))
+                }
+            }
         )
     }
 }
