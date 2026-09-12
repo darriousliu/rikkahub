@@ -22,10 +22,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.core.net.toUri
 import com.dokar.sonner.ToastType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import me.rerere.asr.ASRStatus
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionRecordAudio
@@ -85,9 +89,10 @@ class AndroidChatInputPlatformContent(
         return Modifier.contentReceiver(listener)
     }
 
-    @Composable
-    override fun RenderAttachments(state: ChatInputState) {
-        MediaFileInputRow(state)
+    override fun observeFiles(): Flow<List<ManagedFileEntity>> = filesManager.observe()
+
+    override fun deleteChatFiles(locations: List<String>, scope: CoroutineScope) {
+        filesManager.deleteChatFiles(locations.map { it.toUri() })
     }
 
     @Composable

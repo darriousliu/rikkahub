@@ -177,7 +177,7 @@ fun ChatInput(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     if (state.messageContent.isNotEmpty()) {
-                        platformContent.RenderAttachments(state = state)
+                        MediaFileInputRow(state = state)
                     }
 
                     TextInputRow(

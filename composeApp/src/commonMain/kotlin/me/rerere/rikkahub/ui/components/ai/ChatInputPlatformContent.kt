@@ -1,10 +1,13 @@
 package me.rerere.rikkahub.ui.components.ai
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 
@@ -19,8 +22,9 @@ interface ChatInputPlatformContent {
         settings: Settings,
     ): Modifier
 
-    @Composable
-    fun RenderAttachments(state: ChatInputState)
+    fun observeFiles(): Flow<List<ManagedFileEntity>>
+
+    fun deleteChatFiles(locations: List<String>, scope: CoroutineScope)
 
     @Composable
     fun RenderVoiceAndSendActions(
@@ -40,8 +44,9 @@ object UnavailableChatInputPlatformContent : ChatInputPlatformContent {
         settings: Settings,
     ): Modifier = Modifier
 
-    @Composable
-    override fun RenderAttachments(state: ChatInputState) = Unit
+    override fun observeFiles(): Flow<List<ManagedFileEntity>> = flowOf(emptyList())
+
+    override fun deleteChatFiles(locations: List<String>, scope: CoroutineScope) = Unit
 
     @Composable
     override fun RenderVoiceAndSendActions(
@@ -55,33 +60,8 @@ object UnavailableChatInputPlatformContent : ChatInputPlatformContent {
 
 internal class SharedChatInputPlatformContent(
     private val attachmentStore: SharedChatAttachmentStore,
-) : ChatInputPlatformContent {
-    @Composable
-    override fun isImeVisible(): Boolean = false
-
-    @Composable
-    override fun contentReceiverModifier(
-        state: ChatInputState,
-        settings: Settings,
-    ): Modifier = Modifier
-
-    @Composable
-    override fun RenderAttachments(state: ChatInputState) {
-        val scope = rememberCoroutineScope()
-        AttachmentInputRow(
-            state = state,
-            onDeleteFile = { location ->
-                scope.launch { attachmentStore.delete(listOf(location)) }
-            },
-        )
-    }
-
-    @Composable
-    override fun RenderVoiceAndSendActions(
-        state: ChatInputState,
-        loading: Boolean,
-        sendAction: @Composable () -> Unit,
-    ) {
-        sendAction()
+) : ChatInputPlatformContent by UnavailableChatInputPlatformContent {
+    override fun deleteChatFiles(locations: List<String>, scope: CoroutineScope) {
+        scope.launch { attachmentStore.delete(locations) }
     }
 }

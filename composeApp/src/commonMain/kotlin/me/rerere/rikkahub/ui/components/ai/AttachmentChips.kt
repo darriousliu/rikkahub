@@ -20,6 +20,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,18 +40,26 @@ import me.rerere.hugeicons.stroke.Files02
 import me.rerere.hugeicons.stroke.MusicNote03
 import me.rerere.hugeicons.stroke.Video01
 import me.rerere.rikkahub.ui.hooks.ChatInputState
+import org.koin.compose.koinInject
 
 @Composable
-fun AttachmentInputRow(
+fun MediaFileInputRow(
     state: ChatInputState,
-    displayNameByRelativePath: Map<String, String> = emptyMap(),
-    displayNameByFileName: Map<String, String> = emptyMap(),
-    onDeleteFile: (String) -> Unit = {},
 ) {
+    val platformContent = koinInject<ChatInputPlatformContent>()
+    val scope = rememberCoroutineScope()
+    val managedFiles by platformContent.observeFiles().collectAsState(initial = emptyList())
+    val displayNameByRelativePath = remember(managedFiles) {
+        managedFiles.associate { it.relativePath to it.displayName }
+    }
+    val displayNameByFileName = remember(managedFiles) {
+        managedFiles.associate { it.relativePath.substringAfterLast('/') to it.displayName }
+    }
+
     fun removePart(part: UIMessagePart, url: String) {
         state.messageContent = state.messageContent.filterNot { it == part }
         if (state.shouldDeleteFileOnRemove(part)) {
-            onDeleteFile(url)
+            platformContent.deleteChatFiles(listOf(url), scope)
         }
     }
 
