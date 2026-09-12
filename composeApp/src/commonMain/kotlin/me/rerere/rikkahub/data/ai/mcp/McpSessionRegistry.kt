@@ -70,9 +70,9 @@ private sealed interface ConnectResult {
     data object Failed : ConnectResult
 }
 
-class McpClientUnavailableException(message: String) : IllegalStateException(message)
+internal class McpClientUnavailableException(message: String) : IllegalStateException(message)
 
-class McpStatusStore {
+internal class McpStatusStore {
     private val _status = MutableStateFlow<Map<Uuid, McpStatus>>(emptyMap())
     val status: StateFlow<Map<Uuid, McpStatus>> = _status.asStateFlow()
 
@@ -94,11 +94,11 @@ class McpStatusStore {
  * 每个 serverId 对应一个 [McpSession]，该 Session 的连接、同步、关闭和重连通过同一把 Mutex 串行执行。
  * Client 只有在 connect 与首次工具同步都成功后才对外可见。
  */
-class McpSessionRegistry(
+internal class McpSessionRegistry(
     private val settingsStore: SettingsStore,
     private val appScope: CoroutineScope,
     private val httpClient: HttpClient,
-    private val oauthCoordinator: McpAuthorizationCoordinator,
+    private val oauthCoordinator: McpOAuthCoordinator,
     private val statusStore: McpStatusStore,
 ) {
     private val sessions = ConcurrentHashMap<Uuid, McpSession>()

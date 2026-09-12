@@ -31,7 +31,7 @@ internal class McpOAuthCoordinator(
     private val callbackSessionFactory: OAuthCallbackSessionFactory,
     private val updateStatus: (Uuid, McpStatus) -> Unit,
     private val clock: Clock = Clock.System,
-) : McpAuthorizationCoordinator {
+) {
     private val authorizationJobs = ConcurrentHashMap<Uuid, Job>()
     private val refreshLocks = ConcurrentHashMap<Uuid, Mutex>()
 
@@ -57,7 +57,7 @@ internal class McpOAuthCoordinator(
         updateStatus(configId, McpStatus.NeedsAuthorization)
     }
 
-    override fun forget(configId: Uuid) {
+    fun forget(configId: Uuid) {
         authorizationJobs.remove(configId)?.cancel()
         refreshLocks.remove(configId)
     }
@@ -68,7 +68,7 @@ internal class McpOAuthCoordinator(
             ?: config.clone(commonOptions = config.commonOptions.copy(oauth = null))
     }
 
-    override suspend fun ensureFreshToken(configInput: McpServerConfig): McpServerConfig {
+    suspend fun ensureFreshToken(configInput: McpServerConfig): McpServerConfig {
         val lock = refreshLocks.computeIfAbsent(configInput.id) { Mutex() }
         return lock.withLock {
             val config = settingsStore.settingsFlow.value.mcpServers.find { it.id == configInput.id }
@@ -106,7 +106,7 @@ internal class McpOAuthCoordinator(
         }
     }
 
-    override suspend fun needsAuthorization(config: McpServerConfig, error: Throwable): Boolean {
+    suspend fun needsAuthorization(config: McpServerConfig, error: Throwable): Boolean {
         if (!looksUnauthorized(error)) return false
         if (config.commonOptions.oauth?.enabled == true) return true
         if (config.commonOptions.headers.any { it.first.equals("Authorization", ignoreCase = true) }) {
