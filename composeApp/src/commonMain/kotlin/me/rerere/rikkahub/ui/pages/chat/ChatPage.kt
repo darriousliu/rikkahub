@@ -445,8 +445,13 @@ private fun ChatPageContent(
                 },
                 volumeKeyEventSource = volumeKeyEventSource,
                 scrollCaptureInProgress = scrollCaptureInProgress,
-                exportRenderer = { presentation ->
-                    platformContent.RenderExport(presentation)
+                exportRenderer = { visible, onDismissRequest, conversation, selectedMessages ->
+                    platformContent.RenderExport(
+                        visible = visible,
+                        onDismissRequest = onDismissRequest,
+                        conversation = conversation,
+                        selectedMessages = selectedMessages,
+                    )
                 },
                 loadingRenderer = { modifier ->
                     platformContent.RenderLoading(modifier)

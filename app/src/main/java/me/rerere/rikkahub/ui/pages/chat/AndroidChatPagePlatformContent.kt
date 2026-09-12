@@ -21,6 +21,7 @@ import com.dokar.sonner.ToastType
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.logging.RikkaLog as Log
@@ -134,12 +135,17 @@ class AndroidChatPagePlatformContent(
     }
 
     @Composable
-    override fun RenderExport(presentation: ChatExportPresentation) {
+    override fun RenderExport(
+        visible: Boolean,
+        onDismissRequest: () -> Unit,
+        conversation: Conversation,
+        selectedMessages: List<UIMessage>,
+    ) {
         ChatExportSheet(
-            visible = presentation.visible,
-            onDismissRequest = presentation.onDismissRequest,
-            conversation = presentation.conversation,
-            selectedMessages = presentation.selectedMessages,
+            visible = visible,
+            onDismissRequest = onDismissRequest,
+            conversation = conversation,
+            selectedMessages = selectedMessages,
         )
     }
 

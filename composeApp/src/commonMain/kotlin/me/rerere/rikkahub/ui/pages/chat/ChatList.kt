@@ -112,13 +112,6 @@ interface VolumeKeyEventSource {
     fun removeListener(listener: (isVolumeUp: Boolean) -> Boolean)
 }
 
-data class ChatExportPresentation(
-    val visible: Boolean,
-    val onDismissRequest: () -> Unit,
-    val conversation: Conversation,
-    val selectedMessages: List<UIMessage>,
-)
-
 @Composable
 fun ChatList(
     innerPadding: PaddingValues,
@@ -147,7 +140,7 @@ fun ChatList(
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
     volumeKeyEventSource: VolumeKeyEventSource? = null,
     scrollCaptureInProgress: Boolean = false,
-    exportRenderer: @Composable (ChatExportPresentation) -> Unit = {},
+    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit = { _, _, _, _ -> },
     loadingRenderer: @Composable (Modifier) -> Unit = { CircularProgressIndicator(modifier = it) },
 ) {
     AnimatedContent(
@@ -227,7 +220,7 @@ private fun ChatListNormal(
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
     volumeKeyEventSource: VolumeKeyEventSource?,
     scrollCaptureInProgress: Boolean,
-    exportRenderer: @Composable (ChatExportPresentation) -> Unit,
+    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit,
     loadingRenderer: @Composable (Modifier) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -523,16 +516,14 @@ private fun ChatListNormal(
 
             // 导出对话框
             exportRenderer(
-                ChatExportPresentation(
-                    visible = showExportSheet,
-                    onDismissRequest = {
+                showExportSheet,
+                {
                     showExportSheet = false
                     selectedItems.clear()
-                    },
-                    conversation = conversation,
-                    selectedMessages = conversation.messageNodes.filter { it.id in selectedItems }
-                        .map { it.currentMessage },
-                )
+                },
+                conversation,
+                conversation.messageNodes.filter { it.id in selectedItems }
+                    .map { it.currentMessage },
             )
 
             // 消息快速跳转

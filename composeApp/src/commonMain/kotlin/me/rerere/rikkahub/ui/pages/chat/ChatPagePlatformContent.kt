@@ -19,6 +19,7 @@ import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import kotlinx.coroutines.launch
+import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
@@ -63,7 +64,12 @@ interface ChatPagePlatformContent {
     )
 
     @Composable
-    fun RenderExport(presentation: ChatExportPresentation)
+    fun RenderExport(
+        visible: Boolean,
+        onDismissRequest: () -> Unit,
+        conversation: Conversation,
+        selectedMessages: List<UIMessage>,
+    )
 
     @Composable
     fun RenderLoading(modifier: Modifier)
@@ -100,7 +106,12 @@ object UnavailableChatPagePlatformContent : ChatPagePlatformContent {
     ) = Unit
 
     @Composable
-    override fun RenderExport(presentation: ChatExportPresentation) = Unit
+    override fun RenderExport(
+        visible: Boolean,
+        onDismissRequest: () -> Unit,
+        conversation: Conversation,
+        selectedMessages: List<UIMessage>,
+    ) = Unit
 
     @Composable
     override fun RenderLoading(modifier: Modifier) {
