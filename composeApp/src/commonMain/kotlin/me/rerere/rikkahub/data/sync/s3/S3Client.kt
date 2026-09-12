@@ -16,6 +16,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import io.ktor.utils.io.readAvailable
 import me.rerere.common.crypto.Sha256Crypto
 import me.rerere.common.logging.RikkaLog as Log
@@ -32,28 +35,42 @@ class S3Client(
         key: String,
         data: ByteArray,
         contentType: String = "application/octet-stream",
-    ): Result<Unit> = runCatching {
-        val path = "/${key.trimStart('/')}"
-        val signed = AwsSignatureV4.sign(
-            config = config,
-            method = "PUT",
-            path = path,
-            payload = data,
-            contentType = contentType,
-            crypto = crypto,
-        )
-        val parsedContentType = ContentType.parse(contentType)
-        executeUnitRequest(
-            signed = signed,
-            requestMethod = HttpMethod.Put,
-            body = object : OutgoingContent.ByteArrayContent() {
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val path = "/${key.trimStart('/')}"
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                crypto = crypto,
+                method = "PUT",
+                path = path,
+                payload = data,
+                contentType = contentType,
+            )
+
+            val parsedContentType = ContentType.parse(contentType)
+            val requestBody = object : OutgoingContent.ByteArrayContent() {
                 override val contentLength = data.size.toLong()
                 override val contentType = parsedContentType
                 override fun bytes(): ByteArray = data
-            },
-            operation = "putObject",
-            key = key,
-        )
+            }
+
+            val response: HttpResponse = httpClient.request(signed.url) {
+                method = HttpMethod.Put
+                headers {
+                    signed.headers.forEach { (k, v) -> append(k, v) }
+                }
+                setBody(requestBody)
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorBody = response.bodyAsText()
+                Log.e(TAG, "putObject failed: ${response.status} - $errorBody")
+                throw S3Exception("Failed to put object: ${response.status}", errorBody)
+            }
+
+            Log.d(TAG, "putObject success: $key")
+            Unit
+        }
     }
 
     suspend fun putObject(
@@ -62,83 +79,169 @@ class S3Client(
         payloadHash: String,
         content: () -> ByteReadChannel,
         contentType: String = "application/octet-stream",
-    ): Result<Unit> = runCatching {
-        val path = "/${key.trimStart('/')}"
-        val signed = AwsSignatureV4.sign(
-            config = config,
-            method = "PUT",
-            path = path,
-            payloadHash = payloadHash,
-            contentLength = contentLength,
-            contentType = contentType,
-            crypto = crypto,
-        )
-        val parsedContentType = ContentType.parse(contentType)
-        val resolvedContentLength = contentLength
-        executeUnitRequest(
-            signed = signed,
-            requestMethod = HttpMethod.Put,
-            body = object : OutgoingContent.ReadChannelContent() {
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val path = "/${key.trimStart('/')}"
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                crypto = crypto,
+                method = "PUT",
+                path = path,
+                payloadHash = payloadHash,
+                contentLength = contentLength,
+                contentType = contentType,
+            )
+
+            val resolvedContentLength = contentLength
+            val parsedContentType = ContentType.parse(contentType)
+            val requestBody = object : OutgoingContent.ReadChannelContent() {
                 override val contentLength = resolvedContentLength
                 override val contentType = parsedContentType
                 override fun readFrom(): ByteReadChannel = content()
-            },
-            operation = "putObject",
-            key = key,
-        )
+            }
+
+            val response: HttpResponse = httpClient.request(signed.url) {
+                method = HttpMethod.Put
+                headers {
+                    signed.headers.forEach { (k, v) -> append(k, v) }
+                }
+                // Stream large files to avoid loading backup archives into heap.
+                setBody(requestBody)
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorBody = response.bodyAsText()
+                Log.e(TAG, "putObject(file) failed: ${response.status} - $errorBody")
+                throw S3Exception("Failed to put object: ${response.status}", errorBody)
+            }
+
+            Log.d(TAG, "putObject(file) success: $key (${contentLength} bytes)")
+            Unit
+        }
     }
 
-    suspend fun getObject(key: String): Result<ByteArray> = runCatching {
-        val response = executeObjectRequest(key, HttpMethod.Get)
-        response.body<ByteArray>()
+    suspend fun getObject(key: String): Result<ByteArray> = withContext(Dispatchers.IO) {
+        runCatching {
+            val path = "/${key.trimStart('/')}"
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                crypto = crypto,
+                method = "GET",
+                path = path,
+            )
+
+            val response: HttpResponse = httpClient.request(signed.url) {
+                method = HttpMethod.Get
+                headers {
+                    signed.headers.forEach { (k, v) -> append(k, v) }
+                }
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorBody = response.bodyAsText()
+                Log.e(TAG, "getObject failed: ${response.status} - $errorBody")
+                throw S3Exception("Failed to get object: ${response.status}", errorBody)
+            }
+
+            response.body<ByteArray>()
+        }
     }
 
     suspend fun downloadObject(
         key: String,
         writeChunk: suspend (buffer: ByteArray, byteCount: Int) -> Unit,
-    ): Result<Long> = runCatching {
-        val path = "/${key.trimStart('/')}"
-        val signed = AwsSignatureV4.sign(
-            config = config,
-            method = "GET",
-            path = path,
-            crypto = crypto,
-        )
-        var downloaded = 0L
-        httpClient.prepareRequest(signed.url) {
-            method = HttpMethod.Get
-            headers { signed.headers.forEach { (name, value) -> append(name, value) } }
-        }.execute { response ->
-            response.requireSuccess("download object")
-            val channel = response.bodyAsChannel()
-            val buffer = ByteArray(8192)
-            while (true) {
-                val byteCount = channel.readAvailable(buffer)
-                if (byteCount < 0) break
-                if (byteCount > 0) {
-                    writeChunk(buffer, byteCount)
-                    downloaded += byteCount
+    ): Result<Long> = withContext(Dispatchers.IO) {
+        runCatching {
+            val path = "/${key.trimStart('/')}"
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                method = "GET",
+                path = path,
+                crypto = crypto,
+            )
+            var downloaded = 0L
+            httpClient.prepareRequest(signed.url) {
+                method = HttpMethod.Get
+                headers { signed.headers.forEach { (name, value) -> append(name, value) } }
+            }.execute { response ->
+                if (!response.status.isSuccess()) {
+                    val errorBody = response.bodyAsText()
+                    Log.e(TAG, "downloadObject failed: ${response.status} - $errorBody")
+                    throw S3Exception("Failed to download object: ${response.status}", errorBody)
+                }
+                val channel = response.bodyAsChannel()
+                val buffer = ByteArray(8192)
+                while (true) {
+                    val byteCount = channel.readAvailable(buffer)
+                    if (byteCount < 0) break
+                    if (byteCount > 0) {
+                        writeChunk(buffer, byteCount)
+                        downloaded += byteCount
+                    }
                 }
             }
+            Log.d(TAG, "downloadObject success: $key ($downloaded bytes)")
+            downloaded
         }
-        Log.d(TAG, "downloadObject success: $key ($downloaded bytes)")
-        downloaded
     }
 
-    suspend fun deleteObject(key: String): Result<Unit> = runCatching {
-        executeObjectRequest(key, HttpMethod.Delete)
-        Log.d(TAG, "deleteObject success: $key")
+    suspend fun deleteObject(key: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val path = "/${key.trimStart('/')}"
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                crypto = crypto,
+                method = "DELETE",
+                path = path,
+            )
+
+            val response: HttpResponse = httpClient.request(signed.url) {
+                method = HttpMethod.Delete
+                headers {
+                    signed.headers.forEach { (k, v) -> append(k, v) }
+                }
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorBody = response.bodyAsText()
+                Log.e(TAG, "deleteObject failed: ${response.status} - $errorBody")
+                throw S3Exception("Failed to delete object: ${response.status}", errorBody)
+            }
+
+            Log.d(TAG, "deleteObject success: $key")
+            Unit
+        }
     }
 
-    suspend fun headObject(key: String): Result<S3ObjectMetadata> = runCatching {
-        val response = executeObjectRequest(key, HttpMethod.Head)
-        S3ObjectMetadata(
-            key = key,
-            size = response.headers["content-length"]?.toLongOrNull() ?: 0,
-            contentType = response.headers["content-type"] ?: "application/octet-stream",
-            etag = response.headers["etag"]?.trim('"'),
-            lastModified = response.headers["last-modified"],
-        )
+    suspend fun headObject(key: String): Result<S3ObjectMetadata> = withContext(Dispatchers.IO) {
+        runCatching {
+            val path = "/${key.trimStart('/')}"
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                crypto = crypto,
+                method = "HEAD",
+                path = path,
+            )
+
+            val response: HttpResponse = httpClient.request(signed.url) {
+                method = HttpMethod.Head
+                headers {
+                    signed.headers.forEach { (k, v) -> append(k, v) }
+                }
+            }
+
+            if (!response.status.isSuccess()) {
+                throw S3Exception("Object not found: ${response.status}", "")
+            }
+
+            S3ObjectMetadata(
+                key = key,
+                size = response.headers["content-length"]?.toLongOrNull() ?: 0,
+                contentType = response.headers["content-type"] ?: "application/octet-stream",
+                etag = response.headers["etag"]?.trim('"'),
+                lastModified = response.headers["last-modified"],
+            )
+        }
     }
 
     suspend fun listObjects(
@@ -146,30 +249,45 @@ class S3Client(
         delimiter: String = "",
         maxKeys: Int = 1000,
         continuationToken: String? = null,
-    ): Result<S3ListResult> = runCatching {
-        val queryParams = mutableMapOf(
-            "list-type" to "2",
-            "max-keys" to maxKeys.toString(),
-        )
-        if (prefix.isNotEmpty()) queryParams["prefix"] = prefix
-        if (delimiter.isNotEmpty()) queryParams["delimiter"] = delimiter
-        continuationToken?.let { queryParams["continuation-token"] = it }
-        val signed = AwsSignatureV4.sign(
-            config = config,
-            method = "GET",
-            path = "/",
-            queryParams = queryParams,
-            crypto = crypto,
-        )
-        val response = httpClient.request(signed.url) {
-            method = HttpMethod.Get
-            headers { signed.headers.forEach { (name, value) -> append(name, value) } }
+    ): Result<S3ListResult> = withContext(Dispatchers.IO) {
+        runCatching {
+            val queryParams = mutableMapOf(
+                "list-type" to "2",
+                "max-keys" to maxKeys.toString(),
+            )
+            if (prefix.isNotEmpty()) queryParams["prefix"] = prefix
+            if (delimiter.isNotEmpty()) queryParams["delimiter"] = delimiter
+            continuationToken?.let { queryParams["continuation-token"] = it }
+
+            val signed = AwsSignatureV4.sign(
+                config = config,
+                crypto = crypto,
+                method = "GET",
+                path = "/",
+                queryParams = queryParams,
+            )
+
+            val response: HttpResponse = httpClient.request(signed.url) {
+                method = HttpMethod.Get
+                headers {
+                    signed.headers.forEach { (k, v) -> append(k, v) }
+                }
+            }
+
+            if (!response.status.isSuccess()) {
+                val errorBody = response.bodyAsText()
+                Log.e(TAG, "listObjects failed: ${response.status} - $errorBody")
+                throw S3Exception("Failed to list objects: ${response.status}", errorBody)
+            }
+
+            val xmlBody = response.bodyAsText()
+            parseListObjectsResponse(xmlBody)
         }
-        response.requireSuccess("list objects")
-        parseListObjectsResponse(response.bodyAsText())
     }
 
-    suspend fun objectExists(key: String): Boolean = headObject(key).isSuccess
+    suspend fun objectExists(key: String): Boolean {
+        return headObject(key).isSuccess
+    }
 
     fun getPublicUrl(key: String): String {
         val path = "/${key.trimStart('/')}"
@@ -179,45 +297,6 @@ class S3Client(
             val scheme = if (config.isHttps) "https://" else "http://"
             "$scheme${config.bucket}.${config.host}$path"
         }
-    }
-
-    private suspend fun executeUnitRequest(
-        signed: AwsSignatureV4.SignedRequest,
-        requestMethod: HttpMethod,
-        body: OutgoingContent,
-        operation: String,
-        key: String,
-    ) {
-        val response = httpClient.request(signed.url) {
-            method = requestMethod
-            headers { signed.headers.forEach { (name, value) -> append(name, value) } }
-            setBody(body)
-        }
-        response.requireSuccess(operation)
-        Log.d(TAG, "$operation success: $key")
-    }
-
-    private suspend fun executeObjectRequest(key: String, requestMethod: HttpMethod): HttpResponse {
-        val path = "/${key.trimStart('/')}"
-        val signed = AwsSignatureV4.sign(
-            config = config,
-            method = requestMethod.value,
-            path = path,
-            crypto = crypto,
-        )
-        val response = httpClient.request(signed.url) {
-            method = requestMethod
-            headers { signed.headers.forEach { (name, value) -> append(name, value) } }
-        }
-        response.requireSuccess(requestMethod.value.lowercase())
-        return response
-    }
-
-    private suspend fun HttpResponse.requireSuccess(operation: String) {
-        if (status.isSuccess()) return
-        val errorBody = bodyAsText()
-        Log.e(TAG, "$operation failed: $status - $errorBody")
-        throw S3Exception("Failed to $operation: $status", errorBody)
     }
 
     private fun parseListObjectsResponse(xml: String): S3ListResult {
