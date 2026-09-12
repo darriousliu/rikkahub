@@ -3,13 +3,13 @@ package me.rerere.rikkahub.ui.components.ai
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import com.dokar.sonner.ToastType
-import io.github.vinceglb.filekit.AndroidFile
 import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.common.logging.Logging
 import me.rerere.rikkahub.platform.ImageCropRequest
 import me.rerere.rikkahub.platform.ImageCropResult
 import me.rerere.rikkahub.platform.rememberImageCropper
 import me.rerere.rikkahub.ui.context.LocalToaster
+import me.rerere.rikkahub.utils.toAndroidUri
 
 @Composable
 internal fun useCropLauncher(
@@ -47,9 +47,4 @@ internal fun useCropLauncher(
             )
         )
     }
-}
-
-private fun PlatformFile.toAndroidUri(): Uri = when (val file = androidFile) {
-    is AndroidFile.FileWrapper -> Uri.fromFile(file.file)
-    is AndroidFile.UriWrapper -> file.uri
 }

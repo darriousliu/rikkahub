@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.dokar.sonner.ToastType
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.logging.RikkaLog as Log
@@ -44,6 +47,7 @@ import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
 import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.isAllowedFileType
+import me.rerere.rikkahub.utils.toAndroidUri
 import org.koin.compose.koinInject
 import java.io.File
 import kotlin.uuid.Uuid
@@ -276,7 +280,11 @@ private fun AndroidChatFilesPickerSheet(
         }
 
     val filePickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        rememberFilePickerLauncher(
+            type = FileKitType.File(extensions = null),
+            mode = FileKitMode.Multiple(),
+        ) { selectedFiles ->
+            val uris = selectedFiles.orEmpty().map { it.toAndroidUri() }
             if (uris.isNotEmpty()) {
                 val documents = uris.mapNotNull { uri ->
                     val fileName = filesManager.getFileNameFromUri(uri) ?: "file"
@@ -348,7 +356,7 @@ private fun AndroidChatFilesPickerSheet(
             onPickImage = { imagePickerLauncher.launch("image/*") },
             onPickVideo = { videoPickerLauncher.launch("video/*") },
             onPickAudio = { audioPickerLauncher.launch("audio/*") },
-            onPickFile = { filePickerLauncher.launch(arrayOf("*/*")) },
+            onPickFile = { filePickerLauncher.launch() },
         )
     }
 }

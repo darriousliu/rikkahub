@@ -8,7 +8,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -125,31 +124,30 @@ internal class SharedChatPagePlatformContent(
         onDismiss: () -> Unit,
     ) {
         val scope = rememberCoroutineScope()
-        var showFilePicker by remember { mutableStateOf(false) }
         var showCompression by remember { mutableStateOf(false) }
-        val picker = rememberFilePickerLauncher(
-            type = FileKitType.File(extensions = null),
-            mode = FileKitMode.Multiple(maxItems = MAX_ATTACHMENT_COUNT),
-        ) { selectedFiles ->
-            if (selectedFiles == null) {
-                onDismiss()
-            } else {
-                scope.launch {
-                    inputState.messageContent += attachmentStore.import(selectedFiles)
-                    onDismiss()
-                }
-            }
-        }
         when {
-            showFilePicker -> LaunchedEffect(picker) { picker.launch() }
             showCompression -> SharedCompressContextDialog(
                 onDismiss = onDismiss,
                 onConfirm = vm::handleCompressContext,
             )
             else -> ModalBottomSheet(onDismissRequest = onDismiss) {
+                // Keep the sheet's view controller alive until the native picker returns.
+                val picker = rememberFilePickerLauncher(
+                    type = FileKitType.File(extensions = null),
+                    mode = FileKitMode.Multiple(maxItems = MAX_ATTACHMENT_COUNT),
+                ) { selectedFiles ->
+                    if (selectedFiles == null) {
+                        onDismiss()
+                    } else {
+                        scope.launch {
+                            inputState.messageContent += attachmentStore.import(selectedFiles)
+                            onDismiss()
+                        }
+                    }
+                }
                 Column(modifier = Modifier.padding(16.dp)) {
                     TextButton(
-                        onClick = { showFilePicker = true },
+                        onClick = { picker.launch() },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("添加附件")
