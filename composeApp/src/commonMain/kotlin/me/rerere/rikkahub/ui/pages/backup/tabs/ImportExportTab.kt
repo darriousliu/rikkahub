@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
@@ -36,12 +37,6 @@ import me.rerere.rikkahub.ui.pages.backup.BackupVM
 import kotlin.time.Clock
 import org.jetbrains.compose.resources.stringResource
 
-private enum class BackupImportType {
-    LOCAL,
-    CHATBOX,
-    CHERRY,
-}
-
 @Composable
 fun ImportExportTab(
     vm: BackupVM,
@@ -51,7 +46,7 @@ fun ImportExportTab(
     val scope = rememberCoroutineScope()
     var isExporting by remember { mutableStateOf(false) }
     var isRestoring by remember { mutableStateOf(false) }
-    var importType by remember { mutableStateOf(BackupImportType.LOCAL) }
+    var importType by remember { mutableStateOf("local") }
     val backupSuccess = stringResource(Res.string.backup_page_backup_success)
     val restoreSuccess = stringResource(Res.string.backup_page_restore_success)
     val restoreFailedPrefix = stringResource(Res.string.backup_page_restore_failed, "")
@@ -81,15 +76,15 @@ fun ImportExportTab(
         }
     }
 
-    val openDocumentLauncher = rememberFilePickerLauncher(type = FileKitType.File()) { source ->
+    val onImportFile: (PlatformFile?) -> Unit = { source ->
         if (source != null) {
             scope.launch {
                 isRestoring = true
                 runCatching {
                     when (importType) {
-                        BackupImportType.LOCAL -> vm.restoreFromLocalFile(source)
-                        BackupImportType.CHATBOX -> vm.restoreFromChatBox(source)
-                        BackupImportType.CHERRY -> vm.restoreFromCherryStudio(source)
+                        "local" -> vm.restoreFromLocalFile(source)
+                        "chatbox" -> vm.restoreFromChatBox(source)
+                        "cherry" -> vm.restoreFromCherryStudio(source)
                     }
                     toaster.show(restoreSuccess, type = ToastType.Success)
                     onShowRestartDialog()
@@ -103,6 +98,14 @@ fun ImportExportTab(
             }
         }
     }
+    val openDocumentLauncher = rememberFilePickerLauncher(
+        type = FileKitType.File("zip"),
+        onResult = onImportFile,
+    )
+    val openJsonDocumentLauncher = rememberFilePickerLauncher(
+        type = FileKitType.File("json"),
+        onResult = onImportFile,
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -150,7 +153,7 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isRestoring) {
                         {
-                            importType = BackupImportType.LOCAL
+                            importType = "local"
                             openDocumentLauncher.launch()
                         }
                     } else null,
@@ -186,14 +189,14 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isRestoring) {
                         {
-                            importType = BackupImportType.CHATBOX
-                            openDocumentLauncher.launch()
+                            importType = "chatbox"
+                            openJsonDocumentLauncher.launch()
                         }
                     } else null,
                     headlineContent = { Text(stringResource(Res.string.backup_page_import_from_chatbox)) },
                     supportingContent = { Text(stringResource(Res.string.backup_page_import_chatbox_desc)) },
                     leadingContent = {
-                        if (isRestoring && importType == BackupImportType.CHATBOX) {
+                        if (isRestoring && importType == "chatbox") {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             Icon(HugeIcons.FileImport, null)
@@ -204,14 +207,14 @@ fun ImportExportTab(
                 item(
                     onClick = if (!isRestoring) {
                         {
-                            importType = BackupImportType.CHERRY
+                            importType = "cherry"
                             openDocumentLauncher.launch()
                         }
                     } else null,
                     headlineContent = { Text(stringResource(Res.string.backup_page_import_from_cherry_studio)) },
                     supportingContent = { Text(stringResource(Res.string.backup_page_import_cherry_studio_desc)) },
                     leadingContent = {
-                        if (isRestoring && importType == BackupImportType.CHERRY) {
+                        if (isRestoring && importType == "cherry") {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         } else {
                             Icon(HugeIcons.FileImport, null)
