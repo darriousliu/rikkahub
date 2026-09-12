@@ -57,7 +57,6 @@ import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.ChatInput
-import me.rerere.rikkahub.ui.components.message.ChatMessage
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
@@ -446,27 +445,6 @@ private fun ChatPageContent(
                 },
                 volumeKeyEventSource = volumeKeyEventSource,
                 scrollCaptureInProgress = scrollCaptureInProgress,
-                messageRenderer = { presentation ->
-                    ChatMessage(
-                        node = presentation.node,
-                        model = presentation.model,
-                        assistant = presentation.assistant,
-                        loading = presentation.loading,
-                        lastMessage = presentation.lastMessage,
-                        onRegenerate = presentation.onRegenerate,
-                        onEdit = presentation.onEdit,
-                        onFork = presentation.onFork,
-                        onDelete = presentation.onDelete,
-                        onShare = presentation.onShare,
-                        onUpdate = presentation.onUpdate,
-                        isFavorite = presentation.node.isFavorite,
-                        onToggleFavorite = presentation.onToggleFavorite,
-                        onTranslate = presentation.onTranslate,
-                        onClearTranslation = presentation.onClearTranslation,
-                        onToolApproval = presentation.onToolApproval,
-                        onToolAnswer = presentation.onToolAnswer,
-                    )
-                },
                 exportRenderer = { presentation ->
                     platformContent.RenderExport(presentation)
                 },

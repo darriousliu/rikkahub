@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,7 +52,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,7 +70,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -88,20 +85,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.rerere.ai.core.MessageRole
-import me.rerere.ai.provider.Model
-import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.UIMessage
-import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getAssistantById
-import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
-import me.rerere.rikkahub.ui.components.message.ChatMessageBranchSelector
-import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
-import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
+import me.rerere.rikkahub.ui.components.message.ChatMessage
 import me.rerere.rikkahub.ui.components.ui.ErrorCardsDisplay
 import me.rerere.rikkahub.ui.components.ui.ListSelectableItem
 import me.rerere.rikkahub.ui.components.ui.Tooltip
@@ -115,31 +106,11 @@ import kotlin.uuid.Uuid
 private const val TAG = "ChatList"
 private const val LoadingIndicatorKey = "LoadingIndicator"
 private const val ScrollBottomKey = "ScrollBottomKey"
-private const val AskUserToolName = "ask_user"
 
 interface VolumeKeyEventSource {
     fun addListener(listener: (isVolumeUp: Boolean) -> Boolean)
     fun removeListener(listener: (isVolumeUp: Boolean) -> Boolean)
 }
-
-data class ChatMessagePresentation(
-    val node: MessageNode,
-    val model: Model?,
-    val assistant: Assistant?,
-    val loading: Boolean,
-    val lastMessage: Boolean,
-    val onRegenerate: () -> Unit,
-    val onEdit: () -> Unit,
-    val onFork: () -> Unit,
-    val onDelete: () -> Unit,
-    val onShare: () -> Unit,
-    val onUpdate: (MessageNode) -> Unit,
-    val onToggleFavorite: () -> Unit,
-    val onTranslate: ((UIMessage, String) -> Unit)?,
-    val onClearTranslation: (UIMessage) -> Unit,
-    val onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)?,
-    val onToolAnswer: ((toolCallId: String, answer: String) -> Unit)?,
-)
 
 data class ChatExportPresentation(
     val visible: Boolean,
@@ -147,136 +118,6 @@ data class ChatExportPresentation(
     val conversation: Conversation,
     val selectedMessages: List<UIMessage>,
 )
-
-@Composable
-private fun BasicChatMessage(presentation: ChatMessagePresentation) {
-    val message = presentation.node.currentMessage
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (message.role == MessageRole.USER) Alignment.End else Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        message.parts.forEach { part ->
-            when (part) {
-                is UIMessagePart.Text -> if (part.text.isNotBlank()) {
-                    Surface(
-                        shape = MaterialTheme.shapes.medium,
-                        color = if (message.role == MessageRole.USER) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        },
-                    ) {
-                        MarkdownBlock(
-                            content = part.text,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                }
-
-                is UIMessagePart.Image -> ZoomableAsyncImage(
-                    model = part.url,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 320.dp)
-                        .clip(MaterialTheme.shapes.medium),
-                )
-
-                is UIMessagePart.Video -> BasicAttachmentLabel("Video", part.url)
-                is UIMessagePart.Audio -> BasicAttachmentLabel("Audio", part.url)
-                is UIMessagePart.Document -> BasicAttachmentLabel(part.fileName, part.url)
-                is UIMessagePart.Tool -> BasicToolCall(tool = part, presentation = presentation)
-                else -> Unit
-            }
-        }
-        if (presentation.loading && presentation.lastMessage) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-        }
-        ChatMessageBranchSelector(
-            node = presentation.node,
-            onUpdate = presentation.onUpdate,
-        )
-    }
-}
-
-@Composable
-private fun BasicAttachmentLabel(label: String, url: String) {
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Text(
-            text = "$label · ${url.substringBefore('?').substringAfterLast('/')}",
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.labelMedium,
-        )
-    }
-}
-
-@Composable
-private fun BasicToolCall(
-    tool: UIMessagePart.Tool,
-    presentation: ChatMessagePresentation,
-) {
-    var answer by remember(tool.toolCallId) { mutableStateOf("") }
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        tonalElevation = 2.dp,
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(tool.toolName, style = MaterialTheme.typography.titleSmall)
-            tool.output.filterIsInstance<UIMessagePart.Text>().forEach { output ->
-                Text(output.text, style = MaterialTheme.typography.bodySmall)
-            }
-            if (tool.toolName != AskUserToolName &&
-                tool.approvalState is ToolApprovalState.Pending &&
-                presentation.onToolApproval != null
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = {
-                        presentation.onToolApproval.invoke(tool.toolCallId, false, "")
-                    }) {
-                        Text(stringResource(Res.string.chat_message_tool_deny))
-                    }
-                    TextButton(onClick = {
-                        presentation.onToolApproval.invoke(tool.toolCallId, true, "")
-                    }) {
-                        Text(stringResource(Res.string.chat_message_tool_approve))
-                    }
-                }
-            }
-            if (tool.toolName == AskUserToolName &&
-                tool.approvalState is ToolApprovalState.Pending &&
-                presentation.onToolAnswer != null
-            ) {
-                OutlinedTextField(
-                    value = answer,
-                    onValueChange = { answer = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-                TextButton(
-                    onClick = {
-                        presentation.onToolAnswer.invoke(tool.toolCallId, answer)
-                        answer = ""
-                    },
-                    enabled = answer.isNotBlank(),
-                ) {
-                    Text(stringResource(Res.string.chat_message_tool_submit))
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun ChatList(
@@ -306,7 +147,6 @@ fun ChatList(
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
     volumeKeyEventSource: VolumeKeyEventSource? = null,
     scrollCaptureInProgress: Boolean = false,
-    messageRenderer: @Composable (ChatMessagePresentation) -> Unit = { BasicChatMessage(it) },
     exportRenderer: @Composable (ChatExportPresentation) -> Unit = {},
     loadingRenderer: @Composable (Modifier) -> Unit = { CircularProgressIndicator(modifier = it) },
 ) {
@@ -353,7 +193,6 @@ fun ChatList(
                 onConversationSystemPromptChange = onConversationSystemPromptChange,
                 volumeKeyEventSource = volumeKeyEventSource,
                 scrollCaptureInProgress = scrollCaptureInProgress,
-                messageRenderer = messageRenderer,
                 exportRenderer = exportRenderer,
                 loadingRenderer = loadingRenderer,
             )
@@ -388,7 +227,6 @@ private fun ChatListNormal(
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
     volumeKeyEventSource: VolumeKeyEventSource?,
     scrollCaptureInProgress: Boolean,
-    messageRenderer: @Composable (ChatMessagePresentation) -> Unit,
     exportRenderer: @Composable (ChatExportPresentation) -> Unit,
     loadingRenderer: @Composable (Modifier) -> Unit,
 ) {
@@ -517,42 +355,41 @@ private fun ChatListNormal(
                         selectedKeys = selectedItems,
                         enabled = selecting,
                     ) {
-                        messageRenderer(
-                            ChatMessagePresentation(
-                                node = node,
-                                model = node.currentMessage.modelId?.let(modelById::get),
-                                assistant = assistant,
-                                loading = loading && index == lastMessageIndex,
-                                onRegenerate = {
+                        ChatMessage(
+                            node = node,
+                            model = node.currentMessage.modelId?.let(modelById::get),
+                            assistant = assistant,
+                            loading = loading && index == lastMessageIndex,
+                            onRegenerate = {
                                 onRegenerate(node.currentMessage)
-                                },
-                                onEdit = {
+                            },
+                            onEdit = {
                                 onEdit(node.currentMessage)
-                                },
-                                onFork = {
+                            },
+                            onFork = {
                                 onForkMessage(node.currentMessage)
-                                },
-                                onDelete = {
+                            },
+                            onDelete = {
                                 onDelete(node.currentMessage)
-                                },
-                                onShare = {
+                            },
+                            onShare = {
                                 selecting = true  // 使用 CoroutineScope 延迟状态更新
                                 selectedItems.clear()
                                 selectedItems.addAll(conversation.messageNodes.map { it.id }
                                     .subList(0, conversation.messageNodes.indexOf(node) + 1))
-                                },
-                                onUpdate = {
+                            },
+                            onUpdate = {
                                 onUpdateMessage(it)
-                                },
-                                onToggleFavorite = {
+                            },
+                            isFavorite = node.isFavorite,
+                            onToggleFavorite = {
                                 onToggleFavorite?.invoke(node)
-                                },
-                                onTranslate = onTranslate,
-                                onClearTranslation = onClearTranslation,
-                                onToolApproval = onToolApproval,
-                                onToolAnswer = onToolAnswer,
-                                lastMessage = index == lastMessageIndex,
-                            )
+                            },
+                            onTranslate = onTranslate,
+                            onClearTranslation = onClearTranslation,
+                            onToolApproval = onToolApproval,
+                            onToolAnswer = onToolAnswer,
+                            lastMessage = index == lastMessageIndex,
                         )
                     }
                 }
