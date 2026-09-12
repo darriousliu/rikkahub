@@ -1,8 +1,6 @@
 package me.rerere.rikkahub.ui.components.message
 
 import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -33,6 +31,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -46,6 +46,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.resources.stringResource
+import me.rerere.rikkahub.utils.toAndroidUri
 import me.rerere.workspace.WorkspaceStorageArea
 import org.koin.compose.koinInject
 import java.io.File
@@ -79,12 +80,12 @@ internal fun EditedFilesList(
     val visibleFiles = if (expanded) editedFiles else editedFiles.take(DEFAULT_VISIBLE_COUNT)
     val hasMore = editedFiles.size > DEFAULT_VISIBLE_COUNT
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*"),
-    ) { uri ->
-        val path = selectedPath.also { selectedPath = null } ?: return@rememberLauncherForActivityResult
-        if (uri == null) return@rememberLauncherForActivityResult
-        val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberLauncherForActivityResult
+    val exportLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault(),
+    ) { target ->
+        val path = selectedPath.also { selectedPath = null } ?: return@rememberFileSaverLauncher
+        val uri = target?.toAndroidUri() ?: return@rememberFileSaverLauncher
+        val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberFileSaverLauncher
         scope.launch {
             runCatching {
                 val (area, relativePath) = resolveWorkspacePath(path)
@@ -166,7 +167,7 @@ internal fun EditedFilesList(
                 Card(
                     onClick = {
                         val p = selectedPath ?: return@Card
-                        exportLauncher.launch(p.substringAfterLast('/'))
+                        exportLauncher.launch(suggestedName = p.substringAfterLast('/'), defaultExtension = null)
                     },
                     shape = MaterialTheme.shapes.medium,
                 ) {

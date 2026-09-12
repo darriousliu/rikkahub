@@ -1,8 +1,5 @@
 package me.rerere.rikkahub.ui.components.richtext
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,22 +11,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
 import me.rerere.rikkahub.ui.components.webview.rememberWebViewState
 import me.rerere.rikkahub.ui.context.Navigator
+import me.rerere.rikkahub.utils.toAndroidUri
 
 @Composable
 fun rememberAndroidRichTextPlatformActions(navigator: Navigator): RichTextPlatformActions {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pendingCode by remember { mutableStateOf("") }
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*"),
-    ) { uri: Uri? ->
-        uri ?: return@rememberLauncherForActivityResult
+    val createDocumentLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault(),
+    ) { target ->
+        val uri = target?.toAndroidUri() ?: return@rememberFileSaverLauncher
         val code = pendingCode
         scope.launch {
             runCatching {
@@ -43,7 +43,7 @@ fun rememberAndroidRichTextPlatformActions(navigator: Navigator): RichTextPlatfo
     return RichTextPlatformActions(
         saveCode = { suggestedName, code ->
             pendingCode = code
-            createDocumentLauncher.launch(suggestedName)
+            createDocumentLauncher.launch(suggestedName = suggestedName, defaultExtension = null)
         },
         openCodePreview = { code, language ->
             val contentId = WebViewContentCache.store(

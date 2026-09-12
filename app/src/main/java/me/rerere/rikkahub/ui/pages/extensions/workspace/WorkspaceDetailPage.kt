@@ -4,8 +4,6 @@ import android.content.Intent
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +52,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.ArrowTurnBackward
@@ -80,6 +82,7 @@ import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.fileSizeToString
 import me.rerere.rikkahub.utils.plus
+import me.rerere.rikkahub.utils.toAndroidUri
 import me.rerere.workspace.RootfsInstallProgress
 import me.rerere.workspace.RootfsInstallStage
 import me.rerere.workspace.WorkspaceFileEntry
@@ -101,26 +104,24 @@ fun WorkspaceDetailPage(id: String) {
     var showInstallDialog by remember { mutableStateOf(false) }
     var previewImageUri by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
-    val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+    val filePicker = rememberFilePickerLauncher(type = FileKitType.File()) { source ->
+        val uri = source?.toAndroidUri() ?: return@rememberFilePickerLauncher
         val fileName = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 if (nameIndex >= 0) cursor.getString(nameIndex) else null
             } else null
         } ?: uri.lastPathSegment ?: "imported_file"
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return@rememberLauncherForActivityResult
+        val inputStream = context.contentResolver.openInputStream(uri) ?: return@rememberFilePickerLauncher
         vm.importFile(inputStream, fileName)
     }
     var exportTarget by remember { mutableStateOf<WorkspaceFileEntry?>(null) }
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*"),
-    ) { uri ->
-        val entry = exportTarget.also { exportTarget = null } ?: return@rememberLauncherForActivityResult
-        if (uri == null) return@rememberLauncherForActivityResult
-        val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberLauncherForActivityResult
+    val exportLauncher = rememberFileSaverLauncher(
+        dialogSettings = FileKitDialogSettings.createDefault(),
+    ) { target ->
+        val entry = exportTarget.also { exportTarget = null } ?: return@rememberFileSaverLauncher
+        val uri = target?.toAndroidUri() ?: return@rememberFileSaverLauncher
+        val outputStream = context.contentResolver.openOutputStream(uri) ?: return@rememberFileSaverLauncher
         vm.exportFile(entry, outputStream)
     }
 
@@ -141,7 +142,7 @@ fun WorkspaceDetailPage(id: String) {
                 navigationIcon = { BackButton() },
                 actions = {
                     if (pagerState.currentPage == 1) {
-                        IconButton(onClick = { filePicker.launch(arrayOf("*/*")) }) {
+                        IconButton(onClick = { filePicker.launch() }) {
                             Icon(
                                 HugeIcons.FileImport,
                                 contentDescription = stringResource(Res.string.workspace_detail_import_file),
@@ -235,7 +236,7 @@ fun WorkspaceDetailPage(id: String) {
                     onDelete = { deleteTarget = it },
                     onExport = { entry ->
                         exportTarget = entry
-                        exportLauncher.launch(entry.name)
+                        exportLauncher.launch(suggestedName = entry.name, defaultExtension = null)
                     },
                     onShare = { entry ->
                         vm.exportToCacheFile(entry, context.cacheDir) { file ->

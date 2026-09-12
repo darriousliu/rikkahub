@@ -32,7 +32,7 @@ import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun SharedCompressContextDialog(
+fun CompressContextDialog(
     onDismiss: () -> Unit,
     onConfirm: (additionalPrompt: String, targetTokens: Int, keepRecentMessages: Int) -> Job,
 ) {
