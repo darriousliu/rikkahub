@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -75,7 +77,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 
-class SharedChatRuntimeSessionTest {
+class ChatServiceSessionTest {
     @Test
     fun `only the final release evicts state after five seconds`() = sessionTest { f ->
         val id = Uuid.random()
@@ -232,7 +234,9 @@ class SharedChatRuntimeSessionTest {
         runCurrent()
         assertSame(state, f.runtime.getConversationFlow(id))
         assertNull(f.runtime.getGenerationJobStateFlow(id).first())
+        val backgroundJobs = backgroundScope.coroutineContext.job.children.toList()
         f.provider.backgroundResponse.complete(Unit)
+        backgroundJobs.filter { it !in f.initialJobs }.joinAll()
         state.first { it.title == "session completed" }
         runCurrent()
         advanceTimeBy(5_000)
@@ -283,20 +287,29 @@ class SharedChatRuntimeSessionTest {
         private val eventBus = AppEventBus()
         val provider = WaitingProvider()
         private val providers = ProviderManager(client).also { it.registerProvider("openai", provider) }
-        val runtime = SharedChatRuntime(
-            scope, settings, repository, FolderRepository(database.folderDao(), database.conversationDao()),
-            providers, eventBus, DataStoreBooleanPreferenceStore(preferences),
-            DataStoreStringPreferenceStore(preferences), attachments,
-            McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
+        private val memory = MemoryRepository(database.memoryDao())
+        val runtime = ChatService(
+            appScope = scope, appEventBus = eventBus, settingsStore = settings, conversationRepo = repository,
+            memoryRepository = memory,
+            generationHandler = me.rerere.rikkahub.data.ai.GenerationHandler(
+                Path(root.path), providers, me.rerere.rikkahub.utils.JsonInstant, memory,
+            ),
+            providerManager = providers,
+            folderRepository = FolderRepository(database.folderDao(), database.conversationDao()),
+            booleanPreferenceStore = DataStoreBooleanPreferenceStore(preferences),
+            stringPreferenceStore = DataStoreStringPreferenceStore(preferences),
+            filesManager = FileKitChatFileStore(scope, attachments),
+            mcpManager = McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
                 OAuthCallbackSessionFactory { error("No OAuth expected") }, client),
-            TemplateTransformer(createMessageTemplateEngine().apply {
+            templateTransformer = TemplateTransformer(createMessageTemplateEngine().apply {
                 val loader = AssistantTemplateLoader(settings)
                 root = loader
                 includes = loader
                 layouts = loader
-            }), LocalTools(eventBus, settings, null),
-            MemoryRepository(database.memoryDao()), SkillManager(Path(root.path), settings),
+            }), localTools = LocalTools(eventBus, settings, null),
+            skillManager = SkillManager(Path(root.path), settings),
         )
+        val initialJobs = scope.coroutineContext.job.children.toSet()
 
         suspend fun initialize(generateTitle: Boolean = false): Uuid {
             val model = Model(modelId = "session", displayName = "Session")

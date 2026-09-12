@@ -1,13 +1,16 @@
 package me.rerere.rikkahub.service
 
-import android.app.Application
-import android.content.Context
-import me.rerere.common.logging.RikkaLog as Log
-import androidx.core.net.toUri
+import kotlin.time.Clock
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,21 +36,19 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.finishReasoning
 import me.rerere.ai.ui.isEmptyInputMessage
-import me.rerere.common.logging.Logging
 import me.rerere.common.concurrent.ConcurrentHashMap
-import me.rerere.rikkahub.AppScope
-import me.rerere.rikkahub.R
+import me.rerere.common.logging.Logging
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.ai.GenerationChunk
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.createConversationTools
-import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.tools.createSearchTools
 import me.rerere.rikkahub.data.ai.tools.createSkillTools
-import me.rerere.rikkahub.data.ai.tools.createWorkspaceTools
-import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageToLocalFileTransformer
 import me.rerere.rikkahub.data.ai.transformers.DocumentAsPromptTransformer
+import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OcrTransformer
 import me.rerere.rikkahub.data.ai.transformers.PlaceholderTransformer
 import me.rerere.rikkahub.data.ai.transformers.PromptInjectionTransformer
@@ -55,27 +56,31 @@ import me.rerere.rikkahub.data.ai.transformers.RegexOutputTransformer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.ai.transformers.ThinkTagTransformer
 import me.rerere.rikkahub.data.ai.transformers.TimeReminderTransformer
-import me.rerere.rikkahub.data.ai.transformers.WorkspaceReminderTransformer
-import me.rerere.rikkahub.data.event.AppEvent
-import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.datastore.findModelById
+import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getAssistantById
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
-import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.datastore.getCurrentChatModel
+import me.rerere.rikkahub.data.event.AppEvent
+import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
-import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.generated.resources.*
+import me.rerere.rikkahub.platform.PlatformDeviceInfo
+import me.rerere.rikkahub.utils.applyPlaceholders
+import me.rerere.rikkahub.utils.englishLanguageName
+import me.rerere.rikkahub.utils.languagePromptCode
+import me.rerere.rikkahub.web.BadRequestException
 import me.rerere.rikkahub.web.NotFoundException
-import me.rerere.rikkahub.ui.hooks.writeStringPreference
-import me.rerere.rikkahub.ui.hooks.readBooleanPreference
-import me.rerere.workspace.WorkspaceShellStatus
-import java.util.Locale
-import kotlin.time.Clock
-import kotlin.uuid.Uuid
+import org.jetbrains.compose.resources.getString
 
 private const val TAG = "ChatService"
 
@@ -97,9 +102,21 @@ private val outputTransformers by lazy {
     )
 }
 
+data class ChatError(
+    val id: Uuid = Uuid.random(),
+    val title: String? = null,
+    val error: Throwable,
+    val conversationId: Uuid? = null,
+    val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
+    val solution: ChatErrorSolution? = null,
+)
+
+enum class ChatErrorSolution {
+    CheckTitleModelSettings,
+}
+
 class ChatService(
-    private val context: Application,
-    private val appScope: AppScope,
+    private val appScope: CoroutineScope,
     private val appEventBus: AppEventBus,
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
@@ -109,73 +126,27 @@ class ChatService(
     private val providerManager: ProviderManager,
     private val localTools: LocalTools,
     val mcpManager: McpManager,
-    private val filesManager: FilesManager,
+    private val filesManager: ChatFileStore,
     private val skillManager: SkillManager,
-    private val workspaceRepository: WorkspaceRepository,
     private val folderRepository: FolderRepository,
-) : ChatRuntime {
-    private val titleGenerator = ConversationTitleGenerator(
-        providerManager = providerManager,
-        getSettings = { settingsStore.settingsFlow.first() },
-        getConversation = conversationRepo::getConversationById,
-        saveConversation = ::saveConversation,
-        onError = { id, error ->
-            addError(
-                error = error,
-                conversationId = id,
-                title = context.getString(R.string.error_title_generate_title),
-                solution = ChatErrorSolution.CheckTitleModelSettings,
-            )
-        },
-    )
-
-    private val suggestionGenerator = ConversationSuggestionGenerator(
-        providerManager = providerManager,
-        getSettings = { settingsStore.settingsFlow.first() },
-        getConversation = conversationRepo::getConversationById,
-        getLoadedConversation = { id -> sessions[id]?.state?.value },
-        updateConversation = ::updateConversation,
-        saveConversation = ::saveConversation,
-    )
-
-    private val conversationCompressor = ConversationCompressor(
-        providerManager = providerManager,
-        getSettings = { settingsStore.settingsFlow.first() },
-        saveConversation = ::saveConversation,
-        getNotEnoughMessagesText = { context.getString(R.string.chat_page_compress_not_enough_messages) },
-    )
-
-    private val messageTranslator = MessageTranslationManager(
-        scope = CoroutineScope(appScope.coroutineContext + Dispatchers.IO),
-        getSettings = { settingsStore.settingsFlow.first() },
-        translateText = { settings, source, code, name, onStreamUpdate ->
-            generationHandler.translateText(settings, source, code, name, onStreamUpdate)
-        },
-        getConversation = { getConversationFlow(it).value },
-        updateConversation = ::updateConversation,
-        saveConversation = ::saveConversation,
-        getLoadingText = { context.getString(R.string.translating) },
-        onError = { id, error ->
-            addError(error, id, title = context.getString(R.string.error_title_translate_message))
-        },
-    )
-
-    // workspace 系统提示注入 (依赖 workspaceRepository, 故在类内构造)
-    private val workspaceReminderTransformer = WorkspaceReminderTransformer(workspaceRepository)
-
+    private val booleanPreferenceStore: BooleanPreferenceStore,
+    private val stringPreferenceStore: StringPreferenceStore,
+    private val workspaceReminderTransformer: InputMessageTransformer? = null,
+    private val workspaceTools: suspend (String?, String?) -> List<Tool> = { _, _ -> emptyList() },
+) {
     // 统一会话管理
     private val sessions = ConcurrentHashMap<Uuid, ConversationSession>()
     private val _sessionsVersion = MutableStateFlow(0L)
 
     // 错误状态
     private val _errors = MutableStateFlow<List<ChatError>>(emptyList())
-    override val errors: StateFlow<List<ChatError>> = _errors.asStateFlow()
+    val errors: StateFlow<List<ChatError>> = _errors.asStateFlow()
 
-    override fun addError(
+    fun addError(
         error: Throwable,
-        conversationId: Uuid?,
-        title: String?,
-        solution: ChatErrorSolution?,
+        conversationId: Uuid? = null,
+        title: String? = null,
+        solution: ChatErrorSolution? = null,
     ) {
         if (error is CancellationException) return
         _errors.update {
@@ -183,17 +154,17 @@ class ChatService(
         }
     }
 
-    override fun dismissError(id: Uuid) {
+    fun dismissError(id: Uuid) {
         _errors.update { list -> list.filter { it.id != id } }
     }
 
-    override fun clearAllErrors() {
+    fun clearAllErrors() {
         _errors.value = emptyList()
     }
 
     // 生成完成流
     private val _generationDoneFlow = MutableSharedFlow<Uuid>()
-    override val generationDoneFlow: SharedFlow<Uuid> = _generationDoneFlow.asSharedFlow()
+    val generationDoneFlow: SharedFlow<Uuid> = _generationDoneFlow.asSharedFlow()
 
     fun cleanup() = runCatching {
         sessions.values.forEach { it.cleanup() }
@@ -241,11 +212,11 @@ class ChatService(
 
     // ---- 引用管理 ----
 
-    override fun addConversationReference(conversationId: Uuid) {
+    fun addConversationReference(conversationId: Uuid) {
         getOrCreateSession(conversationId).acquire()
     }
 
-    override fun removeConversationReference(conversationId: Uuid) {
+    fun removeConversationReference(conversationId: Uuid) {
         sessions[conversationId]?.release()
     }
 
@@ -263,21 +234,21 @@ class ChatService(
 
     // ---- 对话状态访问 ----
 
-    override fun getConversationFlow(conversationId: Uuid): StateFlow<Conversation> {
+    fun getConversationFlow(conversationId: Uuid): StateFlow<Conversation> {
         return getOrCreateSession(conversationId).state
     }
 
-    override fun getGenerationJobStateFlow(conversationId: Uuid): Flow<Job?> {
+    fun getGenerationJobStateFlow(conversationId: Uuid): Flow<Job?> {
         val session = sessions[conversationId] ?: return flowOf(null)
         return session.generationJob
     }
 
-    override fun getProcessingStatusFlow(conversationId: Uuid): StateFlow<String?> {
+    fun getProcessingStatusFlow(conversationId: Uuid): StateFlow<String?> {
         val session = sessions[conversationId] ?: return MutableStateFlow(null)
         return session.processingStatus
     }
 
-    override fun getConversationJobs(): Flow<Map<Uuid, Job?>> {
+    fun getConversationJobs(): Flow<Map<Uuid, Job?>> {
         return _sessionsVersion.flatMapLatest {
             val currentSessions = sessions.values.toList()
             if (currentSessions.isEmpty()) {
@@ -294,7 +265,7 @@ class ChatService(
 
     // ---- 初始化对话 ----
 
-    override suspend fun initializeConversation(conversationId: Uuid) {
+    suspend fun initializeConversation(conversationId: Uuid) {
         getOrCreateSession(conversationId) // 确保 session 存在
         val conversation = conversationRepo.getConversationById(conversationId)
         if (conversation != null) {
@@ -313,20 +284,22 @@ class ChatService(
         }
     }
 
-    override fun rememberConversation(conversationId: Uuid) {
-        context.writeStringPreference("lastConversationId", conversationId.toString())
+    fun rememberConversation(conversationId: Uuid) {
+        appScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            stringPreferenceStore.set("lastConversationId", conversationId.toString())
+        }
     }
 
-    override fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
-        context.readBooleanPreference("create_new_conversation_on_start", true)
+    suspend fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
+        booleanPreferenceStore.observe("create_new_conversation_on_start", true).first()
 
-    override fun deleteChatFiles(urls: List<String>) {
-        filesManager.deleteChatFiles(urls.map { it.toUri() })
+    fun deleteChatFiles(urls: List<String>) {
+        filesManager.deleteChatFiles(urls)
     }
 
     // ---- 发送消息 ----
 
-    override fun sendMessage(conversationId: Uuid, content: List<UIMessagePart>, answer: Boolean) {
+    fun sendMessage(conversationId: Uuid, content: List<UIMessagePart>, answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
         val session = getOrCreateSession(conversationId)
@@ -361,7 +334,7 @@ class ChatService(
                 _generationDoneFlow.emit(conversationId)
             } catch (e: Exception) {
                 e.printStackTrace()
-                addError(e, conversationId, title = context.getString(R.string.error_title_send_message))
+                addError(e, conversationId, title = getString(Res.string.error_title_send_message))
             }
         }
         session.setJob(job)
@@ -369,10 +342,10 @@ class ChatService(
 
     // ---- 重新生成消息 ----
 
-    override fun regenerateAtMessage(
+    fun regenerateAtMessage(
         conversationId: Uuid,
         message: UIMessage,
-        regenerateAssistantMsg: Boolean,
+        regenerateAssistantMsg: Boolean = true,
     ) {
         val session = getOrCreateSession(conversationId)
         session.getJob()?.cancel()
@@ -402,7 +375,7 @@ class ChatService(
 
                 _generationDoneFlow.emit(conversationId)
             } catch (e: Exception) {
-                addError(e, conversationId, title = context.getString(R.string.error_title_regenerate_message))
+                addError(e, conversationId, title = getString(Res.string.error_title_regenerate_message))
             }
         }
 
@@ -411,12 +384,12 @@ class ChatService(
 
     // ---- 处理工具调用审批 ----
 
-    override fun handleToolApproval(
+    fun handleToolApproval(
         conversationId: Uuid,
         toolCallId: String,
         approved: Boolean,
-        reason: String,
-        answer: String?,
+        reason: String = "",
+        answer: String? = null,
     ) {
         val session = getOrCreateSession(conversationId)
         session.getJob()?.cancel()
@@ -465,7 +438,7 @@ class ChatService(
 
                 _generationDoneFlow.emit(conversationId)
             } catch (e: Exception) {
-                addError(e, conversationId, title = context.getString(R.string.error_title_tool_approval))
+                addError(e, conversationId, title = getString(Res.string.error_title_tool_approval))
             }
         }
 
@@ -485,7 +458,7 @@ class ChatService(
         val model = settings.findModelById(assistant.chatModelId ?: settings.chatModelId) ?: return
 
         val senderName = if (assistant.useAssistantAvatar) {
-            assistant.name.ifEmpty { context.getString(R.string.assistant_page_default_assistant) }
+            assistant.name.ifEmpty { getString(Res.string.assistant_page_default_assistant) }
         } else {
             model.displayName
         }
@@ -499,9 +472,9 @@ class ChatService(
             if (!model.abilities.contains(ModelAbility.TOOL)) {
                 if (assistant.enableWebSearch || mcpManager.getAllAvailableTools().isNotEmpty()) {
                     addError(
-                        IllegalStateException(context.getString(R.string.tools_warning)),
+                        IllegalStateException(getString(Res.string.tools_warning)),
                         conversationId,
-                        title = context.getString(R.string.error_title_tool_unavailable)
+                        title = getString(Res.string.error_title_tool_unavailable)
                     )
                 }
             }
@@ -536,7 +509,7 @@ class ChatService(
                 inputTransformers = buildList {
                     addAll(inputTransformers)
                     add(templateTransformer)
-                    add(workspaceReminderTransformer)
+                    workspaceReminderTransformer?.let { add(it) }
                 },
                 outputTransformers = outputTransformers,
                 tools = buildList {
@@ -565,8 +538,8 @@ class ChatService(
                         if (invalidNames.isNotEmpty()) {
                             addError(
                                 error = IllegalStateException(
-                                    context.getString(
-                                        R.string.error_mcp_invalid_server_name,
+                                    getString(
+                                        Res.string.error_mcp_invalid_server_name,
                                         invalidNames.joinToString(", ")
                                     )
                                 ),
@@ -629,7 +602,7 @@ class ChatService(
             appEventBus.tryEmit(AppEvent.ChatGenerationEnded(conversationId, senderName, null))
 
             it.printStackTrace()
-            addError(it, conversationId, title = context.getString(R.string.error_title_generation))
+            addError(it, conversationId, title = getString(Res.string.error_title_generation))
             Logging.log(TAG, "handleMessageComplete: $it")
             Logging.log(TAG, it.stackTraceToString())
         }.onSuccess {
@@ -645,18 +618,8 @@ class ChatService(
         }
     }
 
-    private suspend fun createWorkspaceToolsIfReady(workspaceId: String?, cwd: String? = null): List<Tool> {
-        if (workspaceId.isNullOrBlank()) return emptyList()
-        val workspace = workspaceRepository.getById(workspaceId) ?: return emptyList()
-        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) {
-            Log.d(
-                TAG,
-                "createWorkspaceToolsIfReady: skip workspace tools, workspace=$workspaceId, status=${workspace.shellStatus}"
-            )
-            return emptyList()
-        }
-        return createWorkspaceTools(workspaceId, workspaceRepository, cwd)
-    }
+    private suspend fun createWorkspaceToolsIfReady(workspaceId: String?, cwd: String? = null): List<Tool> =
+        workspaceTools(workspaceId, cwd)
 
     // ---- 检查无效消息 ----
 
@@ -667,31 +630,189 @@ class ChatService(
 
     // ---- 生成标题 ----
 
-    override suspend fun generateTitle(
+    suspend fun generateTitle(
         conversationId: Uuid,
         conversation: Conversation,
-        force: Boolean,
+        force: Boolean = false
     ) {
-        titleGenerator.generate(conversationId, conversation, force)
+        val shouldGenerate = when {
+            force -> true
+            conversation.title.isBlank() -> true
+            else -> false
+        }
+        if (!shouldGenerate) return
+
+        runCatching {
+            val settings = settingsStore.settingsFlow.first()
+            val model = settings.findModelById(settings.titleModelId, fallback = settings.fastModelId) ?: return
+            val provider = model.findProvider(settings.providers) ?: return
+
+            val providerHandler = providerManager.getProviderByType(provider)
+            val result = providerHandler.generateText(
+                providerSetting = provider,
+                messages = listOf(
+                    UIMessage.user(
+                        prompt = settings.titlePrompt.applyPlaceholders(
+                            "locale" to PlatformDeviceInfo.localeName,
+                            "content" to conversation.currentMessages
+                                .takeLast(4).joinToString("\n\n") { it.summaryAsText(maxLength = 500) })
+                    ),
+                ),
+                params = backgroundTextGenerationParams(model),
+            )
+
+            // 生成完，conversation可能不是最新了，因此需要重新获取
+            conversationRepo.getConversationById(conversation.id)?.let {
+                saveConversation(
+                    conversationId,
+                    it.copy(title = result.choices[0].message?.toText()?.trim() ?: "")
+                )
+            }
+        }.onFailure {
+            it.printStackTrace()
+            addError(
+                error = it,
+                conversationId = conversationId,
+                title = getString(Res.string.error_title_generate_title),
+                solution = ChatErrorSolution.CheckTitleModelSettings,
+            )
+        }
     }
 
     // ---- 生成建议 ----
 
-    override suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
-        suggestionGenerator.generate(conversationId, conversation)
+    suspend fun generateSuggestion(conversationId: Uuid, conversation: Conversation) {
+        runCatching {
+            val settings = settingsStore.settingsFlow.first()
+            if (!settings.enableSuggestion) return
+            val model = settings.findModelById(settings.suggestionModelId, fallback = settings.fastModelId) ?: return
+            val provider = model.findProvider(settings.providers) ?: return
+
+            sessions[conversationId]?.let { session ->
+                updateConversation(
+                    conversationId,
+                    session.state.value.copy(chatSuggestions = emptyList())
+                )
+            }
+
+            val providerHandler = providerManager.getProviderByType(provider)
+            val result = providerHandler.generateText(
+                providerSetting = provider,
+                messages = listOf(
+                    UIMessage.user(
+                        settings.suggestionPrompt.applyPlaceholders(
+                            "locale" to PlatformDeviceInfo.localeName,
+                            "content" to conversation.currentMessages
+                                .takeLast(8).joinToString("\n\n") { it.summaryAsText(maxLength = 500) }),
+                    )
+                ),
+                params = backgroundTextGenerationParams(model),
+            )
+            val suggestions =
+                result.choices[0].message?.toText()?.split("\n")?.map { it.trim() }
+                    ?.filter { it.isNotBlank() } ?: emptyList()
+
+            val latestConversation = conversationRepo.getConversationById(conversationId)
+                ?: sessions[conversationId]?.state?.value
+                ?: conversation
+            saveConversation(
+                conversationId,
+                latestConversation.copy(
+                    chatSuggestions = suggestions.take(
+                        10
+                    )
+                )
+            )
+        }.onFailure {
+            it.printStackTrace()
+        }
     }
 
     // ---- 压缩对话历史 ----
 
-    override suspend fun compressConversation(
+    suspend fun compressConversation(
         conversationId: Uuid,
         conversation: Conversation,
         additionalPrompt: String,
         targetTokens: Int,
-        keepRecentMessages: Int,
-    ): Result<Unit> = conversationCompressor.compress(
-        conversationId, conversation, additionalPrompt, targetTokens, keepRecentMessages,
-    )
+        keepRecentMessages: Int = 32
+    ): Result<Unit> = runCatching {
+        val settings = settingsStore.settingsFlow.first()
+        val model = settings.findModelById(settings.compressModelId)
+            ?: settings.getCurrentChatModel()
+            ?: throw IllegalStateException("No model available for compression")
+        val provider = model.findProvider(settings.providers)
+            ?: throw IllegalStateException("Provider not found")
+
+        val providerHandler = providerManager.getProviderByType(provider)
+
+        val maxMessagesPerChunk = 256
+        val allMessages = conversation.currentMessages
+
+        // Split messages into those to compress and those to keep
+        val messagesToCompress: List<UIMessage>
+        val messagesToKeep: List<UIMessage>
+
+        if (keepRecentMessages > 0 && allMessages.size > keepRecentMessages) {
+            messagesToCompress = allMessages.dropLast(keepRecentMessages)
+            messagesToKeep = allMessages.takeLast(keepRecentMessages)
+        } else if (keepRecentMessages > 0) {
+            // Not enough messages to compress while keeping recent ones
+            throw IllegalStateException(getString(Res.string.chat_page_compress_not_enough_messages))
+        } else {
+            messagesToCompress = allMessages
+            messagesToKeep = emptyList()
+        }
+
+        fun splitMessages(messages: List<UIMessage>): List<List<UIMessage>> {
+            if (messages.size <= maxMessagesPerChunk) return listOf(messages)
+            val mid = messages.size / 2
+            val left = splitMessages(messages.subList(0, mid))
+            val right = splitMessages(messages.subList(mid, messages.size))
+            return left + right
+        }
+
+        suspend fun compressMessages(messages: List<UIMessage>): String {
+            val contentToCompress = messages.joinToString("\n\n") { it.summaryAsText(maxLength = 2000) }
+            val prompt = settings.compressPrompt.applyPlaceholders(
+                "content" to contentToCompress,
+                "target_tokens" to targetTokens.toString(),
+                "additional_context" to if (additionalPrompt.isNotBlank()) {
+                    "Additional instructions from user: $additionalPrompt"
+                } else "",
+                "locale" to PlatformDeviceInfo.localeName
+            )
+
+            val result = providerHandler.generateText(
+                providerSetting = provider,
+                messages = listOf(UIMessage.user(prompt)),
+                params = backgroundTextGenerationParams(model),
+            )
+
+            return result.choices[0].message?.toText()?.trim()
+                ?: throw IllegalStateException("Failed to generate compressed summary")
+        }
+
+        val compressedSummaries = coroutineScope {
+            splitMessages(messagesToCompress)
+                .map { chunk -> async { compressMessages(chunk) } }
+                .awaitAll()
+        }
+
+        // Create new conversation with compressed history as multiple user messages + kept messages
+        val newMessageNodes = buildList {
+            compressedSummaries.forEach { summary ->
+                add(UIMessage.user(summary).toMessageNode())
+            }
+            addAll(messagesToKeep.map { it.toMessageNode() })
+        }
+        val newConversation = conversation.copy(
+            messageNodes = newMessageNodes,
+            chatSuggestions = emptyList(),
+        )
+
+        saveConversation(conversationId, newConversation)
+    }
 
     // ---- 对话状态更新 ----
 
@@ -702,7 +823,7 @@ class ChatService(
         session.state.value = conversation
     }
 
-    override fun updateConversationState(conversationId: Uuid, update: (Conversation) -> Conversation) {
+    fun updateConversationState(conversationId: Uuid, update: (Conversation) -> Conversation) {
         val current = getConversationFlow(conversationId).value
         updateConversation(conversationId, update(current))
     }
@@ -715,7 +836,7 @@ class ChatService(
      * 后续任意 saveConversation(id, state.value) 会用整对象把 folder_id 覆盖回旧值，导致移动丢失。
      * 先改内存可确保这段窗口内的整对象保存也带上新 folderId。
      */
-    override suspend fun moveConversationToFolder(conversationId: Uuid, folderId: Uuid?) {
+    suspend fun moveConversationToFolder(conversationId: Uuid, folderId: Uuid?) {
         if (sessions.containsKey(conversationId)) {
             updateConversationState(conversationId) { it.copy(folderId = folderId) }
         }
@@ -726,7 +847,7 @@ class ChatService(
      * 文件夹内是否存在正在生成回复的会话。
      * 仅活跃 session 可能在生成；内存态 folderId 为权威（移动会先同步内存态）。
      */
-    override fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean {
+    fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean {
         return sessions.values.any { it.isGenerating && it.state.value.folderId == folderId }
     }
 
@@ -737,7 +858,7 @@ class ChatService(
      * 否则 clearFolder 只改了数据库，而活跃 session 内存态仍指向该文件夹，
      * 后续整对象保存会写回一个已被删除的 folder_id，导致会话在列表中悬空。
      */
-    override suspend fun deleteFolder(folderId: Uuid) {
+    suspend fun deleteFolder(folderId: Uuid) {
         sessions.values
             .filter { it.state.value.folderId == folderId }
             .forEach { updateConversationState(it.id) { c -> c.copy(folderId = null) } }
@@ -751,12 +872,12 @@ class ChatService(
             newFiles.none { it == file }
         }
         if (deletedFiles.isNotEmpty()) {
-            filesManager.deleteChatFiles(deletedFiles.map { it.toUri() })
+            filesManager.deleteChatFiles(deletedFiles)
             Log.w(TAG, "checkFilesDelete: $deletedFiles")
         }
     }
 
-    override suspend fun saveConversation(conversationId: Uuid, conversation: Conversation) {
+    suspend fun saveConversation(conversationId: Uuid, conversation: Conversation) {
         val exists = conversationRepo.existsConversationById(conversation.id)
         if (!exists && conversation.title.isBlank() && conversation.messageNodes.isEmpty()) {
             return // 新会话且为空时不保存
@@ -774,23 +895,72 @@ class ChatService(
 
     // ---- 翻译消息 ----
 
-    override fun translateMessage(
+    fun translateMessage(
         conversationId: Uuid,
         message: UIMessage,
-        targetLanguageTag: String,
+        targetLanguageTag: String
     ) {
-        val targetLanguage = Locale.forLanguageTag(targetLanguageTag)
-        messageTranslator.translate(
-            conversationId = conversationId,
-            message = message,
-            targetLanguageCode = targetLanguage.toString(),
-            targetLanguageName = targetLanguage.getDisplayLanguage(Locale.ENGLISH),
-        )
+        appScope.launch(Dispatchers.IO) {
+            try {
+                val settings = settingsStore.settingsFlow.first()
+
+                val messageText = message.parts.filterIsInstance<UIMessagePart.Text>()
+                    .joinToString("\n\n") { it.text }
+                    .trim()
+
+                if (messageText.isBlank()) return@launch
+
+                // Set loading state for translation
+                val loadingText = getString(Res.string.translating)
+                updateTranslationField(conversationId, message.id, loadingText)
+
+                generationHandler.translateText(
+                    settings = settings,
+                    sourceText = messageText,
+                    targetLanguageCode = languagePromptCode(targetLanguageTag),
+                    targetLanguageName = englishLanguageName(targetLanguageTag)
+                ) { translatedText ->
+                    // Update translation field in real-time
+                    updateTranslationField(conversationId, message.id, translatedText)
+                }.collect { /* Final translation already handled in onStreamUpdate */ }
+
+                // Save the conversation after translation is complete
+                saveConversation(conversationId, getConversationFlow(conversationId).value)
+            } catch (e: Exception) {
+                // Clear translation field on error
+                clearTranslationField(conversationId, message.id)
+                addError(e, conversationId, title = getString(Res.string.error_title_translate_message))
+            }
+        }
+    }
+
+    private fun updateTranslationField(
+        conversationId: Uuid,
+        messageId: Uuid,
+        translationText: String
+    ) {
+        val currentConversation = getConversationFlow(conversationId).value
+        val updatedNodes = currentConversation.messageNodes.map { node ->
+            if (node.messages.any { it.id == messageId }) {
+                val updatedMessages = node.messages.map { msg ->
+                    if (msg.id == messageId) {
+                        msg.copy(translation = translationText)
+                    } else {
+                        msg
+                    }
+                }
+                node.copy(messages = updatedMessages)
+            } else {
+                node
+            }
+        }
+
+        updateConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
     }
 
     // ---- 消息操作 ----
 
-    override suspend fun editMessage(
+    suspend fun editMessage(
         conversationId: Uuid,
         messageId: Uuid,
         parts: List<UIMessagePart>
@@ -824,7 +994,7 @@ class ChatService(
         saveConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
     }
 
-    override suspend fun forkConversationAtMessage(
+    suspend fun forkConversationAtMessage(
         conversationId: Uuid,
         messageId: Uuid
     ): Conversation {
@@ -864,11 +1034,33 @@ class ChatService(
         return forkConversation
     }
 
-    override suspend fun selectMessageNode(
+    suspend fun selectMessageNode(
         conversationId: Uuid,
         nodeId: Uuid,
-        selectIndex: Int,
-    ) = super<ChatRuntime>.selectMessageNode(conversationId, nodeId, selectIndex)
+        selectIndex: Int
+    ) {
+        val currentConversation = getConversationFlow(conversationId).value
+        val targetNode = currentConversation.messageNodes.firstOrNull { it.id == nodeId }
+            ?: throw NotFoundException("Message node not found")
+
+        if (selectIndex !in targetNode.messages.indices) {
+            throw BadRequestException("Invalid selectIndex")
+        }
+
+        if (targetNode.selectIndex == selectIndex) {
+            return
+        }
+
+        val updatedNodes = currentConversation.messageNodes.map { node ->
+            if (node.id == nodeId) {
+                node.copy(selectIndex = selectIndex)
+            } else {
+                node
+            }
+        }
+
+        saveConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
+    }
 
     suspend fun deleteMessage(
         conversationId: Uuid,
@@ -888,17 +1080,17 @@ class ChatService(
         saveConversation(conversationId, updatedConversation)
     }
 
-    override suspend fun deleteMessage(
+    suspend fun deleteMessage(
         conversationId: Uuid,
         message: UIMessage,
     ) {
         deleteMessage(conversationId, message.id, failIfMissing = false)
     }
 
-    private fun UIMessagePart.copyWithForkedFileUrl(): UIMessagePart {
-        fun copyLocalFileIfNeeded(url: String): String {
+    private suspend fun UIMessagePart.copyWithForkedFileUrl(): UIMessagePart {
+        suspend fun copyLocalFileIfNeeded(url: String): String {
             if (!url.startsWith("file:")) return url
-            val copied = filesManager.createChatFilesByContents(listOf(url.toUri())).firstOrNull()
+            val copied = filesManager.copyChatFile(url)
             return copied?.toString() ?: url
         }
 
@@ -911,12 +1103,28 @@ class ChatService(
         }
     }
 
-    override fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
-        messageTranslator.clear(conversationId, messageId)
+    fun clearTranslationField(conversationId: Uuid, messageId: Uuid) {
+        val currentConversation = getConversationFlow(conversationId).value
+        val updatedNodes = currentConversation.messageNodes.map { node ->
+            if (node.messages.any { it.id == messageId }) {
+                val updatedMessages = node.messages.map { msg ->
+                    if (msg.id == messageId) {
+                        msg.copy(translation = null)
+                    } else {
+                        msg
+                    }
+                }
+                node.copy(messages = updatedMessages)
+            } else {
+                node
+            }
+        }
+
+        updateConversation(conversationId, currentConversation.copy(messageNodes = updatedNodes))
     }
 
     // 停止当前会话生成任务（不清理会话缓存）
-    override suspend fun stopGeneration(conversationId: Uuid) {
+    suspend fun stopGeneration(conversationId: Uuid) {
         val job = sessions[conversationId]?.getJob() ?: return
         job.cancel()
         runCatching { job.join() }

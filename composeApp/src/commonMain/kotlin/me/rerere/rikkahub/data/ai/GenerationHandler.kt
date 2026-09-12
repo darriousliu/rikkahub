@@ -1,50 +1,57 @@
 package me.rerere.rikkahub.data.ai
 
-import android.content.Context
-import me.rerere.common.logging.RikkaLog as Log
+import kotlin.time.Clock
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.writeString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import me.rerere.ai.core.MessageRole
+import me.rerere.ai.core.ReasoningLevel
 import me.rerere.ai.core.Tool
 import me.rerere.ai.core.merge
+import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.Provider
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.provider.TextGenerationParams
+import me.rerere.ai.registry.ModelRegistry
+import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.ai.ui.ToolApprovalState
 import me.rerere.ai.ui.handleMessageChunk
 import me.rerere.ai.ui.limitContext
+import me.rerere.common.logging.RikkaLog as Log
+import me.rerere.rikkahub.data.ai.tools.buildMemoryTools
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.MessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.OutputMessageTransformer
-import me.rerere.rikkahub.data.files.FileFolders
-import java.io.File
 import me.rerere.rikkahub.data.ai.transformers.onGenerationFinish
 import me.rerere.rikkahub.data.ai.transformers.transforms
 import me.rerere.rikkahub.data.ai.transformers.visualTransforms
-import me.rerere.rikkahub.data.ai.tools.buildMemoryTools
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
+import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.AssistantMemory
 import me.rerere.rikkahub.data.repository.MemoryRepository
-import me.rerere.rikkahub.service.TextTranslationGenerator
-import kotlin.time.Clock
-import kotlin.uuid.Uuid
+import me.rerere.rikkahub.utils.applyPlaceholders
+import me.rerere.rikkahub.utils.platformClassName
 
 private const val TAG = "GenerationHandler"
 private const val MAX_TOOL_OUTPUT_CHARS = 32 * 1024
@@ -58,7 +65,7 @@ sealed interface GenerationChunk {
 }
 
 class GenerationHandler(
-    private val context: Context,
+    private val filesDir: Path,
     private val providerManager: ProviderManager,
     private val json: Json,
     private val memoryRepo: MemoryRepository,
@@ -292,7 +299,7 @@ class GenerationHandler(
                                                 put(
                                                     "error",
                                                     JsonPrimitive(buildString {
-                                                        append("[${it.javaClass.name}] ${it.message}")
+                                                        append("[${it.platformClassName}] ${it.message}")
                                                         append("\n${it.stackTraceToString()}")
                                                     })
                                                 )
@@ -461,8 +468,8 @@ class GenerationHandler(
         val preview = fullText.take(TOOL_OUTPUT_PREVIEW_CHARS)
 
         val fileName = "${toolCallId}.txt"
-        val outputDir = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() }
-        File(outputDir, fileName).writeText(fullText)
+        val outputDir = Path(filesDir, FileFolders.TOOL_OUTPUTS).also { SystemFileSystem.createDirectories(it) }
+        SystemFileSystem.sink(Path(outputDir, fileName)).buffered().use { it.writeString(fullText) }
 
         return listOf(
             UIMessagePart.Text(
@@ -484,11 +491,70 @@ class GenerationHandler(
         targetLanguageCode: String,
         targetLanguageName: String,
         onStreamUpdate: ((String) -> Unit)? = null
-    ): Flow<String> = TextTranslationGenerator(providerManager).translateText(
-        settings = settings,
-        sourceText = sourceText,
-        targetLanguageCode = targetLanguageCode,
-        targetLanguageName = targetLanguageName,
-        onStreamUpdate = onStreamUpdate,
-    ).flowOn(Dispatchers.IO)
+    ): Flow<String> = flow {
+        val model = settings.providers.findModelById(settings.translateModeId)
+            ?: error("Translation model not found")
+        val provider = model.findProvider(settings.providers)
+            ?: error("Translation provider not found")
+
+        val providerHandler = providerManager.getProviderByType(provider)
+
+        if (!ModelRegistry.QWEN_MT.match(model.modelId)) {
+            // Use regular translation with prompt
+            val prompt = settings.translatePrompt.applyPlaceholders(
+                "source_text" to sourceText,
+                "target_lang" to targetLanguageCode,
+            )
+
+            var messages = listOf(UIMessage.user(prompt))
+            var translatedText = ""
+
+            providerHandler.streamText(
+                providerSetting = provider,
+                messages = messages,
+                params = TextGenerationParams(
+                    model = model,
+                    reasoningLevel = ReasoningLevel.fromBudgetTokens(settings.translateThinkingBudget),
+                ),
+            ).collect { chunk ->
+                messages = messages.handleMessageChunk(chunk)
+                translatedText = messages.lastOrNull()?.toText() ?: ""
+
+                if (translatedText.isNotBlank()) {
+                    onStreamUpdate?.invoke(translatedText)
+                    emit(translatedText)
+                }
+            }
+        } else {
+            // Use Qwen MT model with special translation options
+            val messages = listOf(UIMessage.user(sourceText))
+            val chunk = providerHandler.generateText(
+                providerSetting = provider,
+                messages = messages,
+                params = TextGenerationParams(
+                    model = model,
+                    temperature = 0.3f,
+                    topP = 0.95f,
+                    customBody = listOf(
+                        CustomBody(
+                            key = "translation_options",
+                            value = buildJsonObject {
+                                put("source_lang", JsonPrimitive("auto"))
+                                put(
+                                    "target_lang",
+                                    JsonPrimitive(targetLanguageName)
+                                )
+                            }
+                        )
+                    )
+                ),
+            )
+            val translatedText = chunk.choices.firstOrNull()?.message?.toText() ?: ""
+
+            if (translatedText.isNotBlank()) {
+                onStreamUpdate?.invoke(translatedText)
+                emit(translatedText)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 }

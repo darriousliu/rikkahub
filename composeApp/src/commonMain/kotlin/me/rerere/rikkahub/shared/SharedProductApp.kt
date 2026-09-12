@@ -132,7 +132,7 @@ fun SharedProductApp(
         backupFileLayout,
         oauthCallbackSessionFactory,
     ) {
-        sharedProductModule(
+        platformModule(
             settingsStore = settingsStore,
             templateEngine = templateEngine,
             database = database,

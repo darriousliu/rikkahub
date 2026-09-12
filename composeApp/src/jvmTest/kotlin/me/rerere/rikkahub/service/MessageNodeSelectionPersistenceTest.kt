@@ -35,17 +35,17 @@ class MessageNodeSelectionPersistenceTest {
             val firstDatabase = openDatabase().also { database = it }
             val repository = repository(firstDatabase)
             repository.insertConversation(original)
-            val runtime = SelectionTestRuntime(original) { _, conversation ->
-                repository.updateConversation(conversation)
+            val selected = ChatServiceTestFixture(existingDatabase = firstDatabase, existingRepository = repository).use {
+                it.service.updateConversationState(original.id) { original }
+                it.service.selectMessageNode(original.id, target.id, 1)
+                it.service.getConversationFlow(original.id).value
             }
-
-            runtime.selectMessageNode(original.id, target.id, 1)
             firstDatabase.close()
             database = null
 
             val reopenedDatabase = openDatabase().also { database = it }
             val restored = repository(reopenedDatabase).getConversationById(original.id)!!
-            assertEquals(runtime.state.value, restored)
+            assertEquals(selected, restored)
             assertEquals(target.messages[1], restored.currentMessages[1])
             assertEquals(target.messages, restored.messageNodes[1].messages)
             assertEquals(original.copy(messageNodes = restored.messageNodes), restored)

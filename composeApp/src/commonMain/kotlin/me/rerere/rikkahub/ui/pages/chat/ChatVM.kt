@@ -30,7 +30,7 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.trackEvent
 import me.rerere.rikkahub.service.ChatError
-import me.rerere.rikkahub.service.ChatRuntime
+import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.UpdateChecker
@@ -46,7 +46,7 @@ class ChatVM(
     id: String,
     private val settingsStore: SettingsStore,
     private val conversationRepo: ConversationRepository,
-    private val chatService: ChatRuntime,
+    private val chatService: ChatService,
     val updateChecker: UpdateChecker,
     private val analytics: AnalyticsTracker,
     private val favoriteRepository: FavoriteRepository,
@@ -112,7 +112,7 @@ class ChatVM(
 
     fun clearAllErrors() = chatService.clearAllErrors()
 
-    fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
+    suspend fun shouldCreateNewConversationOnAssistantSwitch(): Boolean =
         chatService.shouldCreateNewConversationOnAssistantSwitch()
 
     // 生成完成

@@ -23,10 +23,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import me.rerere.common.android.appTempFolder
-import me.rerere.rikkahub.di.appModule
-import me.rerere.rikkahub.di.dataSourceModule
-import me.rerere.rikkahub.di.repositoryModule
-import me.rerere.rikkahub.di.viewModelModule
+import me.rerere.rikkahub.di.androidAppModule
+import me.rerere.rikkahub.di.androidDataSourceModule
+import me.rerere.rikkahub.di.androidRepositoryModule
+import me.rerere.rikkahub.di.androidViewModelModule
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.service.WebServerService
@@ -51,7 +51,7 @@ class RikkaHubApp : Application() {
         startKoin {
             androidLogger()
             androidContext(this@RikkaHubApp)
-            modules(appModule, viewModelModule, dataSourceModule, repositoryModule)
+            modules(androidAppModule, androidViewModelModule, androidDataSourceModule, androidRepositoryModule)
         }
         this.createNotificationChannel()
 

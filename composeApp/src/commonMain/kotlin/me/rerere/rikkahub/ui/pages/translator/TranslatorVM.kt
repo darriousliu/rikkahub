@@ -2,25 +2,22 @@ package me.rerere.rikkahub.ui.pages.translator
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.service.TextTranslationGenerator
+import me.rerere.rikkahub.data.ai.GenerationHandler
 
 private const val TAG = "TranslatorVM"
 
 class TranslatorVM(
     private val settingsStore: SettingsStore,
-    private val translationGenerator: TextTranslationGenerator,
-    private val translationDispatcher: CoroutineDispatcher,
+    private val generationHandler: GenerationHandler,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = settingsStore.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Lazily, Settings.dummy())
@@ -76,7 +73,7 @@ class TranslatorVM(
             runCatching {
                 val settings = settings.value
                 val targetLanguage = targetLanguage.value
-                translationGenerator.translateText(
+                generationHandler.translateText(
                     settings = settings,
                     sourceText = inputText,
                     targetLanguageCode = targetLanguage.promptCode,
@@ -84,8 +81,7 @@ class TranslatorVM(
                 ) { translatedText ->
                     // Update translation in real-time
                     _translatedText.value = translatedText
-                }.flowOn(translationDispatcher)
-                    .collect { /* Final translation already handled in onStreamUpdate */ }
+                }.collect { /* Final translation already handled in onStreamUpdate */ }
             }.onFailure {
                 it.printStackTrace()
                 errorFlow.emit(it)

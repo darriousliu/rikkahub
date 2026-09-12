@@ -5,18 +5,15 @@ import io.github.vinceglb.filekit.cacheDir
 import io.ktor.client.HttpClient
 import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.io.files.Path
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
-import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
-import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
-import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -27,13 +24,8 @@ import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.toKotlinxIoPath
-import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.files.ChatFileStore
 import me.rerere.rikkahub.data.repository.ConversationFileStore
-import me.rerere.rikkahub.data.repository.ConversationRepository
-import me.rerere.rikkahub.data.repository.FavoriteRepository
-import me.rerere.rikkahub.data.repository.FolderRepository
-import me.rerere.rikkahub.data.repository.GenMediaRepository
-import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.sync.S3Sync
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
@@ -43,45 +35,30 @@ import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
-import me.rerere.rikkahub.service.ChatRuntime
+import me.rerere.rikkahub.di.appModule
+import me.rerere.rikkahub.di.dataSourceModule
+import me.rerere.rikkahub.di.repositoryModule
+import me.rerere.rikkahub.di.viewModelModule
+import me.rerere.rikkahub.service.FileKitChatFileStore
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
-import me.rerere.rikkahub.service.SharedChatRuntime
-import me.rerere.rikkahub.service.TextTranslationGenerator
 import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.SharedChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.SharedChatPagePlatformContent
-import me.rerere.rikkahub.ui.pages.chat.ChatDrawerVM
-import me.rerere.rikkahub.ui.pages.chat.ChatVM
-import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
-import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
-import me.rerere.rikkahub.ui.pages.backup.BackupVM
-import me.rerere.rikkahub.ui.pages.extensions.PromptVM
-import me.rerere.rikkahub.ui.pages.extensions.QuickMessagesVM
-import me.rerere.rikkahub.ui.pages.extensions.skills.SkillDetailVM
-import me.rerere.rikkahub.ui.pages.extensions.skills.SkillsVM
-import me.rerere.rikkahub.ui.pages.favorite.FavoriteVM
-import me.rerere.rikkahub.ui.pages.history.HistoryVM
-import me.rerere.rikkahub.ui.pages.imggen.ImgGenVM
-import me.rerere.rikkahub.ui.pages.search.SearchVM
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
-import me.rerere.rikkahub.ui.pages.setting.SettingVM
-import me.rerere.rikkahub.ui.pages.stats.StatsVM
-import me.rerere.rikkahub.ui.pages.translator.TranslatorVM
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.tts.provider.TTSManager
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.viewModel
-import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import me.rerere.rikkahub.platform.FileKitFileCleaner
 
-internal fun sharedProductModule(
+internal fun platformModule(
     settingsStore: SettingsStore,
     templateEngine: KorteTemplates,
     database: AppDatabase,
@@ -103,6 +80,12 @@ internal fun sharedProductModule(
     oauthCallbackSessionFactory: OAuthCallbackSessionFactory,
     ttsManager: TTSManager?,
 ): Module = module {
+    includes(appModule, dataSourceModule, repositoryModule, viewModelModule)
+    single<CoroutineScope> { appScope }
+    single { oauthCallbackSessionFactory }
+    single<Path>(named("filesDir")) { FileKit.filesDir.toKotlinxIoPath() }
+    single<Path>(named("cacheDir")) { (FileKit.cacheDir / "imggen").toKotlinxIoPath() }
+    single<ChatFileStore> { FileKitChatFileStore(appScope, get()) }
     single { settingsStore }
     single { database }
     single { buildInfo }
@@ -120,123 +103,21 @@ internal fun sharedProductModule(
     single { providerManager }
     single { eventBus }
     single<McpImageStore> { FileKitMcpImageStore() }
-    single {
-        McpManager(
-            settingsStore = settingsStore,
-            appScope = appScope,
-            imageStore = get(),
-            callbackSessionFactory = oauthCallbackSessionFactory,
-        )
-    }
     single<AnalyticsTracker> { analyticsTracker }
     single<CrashReporter> { crashReporter }
     single { UpdateChecker(client = httpClient, buildInfo = buildInfo) }
     single<SponsorAPI> { SponsorAPI.create(httpClient) }
 
-    single { database.conversationDao() }
-    single { database.memoryDao() }
-    single { database.genMediaDao() }
-    single { database.messageNodeDao() }
-    single { database.favoriteDao() }
-    single { database.workspaceDao() }
-    single { database.folderDao() }
     single { MessageFtsManager(database, MessageFtsDialect.UNICODE61) }
     single { FileKitFileCleaner(database, settingsStore) }
     single<ConversationFileStore> { get<FileKitFileCleaner>() }
     single<MessageNodeReadErrorPolicy> { MessageNodeReadErrorPolicy.Default }
-    single {
-        ConversationRepository(
-            conversationDAO = get(),
-            messageNodeDAO = get(),
-            favoriteDAO = get(),
-            database = database,
-            conversationFileStore = get(),
-            messageFtsManager = get(),
-            messageNodeReadErrorPolicy = get(),
-        )
-    }
-    single {
-        FolderRepository(folderDAO = get(), conversationDAO = get())
-    }
     single<Base64ImageStore> { SharedBase64ImageStore() }
     single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
     single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
     single { templateEngine }
-    single { AssistantTemplateLoader(settingsStore = get()) }
-    single {
-        val engine = get<KorteTemplates>()
-        val loader = get<AssistantTemplateLoader>()
-        engine.root = loader
-        engine.includes = loader
-        engine.layouts = loader
-        TemplateTransformer(engine = engine)
-    }
-    single<ChatRuntime> {
-        SharedChatRuntime(
-            scope = appScope,
-            settingsStore = settingsStore,
-            conversationRepository = get(),
-            folderRepository = get(),
-            providerManager = providerManager,
-            eventBus = eventBus,
-            booleanPreferenceStore = booleanPreferenceStore,
-            stringPreferenceStore = stringPreferenceStore,
-            attachmentStore = get(),
-            mcpManager = get(),
-            templateTransformer = get(),
-            localTools = get(),
-            memoryRepository = get(),
-            skillManager = get(),
-        )
-    }
-    single { MemoryRepository(get()) }
-    single { GenMediaRepository(get()) }
-    single { FavoriteRepository(get()) }
-    single { SkillManager(FileKit.filesDir.toKotlinxIoPath(), settingsStore) }
     single<AssistantAssetCleaner> { get<FileKitFileCleaner>() }
-    single { TextTranslationGenerator(providerManager) }
     single { WebDavSync(get(), JsonInstant, backupFileLayout, httpClient) }
     single { S3Sync(get(), JsonInstant, backupFileLayout, httpClient) }
 
-    viewModelOf(::SettingVM)
-    viewModelOf(::SearchVM)
-    viewModelOf(::HistoryVM)
-    viewModelOf(::FavoriteVM)
-    viewModel { StatsVM(get(), get(), get()) }
-    viewModelOf(::AssistantVM)
-    viewModel<AssistantDetailVM> { parameters ->
-        AssistantDetailVM(
-            id = parameters.get(),
-            settingsStore = get(),
-            memoryRepository = get(),
-            assetCleaner = get(),
-            skillManager = get(),
-            workspaceDao = get(),
-        )
-    }
-    viewModelOf(::PromptVM)
-    viewModelOf(::QuickMessagesVM)
-    viewModelOf(::SkillsVM)
-    viewModelOf(::SkillDetailVM)
-    viewModel { BackupVM(get(), get(), get(), get()) }
-    viewModel {
-        ImgGenVM(
-            get(), get(), get(),
-            FileKit.filesDir.toKotlinxIoPath(),
-            (FileKit.cacheDir / "imggen").toKotlinxIoPath(),
-        )
-    }
-    viewModel { TranslatorVM(get(), get(), Dispatchers.Default) }
-    viewModel<ChatVM> { parameters ->
-        ChatVM(
-            id = parameters.get(),
-            settingsStore = get(),
-            conversationRepo = get(),
-            chatService = get(),
-            updateChecker = get(),
-            analytics = get(),
-            favoriteRepository = get(),
-        )
-    }
-    viewModelOf(::ChatDrawerVM)
 }

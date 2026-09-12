@@ -78,14 +78,23 @@ class ChatAttachmentPersistenceTest {
     )
     private val client = HttpClient(MockEngine { error("Attachment tests must not make network requests") })
     private val eventBus = AppEventBus()
-    private val runtime = SharedChatRuntime(
-        scope, settings, repository, FolderRepository(database.folderDao(), database.conversationDao()),
-        ProviderManager(client), eventBus, DataStoreBooleanPreferenceStore(preferences),
-        DataStoreStringPreferenceStore(preferences), attachments,
-        McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
+    private val providers = ProviderManager(client)
+    private val memory = MemoryRepository(database.memoryDao())
+    private val runtime = ChatService(
+        appScope = scope, appEventBus = eventBus, settingsStore = settings, conversationRepo = repository,
+        memoryRepository = memory,
+        generationHandler = me.rerere.rikkahub.data.ai.GenerationHandler(
+            Path(root.path), providers, me.rerere.rikkahub.utils.JsonInstant, memory,
+        ),
+        providerManager = providers,
+        folderRepository = FolderRepository(database.folderDao(), database.conversationDao()),
+        booleanPreferenceStore = DataStoreBooleanPreferenceStore(preferences),
+        stringPreferenceStore = DataStoreStringPreferenceStore(preferences),
+        filesManager = FileKitChatFileStore(scope, attachments),
+        mcpManager = McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
             OAuthCallbackSessionFactory { error("No OAuth expected") }, client),
-        TemplateTransformer(createMessageTemplateEngine()), LocalTools(eventBus, settings, null),
-        MemoryRepository(database.memoryDao()), SkillManager(Path(root.path), settings),
+        templateTransformer = TemplateTransformer(createMessageTemplateEngine()),
+        localTools = LocalTools(eventBus, settings, null), skillManager = SkillManager(Path(root.path), settings),
     )
 
     @AfterTest

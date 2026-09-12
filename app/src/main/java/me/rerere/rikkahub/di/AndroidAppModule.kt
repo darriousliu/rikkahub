@@ -6,64 +6,92 @@ import android.os.Build
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.io.files.Path
+import me.rerere.ai.core.Tool
+import me.rerere.common.android.appTempFolder
 import me.rerere.rikkahub.AppScope
-import me.rerere.rikkahub.data.datastore.AndroidBooleanPreferenceStore
-import me.rerere.rikkahub.data.datastore.AndroidStringPreferenceStore
-import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
-import me.rerere.rikkahub.data.datastore.StringPreferenceStore
-import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.files.FilesManager
-import me.rerere.rikkahub.data.repository.ConversationRepository
-import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
-import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.platform.AndroidExternalUriOpener
-import me.rerere.rikkahub.platform.AndroidFirebaseAnalyticsTracker
-import me.rerere.rikkahub.platform.AndroidFirebaseCrashReporter
-import me.rerere.rikkahub.platform.AndroidOAuthCallbackSessionFactory
-import me.rerere.rikkahub.platform.AndroidJmDnsServiceRegistrar
-import me.rerere.rikkahub.platform.AnalyticsTracker
-import me.rerere.rikkahub.service.ChatNotificationManager
-import me.rerere.rikkahub.platform.CrashReporter
-import me.rerere.rikkahub.platform.ExternalUriOpener
-import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
-import me.rerere.rikkahub.service.AndroidChatNotificationPresenter
-import me.rerere.rikkahub.service.ChatService
-import me.rerere.rikkahub.service.ChatRuntime
-import me.rerere.rikkahub.service.TextTranslationGenerator
-import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
 import me.rerere.rikkahub.data.ai.transformers.AndroidBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.AndroidDocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
-import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
-import me.rerere.rikkahub.ui.components.message.AndroidChatMessagePlatformActions
-import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
+import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
+import me.rerere.rikkahub.data.ai.transformers.WorkspaceReminderTransformer
+import me.rerere.rikkahub.data.datastore.AndroidBooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.AndroidStringPreferenceStore
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.StringPreferenceStore
+import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.files.AndroidChatFileStore
+import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.data.repository.FolderRepository
+import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.platform.AnalyticsTracker
+import me.rerere.rikkahub.platform.AndroidExternalUriOpener
+import me.rerere.rikkahub.platform.AndroidFirebaseAnalyticsTracker
+import me.rerere.rikkahub.platform.AndroidFirebaseCrashReporter
+import me.rerere.rikkahub.platform.AndroidJmDnsServiceRegistrar
+import me.rerere.rikkahub.platform.AndroidOAuthCallbackSessionFactory
+import me.rerere.rikkahub.platform.CrashReporter
+import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
+import me.rerere.rikkahub.service.AndroidChatNotificationPresenter
+import me.rerere.rikkahub.service.ChatNotificationManager
+import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.service.createWorkspaceToolsIfReady
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.createPlatformBuildInfo
 import me.rerere.rikkahub.ui.components.ai.AndroidChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
+import me.rerere.rikkahub.ui.components.message.AndroidChatMessagePlatformActions
+import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
+import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
+import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.chat.AndroidChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
-import me.rerere.rikkahub.shared.PlatformBuildInfo
-import me.rerere.rikkahub.shared.createPlatformBuildInfo
 import me.rerere.rikkahub.utils.EmojiData
 import me.rerere.rikkahub.utils.EmojiUtils
-import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.SoundEffectPlayer
 import me.rerere.rikkahub.utils.UpdateChecker
-import me.rerere.rikkahub.web.WebServerManager
 import me.rerere.rikkahub.web.AndroidWebServerRuntime
-import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.rikkahub.web.KtorWebServerHost
+import me.rerere.rikkahub.web.WebServerManager
+import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.rikkahub.web.configureWebApi
 import me.rerere.tts.provider.TTSManager
 import me.rerere.tts.provider.providers.SystemTTSProvider
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-val appModule = module {
+val androidAppModule = module {
+    includes(appModule)
+    single<CoroutineScope> { get<AppScope>() }
+    single<Path>(named("filesDir")) {
+        Path(get<Context>().filesDir.path)
+    }
+    single<Path>(named("cacheDir")) {
+        Path(get<Context>().appTempFolder.path)
+    }
+    single<ChatFileStore> {
+        AndroidChatFileStore(get())
+    }
+    single<InputMessageTransformer>(named("workspaceReminder")) {
+        WorkspaceReminderTransformer(get())
+    }
+    single<suspend (String?, String?) -> List<Tool>>(named("workspaceTools")) {
+        val repository = get<WorkspaceRepository>()
+        val createTools: suspend (String?, String?) -> List<Tool> = { id, cwd ->
+            createWorkspaceToolsIfReady(repository, id, cwd)
+        }
+        createTools
+    }
     single<PlatformBuildInfo> {
         val context = get<Context>()
         createPlatformBuildInfo(
@@ -81,7 +109,6 @@ val appModule = module {
         )
     }
 
-    single<Json> { JsonInstant }
     single<BooleanPreferenceStore> { AndroidBooleanPreferenceStore(get()) }
     single<StringPreferenceStore> { AndroidStringPreferenceStore(get()) }
     single<ChatFontRuntime> { AndroidChatFontRuntime(get()) }
@@ -151,28 +178,6 @@ val appModule = module {
             eventBus = get(),
         )
     }
-
-    single {
-        ChatService(
-            context = get(),
-            appScope = get(),
-            appEventBus = get(),
-            settingsStore = get(),
-            conversationRepo = get(),
-            memoryRepository = get(),
-            generationHandler = get(),
-            templateTransformer = get(),
-            providerManager = get(),
-            localTools = get(),
-            mcpManager = get(),
-            filesManager = get(),
-            skillManager = get(),
-            workspaceRepository = get(),
-            folderRepository = get()
-        )
-    }
-    single<ChatRuntime> { get<ChatService>() }
-    single { TextTranslationGenerator(get()) }
 
     single {
         val context = get<Context>()

@@ -34,9 +34,7 @@ class ChatServiceSessionTest {
     @Test
     fun creatingSessionWhileConversationJobsAreCollectedDoesNotBlockMainThread() {
         val koin = GlobalContext.get()
-        val chatRuntime = koin.get<ChatRuntime>()
-        val chatService = koin.get<ChatService>()
-        assertSame("ChatRuntime must resolve to the real Android ChatService", chatService, chatRuntime)
+        val chatRuntime = koin.get<ChatService>()
 
         val conversationId = Uuid.random()
         val snapshots = CopyOnWriteArrayList<Map<Uuid, Job?>>()

@@ -41,7 +41,7 @@ import me.rerere.ai.ui.MessageChunk
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageChoice
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.service.TextTranslationGenerator
+import me.rerere.rikkahub.service.testGenerationHandler
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import kotlin.coroutines.ContinuationInterceptor
@@ -108,7 +108,7 @@ class TranslatorVMContractTest {
         val call = f.provider.requests.receive()
         assertEquals("captured input -> ja", call.messages.single().toText())
         assertEquals("stream", call.kind)
-        assertSame(Dispatchers.Default, call.dispatcher)
+        assertSame(Dispatchers.IO, call.dispatcher)
         assertEquals(ReasoningLevel.fromBudgetTokens(1024), call.params.reasoningLevel)
         call.reply(delta = "first")
         f.vm.translatedText.first { it == "first" }
@@ -241,19 +241,17 @@ class TranslatorVMContractTest {
     }
 
     @Test
-    fun `native dispatcher wiring keeps Android IO and shared Default upstream contexts`() = scenario {
-        for (dispatcher in listOf(Dispatchers.IO, Dispatchers.Default)) {
-            val f = fixture(dispatcher = dispatcher)
-            f.observeSettings()
-            f.vm.updateInputText("original")
-            f.vm.translate()
-            val call = f.provider.requests.receive()
-            assertSame(dispatcher, call.dispatcher)
-            call.reply(delta = "result")
-            call.responses.close()
-            f.vm.translating.first { !it }
-            assertEquals("result", f.vm.translatedText.value)
-        }
+    fun `original generation handler runs translation upstream on IO`() = scenario {
+        val f = fixture()
+        f.observeSettings()
+        f.vm.updateInputText("original")
+        f.vm.translate()
+        val call = f.provider.requests.receive()
+        assertSame(Dispatchers.IO, call.dispatcher)
+        call.reply(delta = "result")
+        call.responses.close()
+        f.vm.translating.first { !it }
+        assertEquals("result", f.vm.translatedText.value)
     }
 
     private fun scenario(block: suspend CoroutineScope.() -> Unit) = runBlocking(ui) {
@@ -262,8 +260,7 @@ class TranslatorVMContractTest {
 
     private suspend fun fixture(
         model: Model = Model("cmp10-regular", "Contract"),
-        dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    ): Fixture = Fixture(dispatcher).also {
+    ): Fixture = Fixture().also {
         fixtures += it
         it.store.update { settings ->
             settings.copy(
@@ -275,7 +272,7 @@ class TranslatorVMContractTest {
         }
     }
 
-    private class Fixture(dispatcher: CoroutineDispatcher) {
+    private class Fixture {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val preferences = MemoryPreferences()
         val store = SettingsStore(preferences, scope)
@@ -284,7 +281,7 @@ class TranslatorVMContractTest {
         val manager = ProviderManager(client).apply { registerProvider("openai", provider) }
         val viewModels = ViewModelStore()
         val vm by lazy {
-            TranslatorVM(store, TextTranslationGenerator(manager), dispatcher).also { viewModels.put("translator", it) }
+            TranslatorVM(store, testGenerationHandler(manager)).also { viewModels.put("translator", it) }
         }
 
         suspend fun observeSettings() {

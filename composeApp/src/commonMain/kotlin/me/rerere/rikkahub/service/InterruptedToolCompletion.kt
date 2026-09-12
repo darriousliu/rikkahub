@@ -16,7 +16,7 @@ private fun cancelToolByUser(tool: UIMessagePart.Tool): UIMessagePart.Tool {
     )
 }
 
-suspend fun ChatRuntime.finishInterruptedPendingTools(conversationId: Uuid) {
+suspend fun ChatService.finishInterruptedPendingTools(conversationId: Uuid) {
     val currentConversation = getConversationFlow(conversationId).value
     val lastNode = currentConversation.messageNodes.lastOrNull() ?: return
     val lastMessage = lastNode.currentMessage

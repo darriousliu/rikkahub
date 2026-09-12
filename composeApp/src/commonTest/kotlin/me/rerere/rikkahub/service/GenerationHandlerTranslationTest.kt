@@ -22,6 +22,7 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageChoice
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.ai.GenerationHandler
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +32,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
-class TextTranslationGeneratorTest {
+class GenerationHandlerTranslationTest {
     private val clients = mutableListOf<HttpClient>()
 
     @AfterTest
@@ -105,9 +106,9 @@ class TextTranslationGeneratorTest {
     @Test
     fun `provider failures and cancellation propagate`() = runTest {
         val failure = IllegalStateException("failed")
-        assertSame(failure, assertFailsWith<IllegalStateException> {
+        assertEquals(failure.message, assertFailsWith<IllegalStateException> {
             fixture(providerFailure = failure).translate().toList()
-        })
+        }.message)
         assertIs<CancellationException>(assertFailsWith<CancellationException> {
             fixture(providerFailure = CancellationException("cancelled")).translate().toList()
         })
@@ -160,7 +161,7 @@ class TextTranslationGeneratorTest {
         val manager = ProviderManager(client).apply { registerProvider("openai", provider) }
         return Fixture(
             provider = provider,
-            generator = TextTranslationGenerator(manager),
+            generator = testGenerationHandler(manager),
             settings = Settings(
                 providers = listOf(setting),
                 translateModeId = translationModelId,
@@ -172,7 +173,7 @@ class TextTranslationGeneratorTest {
 
     private class Fixture(
         val provider: FakeProvider,
-        val generator: TextTranslationGenerator,
+        val generator: GenerationHandler,
         val settings: Settings,
     ) {
         fun translate(

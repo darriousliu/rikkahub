@@ -37,17 +37,17 @@ class InterruptedToolCompletionPersistenceTest {
             val firstDatabase = openDatabase().also { database = it }
             val repository = repository(firstDatabase)
             repository.insertConversation(original)
-            val runtime = SelectionTestRuntime(original) { _, conversation ->
-                repository.updateConversation(conversation)
+            val completed = ChatServiceTestFixture(existingDatabase = firstDatabase, existingRepository = repository).use {
+                it.service.updateConversationState(original.id) { original }
+                it.service.finishInterruptedPendingTools(original.id)
+                it.service.getConversationFlow(original.id).value
             }
-
-            runtime.finishInterruptedPendingTools(original.id)
             firstDatabase.close()
             database = null
 
             val reopenedDatabase = openDatabase().also { database = it }
             val restored = assertNotNull(repository(reopenedDatabase).getConversationById(original.id))
-            assertEquals(runtime.state.value, restored)
+            assertEquals(completed, restored)
             assertEquals(original.copy(messageNodes = restored.messageNodes), restored)
             assertEquals(original.messageNodes.first(), restored.messageNodes.first())
             assertEquals(original.messageNodes.last().messages[0], restored.messageNodes.last().messages[0])

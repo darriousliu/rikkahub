@@ -1,16 +1,16 @@
 package me.rerere.rikkahub.di
 
+import android.content.Context
 import androidx.room3.Room
 import androidx.sqlite.async.prepare
 import androidx.sqlite.async.step
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import android.content.Context
+import io.github.vinceglb.filekit.PlatformFile
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
 import korlibs.template.KorteTemplates
-import kotlinx.serialization.json.Json
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.lru
@@ -19,9 +19,8 @@ import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
-import me.rerere.rikkahub.data.ai.GenerationHandler
-import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
-import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
+import me.rerere.rikkahub.data.ai.mcp.AndroidMcpImageStore
+import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -29,26 +28,23 @@ import me.rerere.rikkahub.data.datastore.createAndroidSettingsDataStore
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
-import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
+import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.db.fts.SimpleDictManager
-import me.rerere.rikkahub.data.ai.mcp.McpManager
-import me.rerere.rikkahub.data.ai.mcp.AndroidMcpImageStore
-import me.rerere.rikkahub.data.ai.mcp.McpImageStore
+import me.rerere.rikkahub.data.sync.BackupFileLayout
+import me.rerere.rikkahub.data.sync.S3Sync
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
 import me.rerere.rikkahub.shared.applyAppTimeouts
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.search.SearchService
-import me.rerere.rikkahub.data.sync.BackupFileLayout
-import io.github.vinceglb.filekit.PlatformFile
-import me.rerere.rikkahub.data.sync.S3Sync
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.dsl.module
 
-val dataSourceModule = module {
+val androidDataSourceModule = module {
+    includes(dataSourceModule)
     single {
         SettingsStore(
             dataStore = createAndroidSettingsDataStore(context = get(), scope = get<AppScope>()),
@@ -64,68 +60,9 @@ val dataSourceModule = module {
     }
 
     single { createMessageTemplateEngine() }
-    single { AssistantTemplateLoader(settingsStore = get()) }
-    single {
-        val engine = get<KorteTemplates>()
-        val loader = get<AssistantTemplateLoader>()
-        engine.root = loader
-        engine.includes = loader
-        engine.layouts = loader
-        TemplateTransformer(engine = engine)
-    }
-
-    single {
-        get<AppDatabase>().conversationDao()
-    }
-
-    single {
-        get<AppDatabase>().memoryDao()
-    }
-
-    single {
-        get<AppDatabase>().genMediaDao()
-    }
-
-    single {
-        get<AppDatabase>().messageNodeDao()
-    }
-
-    single {
-        get<AppDatabase>().managedFileDao()
-    }
-
-    single {
-        get<AppDatabase>().favoriteDao()
-    }
-
-    single {
-        get<AppDatabase>().workspaceDao()
-    }
-
-    single {
-        get<AppDatabase>().folderDao()
-    }
-
     single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
 
-    single {
-        McpManager(
-            settingsStore = get(),
-            appScope = get<AppScope>(),
-            imageStore = get(),
-            callbackSessionFactory = get(),
-        )
-    }
     single<McpImageStore> { AndroidMcpImageStore(get()) }
-
-    single {
-        GenerationHandler(
-            context = get(),
-            providerManager = get(),
-            json = get(),
-            memoryRepo = get()
-        )
-    }
 
     single<OkHttpClient> {
         val acceptLang = AcceptLanguageBuilder.fromAndroid(get())

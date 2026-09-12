@@ -29,7 +29,7 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.model.Folder
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
-import me.rerere.rikkahub.service.ChatRuntime
+import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.utils.toLocalizedString
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
@@ -38,7 +38,7 @@ class ChatDrawerVM(
     private val settingsStore: SettingsStore,
     conversationRepo: ConversationRepository,
     private val folderRepo: FolderRepository,
-    private val chatService: ChatRuntime,
+    private val chatService: ChatService,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
