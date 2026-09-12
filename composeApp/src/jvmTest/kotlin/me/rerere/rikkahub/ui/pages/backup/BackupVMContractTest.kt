@@ -138,6 +138,7 @@ class BackupVMContractTest {
     fun `settings update remains launched and persists existing keys readable by a new store`() = runTest(dispatcher) {
         val f = fixture()
         val vm = f.vm()
+        runCurrent()
         val old = vm.settings.value
         val changed = old.copy(webDavConfig = webConfig.copy(path = "changed"), s3Config = s3Config.copy(region = "other"))
         vm.updateSettings(changed)
@@ -160,14 +161,15 @@ class BackupVMContractTest {
         f.awaitLists(vm)
         f.requests.clear()
         f.store.update { it.copy(webDavConfig = webConfig.copy(path = "new-path"), s3Config = s3Config.copy(bucket = "new-bucket")) }
+        runCurrent()
         val web = webItem("backup_chosen.zip", 5)
         val s3 = s3Item("backup_chosen.zip", 5)
-        assertEquals(0, vm.testWebDav())
-        assertEquals(0, vm.restore(web))
-        assertEquals(0, vm.deleteWebDavBackupFile(web))
-        assertEquals(0, vm.testS3())
-        assertEquals(0, vm.restoreFromS3(s3))
-        assertEquals(0, vm.deleteS3BackupFile(s3))
+        assertEquals(Unit, vm.testWebDav())
+        assertEquals(Unit, vm.restore(web))
+        assertEquals(Unit, vm.deleteWebDavBackupFile(web))
+        assertEquals(Unit, vm.testS3())
+        assertEquals(Unit, vm.restoreFromS3(s3))
+        assertEquals(Unit, vm.deleteS3BackupFile(s3))
         assertEquals(listOf("PROPFIND", "GET", "DELETE", "GET", "GET", "DELETE"), f.requests.map { it.method.value })
         assertTrue(f.requests.take(3).all { "/dav/new-path" in it.url.encodedPath })
         assertTrue(f.requests.takeLast(3).all { it.url.host == "new-bucket.unit.invalid" })
@@ -183,9 +185,11 @@ class BackupVMContractTest {
             f.awaitLists(vm)
             f.deleteUploadedArchive = deleteBeforeSync
             vm.backup()
+            runCurrent()
             assertEquals(f.now, vm.settings.value.backupReminderConfig.lastBackupTime)
             f.now += 123
             vm.backupToS3()
+            runCurrent()
             assertEquals(f.now, vm.settings.value.backupReminderConfig.lastBackupTime)
             assertEquals(2, f.preferences.writes)
             assertEquals("backup_reminder_config", SettingsStore.BACKUP_REMINDER_CONFIG.name)
@@ -283,6 +287,7 @@ class BackupVMContractTest {
         val error = IllegalStateException("disk failure")
         f.preferences.failure = error
         assertSame(error, runCatching { vm.backup() }.exceptionOrNull())
+        runCurrent()
         assertEquals(1, f.requests.count { it.method.value == "PUT" })
         assertEquals(f.now, vm.settings.value.backupReminderConfig.lastBackupTime)
         assertEquals(persistedBefore, f.preferences.data.value[SettingsStore.BACKUP_REMINDER_CONFIG])
@@ -340,6 +345,7 @@ class BackupVMContractTest {
         File(f.root, "files/upload/forced.txt").apply { parentFile.mkdirs(); writeText("forced") }
         File(f.root, "database/rikka_hub").apply { parentFile.mkdirs(); writeText("database bytes") }
         val exported = vm.exportToFile()
+        runCurrent()
         val zip = f.cache.listFiles()!!.single { it.extension == "zip" }
         ZipFile(zip).use {
             assertTrue(it.getEntry("upload/forced.txt") != null)
@@ -349,6 +355,7 @@ class BackupVMContractTest {
         File(f.root, "files/upload/forced.txt").delete()
         File(f.root, "database/rikka_hub").delete()
         vm.restoreFromLocalFile(exported)
+        runCurrent()
         assertEquals("forced", File(f.root, "files/upload/forced.txt").readText())
         assertEquals("database bytes", File(f.root, "database/rikka_hub").readText())
         assertTrue(zip.exists())
@@ -361,7 +368,9 @@ class BackupVMContractTest {
             val f = fixture()
             f.configureImportSettings()
             val vm = f.vm()
+            runCurrent()
             val result = vm.restoreFromChatBox(f.chatboxFile())
+            runCurrent()
             assertEquals(ChatboxRestoreResult(1, 1, 0, 2, 1), result)
             val conversation = requireNotNull(f.conversations.getConversationById(chatboxConversationId))
             assertEquals("CMP15 fixed conversation", conversation.title)
@@ -394,12 +403,14 @@ class BackupVMContractTest {
             val f = fixture()
             f.configureImportSettings()
             val vm = f.vm()
+            runCurrent()
             val file = f.chatboxFile()
             val providerCount = vm.settings.value.providers.size
             vm.restoreFromChatBox(file)
             val first = requireNotNull(f.conversations.getConversationById(chatboxConversationId))
             f.conversations.updateConversation(first.copy(title = "keep original saved title"))
             val result = vm.restoreFromChatBox(file)
+            runCurrent()
             assertEquals(ChatboxRestoreResult(1, 0, 1, 2, 1), result)
             val second = requireNotNull(f.conversations.getConversationById(chatboxConversationId))
             assertEquals("keep original saved title", second.title)
@@ -413,6 +424,7 @@ class BackupVMContractTest {
         val f = fixture()
         f.configureImportSettings()
         val vm = f.vm()
+        runCurrent()
         val reached = CountDownLatch(1)
         val resume = CountDownLatch(1)
         f.beforeStatement = { sql ->
@@ -432,6 +444,7 @@ class BackupVMContractTest {
             resume.countDown()
         }
         pending.await()
+        runCurrent()
         assertEquals(assistantA.id, f.conversations.getConversationById(chatboxConversationId)?.assistantId)
         assertEquals(assistantB.id, vm.settings.value.assistantId)
         assertEquals(77, vm.settings.value.launchCount)
@@ -444,6 +457,7 @@ class BackupVMContractTest {
         val f = fixture()
         f.configureImportSettings()
         val vm = f.vm()
+        runCurrent()
         val before = vm.settings.value
         val writes = f.preferences.writes
         val file = File(f.root, "bad.json").apply { writeText("{broken") }
@@ -459,6 +473,7 @@ class BackupVMContractTest {
             val f = fixture()
             f.configureImportSettings()
             val vm = f.vm()
+            runCurrent()
             val before = vm.settings.value
             vm.restoreFromCherryStudio(f.cherryFile())
             assertEquals(before, vm.settings.value)
@@ -481,6 +496,7 @@ class BackupVMContractTest {
         val f = fixture()
         f.configureImportSettings()
         val vm = f.vm()
+        runCurrent()
         val before = vm.settings.value
         val writes = f.preferences.writes
         val empty = f.cherryFile(empty = true)
@@ -514,12 +530,14 @@ class BackupVMContractTest {
             assertTrue(payload.contentEquals(File(f.root, "files/upload/cmp15-native.txt").readBytes()))
             assertTrue(bytes.contentEquals(source.readBytes()))
             val exported = vm.exportToFile()
+            runCurrent()
             val zip = f.cache.listFiles()!!.single { it.extension == "zip" }
             ZipFile(zip).use {
                 assertTrue(payload.contentEquals(it.getInputStream(it.getEntry("upload/cmp15-native.txt")).readBytes()))
                 assertTrue(it.getEntry("settings.json") != null)
             }
             vm.restoreFromLocalFile(exported)
+            runCurrent()
             assertTrue(payload.contentEquals(File(f.root, "files/upload/cmp15-native.txt").readBytes()))
         }
 

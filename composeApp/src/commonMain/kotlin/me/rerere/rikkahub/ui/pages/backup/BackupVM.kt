@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.datastore.Settings
@@ -28,7 +30,11 @@ class BackupVM(
     private val conversationRepository: ConversationRepository,
     private val clock: Clock = Clock.System,
 ) : ViewModel() {
-    val settings = settingsStore.settingsFlow
+    val settings = settingsStore.settingsFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = Settings.dummy()
+    )
 
     val webDavBackupItems = MutableStateFlow<UiState<List<WebDavBackupItem>>>(UiState.Idle)
     val s3BackupItems = MutableStateFlow<UiState<List<S3BackupItem>>>(UiState.Idle)
@@ -39,34 +45,44 @@ class BackupVM(
     }
 
     fun updateSettings(settings: Settings) {
-        viewModelScope.launch { settingsStore.update(settings) }
+        viewModelScope.launch {
+            settingsStore.update(settings)
+        }
     }
 
     fun loadBackupFileItems() {
         viewModelScope.launch {
-            webDavBackupItems.value = UiState.Loading
-            webDavBackupItems.value = runCatching {
-                webDavSync.listBackupFiles(settings.value.webDavConfig)
-                    .sortedByDescending(WebDavBackupItem::lastModified)
-            }
-                .fold(
-                    onSuccess = { UiState.Success(it) },
-                    onFailure = { UiState.Error(it) },
+            runCatching {
+                webDavBackupItems.emit(UiState.Loading)
+                webDavBackupItems.emit(
+                    value = UiState.Success(
+                        data = webDavSync.listBackupFiles(
+                            config = settings.value.webDavConfig
+                        ).sortedByDescending { it.lastModified }
+                    )
                 )
+            }.onFailure {
+                webDavBackupItems.emit(UiState.Error(it))
+            }
         }
     }
 
-    suspend fun testWebDav() = webDavSync.testConnection(settings.value.webDavConfig)
+    suspend fun testWebDav() {
+        webDavSync.testConnection(settings.value.webDavConfig)
+    }
 
     suspend fun backup() {
         webDavSync.backup(settings.value.webDavConfig)
         recordBackupTime()
     }
 
-    suspend fun restore(item: WebDavBackupItem) = webDavSync.restore(settings.value.webDavConfig, item)
+    suspend fun restore(item: WebDavBackupItem) {
+        webDavSync.restore(config = settings.value.webDavConfig, item = item)
+    }
 
-    suspend fun deleteWebDavBackupFile(item: WebDavBackupItem) =
+    suspend fun deleteWebDavBackupFile(item: WebDavBackupItem) {
         webDavSync.deleteBackupFile(settings.value.webDavConfig, item)
+    }
 
     suspend fun exportToFile(): PlatformFile {
         val file = webDavSync.prepareBackupFile(
@@ -145,33 +161,46 @@ class BackupVM(
         )
     }
 
+    // S3 Backup methods
     fun loadS3BackupFileItems() {
         viewModelScope.launch {
-            s3BackupItems.value = UiState.Loading
-            s3BackupItems.value = runCatching { s3Sync.listBackupFiles(settings.value.s3Config) }
-                .fold(
-                    onSuccess = { UiState.Success(it) },
-                    onFailure = { UiState.Error(it) },
+            runCatching {
+                s3BackupItems.emit(UiState.Loading)
+                s3BackupItems.emit(
+                    value = UiState.Success(
+                        data = s3Sync.listBackupFiles(
+                            config = settings.value.s3Config
+                        )
+                    )
                 )
+            }.onFailure {
+                s3BackupItems.emit(UiState.Error(it))
+            }
         }
     }
 
-    suspend fun testS3() = s3Sync.testS3(settings.value.s3Config)
+    suspend fun testS3() {
+        s3Sync.testS3(settings.value.s3Config)
+    }
 
     suspend fun backupToS3() {
         s3Sync.backupToS3(settings.value.s3Config)
         recordBackupTime()
     }
 
-    suspend fun restoreFromS3(item: S3BackupItem) = s3Sync.restoreFromS3(settings.value.s3Config, item)
+    suspend fun restoreFromS3(item: S3BackupItem) {
+        s3Sync.restoreFromS3(config = settings.value.s3Config, item = item)
+    }
 
-    suspend fun deleteS3BackupFile(item: S3BackupItem) = s3Sync.deleteS3BackupFile(settings.value.s3Config, item)
+    suspend fun deleteS3BackupFile(item: S3BackupItem) {
+        s3Sync.deleteS3BackupFile(settings.value.s3Config, item)
+    }
 
     private suspend fun recordBackupTime() {
         settingsStore.update { settings ->
             settings.copy(
                 backupReminderConfig = settings.backupReminderConfig.copy(
-                    lastBackupTime = clock.now().toEpochMilliseconds(),
+                    lastBackupTime = clock.now().toEpochMilliseconds()
                 )
             )
         }
