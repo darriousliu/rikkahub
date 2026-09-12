@@ -56,8 +56,6 @@ import me.rerere.rikkahub.ui.pages.chat.AndroidChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
-import me.rerere.rikkahub.utils.EmojiData
-import me.rerere.rikkahub.utils.EmojiUtils
 import me.rerere.rikkahub.utils.SoundEffectPlayer
 import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.web.AndroidWebServerRuntime
@@ -148,10 +146,6 @@ val androidAppModule = module {
 
     single {
         AppScope()
-    }
-
-    single<EmojiData> {
-        EmojiUtils.loadEmoji(get())
     }
 
     single {

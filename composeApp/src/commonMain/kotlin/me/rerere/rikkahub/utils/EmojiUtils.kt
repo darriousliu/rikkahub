@@ -1,51 +1,47 @@
 package me.rerere.rikkahub.utils
 
-import android.content.Context
+import me.rerere.rikkahub.generated.resources.Res
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 object EmojiUtils {
-    fun loadEmoji(context: Context): EmojiData {
-        return context.assets.open("emoji/categories.with.modifiers.min.json")
-            .bufferedReader()
-            .use { inputStream ->
-                val text = inputStream.readText()
-                val json = JsonInstant.parseToJsonElement(text).jsonObject
+    suspend fun loadEmoji(): EmojiData {
+        val text = Res.readBytes("files/emoji/categories.with.modifiers.min.json").decodeToString()
+        val json = JsonInstant.parseToJsonElement(text).jsonObject
 
-                val version = json["@version"]?.jsonPrimitive?.content ?: "unknown"
-                val categories = json["emojis"]!!.jsonObject.map { (categoryName, categoryObject) ->
-                    val subCategories =
-                        categoryObject.jsonObject.map { (subCategoryName, subCategoryObject) ->
-                            val emojis =
-                                subCategoryObject.jsonArray.map { emojiObject ->
-                                    val name = emojiObject.jsonObject["name"]?.jsonPrimitive?.content ?: "unknown"
-                                    val emoji = emojiObject.jsonObject["emoji"]?.jsonPrimitive?.content ?: "unknown"
-                                    val code =
-                                        emojiObject.jsonObject["code"]?.jsonArray?.map { it.jsonPrimitive.content }
-                                            ?: emptyList()
+        val version = json["@version"]?.jsonPrimitive?.content ?: "unknown"
+        val categories = json["emojis"]!!.jsonObject.map { (categoryName, categoryObject) ->
+            val subCategories =
+                categoryObject.jsonObject.map { (subCategoryName, subCategoryObject) ->
+                    val emojis =
+                        subCategoryObject.jsonArray.map { emojiObject ->
+                            val name = emojiObject.jsonObject["name"]?.jsonPrimitive?.content ?: "unknown"
+                            val emoji = emojiObject.jsonObject["emoji"]?.jsonPrimitive?.content ?: "unknown"
+                            val code =
+                                emojiObject.jsonObject["code"]?.jsonArray?.map { it.jsonPrimitive.content }
+                                    ?: emptyList()
 
-                                    Emoji(
-                                        name = name,
-                                        emoji = emoji,
-                                        code = code
-                                    )
-                                }
-
-                            EmojiSubCategory(
-                                name = subCategoryName,
-                                emojis = emojis
+                            Emoji(
+                                name = name,
+                                emoji = emoji,
+                                code = code
                             )
                         }
 
-                    EmojiCategory(
-                        name = categoryName,
-                        subCategories = subCategories
+                    EmojiSubCategory(
+                        name = subCategoryName,
+                        emojis = emojis
                     )
                 }
 
-                EmojiData(version, categories)
-            }
+            EmojiCategory(
+                name = categoryName,
+                subCategories = subCategories
+            )
+        }
+
+        return EmojiData(version, categories)
     }
 
     /**
@@ -54,7 +50,13 @@ object EmojiUtils {
     fun codeToEmoji(codes: List<String>): String {
         return codes.joinToString("") { code ->
             val codePoint = code.toInt(16)
-            String(Character.toChars(codePoint))
+            require(codePoint in 0..0x10FFFF)
+            if (codePoint < 0x10000) {
+                codePoint.toChar().toString()
+            } else {
+                val supplementary = codePoint - 0x10000
+                "${(0xD800 + (supplementary shr 10)).toChar()}${(0xDC00 + (supplementary and 0x3FF)).toChar()}"
+            }
         }
     }
 

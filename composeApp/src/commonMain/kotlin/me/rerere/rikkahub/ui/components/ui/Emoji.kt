@@ -42,7 +42,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -51,12 +50,12 @@ import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.ui.resources.stringResource
+import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.utils.Emoji
 import me.rerere.rikkahub.utils.EmojiData
-import org.koin.compose.koinInject
+import androidx.compose.runtime.produceState
+import me.rerere.rikkahub.utils.EmojiUtils
 
-@Preview
 @Composable
 fun EmojiPicker(
     modifier: Modifier = Modifier,
@@ -64,7 +63,9 @@ fun EmojiPicker(
     showSearch: Boolean = true,
     height: Int = 400
 ) {
-    val emojiData = koinInject<EmojiData>()
+    val emojiData by produceState<EmojiData?>(initialValue = null) {
+        value = EmojiUtils.loadEmoji()
+    }
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategoryIndex by remember { mutableIntStateOf(0) }
     var showModifierPicker by remember { mutableStateOf(false) }
@@ -74,7 +75,7 @@ fun EmojiPicker(
     val lazyListState: LazyGridState = rememberLazyGridState()
     val coroutineScope = rememberCoroutineScope()
 
-    emojiData.let { data ->
+    emojiData?.let { data ->
         Box(modifier = modifier) {
             Column(
                 modifier = Modifier

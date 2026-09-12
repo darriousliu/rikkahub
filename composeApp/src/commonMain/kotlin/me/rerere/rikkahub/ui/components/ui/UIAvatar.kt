@@ -2,6 +2,7 @@ package me.rerere.rikkahub.ui.components.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,17 +10,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,57 +33,54 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import kotlin.math.abs
 import androidx.compose.ui.layout.ContentScale
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Edit03
-import me.rerere.rikkahub.data.model.Avatar
-import me.rerere.rikkahub.generated.resources.Res
-import me.rerere.rikkahub.generated.resources.avatar_cancel
-import me.rerere.rikkahub.generated.resources.avatar_change_avatar
-import me.rerere.rikkahub.generated.resources.avatar_input_url
-import me.rerere.rikkahub.generated.resources.avatar_pick_emoji
-import me.rerere.rikkahub.generated.resources.avatar_pick_image
-import me.rerere.rikkahub.generated.resources.avatar_reset
-import me.rerere.rikkahub.generated.resources.avatar_url_confirm
-import me.rerere.rikkahub.generated.resources.avatar_url_dialog_title
-import me.rerere.rikkahub.generated.resources.avatar_url_hint
+import me.rerere.rikkahub.generated.resources.*
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.ktor.util.sha1
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
 import me.rerere.rikkahub.platform.ImageCropRequest
 import me.rerere.rikkahub.platform.ImageCropResult
 import me.rerere.rikkahub.platform.rememberImageCropper
 import me.rerere.rikkahub.service.toFileUri
-import org.jetbrains.compose.resources.stringResource
-import kotlin.math.abs
+import me.rerere.rikkahub.data.model.Avatar
+import me.rerere.rikkahub.ui.hooks.rememberAvatarShape
 
 @Composable
 fun TextAvatar(
     text: String,
     modifier: Modifier = Modifier,
     loading: Boolean = false,
-    color: Color = MaterialTheme.colorScheme.secondaryContainer,
+    color: Color = MaterialTheme.colorScheme.secondaryContainer
 ) {
     Box(
         modifier = modifier
             .then(Modifier.size(32.dp))
-            .clip(if (loading) RoundedCornerShape(50) else MaterialTheme.shapes.medium)
+            .clip(shape = rememberAvatarShape(loading))
             .background(color),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = text.take(1).uppercase(),
             color = LocalContentColor.current,
             maxLines = 1,
             overflow = TextOverflow.Clip,
-            autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 32.sp, stepSize = 1.sp),
-            lineHeight = 0.8.em,
+            autoSize = TextAutoSize.StepBased(
+                minFontSize = 8.sp,
+                maxFontSize = 32.sp,
+                stepSize = 1.sp
+            ),
+            lineHeight = 0.8.em
         )
     }
 }
@@ -93,12 +92,13 @@ fun UIAvatar(
     modifier: Modifier = Modifier,
     loading: Boolean = false,
     onUpdate: ((Avatar) -> Unit)? = null,
-    onClick: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null
 ) {
     val fileStore = remember { FileKitPlatformFileStore() }
-    var showPicker by remember { mutableStateOf(false) }
-    var showTextInput by remember { mutableStateOf<AvatarInput?>(null) }
-    var input by remember { mutableStateOf("") }
+    var showPickOption by remember { mutableStateOf(false) }
+    var showEmojiPicker by remember { mutableStateOf(false) }
+    var showUrlInput by remember { mutableStateOf(false) }
+    var urlInput by remember { mutableStateOf("") }
 
     suspend fun storeAvatar(result: ImageCropResult) {
         val file = (result as? ImageCropResult.Success)?.file ?: return
@@ -107,7 +107,7 @@ fun UIAvatar(
     }
 
     val cropper = rememberImageCropper(::storeAvatar)
-    val imagePicker = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
+    val imagePickerLauncher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
         file?.let {
             cropper.launch(
                 ImageCropRequest(
@@ -121,34 +121,53 @@ fun UIAvatar(
 
     Box(modifier = modifier.then(Modifier.size(32.dp))) {
         Surface(
-            shape = if (loading) RoundedCornerShape(50) else MaterialTheme.shapes.medium,
+            shape = rememberAvatarShape(loading),
             modifier = Modifier.fillMaxSize(),
             onClick = {
                 onClick?.invoke()
-                if (onUpdate != null) showPicker = true
+                if (onUpdate != null) showPickOption = true
             },
             tonalElevation = 4.dp,
             color = MaterialTheme.colorScheme.secondaryContainer,
         ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
                 when (value) {
-                    is Avatar.Image -> AsyncImage(
-                        model = value.url,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                    is Avatar.Emoji -> Text(
-                        text = value.content,
-                        autoSize = TextAutoSize.StepBased(minFontSize = 15.sp, maxFontSize = 30.sp),
-                        lineHeight = 0.8.em,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(5.dp),
-                    )
-                    Avatar.Dummy -> ProceduralAvatar(name, Modifier.fillMaxSize())
+                    is Avatar.Image -> {
+                        AsyncImage(
+                            model = value.url,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+
+                    is Avatar.Emoji -> {
+                        Text(
+                            text = value.content,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = 15.sp,
+                                maxFontSize = 30.sp,
+                            ),
+                            lineHeight = 0.8.em,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(5.dp)
+                        )
+                    }
+
+                    is Avatar.Dummy -> {
+                        ProceduralAvatar(
+                            name = name,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         }
+
+        // Show edit icon when editable
         if (onUpdate != null) {
             Box(
                 modifier = Modifier
@@ -156,135 +175,183 @@ fun UIAvatar(
                     .size(14.dp)
                     .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.tertiaryContainer),
-                contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = HugeIcons.Edit03,
-                    contentDescription = null,
-                    modifier = Modifier.size(10.dp).padding(1.dp),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    contentDescription = "Edit",
+                    modifier = Modifier
+                        .size(10.dp)
+                        .padding(1.dp),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             }
         }
     }
 
-    if (showPicker) {
+    if (showPickOption) {
         AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text(stringResource(Res.string.avatar_change_avatar)) },
+            onDismissRequest = {
+                showPickOption = false
+            },
+            title = {
+                Text(text = stringResource(Res.string.avatar_change_avatar))
+            },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Button(
                         onClick = {
-                            showPicker = false
-                            imagePicker.launch()
+                            showPickOption = false
+                            imagePickerLauncher.launch()
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.avatar_pick_image)) }
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = stringResource(Res.string.avatar_pick_image))
+                    }
                     Button(
                         onClick = {
-                            showPicker = false
-                            input = ""
-                            showTextInput = AvatarInput.Emoji
+                            showPickOption = false
+                            showEmojiPicker = true
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.avatar_pick_emoji)) }
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = stringResource(Res.string.avatar_pick_emoji))
+                    }
                     Button(
                         onClick = {
-                            showPicker = false
-                            input = ""
-                            showTextInput = AvatarInput.Url
+                            showPickOption = false
+                            urlInput = ""
+                            showUrlInput = true
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.avatar_input_url)) }
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = stringResource(Res.string.avatar_input_url))
+                    }
                     Button(
                         onClick = {
-                            showPicker = false
+                            showPickOption = false
                             onUpdate?.invoke(Avatar.Dummy)
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(Res.string.avatar_reset)) }
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(text = stringResource(Res.string.avatar_reset))
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showPicker = false }) {
+                TextButton(
+                    onClick = {
+                        showPickOption = false
+                    }
+                ) {
                     Text(stringResource(Res.string.avatar_cancel))
                 }
-            },
+            }
         )
     }
 
-    showTextInput?.let { inputType ->
+    if (showEmojiPicker) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showEmojiPicker = false
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            EmojiPicker(
+                onEmojiSelected = { emoji ->
+                    onUpdate?.invoke(Avatar.Emoji(content = emoji.emoji))
+                    showEmojiPicker = false
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(16.dp)
+            )
+        }
+    }
+
+    if (showUrlInput) {
         AlertDialog(
-            onDismissRequest = { showTextInput = null },
-            title = { Text(stringResource(Res.string.avatar_url_dialog_title)) },
+            onDismissRequest = {
+                showUrlInput = false
+            },
+            title = {
+                Text(text = stringResource(Res.string.avatar_url_dialog_title))
+            },
             text = {
                 OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
                     label = { Text(stringResource(Res.string.avatar_url_hint)) },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    singleLine = true
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val value = input.trim()
-                        if (value.isNotEmpty()) {
-                            onUpdate?.invoke(
-                                when (inputType) {
-                                    AvatarInput.Emoji -> Avatar.Emoji(value)
-                                    AvatarInput.Url -> Avatar.Image(value)
-                                },
-                            )
-                            showTextInput = null
+                        if (urlInput.isNotBlank()) {
+                            onUpdate?.invoke(Avatar.Image(urlInput.trim()))
+                            showUrlInput = false
                         }
-                    },
-                ) { Text(stringResource(Res.string.avatar_url_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTextInput = null }) {
-                    Text(stringResource(Res.string.avatar_cancel))
+                    }
+                ) {
+                    Text(stringResource(Res.string.avatar_url_confirm))
                 }
             },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUrlInput = false
+                    }
+                ) {
+                    Text(stringResource(Res.string.avatar_cancel))
+                }
+            }
         )
     }
 }
 
 @Composable
 private fun ProceduralAvatar(name: String, modifier: Modifier = Modifier) {
-    val (fromColor, toColor) = remember(name) { avatarColors(name.ifBlank { "?" }) }
+    val (fromColor, toColor) = remember(name) {
+        vercelAvatarColors(name.ifBlank { "?" })
+    }
     Canvas(modifier = modifier) {
         drawRect(
             brush = Brush.linearGradient(
                 colors = listOf(fromColor, toColor),
-                start = Offset.Zero,
-                end = Offset(size.width, size.height),
-            ),
+                start = Offset(0f, 0f),
+                end = Offset(size.width, size.height)
+            )
         )
     }
 }
 
-private fun avatarColors(name: String): Pair<Color, Color> {
-    val hue = abs(name.fold(0) { hash, character -> hash * 31 + character.code } % 360).toFloat()
-    return hslToColor(hue, 0.65f, 0.55f) to hslToColor((hue + 120f) % 360f, 0.65f, 0.55f)
+internal fun vercelAvatarColors(name: String): Pair<Color, Color> {
+    val bytes = sha1(name.encodeToByteArray())
+    val sum = bytes.fold(0) { acc, b -> acc + (b.toInt() and 0xFF) }
+    val hue = (sum % 360).toFloat()
+    return Pair(
+        hslToColor(hue, 0.65f, 0.55f),
+        hslToColor((hue + 120f) % 360f, 0.65f, 0.55f)
+    )
 }
 
-private fun hslToColor(hue: Float, saturation: Float, lightness: Float): Color {
-    val chroma = (1f - abs(2f * lightness - 1f)) * saturation
-    val sector = hue / 60f
-    val intermediate = chroma * (1f - abs(sector % 2f - 1f))
-    val (red, green, blue) = when {
-        sector < 1f -> Triple(chroma, intermediate, 0f)
-        sector < 2f -> Triple(intermediate, chroma, 0f)
-        sector < 3f -> Triple(0f, chroma, intermediate)
-        sector < 4f -> Triple(0f, intermediate, chroma)
-        sector < 5f -> Triple(intermediate, 0f, chroma)
-        else -> Triple(chroma, 0f, intermediate)
+private fun hslToColor(h: Float, s: Float, l: Float): Color {
+    val c = (1f - abs(2f * l - 1f)) * s
+    val hPrime = h / 60f
+    val x = c * (1f - abs(hPrime % 2f - 1f))
+    val (r1, g1, b1) = when {
+        hPrime < 1f -> Triple(c, x, 0f)
+        hPrime < 2f -> Triple(x, c, 0f)
+        hPrime < 3f -> Triple(0f, c, x)
+        hPrime < 4f -> Triple(0f, x, c)
+        hPrime < 5f -> Triple(x, 0f, c)
+        else        -> Triple(c, 0f, x)
     }
-    val offset = lightness - chroma / 2f
-    return Color(red + offset, green + offset, blue + offset)
+    val m = l - c / 2f
+    return Color(r1 + m, g1 + m, b1 + m)
 }
-
-private enum class AvatarInput { Emoji, Url }
