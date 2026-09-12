@@ -15,15 +15,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.getString
 import com.dokar.sonner.ToastType
-import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
-import me.rerere.rikkahub.service.toFileUri
-import io.github.vinceglb.filekit.readBytes
-import io.github.vinceglb.filekit.readString
-import kotlin.io.encoding.Base64
+import com.dokar.sonner.ToasterState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -31,122 +29,255 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import me.rerere.ai.ui.UIMessage
 import me.rerere.rikkahub.data.model.Assistant
-import me.rerere.rikkahub.generated.resources.Res
-import me.rerere.rikkahub.generated.resources.assistant_importer_import_failed
-import me.rerere.rikkahub.generated.resources.assistant_importer_import_tavern_json
-import me.rerere.rikkahub.generated.resources.assistant_importer_import_tavern_png
-import me.rerere.rikkahub.generated.resources.assistant_importer_importing
-import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.createCharacterCardMetadataReader
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
-import org.jetbrains.compose.resources.stringResource
+import me.rerere.rikkahub.generated.resources.*
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.mimeType
+import io.github.vinceglb.filekit.readBytes
+import io.github.vinceglb.filekit.readString
+import kotlinx.coroutines.IO
+import me.rerere.rikkahub.platform.FileKitPlatformFileStore
+import me.rerere.rikkahub.platform.createCharacterCardMetadataReader
+import me.rerere.rikkahub.service.toFileUri
+import kotlin.io.encoding.Base64
 
 @Composable
 fun AssistantImporter(
     modifier: Modifier = Modifier,
     onUpdate: (Assistant) -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-    val toaster = LocalToaster.current
-    val fileStore = remember { FileKitPlatformFileStore() }
-    var isLoading by remember { mutableStateOf(false) }
-
-    fun import(file: PlatformFile, png: Boolean) {
-        isLoading = true
-        scope.launch {
-            runCatching {
-                val background = if (png) {
-                    fileStore.copyIntoSandbox(file).getOrThrow().toFileUri()
-                } else {
-                    null
-                }
-                val jsonText = if (png) {
-                    val encoded = createCharacterCardMetadataReader().read(file.readBytes()).getOrThrow()
-                    Base64.Default
-                        .withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
-                        .decode(encoded.filterNot(Char::isWhitespace))
-                        .decodeToString()
-                } else {
-                    file.readString()
-                }
-                parseTavernAssistant(Json.parseToJsonElement(jsonText).jsonObject, background)
-            }.onSuccess(onUpdate)
-                .onFailure {
-                    toaster.show(it.message ?: "Assistant import failed", type = ToastType.Error)
-                }
-            isLoading = false
-        }
-    }
-
-    val pngPicker = rememberFilePickerLauncher(type = FileKitType.File("png")) { file ->
-        file?.let { import(it, png = true) }
-    }
-    val jsonPicker = rememberFilePickerLauncher(type = FileKitType.File("json")) { file ->
-        file?.let { import(it, png = false) }
-    }
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = pngPicker::launch, enabled = !isLoading) {
-                AutoAIIcon(name = "tavern", modifier = Modifier.padding(end = 8.dp))
-                Text(
-                    if (isLoading) {
-                        stringResource(Res.string.assistant_importer_importing)
-                    } else {
-                        stringResource(Res.string.assistant_importer_import_tavern_png)
-                    },
-                )
+        SillyTavernImporter(onImport = onUpdate)
+    }
+}
+
+@Composable
+private fun SillyTavernImporter(
+    onImport: (Assistant) -> Unit
+) {
+    val fileStore = remember { FileKitPlatformFileStore() }
+    val scope = rememberCoroutineScope()
+    val toaster = LocalToaster.current
+    var isLoading by remember { mutableStateOf(false) }
+
+    val jsonPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("json")) { file ->
+        file?.let {
+            isLoading = true
+            scope.launch {
+                try {
+                    runCatching {
+                        importAssistantFromUri(
+                            file = file,
+                            onImport = onImport,
+                            toaster = toaster,
+                            fileStore = fileStore,
+                        )
+                    }.onFailure { exception ->
+                        exception.printStackTrace()
+                        toaster.show(exception.message ?: getString(Res.string.assistant_importer_import_failed))
+                    }
+                } finally {
+                    isLoading = false
+                }
             }
-            OutlinedButton(onClick = jsonPicker::launch, enabled = !isLoading) {
-                AutoAIIcon(name = "tavern", modifier = Modifier.padding(end = 8.dp))
-                Text(
-                    if (isLoading) {
-                        stringResource(Res.string.assistant_importer_importing)
-                    } else {
-                        stringResource(Res.string.assistant_importer_import_tavern_json)
-                    },
-                )
+        }
+    }
+
+    val pngPickerLauncher = rememberFilePickerLauncher(type = FileKitType.File("png")) { file ->
+        file?.let {
+            isLoading = true
+            scope.launch {
+                try {
+                    runCatching {
+                        importAssistantFromUri(
+                            file = file,
+                            onImport = onImport,
+                            toaster = toaster,
+                            fileStore = fileStore,
+                        )
+                    }.onFailure { exception ->
+                        exception.printStackTrace()
+                        toaster.show(exception.message ?: getString(Res.string.assistant_importer_import_failed))
+                    }
+                } finally {
+                    isLoading = false
+                }
             }
+        }
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedButton(
+            onClick = {
+                pngPickerLauncher.launch()
+            },
+            enabled = !isLoading
+        ) {
+            AutoAIIcon(name = "tavern", modifier = Modifier.padding(end = 8.dp))
+            Text(text = if (isLoading) stringResource(Res.string.assistant_importer_importing) else stringResource(Res.string.assistant_importer_import_tavern_png))
+        }
+
+        OutlinedButton(
+            onClick = {
+                jsonPickerLauncher.launch()
+            },
+            enabled = !isLoading
+        ) {
+            AutoAIIcon(name = "tavern", modifier = Modifier.padding(end = 8.dp))
+            Text(text = if (isLoading) stringResource(Res.string.assistant_importer_importing) else stringResource(Res.string.assistant_importer_import_tavern_json))
         }
     }
 }
 
-internal fun parseTavernAssistant(json: JsonObject, background: String?): Assistant {
-    val spec = json["spec"]?.jsonPrimitive?.contentOrNull ?: error("Missing character card spec")
-    require(spec == "chara_card_v2" || spec == "chara_card_v3") { "Unsupported character card spec: $spec" }
-    val data = json["data"]?.jsonObject ?: error("Missing character card data")
-    val name = data["name"]?.jsonPrimitiveOrNull?.contentOrNull ?: error("Missing character name")
-    val firstMessage = data["first_mes"]?.jsonPrimitiveOrNull?.contentOrNull
-    val system = data["system_prompt"]?.jsonPrimitiveOrNull?.contentOrNull
-    val description = data["description"]?.jsonPrimitiveOrNull?.contentOrNull
-    val personality = data["personality"]?.jsonPrimitiveOrNull?.contentOrNull
-    val scenario = data["scenario"]?.jsonPrimitiveOrNull?.contentOrNull
-    val prompt = buildString {
-        appendLine("You are roleplaying as $name.")
-        appendLine()
-        if (!system.isNullOrBlank()) {
-            appendLine(system)
+// region Parsing Strategy
+
+private interface TavernCardParser {
+    val specName: String
+    suspend fun parse(json: JsonObject, background: String?): Assistant
+}
+
+private class CharaCardV2Parser : TavernCardParser {
+    override val specName: String = "chara_card_v2"
+
+    override suspend fun parse(json: JsonObject, background: String?): Assistant {
+        val data = json["data"]?.jsonObject ?: error(getString(Res.string.assistant_importer_missing_data_field))
+        val name = data["name"]?.jsonPrimitiveOrNull?.contentOrNull
+            ?: error(getString(Res.string.assistant_importer_missing_name_field))
+        val firstMessage = data["first_mes"]?.jsonPrimitiveOrNull?.contentOrNull
+        val system = data["system_prompt"]?.jsonPrimitiveOrNull?.contentOrNull
+        val description = data["description"]?.jsonPrimitiveOrNull?.contentOrNull
+        val personality = data["personality"]?.jsonPrimitiveOrNull?.contentOrNull
+        val scenario = data["scenario"]?.jsonPrimitiveOrNull?.contentOrNull
+
+        val prompt = buildString {
+            appendLine("You are roleplaying as $name.")
             appendLine()
+            if (!system.isNullOrBlank()) {
+                appendLine(system)
+                appendLine()
+            }
+            appendLine("## Description of the character")
+            appendLine(description ?: "Empty")
+            appendLine()
+            appendLine("## Personality of the character")
+            appendLine(personality ?: "Empty")
+            appendLine()
+            appendLine("## Scenario")
+            append(scenario ?: "Empty")
         }
-        appendLine("## Description of the character")
-        appendLine(description ?: "Empty")
-        appendLine()
-        appendLine("## Personality of the character")
-        appendLine(personality ?: "Empty")
-        appendLine()
-        appendLine("## Scenario")
-        append(scenario ?: "Empty")
+
+        return Assistant(
+            name = name,
+            presetMessages = if (firstMessage != null) listOf(UIMessage.assistant(firstMessage)) else emptyList(),
+            systemPrompt = prompt,
+            background = background
+        )
     }
-    return Assistant(
-        name = name,
-        presetMessages = firstMessage?.let { listOf(UIMessage.assistant(it)) }.orEmpty(),
-        systemPrompt = prompt,
-        background = background,
-    )
+}
+
+private class CharaCardV3Parser : TavernCardParser {
+    override val specName: String = "chara_card_v3"
+
+    override suspend fun parse(json: JsonObject, background: String?): Assistant {
+        val data = json["data"]?.jsonObject ?: error(getString(Res.string.assistant_importer_missing_data_field))
+        val name = data["name"]?.jsonPrimitiveOrNull?.contentOrNull ?: error(getString(Res.string.assistant_importer_missing_name_field))
+        val description = data["description"]?.jsonPrimitiveOrNull?.contentOrNull
+        val firstMessage = data["first_mes"]?.jsonPrimitiveOrNull?.contentOrNull
+        val system = data["system_prompt"]?.jsonPrimitiveOrNull?.contentOrNull
+        val personality = data["personality"]?.jsonPrimitiveOrNull?.contentOrNull
+        val scenario = data["scenario"]?.jsonPrimitiveOrNull?.contentOrNull
+
+        val prompt = buildString {
+            appendLine("You are roleplaying as $name.")
+            appendLine()
+            if (!system.isNullOrBlank()) {
+                appendLine(system)
+                appendLine()
+            }
+            appendLine("## Description of the character")
+            appendLine(description ?: "Empty")
+            appendLine()
+            appendLine("## Personality of the character")
+            appendLine(personality ?: "Empty")
+            appendLine()
+            appendLine("## Scenario")
+            append(scenario ?: "Empty")
+        }
+
+        return Assistant(
+            name = name,
+            presetMessages = if (firstMessage != null) listOf(UIMessage.assistant(firstMessage)) else emptyList(),
+            systemPrompt = prompt,
+            background = background
+        )
+    }
+}
+
+private val TAVERN_PARSERS: Map<String, TavernCardParser> = listOf(
+    CharaCardV2Parser(),
+    CharaCardV3Parser()
+).associateBy { it.specName }
+
+internal suspend fun parseAssistantFromJson(
+    json: JsonObject,
+    background: String?,
+): Assistant {
+    val spec = json["spec"]?.jsonPrimitive?.contentOrNull
+        ?: error(getString(Res.string.assistant_importer_missing_spec_field))
+    val parser = TAVERN_PARSERS[spec] ?: error(getString(Res.string.assistant_importer_unsupported_spec, spec))
+    return parser.parse(json = json, background = background)
+}
+
+// endregion
+
+private suspend fun importAssistantFromUri(
+    file: PlatformFile,
+    onImport: (Assistant) -> Unit,
+    toaster: ToasterState,
+    fileStore: FileKitPlatformFileStore,
+) {
+    try {
+        val mime = withContext(Dispatchers.IO) { file.mimeType()?.toString() }
+        val (jsonString, backgroundStr) = withContext(Dispatchers.IO) {
+            when (mime) {
+                "image/png" -> {
+                    val result = createCharacterCardMetadataReader().read(file.readBytes())
+                    result.map { base64Data ->
+                        val json = Base64.Default
+                            .withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+                            .decode(base64Data.filterNot(Char::isWhitespace))
+                            .decodeToString()
+                        val bg = fileStore.copyIntoSandbox(file).getOrThrow().toFileUri()
+                        json to bg
+                    }.getOrElse { throw it }
+                }
+
+                "application/json" -> {
+                    val json = file.readString()
+                    json to null
+                }
+
+                else -> error(getString(Res.string.assistant_importer_unsupported_file_type, mime ?: "unknown"))
+            }
+        }
+        val json = Json.parseToJsonElement(jsonString).jsonObject
+        val assistant = parseAssistantFromJson(json = json, background = backgroundStr)
+        onImport(assistant)
+    } catch (exception: Exception) {
+        exception.printStackTrace()
+        toaster.show(
+            message = exception.message ?: getString(Res.string.assistant_importer_import_failed),
+            type = ToastType.Error
+        )
+    }
 }
