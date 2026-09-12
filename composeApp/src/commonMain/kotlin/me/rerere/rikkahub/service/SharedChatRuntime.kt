@@ -11,7 +11,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -19,6 +22,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
+import me.rerere.common.concurrent.ConcurrentHashMap
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.Tool
 import me.rerere.ai.provider.ProviderManager
@@ -78,6 +83,8 @@ import org.jetbrains.compose.resources.getString
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 
+private const val TAG = "SharedChatRuntime"
+
 /**
  * Portable chat runtime used by the iOS and Desktop product shells.
  *
@@ -121,8 +128,8 @@ internal class SharedChatRuntime(
         providerManager = providerManager,
         getSettings = { settingsStore.settingsFlow.first() },
         getConversation = conversationRepository::getConversationById,
-        getLoadedConversation = { id -> conversations[id]?.value },
-        updateConversation = { id, conversation -> conversationState(id).value = conversation },
+        getLoadedConversation = { id -> sessions[id]?.state?.value },
+        updateConversation = { id, conversation -> getOrCreateSession(id).state.value = conversation },
         saveConversation = ::saveConversation,
     )
 
@@ -141,7 +148,7 @@ internal class SharedChatRuntime(
             textTranslator.translateText(settings, source, code, name, onStreamUpdate).flowOn(Dispatchers.Default)
         },
         getConversation = { getConversationFlow(it).value },
-        updateConversation = { id, conversation -> conversationState(id).value = conversation },
+        updateConversation = { id, conversation -> getOrCreateSession(id).state.value = conversation },
         saveConversation = ::saveConversation,
         getLoadingText = { getString(Res.string.translating) },
         onError = { id, error ->
@@ -153,10 +160,9 @@ internal class SharedChatRuntime(
     private val inputTransformers: List<InputMessageTransformer> =
         SHARED_INPUT_TRANSFORMERS + templateTransformer
 
-    private val conversations = mutableMapOf<Uuid, MutableStateFlow<Conversation>>()
-    private val processingStatuses = mutableMapOf<Uuid, MutableStateFlow<String?>>()
+    private val sessions = ConcurrentHashMap<Uuid, ConversationSession>()
+    private val _sessionsVersion = MutableStateFlow(0L)
     private val generationVersions = mutableMapOf<Uuid, Long>()
-    private val jobs = MutableStateFlow<Map<Uuid, Job?>>(emptyMap())
     private val createNewConversationOnStart = MutableStateFlow(true)
     private val mutableErrors = MutableStateFlow<List<ChatError>>(emptyList())
     private val mutableGenerationDoneFlow = MutableSharedFlow<Uuid>(extraBufferCapacity = 1)
@@ -172,26 +178,101 @@ internal class SharedChatRuntime(
         }
     }
 
-    override fun getConversationFlow(conversationId: Uuid): StateFlow<Conversation> =
-        conversationState(conversationId).asStateFlow()
+    // ---- Session 管理 ----
 
-    override fun getGenerationJobStateFlow(conversationId: Uuid): Flow<Job?> =
-        jobs.map { it[conversationId] }
-
-    override fun getProcessingStatusFlow(conversationId: Uuid): StateFlow<String?> =
-        processingStatuses.getOrPut(conversationId) { MutableStateFlow(null) }.asStateFlow()
-
-    override fun getConversationJobs(): Flow<Map<Uuid, Job?>> = jobs
-
-    override fun addConversationReference(conversationId: Uuid) {
-        conversationState(conversationId)
+    private fun getOrCreateSession(conversationId: Uuid): ConversationSession {
+        var created = false
+        val session = sessions.computeIfAbsent(conversationId) { id ->
+            val settings = settingsStore.settingsFlow.value
+            ConversationSession(
+                id = id,
+                initial = Conversation.ofId(
+                    id = id,
+                    assistantId = settings.getCurrentAssistant().id
+                ),
+                scope = scope,
+                onIdle = { removeSession(it) }
+            ).also {
+                created = true
+            }
+        }
+        if (created) {
+            // Collectors may synchronously read the map; publish only after the session has been inserted.
+            _sessionsVersion.update { it + 1 }
+            Log.i(TAG, "createSession: $conversationId (total: ${sessions.size})")
+        }
+        return session
     }
 
-    override fun removeConversationReference(conversationId: Uuid) = Unit
+    private fun removeSession(conversationId: Uuid) {
+        val session = sessions[conversationId] ?: return
+        if (session.isInUse) {
+            Log.d(TAG, "removeSession: skipped $conversationId (still in use)")
+            return
+        }
+        if (sessions.remove(conversationId, session)) {
+            session.cleanup()
+            _sessionsVersion.update { it + 1 }
+            Log.i(TAG, "removeSession: $conversationId (remaining: ${sessions.size})")
+        }
+    }
+
+    // ---- 引用管理 ----
+
+    override fun addConversationReference(conversationId: Uuid) {
+        getOrCreateSession(conversationId).acquire()
+    }
+
+    override fun removeConversationReference(conversationId: Uuid) {
+        sessions[conversationId]?.release()
+    }
+
+    private fun launchWithConversationReference(
+        conversationId: Uuid,
+        block: suspend () -> Unit
+    ): Job = scope.launch {
+        addConversationReference(conversationId)
+        try {
+            block()
+        } finally {
+            removeConversationReference(conversationId)
+        }
+    }
+
+    // ---- 对话状态访问 ----
+
+    override fun getConversationFlow(conversationId: Uuid): StateFlow<Conversation> {
+        return getOrCreateSession(conversationId).state
+    }
+
+    override fun getGenerationJobStateFlow(conversationId: Uuid): Flow<Job?> {
+        val session = sessions[conversationId] ?: return flowOf(null)
+        return session.generationJob
+    }
+
+    override fun getProcessingStatusFlow(conversationId: Uuid): StateFlow<String?> {
+        val session = sessions[conversationId] ?: return MutableStateFlow(null)
+        return session.processingStatus
+    }
+
+    override fun getConversationJobs(): Flow<Map<Uuid, Job?>> {
+        return _sessionsVersion.flatMapLatest {
+            val currentSessions = sessions.values.toList()
+            if (currentSessions.isEmpty()) {
+                flowOf(emptyMap())
+            } else {
+                combine(currentSessions.map { s ->
+                    s.generationJob.map { job -> s.id to job }
+                }) { pairs ->
+                    pairs.filter { it.second != null }.toMap()
+                }
+            }
+        }
+    }
 
     override suspend fun initializeConversation(conversationId: Uuid) {
         val stored = conversationRepository.getConversationById(conversationId)
-        val state = conversationState(conversationId)
+        val state = getOrCreateSession(conversationId).state
         if (stored != null) {
             state.value = stored
             settingsStore.updateAssistant(stored.assistantId)
@@ -250,7 +331,7 @@ internal class SharedChatRuntime(
     ) {
         if (content.isEmptyInputMessage()) return
         startGeneration(conversationId) {
-            val conversation = conversationState(conversationId).value
+            val conversation = getOrCreateSession(conversationId).state.value
             val settings = settingsStore.settingsFlow.first()
             val assistant = settings.getAssistantById(conversation.assistantId) ?: settings.getCurrentAssistant()
             val processedParts = preprocessUserInputParts(content, assistant)
@@ -271,7 +352,7 @@ internal class SharedChatRuntime(
         messageId: Uuid,
         parts: List<UIMessagePart>,
     ) {
-        val conversation = conversationState(conversationId).value
+        val conversation = getOrCreateSession(conversationId).state.value
         saveConversation(
             conversationId,
             conversation.copy(
@@ -354,7 +435,7 @@ internal class SharedChatRuntime(
     }
 
     override suspend fun deleteMessage(conversationId: Uuid, message: UIMessage) {
-        val conversation = conversationState(conversationId).value
+        val conversation = getOrCreateSession(conversationId).state.value
         val updatedNodes = conversation.messageNodes.mapNotNull { node ->
             if (node.messages.none { it.id == message.id }) return@mapNotNull node
             val remaining = node.messages.filterNot { it.id == message.id }
@@ -379,7 +460,7 @@ internal class SharedChatRuntime(
         regenerateAssistantMsg: Boolean,
     ) {
         startGeneration(conversationId) {
-            val conversation = conversationState(conversationId).value
+            val conversation = getOrCreateSession(conversationId).state.value
             val nodeIndex = conversation.messageNodes.indexOfFirst { node -> node.messages.any { it.id == message.id } }
             require(nodeIndex >= 0) { "Message ${message.id} is not part of conversation $conversationId" }
             val retainedCount = if (message.role == MessageRole.USER) nodeIndex + 1 else nodeIndex
@@ -404,7 +485,7 @@ internal class SharedChatRuntime(
         answer: String?,
     ) {
         startGeneration(conversationId) {
-            val conversation = conversationState(conversationId).value
+            val conversation = getOrCreateSession(conversationId).state.value
             val approvalState = when {
                 answer != null -> ToolApprovalState.Answered(answer)
                 approved -> ToolApprovalState.Approved
@@ -437,7 +518,7 @@ internal class SharedChatRuntime(
     }
 
     override suspend fun stopGeneration(conversationId: Uuid) {
-        jobs.value[conversationId]?.cancel()
+        sessions[conversationId]?.getJob()?.cancel()
     }
 
     override suspend fun saveConversation(conversationId: Uuid, conversation: Conversation) {
@@ -447,14 +528,14 @@ internal class SharedChatRuntime(
         } else {
             conversationRepository.insertConversation(persisted)
         }
-        conversationState(conversationId).value = persisted
+        getOrCreateSession(conversationId).state.value = persisted
     }
 
     override fun updateConversationState(
         conversationId: Uuid,
         update: (Conversation) -> Conversation,
     ) {
-        conversationState(conversationId).update(update)
+        getOrCreateSession(conversationId).state.update(update)
     }
 
     override fun translateMessage(
@@ -490,12 +571,11 @@ internal class SharedChatRuntime(
     }
 
     override fun hasGeneratingConversationInFolder(folderId: Uuid): Boolean =
-        jobs.value.any { (conversationId, job) ->
-            job?.isActive == true && conversations[conversationId]?.value?.folderId == folderId
-        }
+        sessions.values.any { it.isGenerating && it.state.value.folderId == folderId }
 
     override suspend fun deleteFolder(folderId: Uuid) {
-        conversations.values.forEach { state ->
+        sessions.values.forEach { session ->
+            val state = session.state
             if (state.value.folderId == folderId) state.update { it.copy(folderId = null) }
         }
         folderRepository.deleteFolder(folderId)
@@ -503,26 +583,18 @@ internal class SharedChatRuntime(
 
     override suspend fun moveConversationToFolder(conversationId: Uuid, folderId: Uuid?) {
         conversationRepository.updateConversationFolderId(conversationId, folderId)
-        conversationState(conversationId).update { it.copy(folderId = folderId) }
+        getOrCreateSession(conversationId).state.update { it.copy(folderId = folderId) }
     }
 
-    private fun conversationState(conversationId: Uuid): MutableStateFlow<Conversation> =
-        conversations.getOrPut(conversationId) {
-            MutableStateFlow(
-                Conversation.ofId(
-                    id = conversationId,
-                    assistantId = settingsStore.settingsFlow.value.getCurrentAssistant().id,
-                    newConversation = true,
-                ),
-            )
-        }
-
     private fun startGeneration(conversationId: Uuid, block: suspend () -> Unit) {
-        jobs.value[conversationId]?.cancel()
+        val session = getOrCreateSession(conversationId)
+        val previousJob = session.getJob()
+        previousJob?.cancel()
         val generationVersion = (generationVersions[conversationId] ?: 0L) + 1L
         generationVersions[conversationId] = generationVersion
         val job = scope.launch {
             try {
+                runCatching { previousJob?.join() }
                 block()
                 mutableGenerationDoneFlow.emit(conversationId)
             } catch (error: CancellationException) {
@@ -537,16 +609,15 @@ internal class SharedChatRuntime(
                 addError(error, conversationId = conversationId)
             } finally {
                 if (generationVersions[conversationId] == generationVersion) {
-                    processingStatuses[conversationId]?.value = null
-                    jobs.update { current -> current + (conversationId to null) }
+                    session.processingStatus.value = null
                 }
             }
         }
-        jobs.update { current -> current + (conversationId to job) }
+        session.setJob(job)
     }
 
     private suspend fun completeConversation(conversationId: Uuid) {
-        val state = conversationState(conversationId)
+        val state = getOrCreateSession(conversationId).state
         val settings = settingsStore.settingsFlow.first()
         val conversation = state.value
         val assistant = settings.getAssistantById(conversation.assistantId) ?: settings.getCurrentAssistant()
@@ -555,7 +626,7 @@ internal class SharedChatRuntime(
         val providerSetting = model.findProvider(settings.providers)
             ?: error("No provider is configured for ${model.displayName}")
         val provider = providerManager.getProviderByType(providerSetting)
-        val status = processingStatuses.getOrPut(conversationId) { MutableStateFlow(null) }
+        val status = getOrCreateSession(conversationId).processingStatus
         val senderName = assistant.name.ifBlank { model.displayName }
         val systemPrompt = conversation.customSystemPrompt
             ?.takeIf { assistant.allowConversationSystemPrompt && it.isNotBlank() }
@@ -708,8 +779,8 @@ internal class SharedChatRuntime(
         )
         if (completed) {
             val finalConversation = state.value
-            scope.launch { generateTitle(conversationId, finalConversation) }
-            scope.launch { generateSuggestion(conversationId, finalConversation) }
+            launchWithConversationReference(conversationId) { generateTitle(conversationId, finalConversation) }
+            launchWithConversationReference(conversationId) { generateSuggestion(conversationId, finalConversation) }
         }
     }
 
