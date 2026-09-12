@@ -30,12 +30,10 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.shared.PlatformBuildInfo
-import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
 import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
-import me.rerere.rikkahub.ui.components.ui.ErrorCardsDisplay
 import me.rerere.rikkahub.ui.components.ui.RabbitLoadingIndicator
 import me.rerere.rikkahub.ui.components.ui.UpdateCard
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
@@ -139,16 +137,6 @@ class AndroidChatPagePlatformContent(
             conversation = presentation.conversation,
             selectedMessages = presentation.selectedMessages,
         )
-    }
-
-    @Composable
-    override fun RenderErrors(
-        errors: List<ChatError>,
-        onDismissError: (Uuid) -> Unit,
-        onClearAllErrors: () -> Unit,
-        modifier: Modifier,
-    ) {
-        ErrorCardsDisplay(errors, onDismissError, onClearAllErrors, modifier)
     }
 
     @Composable

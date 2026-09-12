@@ -471,9 +471,6 @@ private fun ChatPageContent(
                 exportRenderer = { presentation ->
                     platformContent.RenderExport(presentation)
                 },
-                errorRenderer = { currentErrors, dismiss, clearAll, modifier ->
-                    platformContent.RenderErrors(currentErrors, dismiss, clearAll, modifier)
-                },
                 loadingRenderer = { modifier ->
                     platformContent.RenderLoading(modifier)
                 },

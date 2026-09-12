@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.ui
 
-import android.content.ClipData
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,7 +22,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -44,8 +42,9 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.ChatErrorSolution
 import me.rerere.rikkahub.ui.context.LocalNavController
+import me.rerere.rikkahub.utils.createPlainTextClipEntry
+import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
-import me.rerere.rikkahub.ui.resources.stringResource
 
 @Composable
 fun ErrorCardsDisplay(
@@ -182,9 +181,7 @@ fun ErrorCard(
                 onClick = {
                     scope.launch {
                         clipboard.setClipEntry(
-                            ClipEntry(
-                                clipData = ClipData.newPlainText("Error", error.error.message ?: "Unknown error")
-                            )
+                            createPlainTextClipEntry("Error", error.error.message ?: "Unknown error")
                         )
                     }
                 },

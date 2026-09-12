@@ -24,7 +24,6 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
-import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.chat_page_compress_context
@@ -32,7 +31,6 @@ import me.rerere.rikkahub.ui.components.ai.SharedCompressContextDialog
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import org.jetbrains.compose.resources.stringResource
-import kotlin.uuid.Uuid
 
 /** Platform operations and Android-only content embedded in the shared chat page. */
 interface ChatPagePlatformContent {
@@ -67,14 +65,6 @@ interface ChatPagePlatformContent {
 
     @Composable
     fun RenderExport(presentation: ChatExportPresentation)
-
-    @Composable
-    fun RenderErrors(
-        errors: List<ChatError>,
-        onDismissError: (Uuid) -> Unit,
-        onClearAllErrors: () -> Unit,
-        modifier: Modifier,
-    )
 
     @Composable
     fun RenderLoading(modifier: Modifier)
@@ -112,18 +102,6 @@ object UnavailableChatPagePlatformContent : ChatPagePlatformContent {
 
     @Composable
     override fun RenderExport(presentation: ChatExportPresentation) = Unit
-
-    @Composable
-    override fun RenderErrors(
-        errors: List<ChatError>,
-        onDismissError: (Uuid) -> Unit,
-        onClearAllErrors: () -> Unit,
-        modifier: Modifier,
-    ) {
-        Column(modifier = modifier) {
-            errors.forEach { error -> Text(error.error.message ?: "Unknown error") }
-        }
-    }
 
     @Composable
     override fun RenderLoading(modifier: Modifier) {

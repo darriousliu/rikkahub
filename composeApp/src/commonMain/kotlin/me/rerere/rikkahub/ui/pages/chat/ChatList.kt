@@ -102,6 +102,7 @@ import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.message.ChatMessageBranchSelector
 import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.ui.components.richtext.ZoomableAsyncImage
+import me.rerere.rikkahub.ui.components.ui.ErrorCardsDisplay
 import me.rerere.rikkahub.ui.components.ui.ListSelectableItem
 import me.rerere.rikkahub.ui.components.ui.Tooltip
 import me.rerere.rikkahub.ui.hooks.ImeLazyListAutoScroller
@@ -277,29 +278,6 @@ private fun BasicToolCall(
 }
 
 @Composable
-private fun BasicErrorCards(
-    errors: List<ChatError>,
-    onDismissError: (Uuid) -> Unit,
-    modifier: Modifier,
-) {
-    val error = errors.lastOrNull() ?: return
-    Surface(
-        onClick = { onDismissError(error.id) },
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.errorContainer,
-    ) {
-        Text(
-            text = error.title ?: error.error.message ?: error.error::class.simpleName.orEmpty(),
-            modifier = Modifier.padding(12.dp),
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
 fun ChatList(
     innerPadding: PaddingValues,
     conversation: Conversation,
@@ -329,8 +307,6 @@ fun ChatList(
     scrollCaptureInProgress: Boolean = false,
     messageRenderer: @Composable (ChatMessagePresentation) -> Unit = { BasicChatMessage(it) },
     exportRenderer: @Composable (ChatExportPresentation) -> Unit = {},
-    errorRenderer: @Composable (List<ChatError>, (Uuid) -> Unit, () -> Unit, Modifier) -> Unit =
-        { currentErrors, dismiss, _, modifier -> BasicErrorCards(currentErrors, dismiss, modifier) },
     loadingRenderer: @Composable (Modifier) -> Unit = { CircularProgressIndicator(modifier = it) },
     chatFontWrapper: @Composable (@Composable () -> Unit) -> Unit = { content -> content() },
 ) {
@@ -379,7 +355,6 @@ fun ChatList(
                 scrollCaptureInProgress = scrollCaptureInProgress,
                 messageRenderer = messageRenderer,
                 exportRenderer = exportRenderer,
-                errorRenderer = errorRenderer,
                 loadingRenderer = loadingRenderer,
                 chatFontWrapper = chatFontWrapper,
             )
@@ -416,7 +391,6 @@ private fun ChatListNormal(
     scrollCaptureInProgress: Boolean,
     messageRenderer: @Composable (ChatMessagePresentation) -> Unit,
     exportRenderer: @Composable (ChatExportPresentation) -> Unit,
-    errorRenderer: @Composable (List<ChatError>, (Uuid) -> Unit, () -> Unit, Modifier) -> Unit,
     loadingRenderer: @Composable (Modifier) -> Unit,
     chatFontWrapper: @Composable (@Composable () -> Unit) -> Unit,
 ) {
@@ -633,13 +607,13 @@ private fun ChatListNormal(
                 .padding(innerPadding),
         ) {
             // 错误消息卡片
-            errorRenderer(
-                errors,
-                onDismissError,
-                onClearAllErrors,
-                Modifier
+            ErrorCardsDisplay(
+                errors = errors,
+                onDismissError = onDismissError,
+                onClearAllErrors = onClearAllErrors,
+                modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .zIndex(5f),
+                    .zIndex(5f)
             )
 
             // 完成选择
