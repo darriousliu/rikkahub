@@ -74,7 +74,7 @@ import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.RECOMMENDED_PROVIDERS
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.platform.KScanQrImageDecoder
+import me.rerere.rikkahub.platform.platformDecodeQrImage
 import me.rerere.rikkahub.platform.QrScanResult
 import me.rerere.rikkahub.platform.rememberPlatformQrScanner
 import me.rerere.rikkahub.ui.components.nav.BackButton
@@ -342,7 +342,6 @@ private fun ImportProviderButton(
     val toaster = LocalToaster.current
     val coroutineScope = rememberCoroutineScope()
     val qrScanner = rememberPlatformQrScanner()
-    val qrImageDecoder = remember { KScanQrImageDecoder() }
     val cameraPermissionState = rememberPermissionState(PermissionCamera)
     var showImportDialog by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
@@ -377,7 +376,7 @@ private fun ImportProviderButton(
     val pickImageLauncher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
         file?.let {
             coroutineScope.launch {
-                val result = runCatching { qrImageDecoder.decode(it.readBytes()) }
+                val result = runCatching { platformDecodeQrImage(it.readBytes()) }
                     .getOrElse { error -> QrScanResult.Failure(error) }
                 handleImageQrResult(result, onAdd, toaster, messages)
             }

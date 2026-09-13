@@ -9,7 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
-import me.rerere.rikkahub.platform.PlatformQrCodeRenderer
+import me.rerere.rikkahub.platform.platformRenderQrCode
 
 @Composable
 fun QRCode(
@@ -21,9 +21,8 @@ fun QRCode(
 ) {
     val actualColor = color.takeOrElse { MaterialTheme.colorScheme.secondary }
     val actualBackgroundColor = backgroundColor.takeOrElse { Color.Transparent }
-    val renderer = remember { PlatformQrCodeRenderer() }
     val matrix = remember(value, size) {
-        renderer.render(content = value, size = size).getOrThrow()
+        platformRenderQrCode(content = value, size = size).getOrThrow()
     }
 
     Canvas(modifier = modifier) {

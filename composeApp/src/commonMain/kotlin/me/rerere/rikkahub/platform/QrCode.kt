@@ -25,10 +25,6 @@ public interface QrScanner {
 @Composable
 public expect fun rememberPlatformQrScanner(): QrScanner?
 
-public fun interface QrImageDecoder {
-    public suspend fun decode(imageBytes: ByteArray): QrScanResult
-}
-
 public class QrCodeMatrix internal constructor(
     public val width: Int,
     public val height: Int,
@@ -43,19 +39,6 @@ public class QrCodeMatrix internal constructor(
         require(x in 0 until width && y in 0 until height) { "QR code coordinate is out of bounds" }
         return darkModules[y * width + x]
     }
-}
-
-public fun interface QrCodeRenderer {
-    public fun render(content: String, size: Int): Result<QrCodeMatrix>
-}
-
-public class PlatformQrCodeRenderer : QrCodeRenderer {
-    override fun render(content: String, size: Int): Result<QrCodeMatrix> =
-        platformRenderQrCode(content = content, size = size)
-}
-
-public class KScanQrImageDecoder : QrImageDecoder {
-    override suspend fun decode(imageBytes: ByteArray): QrScanResult = platformDecodeQrImage(imageBytes)
 }
 
 internal expect fun platformRenderQrCode(content: String, size: Int): Result<QrCodeMatrix>
