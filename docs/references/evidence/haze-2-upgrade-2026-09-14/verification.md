@@ -43,6 +43,11 @@
 - 用户实际验证：开启模糊开关后输入框背景模糊正常。
 - 本 agent 已核对本轮 Desktop 可执行文件和内嵌 JAR hash 并以隔离 profile 启动；专属窗口截图受 Stage Manager/并行 Emulator 干扰，未保留为证据。
 
+### 用户补充的 Android / iOS 人工验证
+
+- 用户在同轮明确确认已手动验证 Android 和 iOS，blur 均没有问题。
+- 三端模糊效果均获得用户人工验证确认；这项反馈独立于上述 agent 的操作和截图覆盖范围。
+
 ## 未覆盖与清理
 
 已清除 Android 的未发送 `HazeGUI` 文本和 iOS 的测试文本，恢复两个平台的背景模糊开关为初始关闭；没有发送消息、调用模型、创建会话或修改其他设置。已停止本 agent 启动的 Android、iOS 和隔离 Desktop 进程；Android `pidof` 与测试 Desktop 进程检查均为空，隔离 Desktop profile 已删除。保留本目录的 Android 截图、一张范围受限的 iOS 聊天输入栏截图与本文作为证据，其他中间文件不作为提交证据。
