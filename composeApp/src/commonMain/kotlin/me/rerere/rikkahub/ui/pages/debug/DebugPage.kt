@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
@@ -53,7 +52,7 @@ import me.rerere.rikkahub.ui.components.richtext.MathBlock
 import me.rerere.rikkahub.ui.components.richtext.Mermaid
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import me.rerere.rikkahub.ui.theme.jetbrainsMonoFontFamily
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -62,7 +61,6 @@ import kotlin.uuid.Uuid
 @Composable
 fun DebugPage(vm: DebugVM = koinViewModel()) {
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -392,14 +390,14 @@ private fun ColorTokenItem(name: String, color: Color) {
             Text(
                 color.toHexString(),
                 style = MaterialTheme.typography.bodySmall,
-                fontFamily = JetbrainsMono,
+                fontFamily = jetbrainsMonoFontFamily(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
-private fun Color.toHexString(): String {
+internal fun Color.toHexString(): String {
     val argb = toArgb()
-    return "#%08X".format(argb)
+    return "#${argb.toUInt().toString(16).uppercase().padStart(8, '0')}"
 }

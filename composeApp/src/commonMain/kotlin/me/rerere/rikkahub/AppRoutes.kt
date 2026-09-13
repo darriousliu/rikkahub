@@ -69,6 +69,7 @@ import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantPromptPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantRequestPage
 import me.rerere.rikkahub.ui.pages.backup.BackupPage
 import me.rerere.rikkahub.ui.pages.chat.ChatPage
+import me.rerere.rikkahub.ui.pages.debug.DebugPage
 import me.rerere.rikkahub.ui.pages.extensions.ExtensionsPage
 import me.rerere.rikkahub.ui.pages.extensions.PromptPage
 import me.rerere.rikkahub.ui.pages.extensions.QuickMessagesPage
@@ -281,6 +282,7 @@ fun AppRoutes(
                         entry<Screen.SettingDonate> { SettingDonatePage() }
                         entry<Screen.SettingWeb> { SettingWebPage() }
                         entry<Screen.Log> { LogPage() }
+                        entry<Screen.Debug> { DebugPage() }
                         entry<Screen.Extensions> { ExtensionsPage() }
                         entry<Screen.QuickMessages> { QuickMessagesPage() }
                         entry<Screen.Prompts> { PromptPage() }

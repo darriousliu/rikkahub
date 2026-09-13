@@ -34,7 +34,6 @@ import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.openUsageAccessSettings
 import org.koin.android.ext.android.inject
-import me.rerere.rikkahub.ui.pages.debug.DebugPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceDetailPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceFileEditorPage
 import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
@@ -148,7 +147,6 @@ class RouteActivity : ComponentActivity() {
                 platformEntries = {
                     entry<Screen.ShareHandler> { ShareHandlerPage(it.text, it.streamUri) }
                     entry<Screen.SettingFiles> { SettingFilesPage() }
-                    entry<Screen.Debug> { DebugPage() }
                     entry<Screen.Workspaces> { WorkspacePage() }
                     entry<Screen.WorkspaceDetail> { WorkspaceDetailPage(it.id) }
                     entry<Screen.WorkspaceTerminal> { WorkspaceTerminalPage(it.id) }
