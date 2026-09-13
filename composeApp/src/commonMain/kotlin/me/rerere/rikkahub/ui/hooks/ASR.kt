@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.hooks
 
+import androidx.compose.runtime.Composable
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.asr.ASRState
 
@@ -9,3 +10,6 @@ interface CustomAsrState {
     fun stop()
     fun cleanup()
 }
+
+@Composable
+expect fun rememberCustomAsrState(): CustomAsrState?

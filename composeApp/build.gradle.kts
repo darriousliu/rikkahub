@@ -148,12 +148,16 @@ kotlin {
                 implementation(libs.metadata.extractor)
             }
         }
+        val iosJvmMain = create("iosJvmMain") {
+            dependsOn(commonMain.get())
+        }
         androidMain {
             dependsOn(mobileMain)
             dependsOn(androidJvmMain)
             dependencies {
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.appcompat)
+                implementation(libs.androidx.browser)
                 implementation(libs.androidx.lifecycle.process)
                 implementation(libs.coil.compose)
                 implementation(libs.coil.gif)
@@ -163,16 +167,20 @@ kotlin {
                 implementation(libs.ucrop)
                 implementation(libs.androidx.exifinterface)
                 implementation(libs.zxing.core)
+                implementation(project(":workspace"))
+                implementation(libs.termux.terminal.view)
             }
         }
         iosMain {
             dependsOn(mobileMain)
+            dependsOn(iosJvmMain)
             dependencies {
                 implementation(libs.ktor.client.darwin)
             }
         }
         jvmMain {
             dependsOn(androidJvmMain)
+            dependsOn(iosJvmMain)
             dependencies {
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)

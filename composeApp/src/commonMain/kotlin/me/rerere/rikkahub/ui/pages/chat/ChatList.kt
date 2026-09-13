@@ -107,11 +107,6 @@ private const val TAG = "ChatList"
 private const val LoadingIndicatorKey = "LoadingIndicator"
 private const val ScrollBottomKey = "ScrollBottomKey"
 
-interface VolumeKeyEventSource {
-    fun addListener(listener: (isVolumeUp: Boolean) -> Boolean)
-    fun removeListener(listener: (isVolumeUp: Boolean) -> Boolean)
-}
-
 @Composable
 fun ChatList(
     innerPadding: PaddingValues,
@@ -138,9 +133,8 @@ fun ChatList(
     onToolAnswer: ((toolCallId: String, answer: String) -> Unit)? = null,
     onToggleFavorite: ((MessageNode) -> Unit)? = null,
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
-    volumeKeyEventSource: VolumeKeyEventSource? = null,
+    volumeKeyEventSource: VolumeKeyEventSource? = rememberVolumeKeyEventSource(),
     scrollCaptureInProgress: Boolean = false,
-    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit = { _, _, _, _ -> },
 ) {
     AnimatedContent(
         targetState = previewMode,
@@ -185,7 +179,6 @@ fun ChatList(
                 onConversationSystemPromptChange = onConversationSystemPromptChange,
                 volumeKeyEventSource = volumeKeyEventSource,
                 scrollCaptureInProgress = scrollCaptureInProgress,
-                exportRenderer = exportRenderer,
             )
         }
     }
@@ -218,7 +211,6 @@ private fun ChatListNormal(
     onConversationSystemPromptChange: ((String?) -> Unit)? = null,
     volumeKeyEventSource: VolumeKeyEventSource?,
     scrollCaptureInProgress: Boolean,
-    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val loadingState by rememberUpdatedState(loading)
@@ -512,7 +504,7 @@ private fun ChatListNormal(
             }
 
             // 导出对话框
-            exportRenderer(
+            ChatExportSheet(
                 showExportSheet,
                 {
                     showExportSheet = false

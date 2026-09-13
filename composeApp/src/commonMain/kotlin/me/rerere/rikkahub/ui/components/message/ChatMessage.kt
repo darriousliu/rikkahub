@@ -208,7 +208,7 @@ fun ChatMessage(
             }
         }
 
-        LocalEditedFilesContent.current(message.parts, assistant)
+        EditedFilesList(message.parts, assistant)
 
         ProvideTextStyle(textStyle) {
             ChatMessageNerdLine(message = message)

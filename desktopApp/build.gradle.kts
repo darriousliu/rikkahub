@@ -44,6 +44,8 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.filekit.core)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.compose)
             implementation(libs.ratex)
             runtimeOnly("io.github.darriousliu:ratex-native-$ratexNativeTarget:${libs.versions.ratex.get()}")
         }

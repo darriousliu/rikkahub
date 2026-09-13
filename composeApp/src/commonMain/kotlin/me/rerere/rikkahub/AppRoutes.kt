@@ -23,41 +23,43 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import androidx.savedstate.serialization.SavedStateConfiguration
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
-import me.rerere.rikkahub.shared.PlatformBuildInfo
-import me.rerere.rikkahub.shared.currentPlatformKind
-import me.rerere.rikkahub.ui.components.nav.BackButton
-import me.rerere.rikkahub.ui.pages.webview.WebViewPage
-import androidx.navigation3.runtime.EntryProviderScope
-import androidx.navigation3.runtime.NavEntry
+import kotlin.uuid.Uuid
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
 import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.db_migrating
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.TTSController
+import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalSharedTransitionScope
 import me.rerere.rikkahub.ui.context.LocalTTSState
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
-import me.rerere.rikkahub.ui.hooks.CustomTtsState
+import me.rerere.rikkahub.ui.hooks.rememberCustomAsrState
+import me.rerere.rikkahub.ui.hooks.rememberCustomTtsState
 import me.rerere.rikkahub.ui.pages.assistant.AssistantPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantBasicPage
 import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailPage
@@ -75,21 +77,26 @@ import me.rerere.rikkahub.ui.pages.extensions.PromptPage
 import me.rerere.rikkahub.ui.pages.extensions.QuickMessagesPage
 import me.rerere.rikkahub.ui.pages.extensions.skills.SkillDetailPage
 import me.rerere.rikkahub.ui.pages.extensions.skills.SkillsPage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceDetailPage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceFileEditorPage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspacePage
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalPage
 import me.rerere.rikkahub.ui.pages.favorite.FavoritePage
 import me.rerere.rikkahub.ui.pages.history.HistoryPage
 import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
 import me.rerere.rikkahub.ui.pages.log.LogPage
+import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
+import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
+import me.rerere.rikkahub.ui.pages.setting.SettingPage
+import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
-import me.rerere.rikkahub.ui.pages.search.SearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
@@ -97,95 +104,39 @@ import me.rerere.rikkahub.ui.pages.setting.SettingSearchPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSpeechPage
 import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingWebPage
+import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.stats.StatsPage
 import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
+import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
-import org.koin.compose.koinInject
 import org.jetbrains.compose.resources.stringResource
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
-import kotlin.uuid.Uuid
-
-private val navigationSavedStateConfiguration = SavedStateConfiguration {
-    serializersModule = SerializersModule {
-        polymorphic(NavKey::class) {
-            subclass(Screen.Chat::class, Screen.Chat.serializer())
-            subclass(Screen.ShareHandler::class, Screen.ShareHandler.serializer())
-            subclass(Screen.History::class, Screen.History.serializer())
-            subclass(Screen.Favorite::class, Screen.Favorite.serializer())
-            subclass(Screen.Assistant::class, Screen.Assistant.serializer())
-            subclass(Screen.AssistantDetail::class, Screen.AssistantDetail.serializer())
-            subclass(Screen.AssistantBasic::class, Screen.AssistantBasic.serializer())
-            subclass(Screen.AssistantPrompt::class, Screen.AssistantPrompt.serializer())
-            subclass(Screen.AssistantMemory::class, Screen.AssistantMemory.serializer())
-            subclass(Screen.AssistantRequest::class, Screen.AssistantRequest.serializer())
-            subclass(Screen.AssistantMcp::class, Screen.AssistantMcp.serializer())
-            subclass(Screen.AssistantLocalTool::class, Screen.AssistantLocalTool.serializer())
-            subclass(Screen.AssistantInjections::class, Screen.AssistantInjections.serializer())
-            subclass(Screen.Translator::class, Screen.Translator.serializer())
-            subclass(Screen.Setting::class, Screen.Setting.serializer())
-            subclass(Screen.Backup::class, Screen.Backup.serializer())
-            subclass(Screen.ImageGen::class, Screen.ImageGen.serializer())
-            subclass(Screen.WebView::class, Screen.WebView.serializer())
-            subclass(Screen.SettingTheme::class, Screen.SettingTheme.serializer())
-            subclass(Screen.SettingPreferences::class, Screen.SettingPreferences.serializer())
-            subclass(Screen.SettingPreferencesTheme::class, Screen.SettingPreferencesTheme.serializer())
-            subclass(Screen.SettingPreferencesNotification::class, Screen.SettingPreferencesNotification.serializer())
-            subclass(Screen.SettingPreferencesGeneral::class, Screen.SettingPreferencesGeneral.serializer())
-            subclass(Screen.SettingPreferencesUI::class, Screen.SettingPreferencesUI.serializer())
-            subclass(Screen.SettingProvider::class, Screen.SettingProvider.serializer())
-            subclass(Screen.SettingProviderDetail::class, Screen.SettingProviderDetail.serializer())
-            subclass(Screen.SettingModels::class, Screen.SettingModels.serializer())
-            subclass(Screen.SettingAbout::class, Screen.SettingAbout.serializer())
-            subclass(Screen.SettingSearch::class, Screen.SettingSearch.serializer())
-            subclass(Screen.SettingSearchDetail::class, Screen.SettingSearchDetail.serializer())
-            subclass(Screen.SettingSpeech::class, Screen.SettingSpeech.serializer())
-            subclass(Screen.SettingMcp::class, Screen.SettingMcp.serializer())
-            subclass(Screen.SettingDonate::class, Screen.SettingDonate.serializer())
-            subclass(Screen.SettingFiles::class, Screen.SettingFiles.serializer())
-            subclass(Screen.SettingWeb::class, Screen.SettingWeb.serializer())
-            subclass(Screen.Debug::class, Screen.Debug.serializer())
-            subclass(Screen.Log::class, Screen.Log.serializer())
-            subclass(Screen.Extensions::class, Screen.Extensions.serializer())
-            subclass(Screen.QuickMessages::class, Screen.QuickMessages.serializer())
-            subclass(Screen.Prompts::class, Screen.Prompts.serializer())
-            subclass(Screen.Skills::class, Screen.Skills.serializer())
-            subclass(Screen.Workspaces::class, Screen.Workspaces.serializer())
-            subclass(Screen.WorkspaceDetail::class, Screen.WorkspaceDetail.serializer())
-            subclass(Screen.WorkspaceTerminal::class, Screen.WorkspaceTerminal.serializer())
-            subclass(Screen.WorkspaceFileEditor::class, Screen.WorkspaceFileEditor.serializer())
-            subclass(Screen.SkillDetail::class, Screen.SkillDetail.serializer())
-            subclass(Screen.MessageSearch::class, Screen.MessageSearch.serializer())
-            subclass(Screen.Stats::class, Screen.Stats.serializer())
-        }
-    }
-}
+import org.koin.compose.koinInject
 
 @Composable
 fun AppRoutes(
-    startScreen: Screen,
-    ttsState: CustomTtsState,
-    chatPage: @Composable (Screen.Chat) -> Unit = {
-        ChatPage(
-            id = Uuid.parse(it.id),
-            text = it.text,
-            files = it.files,
-            nodeId = it.nodeId?.let(Uuid::parse),
-        )
-    },
-    platformEntries: EntryProviderScope<NavKey>.() -> Unit = {},
+    startScreen: Screen? = null,
     modifier: Modifier = Modifier,
     onOpenUsageAccessSettings: () -> Unit = {},
     onBackStackChanged: (MutableList<NavKey>) -> Unit = {},
 ) {
     val toastState = rememberToasterState()
+    val ttsState = rememberCustomTtsState()
+    val asrState = rememberCustomAsrState()
+    val stringPreferenceStore = koinInject<StringPreferenceStore>()
+    val resolvedStartScreen by produceState<Screen?>(startScreen, startScreen, stringPreferenceStore) {
+        if (value == null) {
+            val rememberedId = stringPreferenceStore.get("lastConversationId")
+                ?.let { stored -> runCatching { Uuid.parse(stored) }.getOrNull() }
+            value = Screen.Chat((rememberedId ?: Uuid.random()).toString())
+        }
+    }
+    val initialScreen = resolvedStartScreen ?: return
     val settingsStore = koinInject<SettingsStore>()
     val settings by settingsStore.settingsFlow.collectAsStateWithLifecycle()
     val eventBus = koinInject<AppEventBus>()
     val buildInfo = koinInject<PlatformBuildInfo>()
     val migrationState by DatabaseMigrationTracker.state.collectAsStateWithLifecycle()
-    val backStack = rememberNavBackStack(navigationSavedStateConfiguration, startScreen)
+    val backStack = rememberNavBackStack(navigationSavedStateConfiguration, initialScreen)
     val navigator = remember(backStack) { Navigator(backStack) }
 
     SideEffect { onBackStackChanged(backStack) }
@@ -208,6 +159,7 @@ fun AppRoutes(
             LocalSettings provides settings,
             LocalToaster provides toastState,
             LocalTTSState provides ttsState,
+            LocalASRState provides asrState,
         ) {
             Toaster(
                 state = toastState,
@@ -249,7 +201,18 @@ fun AppRoutes(
                     entryProvider = entryProvider(
                         fallback = { key -> NavEntry(key) { UnavailableRoute(it) } },
                     ) {
-                        entry<Screen.Chat> { chatPage(it) }
+                        entry<Screen.Chat>(
+                            metadata = NavDisplay.transitionSpec { fadeIn() togetherWith fadeOut() }
+                                + NavDisplay.popTransitionSpec { fadeIn() togetherWith fadeOut() },
+                        ) { key ->
+                            ChatPage(
+                                id = Uuid.parse(key.id),
+                                text = key.text,
+                                files = key.files,
+                                nodeId = key.nodeId?.let(Uuid::parse),
+                            )
+                        }
+                        entry<Screen.ShareHandler> { ShareHandlerPage(it.text, it.streamUri) }
                         entry<Screen.History> { HistoryPage() }
                         entry<Screen.Favorite> { FavoritePage() }
                         entry<Screen.Assistant> { AssistantPage() }
@@ -281,6 +244,7 @@ fun AppRoutes(
                         entry<Screen.SettingSpeech> { SettingSpeechPage() }
                         entry<Screen.SettingMcp> { SettingMcpPage() }
                         entry<Screen.SettingDonate> { SettingDonatePage() }
+                        entry<Screen.SettingFiles> { SettingFilesPage() }
                         entry<Screen.SettingWeb> { SettingWebPage() }
                         entry<Screen.Log> { LogPage() }
                         entry<Screen.Debug> { DebugPage() }
@@ -288,7 +252,10 @@ fun AppRoutes(
                         entry<Screen.QuickMessages> { QuickMessagesPage() }
                         entry<Screen.Prompts> { PromptPage() }
                         entry<Screen.Skills> { SkillsPage() }
-                        platformEntries()
+                        entry<Screen.Workspaces> { WorkspacePage() }
+                        entry<Screen.WorkspaceDetail> { WorkspaceDetailPage(it.id) }
+                        entry<Screen.WorkspaceTerminal> { WorkspaceTerminalPage(it.id) }
+                        entry<Screen.WorkspaceFileEditor> { WorkspaceFileEditorPage(it.id, it.area, it.path) }
                         entry<Screen.SkillDetail> { SkillDetailPage(it.skillName) }
                         entry<Screen.MessageSearch> { SearchPage() }
                         entry<Screen.Stats> { StatsPage() }
@@ -342,7 +309,7 @@ fun AppRoutes(
 }
 
 @Composable
-private fun UnavailableRoute(screen: NavKey) {
+internal fun UnavailableRoute(screen: NavKey) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),

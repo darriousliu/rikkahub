@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.hooks
 
+import androidx.compose.runtime.Composable
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.tts.model.PlaybackState
 
@@ -27,3 +28,6 @@ interface CustomTtsState {
 
     fun cleanup()
 }
+
+@Composable
+expect fun rememberCustomTtsState(): CustomTtsState

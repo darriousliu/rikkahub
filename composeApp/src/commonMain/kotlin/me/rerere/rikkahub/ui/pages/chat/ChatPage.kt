@@ -73,7 +73,9 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.ChatInput
-import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
+import me.rerere.rikkahub.ui.components.ai.WorkspacePicker
+import me.rerere.rikkahub.ui.components.ai.WorkspaceCwdPicker
+import me.rerere.rikkahub.ui.components.ai.completion.rememberWorkspaceCompletionProviders
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
 import me.rerere.rikkahub.utils.rememberCameraLauncher
 import me.rerere.rikkahub.utils.prepareImageForCrop
@@ -101,13 +103,6 @@ fun ChatPage(
     text: String?,
     files: List<String>,
     nodeId: Uuid? = null,
-    volumeKeyEventSource: VolumeKeyEventSource? = null,
-    completionProviders: (Assistant, Conversation) -> List<ChatCompletionProvider> = { _, _ -> emptyList() },
-    drawerHeaderContent: @Composable (ChatVM, Settings) -> Unit = { _, _ -> },
-    workspacePicker: @Composable (Assistant, Conversation, (Assistant) -> Unit, (Conversation) -> Unit, () -> Unit) -> Unit =
-        { _, _, _, _, _ -> },
-    workspaceCwdPicker: @Composable (Assistant, Conversation, (Conversation) -> Unit) -> Unit = { _, _, _ -> },
-    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit = { _, _, _, _ -> },
 ) {
     val vm: ChatVM = koinViewModel(
         parameters = {
@@ -210,7 +205,6 @@ fun ChatPage(
                         current = conversation,
                         vm = vm,
                         settings = setting,
-                        headerContent = { drawerHeaderContent(vm, setting) },
                     )
                 }
             ) {
@@ -230,11 +224,6 @@ fun ChatPage(
                     errors = errors,
                     onDismissError = { vm.dismissError(it) },
                     onClearAllErrors = { vm.clearAllErrors() },
-                    volumeKeyEventSource = volumeKeyEventSource,
-                    completionProviders = completionProviders,
-                    workspacePicker = workspacePicker,
-                    workspaceCwdPicker = workspaceCwdPicker,
-                    exportRenderer = exportRenderer,
                 )
             }
         }
@@ -248,7 +237,6 @@ fun ChatPage(
                         current = conversation,
                         vm = vm,
                         settings = setting,
-                        headerContent = { drawerHeaderContent(vm, setting) },
                     )
                 }
             ) {
@@ -268,11 +256,6 @@ fun ChatPage(
                     errors = errors,
                     onDismissError = { vm.dismissError(it) },
                     onClearAllErrors = { vm.clearAllErrors() },
-                    volumeKeyEventSource = volumeKeyEventSource,
-                    completionProviders = completionProviders,
-                    workspacePicker = workspacePicker,
-                    workspaceCwdPicker = workspaceCwdPicker,
-                    exportRenderer = exportRenderer,
                 )
             }
             PlatformBackHandler(drawerState.isOpen) {
@@ -299,11 +282,6 @@ private fun ChatPageContent(
     errors: List<ChatError>,
     onDismissError: (Uuid) -> Unit,
     onClearAllErrors: () -> Unit,
-    volumeKeyEventSource: VolumeKeyEventSource?,
-    completionProviders: (Assistant, Conversation) -> List<ChatCompletionProvider>,
-    workspacePicker: @Composable (Assistant, Conversation, (Assistant) -> Unit, (Conversation) -> Unit, () -> Unit) -> Unit,
-    workspaceCwdPicker: @Composable (Assistant, Conversation, (Conversation) -> Unit) -> Unit,
-    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -313,9 +291,7 @@ private fun ChatPageContent(
     var showFilesSheet by remember { mutableStateOf(false) }
     val scrollCaptureInProgress = LocalScrollCaptureInProgress.current
 
-    val inputCompletionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, completionProviders) {
-        completionProviders(assistant, conversation)
-    }
+    val inputCompletionProviders = rememberWorkspaceCompletionProviders(assistant, conversation)
 
     TTSAutoPlay(vm = vm, setting = setting, conversation = conversation)
 
@@ -504,9 +480,7 @@ private fun ChatPageContent(
                     vm.updateConversation(conversation.copy(customSystemPrompt = newPrompt))
                     vm.saveConversationAsync()
                 },
-                volumeKeyEventSource = volumeKeyEventSource,
                 scrollCaptureInProgress = scrollCaptureInProgress,
-                exportRenderer = exportRenderer,
             )
         }
 
@@ -518,8 +492,6 @@ private fun ChatPageContent(
                 assistant = assistant,
                 vm = vm,
                 onDismiss = { showFilesSheet = false },
-                workspacePicker = workspacePicker,
-                workspaceCwdPicker = workspaceCwdPicker,
             )
         }
     }
@@ -533,8 +505,6 @@ private fun ChatFilesPickerSheet(
     assistant: Assistant,
     vm: ChatVM,
     onDismiss: () -> Unit,
-    workspacePicker: @Composable (Assistant, Conversation, (Assistant) -> Unit, (Conversation) -> Unit, () -> Unit) -> Unit,
-    workspaceCwdPicker: @Composable (Assistant, Conversation, (Conversation) -> Unit) -> Unit,
 ) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
@@ -696,12 +666,12 @@ private fun ChatFilesPickerSheet(
             onPickAudio = { audioPickerLauncher.launch() },
             onPickFile = { filePickerLauncher.launch() },
             workspacePicker = {
-                workspacePicker(
+                WorkspacePicker(
                     assistant, conversation, onUpdateAssistant, onUpdateConversation, ::dismissAll,
                 )
             },
             workspaceCwdPicker = {
-                workspaceCwdPicker(assistant, conversation, onUpdateConversation)
+                WorkspaceCwdPicker(assistant, conversation, onUpdateConversation)
             },
         )
     }

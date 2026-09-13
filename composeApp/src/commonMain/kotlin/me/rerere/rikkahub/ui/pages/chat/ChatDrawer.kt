@@ -5,7 +5,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,6 +86,9 @@ import org.jetbrains.compose.resources.stringResource
 import me.rerere.rikkahub.utils.toDp
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
+import me.rerere.rikkahub.shared.PlatformBuildInfo
+import me.rerere.rikkahub.ui.components.ui.UpdateCard
+import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
 import kotlin.uuid.Uuid
 
 @Composable
@@ -95,7 +97,6 @@ fun ChatDrawerContent(
     vm: ChatVM,
     settings: Settings,
     current: Conversation,
-    headerContent: @Composable ColumnScope.() -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -160,7 +161,9 @@ fun ChatDrawerContent(
             modifier = Modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            headerContent()
+            if (settings.displaySetting.showUpdates && !rememberIsPlayStoreVersion()) {
+                UpdateCard(vm, koinInject<PlatformBuildInfo>())
+            }
 
             BackupReminderCard(
                 settings = settings,
