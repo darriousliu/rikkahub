@@ -154,6 +154,7 @@ kotlin {
                 implementation(libs.floatingx)
                 implementation(libs.jmdns)
                 implementation(libs.ucrop)
+                implementation(libs.androidx.exifinterface)
                 implementation(libs.zxing.core)
             }
         }

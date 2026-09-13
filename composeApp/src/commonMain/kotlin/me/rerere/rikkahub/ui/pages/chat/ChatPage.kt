@@ -34,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -41,13 +42,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.path
+import kotlinx.io.files.Path
+import me.rerere.rikkahub.utils.delete
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.provider.Model
+import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.LeftToRightListBullet
@@ -66,6 +73,12 @@ import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
 import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.ChatInput
+import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
+import me.rerere.rikkahub.ui.components.ai.useCropLauncher
+import me.rerere.rikkahub.utils.rememberCameraLauncher
+import me.rerere.rikkahub.utils.prepareImageForCrop
+import me.rerere.rikkahub.shared.PlatformKind
+import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
@@ -83,13 +96,24 @@ import org.koin.core.parameter.parametersOf
 import kotlin.uuid.Uuid
 
 @Composable
-fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null) {
+fun ChatPage(
+    id: Uuid,
+    text: String?,
+    files: List<String>,
+    nodeId: Uuid? = null,
+    volumeKeyEventSource: VolumeKeyEventSource? = null,
+    completionProviders: (Assistant, Conversation) -> List<ChatCompletionProvider> = { _, _ -> emptyList() },
+    drawerHeaderContent: @Composable (ChatVM, Settings) -> Unit = { _, _ -> },
+    workspacePicker: @Composable (Assistant, Conversation, (Assistant) -> Unit, (Conversation) -> Unit, () -> Unit) -> Unit =
+        { _, _, _, _, _ -> },
+    workspaceCwdPicker: @Composable (Assistant, Conversation, (Conversation) -> Unit) -> Unit = { _, _, _ -> },
+    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit = { _, _, _, _ -> },
+) {
     val vm: ChatVM = koinViewModel(
         parameters = {
             parametersOf(id.toString())
         }
     )
-    val platformContent = koinInject<ChatPagePlatformContent>()
     val filesManager = koinInject<FilesManager>()
     val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
@@ -186,7 +210,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
                         current = conversation,
                         vm = vm,
                         settings = setting,
-                        headerContent = { platformContent.RenderDrawerHeader(vm, setting) },
+                        headerContent = { drawerHeaderContent(vm, setting) },
                     )
                 }
             ) {
@@ -206,7 +230,11 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
                     errors = errors,
                     onDismissError = { vm.dismissError(it) },
                     onClearAllErrors = { vm.clearAllErrors() },
-                    platformContent = platformContent,
+                    volumeKeyEventSource = volumeKeyEventSource,
+                    completionProviders = completionProviders,
+                    workspacePicker = workspacePicker,
+                    workspaceCwdPicker = workspaceCwdPicker,
+                    exportRenderer = exportRenderer,
                 )
             }
         }
@@ -220,7 +248,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
                         current = conversation,
                         vm = vm,
                         settings = setting,
-                        headerContent = { platformContent.RenderDrawerHeader(vm, setting) },
+                        headerContent = { drawerHeaderContent(vm, setting) },
                     )
                 }
             ) {
@@ -240,7 +268,11 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
                     errors = errors,
                     onDismissError = { vm.dismissError(it) },
                     onClearAllErrors = { vm.clearAllErrors() },
-                    platformContent = platformContent,
+                    volumeKeyEventSource = volumeKeyEventSource,
+                    completionProviders = completionProviders,
+                    workspacePicker = workspacePicker,
+                    workspaceCwdPicker = workspaceCwdPicker,
+                    exportRenderer = exportRenderer,
                 )
             }
             PlatformBackHandler(drawerState.isOpen) {
@@ -267,7 +299,11 @@ private fun ChatPageContent(
     errors: List<ChatError>,
     onDismissError: (Uuid) -> Unit,
     onClearAllErrors: () -> Unit,
-    platformContent: ChatPagePlatformContent,
+    volumeKeyEventSource: VolumeKeyEventSource?,
+    completionProviders: (Assistant, Conversation) -> List<ChatCompletionProvider>,
+    workspacePicker: @Composable (Assistant, Conversation, (Assistant) -> Unit, (Conversation) -> Unit, () -> Unit) -> Unit,
+    workspaceCwdPicker: @Composable (Assistant, Conversation, (Conversation) -> Unit) -> Unit,
+    exportRenderer: @Composable (Boolean, () -> Unit, Conversation, List<UIMessage>) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -275,11 +311,10 @@ private fun ChatPageContent(
     val hazeState = rememberHazeState()
     val assistant = setting.getCurrentAssistant()
     var showFilesSheet by remember { mutableStateOf(false) }
-    val volumeKeyEventSource = platformContent.volumeKeyEventSource()
-    val scrollCaptureInProgress = platformContent.isScrollCaptureInProgress()
+    val scrollCaptureInProgress = LocalScrollCaptureInProgress.current
 
-    val completionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, platformContent) {
-        platformContent.completionProviders(assistant, conversation)
+    val inputCompletionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, completionProviders) {
+        completionProviders(assistant, conversation)
     }
 
     TTSAutoPlay(vm = vm, setting = setting, conversation = conversation)
@@ -314,7 +349,7 @@ private fun ChatPageContent(
                     loading = loadingJob != null,
                     settings = setting,
                     hazeState = hazeState,
-                    completionProviders = completionProviders,
+                    completionProviders = inputCompletionProviders,
                     onCancelClick = {
                         vm.stopGeneration()
                     },
@@ -471,14 +506,7 @@ private fun ChatPageContent(
                 },
                 volumeKeyEventSource = volumeKeyEventSource,
                 scrollCaptureInProgress = scrollCaptureInProgress,
-                exportRenderer = { visible, onDismissRequest, conversation, selectedMessages ->
-                    platformContent.RenderExport(
-                        visible = visible,
-                        onDismissRequest = onDismissRequest,
-                        conversation = conversation,
-                        selectedMessages = selectedMessages,
-                    )
-                },
+                exportRenderer = exportRenderer,
             )
         }
 
@@ -490,7 +518,8 @@ private fun ChatPageContent(
                 assistant = assistant,
                 vm = vm,
                 onDismiss = { showFilesSheet = false },
-                platformContent = platformContent,
+                workspacePicker = workspacePicker,
+                workspaceCwdPicker = workspaceCwdPicker,
             )
         }
     }
@@ -504,7 +533,8 @@ private fun ChatFilesPickerSheet(
     assistant: Assistant,
     vm: ChatVM,
     onDismiss: () -> Unit,
-    platformContent: ChatPagePlatformContent,
+    workspacePicker: @Composable (Assistant, Conversation, (Assistant) -> Unit, (Conversation) -> Unit, () -> Unit) -> Unit,
+    workspaceCwdPicker: @Composable (Assistant, Conversation, (Conversation) -> Unit) -> Unit,
 ) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
@@ -531,12 +561,39 @@ private fun ChatFilesPickerSheet(
         vm.updateConversation(it)
         vm.saveConversationAsync()
     }
-    val onLaunchCamera = platformContent.rememberCameraLauncher(
-        inputState = inputState,
-        skipCropImage = setting.displaySetting.skipCropImage,
-        onDismiss = ::dismissAll,
+    var cleanupCameraOutput by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val launchCameraCrop = useCropLauncher(
+        onCroppedImageReady = { croppedFile ->
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedFile)))
+            dismissAll()
+        },
+        onCleanup = {
+            cleanupCameraOutput?.invoke()
+            cleanupCameraOutput = null
+        },
     )
-    val launchImageCrop = platformContent.rememberImageCropLauncher(inputState, ::dismissAll)
+    val onLaunchCamera = rememberCameraLauncher { file, cleanup ->
+        cleanupCameraOutput = cleanup
+        if (setting.displaySetting.skipCropImage) {
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(file)))
+            cleanupCameraOutput?.invoke()
+            cleanupCameraOutput = null
+            dismissAll()
+        } else {
+            launchCameraCrop(file)
+        }
+    }
+    var preCropTempFile by remember { mutableStateOf<PlatformFile?>(null) }
+    val launchImageCrop = useCropLauncher(
+        onCroppedImageReady = { croppedFile ->
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedFile)))
+            dismissAll()
+        },
+        onCleanup = {
+            preCropTempFile?.let { Path(it.path).delete() }
+            preCropTempFile = null
+        },
+    )
     val filesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(sheetState = filesSheetState, onDismissRequest = ::dismissAll) {
         // FileKit needs the sheet's view controller until the native iOS picker returns.
@@ -545,8 +602,17 @@ private fun ChatFilesPickerSheet(
             mode = FileKitMode.Multiple(),
         ) { selectedFiles ->
             if (!selectedFiles.isNullOrEmpty()) {
-                if (!setting.displaySetting.skipCropImage && selectedFiles.size == 1 && launchImageCrop != null) {
-                    launchImageCrop(selectedFiles.first())
+                if (!setting.displaySetting.skipCropImage && selectedFiles.size == 1 &&
+                    currentPlatformKind == PlatformKind.ANDROID
+                ) {
+                    val selectedFile = selectedFiles.first()
+                    runCatching {
+                        preCropTempFile = prepareImageForCrop(selectedFile)
+                        launchImageCrop(preCropTempFile ?: selectedFile)
+                    }.onFailure {
+                        Log.e("ImagePickButton", "Failed to copy image to temp, falling back", it)
+                        launchImageCrop(selectedFile)
+                    }
                 } else {
                     scope.launch {
                         inputState.addImages(filesManager.importChatFiles(selectedFiles))
@@ -630,12 +696,12 @@ private fun ChatFilesPickerSheet(
             onPickAudio = { audioPickerLauncher.launch() },
             onPickFile = { filePickerLauncher.launch() },
             workspacePicker = {
-                platformContent.WorkspacePicker(
+                workspacePicker(
                     assistant, conversation, onUpdateAssistant, onUpdateConversation, ::dismissAll,
                 )
             },
             workspaceCwdPicker = {
-                platformContent.WorkspaceCwdPicker(assistant, conversation, onUpdateConversation)
+                workspaceCwdPicker(assistant, conversation, onUpdateConversation)
             },
         )
     }

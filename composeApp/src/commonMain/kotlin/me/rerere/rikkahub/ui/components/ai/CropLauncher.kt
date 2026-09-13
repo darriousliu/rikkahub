@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.components.ai
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import com.dokar.sonner.ToastType
 import io.github.vinceglb.filekit.PlatformFile
@@ -9,19 +8,18 @@ import me.rerere.rikkahub.platform.ImageCropRequest
 import me.rerere.rikkahub.platform.ImageCropResult
 import me.rerere.rikkahub.platform.rememberImageCropper
 import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.utils.toAndroidUri
 
 @Composable
 internal fun useCropLauncher(
-    onCroppedImageReady: (Uri) -> Unit,
+    onCroppedImageReady: (PlatformFile) -> Unit,
     onCleanup: (() -> Unit)? = null,
     aspectRatio: Pair<Float, Float>? = null,
     freeStyleCropEnabled: Boolean = true
-): (Uri) -> Unit {
+): (PlatformFile) -> Unit {
     val toaster = LocalToaster.current
     val cropper = rememberImageCropper { result ->
         when (result) {
-            is ImageCropResult.Success -> onCroppedImageReady(result.file.toAndroidUri())
+            is ImageCropResult.Success -> onCroppedImageReady(result.file)
             is ImageCropResult.Failed -> {
                 Logging.log(
                     "CropLauncher",
@@ -41,7 +39,7 @@ internal fun useCropLauncher(
     return { sourceUri ->
         cropper.launch(
             ImageCropRequest(
-                source = PlatformFile(sourceUri),
+                source = sourceUri,
                 aspectRatio = aspectRatio,
                 freeStyleCropEnabled = freeStyleCropEnabled,
             )

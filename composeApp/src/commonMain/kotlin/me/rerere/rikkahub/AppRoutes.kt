@@ -166,6 +166,14 @@ private val navigationSavedStateConfiguration = SavedStateConfiguration {
 fun AppRoutes(
     startScreen: Screen,
     ttsState: CustomTtsState,
+    chatPage: @Composable (Screen.Chat) -> Unit = {
+        ChatPage(
+            id = Uuid.parse(it.id),
+            text = it.text,
+            files = it.files,
+            nodeId = it.nodeId?.let(Uuid::parse),
+        )
+    },
     platformEntries: EntryProviderScope<NavKey>.() -> Unit = {},
     modifier: Modifier = Modifier,
     onOpenUsageAccessSettings: () -> Unit = {},
@@ -241,14 +249,7 @@ fun AppRoutes(
                     entryProvider = entryProvider(
                         fallback = { key -> NavEntry(key) { UnavailableRoute(it) } },
                     ) {
-                        entry<Screen.Chat> {
-                            ChatPage(
-                                id = Uuid.parse(it.id),
-                                text = it.text,
-                                files = it.files,
-                                nodeId = it.nodeId?.let(Uuid::parse),
-                            )
-                        }
+                        entry<Screen.Chat> { chatPage(it) }
                         entry<Screen.History> { HistoryPage() }
                         entry<Screen.Favorite> { FavoritePage() }
                         entry<Screen.Assistant> { AssistantPage() }

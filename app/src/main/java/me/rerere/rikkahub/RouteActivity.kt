@@ -28,10 +28,23 @@ import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.context.LocalASRState
 import me.rerere.rikkahub.ui.components.message.EditedFilesList
 import me.rerere.rikkahub.ui.components.message.LocalEditedFilesContent
+import me.rerere.rikkahub.ui.components.ai.WorkspaceCwdPicker
+import me.rerere.rikkahub.ui.components.ai.WorkspacePicker
+import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
+import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
+import me.rerere.rikkahub.ui.components.ui.UpdateCard
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.readStringPreference
 import me.rerere.rikkahub.ui.hooks.rememberCustomAsrState
 import me.rerere.rikkahub.ui.hooks.rememberCustomTtsState
+import me.rerere.rikkahub.ui.hooks.rememberIsPlayStoreVersion
+import me.rerere.rikkahub.ui.pages.chat.ChatExportSheet
+import me.rerere.rikkahub.ui.pages.chat.ChatPage
+import me.rerere.rikkahub.ui.pages.chat.VolumeKeyEventSource
+import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.openUsageAccessSettings
@@ -44,6 +57,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.workspace.WorkspaceStorageArea
 import kotlin.uuid.Uuid
+import org.koin.compose.koinInject
 
 class RouteActivity : ComponentActivity() {
     private val httpClient by inject<HttpClient>()
@@ -127,6 +141,32 @@ class RouteActivity : ComponentActivity() {
     private fun AppRoutes() {
         val tts = rememberCustomTtsState()
         val asr = rememberCustomAsrState()
+        val workspaceRepository = koinInject<WorkspaceRepository>()
+        val buildInfo = koinInject<PlatformBuildInfo>()
+        val volumeKeyEventSource = remember(this@RouteActivity) {
+            object : VolumeKeyEventSource {
+                override fun addListener(listener: (isVolumeUp: Boolean) -> Boolean) {
+                    volumeKeyListeners.add(listener)
+                }
+
+                override fun removeListener(listener: (isVolumeUp: Boolean) -> Boolean) {
+                    volumeKeyListeners.remove(listener)
+                }
+            }
+        }
+        val completionProviders: (Assistant, Conversation) -> List<ChatCompletionProvider> = remember(workspaceRepository) {
+            { assistant, conversation ->
+                assistant.workspaceId?.let { workspaceId ->
+                    listOf(
+                        WorkspaceCompletionProvider(
+                            workspaceId = workspaceId.toString(),
+                            repository = workspaceRepository,
+                            currentCwd = conversation.workspaceCwd,
+                        ),
+                    )
+                }.orEmpty()
+            }
+        }
         val startScreen = remember {
             Screen.Chat(
                 id = if (readBooleanPreference("create_new_conversation_on_start", true)) {
@@ -151,6 +191,36 @@ class RouteActivity : ComponentActivity() {
             me.rerere.rikkahub.AppRoutes(
                 startScreen = startScreen,
                 ttsState = tts,
+                chatPage = { screen ->
+                    ChatPage(
+                        id = Uuid.parse(screen.id),
+                        text = screen.text,
+                        files = screen.files,
+                        nodeId = screen.nodeId?.let(Uuid::parse),
+                        completionProviders = completionProviders,
+                        drawerHeaderContent = { vm, settings ->
+                            if (settings.displaySetting.showUpdates && !rememberIsPlayStoreVersion()) {
+                                UpdateCard(vm, buildInfo)
+                            }
+                        },
+                        volumeKeyEventSource = volumeKeyEventSource,
+                        workspacePicker = { assistant, conversation, onUpdateAssistant, onUpdateConversation, onDismiss ->
+                            WorkspacePicker(
+                                assistant,
+                                conversation,
+                                onUpdateAssistant,
+                                onUpdateConversation,
+                                onDismiss,
+                            )
+                        },
+                        workspaceCwdPicker = { assistant, conversation, onUpdateConversation ->
+                            WorkspaceCwdPicker(assistant, conversation, onUpdateConversation)
+                        },
+                        exportRenderer = { visible, onDismissRequest, conversation, selectedMessages ->
+                            ChatExportSheet(visible, onDismissRequest, conversation, selectedMessages)
+                        },
+                    )
+                },
                 platformEntries = {
                     entry<Screen.ShareHandler> { ShareHandlerPage(it.text, it.streamUri) }
                     entry<Screen.SettingFiles> { SettingFilesPage() }

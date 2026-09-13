@@ -42,8 +42,6 @@ import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.service.createWorkspaceToolsIfReady
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.createPlatformBuildInfo
-import me.rerere.rikkahub.ui.pages.chat.AndroidChatPagePlatformContent
-import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.SoundEffectPlayer
@@ -100,7 +98,6 @@ val androidAppModule = module {
     single<DocumentTextExtractor> { AndroidDocumentTextExtractor }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
-    single<ChatPagePlatformContent> { AndroidChatPagePlatformContent(get(), get(), get()) }
     single<OAuthCallbackSessionFactory> {
         AndroidOAuthCallbackSessionFactory(
             appScope = get(),

@@ -45,8 +45,6 @@ import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.FileKitFileCleaner
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
-import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
-import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
 import me.rerere.rikkahub.ui.hooks.rememberSharedCustomTtsState
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
@@ -130,7 +128,6 @@ fun SharedProductApp(
             single { database }
             single { buildInfo }
             single { externalUriOpener }
-            single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
             single { webServerRuntime }
             single { booleanPreferenceStore }
             single { stringPreferenceStore }
