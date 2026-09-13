@@ -4,7 +4,7 @@ import android.content.ClipData
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.system.Os
-import android.view.WindowManager
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -91,6 +92,7 @@ class ChatInputPlatformTest {
     private lateinit var repository: FilesRepository
     private lateinit var filesManager: FilesManager
     private lateinit var isolatedKoin: KoinApplication
+    private lateinit var composeView: View
     private var contentSet = false
 
     @Before
@@ -223,7 +225,7 @@ class ChatInputPlatformTest {
     }
 
     @Test
-    fun loadingWindowFlagLifecycleAndOriginalAsrSoundResourcesAreWired() {
+    fun loadingScreenOnLifecycleAndOriginalAsrSoundResourcesAreWired() {
         showInput()
         assertKeepScreenOn(false)
         compose.runOnIdle { loading.value = true }
@@ -259,6 +261,7 @@ class ChatInputPlatformTest {
 
     private fun showInput() {
         compose.setContent {
+            composeView = LocalView.current
             KoinIsolatedContext(context = isolatedKoin) {
                 CompositionLocalProvider(
                     LocalClipboard provides clipboard,
@@ -316,9 +319,11 @@ class ChatInputPlatformTest {
 
     private fun assertKeepScreenOn(expected: Boolean) {
         compose.runOnIdle {
-            val flags = compose.activity.window.attributes.flags
-            val enabled = flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON != 0
-            assertEquals("ChatInput loading owns the Activity window flag", expected, enabled)
+            assertEquals(
+                "ChatInput loading owns the Compose view's keep-screen-on request",
+                expected,
+                composeView.keepScreenOn,
+            )
         }
     }
 

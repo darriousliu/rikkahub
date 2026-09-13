@@ -55,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -95,7 +96,6 @@ import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionContext
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionItem
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionList
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
-import me.rerere.rikkahub.ui.components.ui.KeepScreenOn
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionRecordAudio
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
@@ -335,9 +335,6 @@ fun ChatInput(
                             enter = fadeIn() + scaleIn(),
                             exit = fadeOut() + scaleOut(),
                         ) {
-                            if (loading) {
-                                KeepScreenOn()
-                            }
                             ChatSendButton(
                                 state = state,
                                 loading = loading,
@@ -364,6 +361,7 @@ private fun ChatSendButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(30.dp)
+            .then(if (loading) Modifier.keepScreenOn() else Modifier)
             .testTag("chat_send_button")
             .clip(CircleShape)
             .combinedClickable(
