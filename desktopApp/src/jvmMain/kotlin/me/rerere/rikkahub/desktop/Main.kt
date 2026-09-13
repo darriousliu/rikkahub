@@ -22,13 +22,8 @@ import me.rerere.rikkahub.platform.JvmExternalUriOpener
 import me.rerere.rikkahub.platform.JvmOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.JvmSentryMonitoring
 import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
-import me.rerere.rikkahub.shared.CapabilityState
-import me.rerere.rikkahub.shared.PlatformCapability
-import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.SharedProductApp
-import me.rerere.rikkahub.shared.capabilityMatrix
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
-import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.web.createJvmWebServerRuntime
 import me.rerere.tts.controller.JvmAudioPlayer
 import me.rerere.tts.provider.providers.JvmSystemTTSProvider
@@ -51,14 +46,6 @@ internal fun desktopLaunchPolicy(
     shouldOpenWindow = !isHeadless,
 )
 
-internal fun validatesHeadlessSharedEntry(): Boolean {
-    val platform = currentPlatformKind
-    val capabilities = capabilityMatrix(platform)
-    return platform == PlatformKind.DESKTOP &&
-        capabilities.keys.toList() == PlatformCapability.entries &&
-        capabilities[PlatformCapability.SHARED_ENTRY] == CapabilityState.READY
-}
-
 fun main(args: Array<String>) {
     FileKit.init("RikkaHub")
     val policy = desktopLaunchPolicy(
@@ -66,11 +53,6 @@ fun main(args: Array<String>) {
         isHeadless = GraphicsEnvironment.isHeadless(),
     )
     if (!policy.shouldOpenWindow) {
-        if (policy.mode == DesktopLaunchMode.Smoke) {
-            check(validatesHeadlessSharedEntry()) {
-                "Desktop shared entry capability contract is invalid"
-            }
-        }
         return
     }
 

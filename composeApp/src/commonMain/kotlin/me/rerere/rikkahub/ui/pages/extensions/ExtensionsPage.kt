@@ -22,9 +22,8 @@ import me.rerere.hugeicons.stroke.Puzzle
 import me.rerere.hugeicons.stroke.Zap
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.generated.resources.*
-import me.rerere.rikkahub.shared.PlatformCapability
+import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.currentPlatformKind
-import me.rerere.rikkahub.shared.hasCapability
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalNavController
@@ -77,7 +76,7 @@ fun ExtensionsPage() {
                         headlineContent = { Text(stringResource(Res.string.extensions_page_agent_skills)) },
                         supportingContent = { Text(stringResource(Res.string.extensions_page_agent_skills_desc)) },
                     )
-                    if (hasCapability(currentPlatformKind, PlatformCapability.WORKSPACE)) {
+                    if (currentPlatformKind == PlatformKind.ANDROID) {
                         item(
                             onClick = { navController.navigate(Screen.Workspaces) },
                             leadingContent = { Icon(HugeIcons.Folder01, null) },
