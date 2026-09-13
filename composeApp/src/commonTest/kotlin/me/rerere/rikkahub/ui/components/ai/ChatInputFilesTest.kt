@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemTemporaryDirectory
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
+import me.rerere.rikkahub.service.FileKitChatFileStore
 import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.service.toFileUri
 import me.rerere.rikkahub.utils.canonicalFile
@@ -29,12 +30,14 @@ import kotlin.uuid.Uuid
 class ChatInputFilesTest {
     private val root = Path(SystemTemporaryDirectory, "cmp-input-files-${Uuid.random()}")
         .canonicalFile.apply { mkdirs() }
-    private val platform = SharedChatInputPlatformContent(
+    private val appScope = CoroutineScope(SupervisorJob())
+    private val filesManager = FileKitChatFileStore(
+        appScope,
         SharedChatAttachmentStore(FileKitPlatformFileStore(PlatformFile(root.toString()))),
     )
 
     @AfterTest
-    fun cleanUp() { root.deleteRecursively() }
+    fun cleanUp() { appScope.cancel(); root.deleteRecursively() }
 
     @Test
     fun deletionUsesTheInputScopeAndOnlyRemovesTheSelectedFile() = runTest {
@@ -42,7 +45,7 @@ class ChatInputFilesTest {
         val retained = root.resolve("retained.txt").apply { writeBytes(byteArrayOf(2)) }
         val inputScope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
         try {
-            platform.deleteChatFiles(listOf(PlatformFile(selected.toString()).toFileUri()), inputScope)
+            filesManager.deleteChatFiles(listOf(PlatformFile(selected.toString()).toFileUri()), inputScope)
             assertTrue(selected.exists())
             inputScope.coroutineContext.job.children.toList().joinAll()
             assertFalse(selected.exists())
@@ -56,7 +59,7 @@ class ChatInputFilesTest {
     fun cancellingTheInputScopeCancelsAQueuedDeletion() = runTest {
         val selected = root.resolve("selected.txt").apply { writeBytes(byteArrayOf(1)) }
         val inputScope = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
-        platform.deleteChatFiles(listOf(PlatformFile(selected.toString()).toFileUri()), inputScope)
+        filesManager.deleteChatFiles(listOf(PlatformFile(selected.toString()).toFileUri()), inputScope)
         inputScope.cancel()
         advanceUntilIdle()
         assertTrue(selected.exists())

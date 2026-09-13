@@ -13,6 +13,10 @@ internal class FileKitChatFileStore(
         scope.launch { attachmentStore.delete(locations) }
     }
 
+    override fun deleteChatFiles(locations: List<String>, scope: CoroutineScope) {
+        scope.launch { attachmentStore.delete(locations) }
+    }
+
     override suspend fun copyChatFile(location: String): String? = attachmentStore.copyIntoSandbox(location)
 
     override suspend fun createChatFilesByContents(files: List<PlatformFile>): List<String> =

@@ -51,13 +51,6 @@ fun rememberCustomAsrState(): CustomAsrState {
     return asrState
 }
 
-interface CustomAsrState {
-    val state: StateFlow<ASRState>
-    fun start(onTranscriptChange: (String) -> Unit)
-    fun stop()
-    fun cleanup()
-}
-
 private class CustomAsrStateImpl(
     private val context: Context,
     private val ktorHttpClient: HttpClient,

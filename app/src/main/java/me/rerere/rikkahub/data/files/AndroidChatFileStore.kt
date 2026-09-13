@@ -1,10 +1,14 @@
 package me.rerere.rikkahub.data.files
 
+import kotlinx.coroutines.flow.Flow
+import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
 import androidx.core.net.toUri
 import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.rikkahub.utils.toAndroidUri
 
 class AndroidChatFileStore(private val filesManager: FilesManager) : ChatFileStore {
+    override fun observe(): Flow<List<ManagedFileEntity>> = filesManager.observe()
+
     override fun deleteChatFiles(locations: List<String>) {
         filesManager.deleteChatFiles(locations.map { it.toUri() })
     }

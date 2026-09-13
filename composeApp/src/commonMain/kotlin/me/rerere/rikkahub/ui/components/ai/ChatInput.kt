@@ -1,5 +1,10 @@
 package me.rerere.rikkahub.ui.components.ai
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -38,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +52,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
@@ -65,6 +73,7 @@ import dev.chrisbanes.haze.blur.materials.HazeMaterials
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collectLatest
+import me.rerere.asr.ASRStatus
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ModelType
@@ -85,6 +94,11 @@ import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionContext
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionItem
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionList
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionRecordAudio
+import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
+import me.rerere.rikkahub.ui.context.LocalASRState
+import me.rerere.rikkahub.ui.hooks.isImeVisible
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
@@ -120,7 +134,7 @@ fun ChatInput(
     val focusManager = LocalFocusManager.current
 
     // 键盘弹出时让底部两角变直角，贴合 IME
-    val imeVisible = platformContent.isImeVisible()
+    val imeVisible = WindowInsets.isImeVisible
     val containerShape = if (imeVisible) {
         MaterialTheme.shapes.large.copy(
             bottomStart = CornerSize(0.dp),
@@ -140,6 +154,37 @@ fun ChatInput(
         focusManager.clearFocus(force = true)
         keyboardController?.hide()
         if (loading) onCancelClick() else onLongSendClick()
+    }
+
+    val asr = LocalASRState.current
+    val asrState = asr?.state?.collectAsState()?.value
+    val hapticFeedback = LocalHapticFeedback.current
+    val asrPermission = if (asr != null) rememberPermissionState(PermissionRecordAudio) else null
+    asrPermission?.let { PermissionManager(permissionState = it) }
+    var asrBaseText by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        platformContent.preloadAsrSounds()
+    }
+    LaunchedEffect(asrState?.status) {
+        when (asrState?.status) {
+            ASRStatus.Listening -> {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                platformContent.playAsrSound(ASRStatus.Listening)
+            }
+
+            ASRStatus.Stopping -> {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                platformContent.playAsrSound(ASRStatus.Stopping)
+            }
+
+            else -> Unit
+        }
+    }
+    LaunchedEffect(asrState?.errorMessage) {
+        asrState?.errorMessage?.takeIf { it.isNotBlank() }?.let { message ->
+            toaster.show(message = message, type = ToastType.Error)
+        }
     }
 
     Surface(
@@ -258,7 +303,38 @@ fun ChatInput(
                             )
                         }
 
-                        platformContent.RenderVoiceAndSendActions(state = state, loading = loading) {
+                        if (asr != null && asrState != null && (asrState.isAvailable || asrState.isRecording)) {
+                            AsrButton(
+                                state = asrState,
+                                onClick = {
+                                    when (asrState.status) {
+                                        ASRStatus.Listening -> asr.stop()
+                                        ASRStatus.Idle, ASRStatus.Error -> {
+                                            if (!asrPermission!!.allRequiredPermissionsGranted) {
+                                                asrPermission.requestPermissions()
+                                            } else {
+                                                asrBaseText = state.textContent.text.toString()
+                                                asr.start { transcript ->
+                                                    val spacer = if (asrBaseText.isBlank() || transcript.isBlank()) "" else " "
+                                                    state.setMessageText(asrBaseText + spacer + transcript)
+                                                }
+                                            }
+                                        }
+
+                                        ASRStatus.Connecting, ASRStatus.Stopping -> Unit
+                                    }
+                                },
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = asrState?.isRecording != true,
+                            enter = fadeIn() + scaleIn(),
+                            exit = fadeOut() + scaleOut(),
+                        ) {
+                            if (loading) {
+                                platformContent.KeepScreenOn()
+                            }
                             ChatSendButton(
                                 state = state,
                                 loading = loading,
