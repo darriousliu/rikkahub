@@ -87,6 +87,7 @@ import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.datastore.getQuickMessagesOfAssistant
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.QuickMessage
 import me.rerere.rikkahub.generated.resources.*
@@ -94,6 +95,7 @@ import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionContext
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionItem
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionList
 import me.rerere.rikkahub.ui.components.ai.completion.ChatCompletionProvider
+import me.rerere.rikkahub.ui.components.ui.KeepScreenOn
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.PermissionRecordAudio
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
@@ -102,6 +104,9 @@ import me.rerere.rikkahub.ui.hooks.isImeVisible
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
+import me.rerere.rikkahub.utils.onReceiveContent
+import me.rerere.rikkahub.utils.playAsrSound
+import me.rerere.rikkahub.utils.preloadAsrSounds
 import org.koin.compose.koinInject
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration.Companion.seconds
@@ -125,7 +130,6 @@ fun ChatInput(
     onLongSendClick: () -> Unit,
 ) {
     val toaster = LocalToaster.current
-    val platformContent = koinInject<ChatInputPlatformContent>()
     val assistant = settings.getCurrentAssistant()
     val hazeTintColor = MaterialTheme.colorScheme.surfaceContainerLow
     val inputHazeStyle = HazeMaterials.thin(containerColor = hazeTintColor)
@@ -164,18 +168,18 @@ fun ChatInput(
     var asrBaseText by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        platformContent.preloadAsrSounds()
+        preloadAsrSounds()
     }
     LaunchedEffect(asrState?.status) {
         when (asrState?.status) {
             ASRStatus.Listening -> {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                platformContent.playAsrSound(ASRStatus.Listening)
+                playAsrSound(ASRStatus.Listening)
             }
 
             ASRStatus.Stopping -> {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                platformContent.playAsrSound(ASRStatus.Stopping)
+                playAsrSound(ASRStatus.Stopping)
             }
 
             else -> Unit
@@ -227,7 +231,6 @@ fun ChatInput(
 
                     TextInputRow(
                         state = state,
-                        platformContent = platformContent,
                         completionProviders = completionProviders,
                         onSendMessage = { sendMessage() }
                     )
@@ -333,7 +336,7 @@ fun ChatInput(
                             exit = fadeOut() + scaleOut(),
                         ) {
                             if (loading) {
-                                platformContent.KeepScreenOn()
+                                KeepScreenOn()
                             }
                             ChatSendButton(
                                 state = state,
@@ -426,11 +429,11 @@ private fun ActionIconButton(
 @Composable
 private fun TextInputRow(
     state: ChatInputState,
-    platformContent: ChatInputPlatformContent,
     completionProviders: List<ChatCompletionProvider>,
     onSendMessage: () -> Unit,
 ) {
     val settings = LocalSettings.current
+    val filesManager: FilesManager = koinInject()
     val assistant = settings.getCurrentAssistant()
     val quickMessages = remember(settings.quickMessages, assistant.quickMessageIds) {
         settings.getQuickMessagesOfAssistant(assistant)
@@ -465,7 +468,27 @@ private fun TextInputRow(
         var isFocused by remember { mutableStateOf(false) }
         var isFullScreen by remember { mutableStateOf(false) }
         var completionList by remember { mutableStateOf<ChatCompletionList?>(null) }
-        val contentReceiverModifier = platformContent.contentReceiverModifier(state, settings)
+        val contentReceiverModifier = remember(
+            settings.displaySetting.pasteLongTextAsFile, settings.displaySetting.pasteLongTextThreshold
+        ) {
+            Modifier.onReceiveContent(
+                onImage = { file ->
+                    state.addImages(filesManager.createChatFilesByContents(listOf(file)))
+                    true
+                },
+                onText = { text ->
+                    if (settings.displaySetting.pasteLongTextAsFile &&
+                        text.length > settings.displaySetting.pasteLongTextThreshold
+                    ) {
+                        val document = filesManager.createChatTextFile(text)
+                        state.addFiles(listOf(document))
+                        true
+                    } else {
+                        false
+                    }
+                },
+            )
+        }
 
         LaunchedEffect(completionProviders, isFocused) {
             if (!isFocused || completionProviders.isEmpty()) {

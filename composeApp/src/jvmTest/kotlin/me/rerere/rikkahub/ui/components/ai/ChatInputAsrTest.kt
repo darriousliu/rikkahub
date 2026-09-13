@@ -1,9 +1,7 @@
 package me.rerere.rikkahub.ui.components.ai
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.ImageComposeScene
@@ -13,12 +11,19 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import com.dokar.sonner.rememberToasterState
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemTemporaryDirectory
 import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.rikkahub.data.datastore.DisplaySetting
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.files.testFilesManager
 import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.generated.resources.asr_button_content_description
 import me.rerere.rikkahub.generated.resources.asr_button_stop
@@ -27,6 +32,7 @@ import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.CustomAsrState
+import me.rerere.rikkahub.utils.deleteRecursively
 import org.jetbrains.compose.resources.getString
 import org.koin.compose.KoinIsolatedContext
 import org.koin.dsl.koinApplication
@@ -35,6 +41,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.uuid.Uuid
 
 class ChatInputAsrTest {
     @Test
@@ -58,12 +65,10 @@ class ChatInputAsrTest {
             assertEquals(1, asr.stops)
             ui.advance()
             assertFalse(ui.hasSendButton())
-            assertEquals(listOf(ASRStatus.Listening, ASRStatus.Stopping), ui.effects.played)
 
             asr.state.value = asr.state.value.copy(status = ASRStatus.Idle)
             ui.advance()
             assertTrue(ui.hasSendButton())
-            assertEquals(1, ui.effects.preloaded)
         }
     }
 
@@ -86,7 +91,7 @@ class ChatInputAsrTest {
     }
 
     @Test
-    fun withoutAsrKeepsSendAvailableAndLoadingWindowEffectIsDisposed() = withInput(null) { ui ->
+    fun withoutAsrKeepsSendAvailableAndLoadingSwitchesToCancel() = withInput(null) { ui ->
         assertTrue(ui.hasSendButton())
         assertTrue(ui.nodes().none { ui.voiceDescription in it.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty() })
         ui.input.setMessageText("message")
@@ -97,10 +102,10 @@ class ChatInputAsrTest {
         ui.advance()
         ui.sendButton().config[SemanticsActions.OnClick].action!!.invoke()
         assertEquals(1, ui.cancelled, "The rendered send action should see loading=true")
-        assertEquals(1, ui.effects.keepScreenOn)
         Snapshot.withMutableSnapshot { ui.loading.value = false }
         ui.advance()
-        assertEquals(0, ui.effects.keepScreenOn)
+        ui.sendButton().config[SemanticsActions.OnClick].action!!.invoke()
+        assertEquals(2, ui.sent)
     }
 
     private fun withInput(asr: FakeAsr?, block: (InputFixture) -> Unit) {
@@ -111,6 +116,8 @@ class ChatInputAsrTest {
         } finally {
             fixture.scene.close()
             fixture.koin.close()
+            fixture.scope.cancel()
+            fixture.root.deleteRecursively()
         }
     }
 
@@ -131,26 +138,13 @@ class ChatInputAsrTest {
         override fun cleanup() = Unit
     }
 
-    private class Effects : ChatInputPlatformContent {
-        var preloaded = 0
-        val played = mutableListOf<ASRStatus>()
-        var keepScreenOn = 0
-        override fun preloadAsrSounds() { preloaded++ }
-        override fun playAsrSound(status: ASRStatus) { played += status }
-        @Composable
-        override fun KeepScreenOn() {
-            DisposableEffect(Unit) {
-                keepScreenOn++
-                onDispose { keepScreenOn-- }
-            }
-        }
-    }
-
     private class InputFixture(asr: FakeAsr?) {
         val input = ChatInputState()
         val loading = mutableStateOf(false)
-        val effects = Effects()
-        val koin = koinApplication { modules(module { single<ChatInputPlatformContent> { effects } }) }
+        val root = Path(SystemTemporaryDirectory, "chat-input-test-${Uuid.random()}")
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val filesManager = testFilesManager(root, scope)
+        val koin = koinApplication { modules(module { single { filesManager } }) }
         var sent = 0
         var cancelled = 0
         private var frame = 0L

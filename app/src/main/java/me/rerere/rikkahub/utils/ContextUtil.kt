@@ -123,17 +123,6 @@ fun Context.openUrl(url: String) {
     }
 }
 
-fun Context.getActivity(): Activity? {
-    var context = this
-    while (context is ContextWrapper) {
-        if (context is Activity) {
-            return context
-        }
-        context = context.baseContext
-    }
-    return null
-}
-
 fun Context.getComponentActivity(): ComponentActivity? {
     var context = this
     while (context is ContextWrapper) {

@@ -7,7 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import me.rerere.rikkahub.utils.getActivity
 
 @Composable
-fun KeepScreenOn() {
+actual fun KeepScreenOn() {
     val context = LocalContext.current
     DisposableEffect(Unit) {
         val window = context.getActivity()?.window
