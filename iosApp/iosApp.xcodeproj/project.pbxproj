@@ -15,14 +15,14 @@
 
 /* Begin PBXFileReference section */
 		05595FD5C7727F5CBFBF8295 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		6DF3FFE105BE40D48018739F /* RikkaHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RikkaHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1F0CA11000000000000000C1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		1F0CA11000000000000000C1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1F0CA11000000000000000C2 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		1F0CA11000000000000000C3 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		1F0CA11000000000000000C4 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		1F0CA11000000000000000C5 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "ko.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		1F0CA11000000000000000C6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ru"; path = "ru.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Signing.xcconfig; sourceTree = "<group>"; };
+		1F0CA11000000000000000C4 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1F0CA11000000000000000C5 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1F0CA11000000000000000C6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		6DF3FFE105BE40D48018739F /* RikkaHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RikkaHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7A7EB0135A764D8C92C3AF10 /* Configuration/Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Signing.xcconfig; sourceTree = "<group>"; };
 		89C95284DD0819285255FEC3 /* iOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -51,7 +51,7 @@
 		EA5AC93861530F345CE58808 = {
 			isa = PBXGroup;
 			children = (
-				7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */,
+				7A7EB0135A764D8C92C3AF10 /* Configuration/Signing.xcconfig */,
 				F314196457A06B495FA325FF /* Products */,
 				0D03B36F28C12D0220BE39FC /* iosApp */,
 			);
@@ -124,22 +124,6 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXVariantGroup section */
-		1F0CA11000000000000000A0 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				1F0CA11000000000000000C1 /* en */,
-				1F0CA11000000000000000C2 /* zh-Hans */,
-				1F0CA11000000000000000C3 /* zh-Hant */,
-				1F0CA11000000000000000C4 /* ja */,
-				1F0CA11000000000000000C5 /* ko */,
-				1F0CA11000000000000000C6 /* ru */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin PBXResourcesBuildPhase section */
 		DCB56637C41495CD44053AFC /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
@@ -184,6 +168,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		1F0CA11000000000000000A0 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1F0CA11000000000000000C1 /* en */,
+				1F0CA11000000000000000C2 /* zh-Hans */,
+				1F0CA11000000000000000C3 /* zh-Hant */,
+				1F0CA11000000000000000C4 /* ja */,
+				1F0CA11000000000000000C5 /* ko */,
+				1F0CA11000000000000000C6 /* ru */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		04F91FE0263A9AA249DBF15E /* Release */ = {
@@ -243,12 +243,13 @@
 		};
 		14562A630B2ED314AD9C7676 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */;
+			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10 /* Configuration/Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 172;
+				DEVELOPMENT_TEAM = 656W8T2CR9;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
@@ -349,12 +350,13 @@
 		};
 		939482F6A5E708E27C124C55 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10 /* Signing.xcconfig */;
+			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10 /* Configuration/Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 172;
+				DEVELOPMENT_TEAM = 656W8T2CR9;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
