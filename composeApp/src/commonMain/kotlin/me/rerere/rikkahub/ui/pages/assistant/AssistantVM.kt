@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.assistant
 
+import me.rerere.rikkahub.data.files.FilesManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +18,7 @@ class AssistantVM(
     private val settingsStore: SettingsStore,
     private val memoryRepository: MemoryRepository,
     private val conversationRepo: ConversationRepository,
-    private val assetCleaner: AssistantAssetCleaner,
+    private val filesManager: FilesManager,
 ) : ViewModel() {
     val settings: StateFlow<Settings> = settingsStore.settingsFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, Settings.dummy())
@@ -61,7 +62,7 @@ class AssistantVM(
         }
 
         if (locations.isNotEmpty()) {
-            assetCleaner.deleteLocalAssets(locations)
+            filesManager.deleteLocalAssets(locations)
         }
     }
 

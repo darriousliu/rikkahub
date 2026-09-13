@@ -66,7 +66,7 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
@@ -126,7 +126,7 @@ class ChatService(
     private val providerManager: ProviderManager,
     private val localTools: LocalTools,
     val mcpManager: McpManager,
-    private val filesManager: ChatFileStore,
+    private val filesManager: FilesManager,
     private val skillManager: SkillManager,
     private val folderRepository: FolderRepository,
     private val booleanPreferenceStore: BooleanPreferenceStore,

@@ -10,21 +10,19 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.service.toLocalFilePath
-import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 
 /** 非 Android 文件清理接线；兼容旧 CMP fork 共用文件，不改写存量会话。 */
-internal class FileKitFileCleaner(
+class FileKitFileCleaner(
     private val database: AppDatabase,
     private val settingsStore: SettingsStore,
-) : ConversationFileStore, AssistantAssetCleaner {
-    override suspend fun deleteChatFiles(urls: List<String>) {
+) {
+    suspend fun deleteChatFiles(urls: List<String>) {
         // Repository 已删除会话，数据库中剩下的引用都需要保留。
         delete(urls, settingsStore.settingsFlowRaw.first().assetLocations())
     }
 
-    override suspend fun deleteLocalAssets(locations: List<String>) {
+    suspend fun deleteLocalAssets(locations: List<String>) {
         // 原 VM 在更新设置之前清理；只扣除本次移除的引用。
         val retained = settingsStore.settingsFlowRaw.first().assetLocations()
             .map(String::toLocalFilePath).toMutableList()

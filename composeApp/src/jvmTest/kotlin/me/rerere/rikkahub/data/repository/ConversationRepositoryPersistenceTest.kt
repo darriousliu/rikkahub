@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.repository
 
+import me.rerere.rikkahub.data.files.testFilesManager
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.CancellationException
@@ -313,7 +314,7 @@ class ConversationRepositoryPersistenceTest {
         messageNodeDAO,
         database.favoriteDao(),
         database,
-        ConversationFileStore {},
+        testFilesManager(),
         MessageFtsManager(database, MessageFtsDialect.UNICODE61),
     )
 

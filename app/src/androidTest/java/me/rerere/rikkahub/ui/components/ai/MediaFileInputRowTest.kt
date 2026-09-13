@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.ui.components.ai
 
+import me.rerere.rikkahub.utils.delete
+import me.rerere.rikkahub.utils.exists
+import me.rerere.rikkahub.data.files.toFileUri
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -140,7 +143,7 @@ class MediaFileInputRowTest {
             .also(createdFiles::add)
     }
 
-    private fun url(file: ManagedFileEntity): String = filesManager.getFile(file).toUri().toString()
+    private fun url(file: ManagedFileEntity): String = filesManager.getFile(file).toFileUri()
 
     private fun document(file: ManagedFileEntity) = UIMessagePart.Document(url(file), file.displayName, file.mimeType)
 }

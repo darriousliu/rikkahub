@@ -1,7 +1,7 @@
 package me.rerere.rikkahub.data.ai.mcp
 
 import android.webkit.MimeTypeMap
-import androidx.core.net.toUri
+import me.rerere.rikkahub.data.files.toFileUri
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
@@ -16,6 +16,6 @@ class AndroidMcpImageStore(
             displayName = "mcp_image.$extension",
             mimeType = mimeType,
         )
-        return UIMessagePart.Image(url = filesManager.getFile(entity).toUri().toString())
+        return UIMessagePart.Image(url = filesManager.getFile(entity).toFileUri())
     }
 }

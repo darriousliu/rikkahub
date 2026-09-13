@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.service
 
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.repository.FilesRepository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -70,10 +72,13 @@ class ChatAttachmentPersistenceTest {
         Room.inMemoryDatabaseBuilder<AppDatabase>(AppDatabaseConstructor::initialize),
         BundledSQLiteDriver(), MessageFtsDialect.UNICODE61,
     )
-    private val attachments = SharedChatAttachmentStore(FileKitPlatformFileStore(PlatformFile(root)))
+    private val filesManager = FilesManager(
+        Path(root.path), FilesRepository(database.managedFileDao()), scope,
+        FileKitFileCleaner(database, settings), asyncFileIo = true,
+    )
     private val repository = ConversationRepository(
         database.conversationDao(), database.messageNodeDao(), database.favoriteDao(), database,
-        FileKitFileCleaner(database, settings),
+        filesManager,
         MessageFtsManager(database, MessageFtsDialect.UNICODE61),
     )
     private val client = HttpClient(MockEngine { error("Attachment tests must not make network requests") })
@@ -90,7 +95,7 @@ class ChatAttachmentPersistenceTest {
         folderRepository = FolderRepository(database.folderDao(), database.conversationDao()),
         booleanPreferenceStore = DataStoreBooleanPreferenceStore(preferences),
         stringPreferenceStore = DataStoreStringPreferenceStore(preferences),
-        filesManager = FileKitChatFileStore(scope, attachments),
+        filesManager = filesManager,
         mcpManager = McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
             OAuthCallbackSessionFactory { error("No OAuth expected") }, client),
         templateTransformer = TemplateTransformer(createMessageTemplateEngine()),

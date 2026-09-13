@@ -54,7 +54,7 @@ import me.rerere.hugeicons.stroke.LeftToRightListBullet
 import me.rerere.hugeicons.stroke.Menu03
 import me.rerere.hugeicons.stroke.MessageAdd01
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.platform.PlatformBackHandler
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
@@ -90,7 +90,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
         }
     )
     val platformContent = koinInject<ChatPagePlatformContent>()
-    val filesManager = koinInject<ChatFileStore>()
+    val filesManager = koinInject<FilesManager>()
     val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
 
@@ -140,7 +140,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
     LaunchedEffect(files, text) {
         if (files.isNotEmpty()) {
             val sourceFiles = files.map(filesManager::fileFromLocation)
-            val localFiles = filesManager.createChatFilesByContents(sourceFiles)
+            val localFiles = filesManager.importChatFiles(sourceFiles)
             val contentTypes = sourceFiles.mapNotNull(filesManager::getFileMimeType)
             inputState.messageContent = buildList {
                 localFiles.forEachIndexed { index, file ->
@@ -508,7 +508,7 @@ private fun ChatFilesPickerSheet(
 ) {
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
-    val filesManager = koinInject<ChatFileStore>()
+    val filesManager = koinInject<FilesManager>()
     var showInjectionSheet by remember { mutableStateOf(false) }
     var showCompressDialog by remember { mutableStateOf(false) }
 
@@ -549,7 +549,7 @@ private fun ChatFilesPickerSheet(
                     launchImageCrop(selectedFiles.first())
                 } else {
                     scope.launch {
-                        inputState.addImages(filesManager.createChatFilesByContents(selectedFiles))
+                        inputState.addImages(filesManager.importChatFiles(selectedFiles))
                         dismissAll()
                     }
                 }
@@ -561,7 +561,7 @@ private fun ChatFilesPickerSheet(
         ) { selectedFiles ->
             if (!selectedFiles.isNullOrEmpty()) {
                 scope.launch {
-                    inputState.addVideos(filesManager.createChatFilesByContents(selectedFiles))
+                    inputState.addVideos(filesManager.importChatFiles(selectedFiles))
                     dismissAll()
                 }
             }
@@ -572,7 +572,7 @@ private fun ChatFilesPickerSheet(
         ) { selectedFiles ->
             if (!selectedFiles.isNullOrEmpty()) {
                 scope.launch {
-                    inputState.addAudios(filesManager.createChatFilesByContents(selectedFiles))
+                    inputState.addAudios(filesManager.importChatFiles(selectedFiles))
                     dismissAll()
                 }
             }
@@ -587,7 +587,7 @@ private fun ChatFilesPickerSheet(
                         val fileName = filesManager.getFileName(file) ?: "file"
                         val mime = filesManager.getFileMimeType(file) ?: "text/plain"
                         if (isAllowedFileType(fileName, mime)) {
-                            val localUri = filesManager.createChatFilesByContents(listOf(file)).firstOrNull()
+                            val localUri = filesManager.importChatFiles(listOf(file)).firstOrNull()
                                 ?: run {
                                     toaster.show(
                                         getString(Res.string.chat_input_file_read_failed, fileName),

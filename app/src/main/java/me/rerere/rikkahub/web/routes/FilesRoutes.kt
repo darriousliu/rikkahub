@@ -105,7 +105,7 @@ fun Route.filesRoutes(
             val entity = filesManager.get(id)
                 ?: throw NotFoundException("File not found")
 
-            val file = filesManager.getFile(entity)
+            val file = File(filesManager.getFile(entity).toString())
             if (!file.exists()) {
                 throw NotFoundException("File not found on disk")
             }
@@ -241,7 +241,7 @@ private fun sanitizeDisplayName(fileName: String): String {
 
 private fun ManagedFileEntity.toUploadedFileDto(filesManager: FilesManager) = UploadedFileDto(
     id = id,
-    url = filesManager.getFile(this).toUri().toString(),
+    url = File(filesManager.getFile(this).toString()).toUri().toString(),
     fileName = displayName,
     mime = mimeType,
     size = sizeBytes,

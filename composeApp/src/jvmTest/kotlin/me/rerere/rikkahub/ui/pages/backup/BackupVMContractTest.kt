@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.backup
 
+import me.rerere.rikkahub.data.files.testFilesManager
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -46,7 +47,6 @@ import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.data.sync.S3BackupItem
@@ -663,7 +663,7 @@ class BackupVMContractTest {
                 }, MessageFtsDialect.UNICODE61,
             ).also { database = it }
             ConversationRepository(
-                db.conversationDao(), db.messageNodeDao(), db.favoriteDao(), db, ConversationFileStore {},
+                db.conversationDao(), db.messageNodeDao(), db.favoriteDao(), db, testFilesManager(),
                 MessageFtsManager(db, MessageFtsDialect.UNICODE61),
             )
         }

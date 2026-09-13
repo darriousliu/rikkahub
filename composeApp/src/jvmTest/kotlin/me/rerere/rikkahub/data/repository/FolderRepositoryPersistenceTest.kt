@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.repository
 
+import me.rerere.rikkahub.data.files.testFilesManager
 import androidx.room3.Room
 import androidx.room3.useWriterConnection
 import androidx.sqlite.async.step
@@ -47,7 +48,7 @@ class FolderRepositoryPersistenceTest {
             database.messageNodeDao(),
             database.favoriteDao(),
             database,
-            ConversationFileStore {},
+            testFilesManager(),
             MessageFtsManager(database, MessageFtsDialect.UNICODE61),
         )
     }

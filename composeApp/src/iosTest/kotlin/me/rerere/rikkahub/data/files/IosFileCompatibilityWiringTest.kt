@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.files
 
+import me.rerere.rikkahub.data.files.testFilesManager
 import androidx.datastore.preferences.core.edit
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
@@ -26,7 +27,6 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.canonicalFile
@@ -108,6 +108,6 @@ class IosFileCompatibilityWiringTest {
 
     private fun repository(database: AppDatabase) = ConversationRepository(
         database.conversationDao(), database.messageNodeDao(), database.favoriteDao(), database,
-        ConversationFileStore { }, MessageFtsManager(database, MessageFtsDialect.UNICODE61),
+        testFilesManager(), MessageFtsManager(database, MessageFtsDialect.UNICODE61),
     )
 }

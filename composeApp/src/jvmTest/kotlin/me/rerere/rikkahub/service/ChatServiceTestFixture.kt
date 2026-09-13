@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.service
 
+import me.rerere.rikkahub.data.files.FilesManager
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -34,14 +35,11 @@ import me.rerere.rikkahub.data.db.buildAppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.data.files.ChatFileStore
 import me.rerere.rikkahub.data.model.Conversation
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
-import me.rerere.rikkahub.platform.FileKitPlatformFileStore
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import org.koin.core.qualifier.named
@@ -83,10 +81,7 @@ internal class ChatServiceTestFixture(
             single<BooleanPreferenceStore> { DataStoreBooleanPreferenceStore(preferences) }
             single<StringPreferenceStore> { DataStoreStringPreferenceStore(preferences) }
             single { fts }
-            single<ConversationFileStore> { ConversationFileStore { error("Unexpected repository file deletion") } }
-            single<ChatFileStore> {
-                FileKitChatFileStore(scope, SharedChatAttachmentStore(FileKitPlatformFileStore(PlatformFile(root))))
-            }
+            single { FilesManager(Path(root.path), get(), scope, asyncFileIo = true) }
             single<McpImageStore> { McpImageStore { _, _ -> error("Unexpected MCP image") } }
             single<OAuthCallbackSessionFactory> { OAuthCallbackSessionFactory { error("Unexpected OAuth") } }
             single { LocalTools(get(), settings, null) }

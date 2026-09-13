@@ -18,6 +18,7 @@ import me.rerere.common.android.appTempFolder
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.RouteActivity
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.files.createChatFilesByContents
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation

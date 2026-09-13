@@ -23,7 +23,7 @@ import me.rerere.rikkahub.data.model.Avatar
 import me.rerere.rikkahub.data.model.Tag
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.db.dao.WorkspaceDAO
-import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.files.SkillMetadata
 import kotlin.uuid.Uuid
@@ -34,7 +34,7 @@ class AssistantDetailVM(
     private val id: String,
     private val settingsStore: SettingsStore,
     private val memoryRepository: MemoryRepository,
-    private val assetCleaner: AssistantAssetCleaner,
+    private val filesManager: FilesManager,
     private val skillManager: SkillManager,
     private val workspaceDao: WorkspaceDAO,
 ) : ViewModel() {
@@ -208,7 +208,7 @@ class AssistantDetailVM(
     suspend fun checkAvatarDelete(old: Assistant, new: Assistant) {
         val oldAvatar = old.avatar
         if (oldAvatar is Avatar.Image && oldAvatar != new.avatar) {
-            assetCleaner.deleteLocalAssets(listOf(oldAvatar.url))
+            filesManager.deleteLocalAssets(listOf(oldAvatar.url))
         }
     }
 
@@ -218,7 +218,7 @@ class AssistantDetailVM(
 
         if (oldBackground != null && oldBackground != newBackground) {
             try {
-                assetCleaner.deleteLocalAssets(listOf(oldBackground))
+                filesManager.deleteLocalAssets(listOf(oldBackground))
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to delete background file: $oldBackground", e)
             }

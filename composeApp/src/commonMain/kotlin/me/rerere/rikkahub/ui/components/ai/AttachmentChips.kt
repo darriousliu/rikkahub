@@ -33,7 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import coil3.compose.AsyncImage
-import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
@@ -47,7 +47,7 @@ import org.koin.compose.koinInject
 fun MediaFileInputRow(
     state: ChatInputState,
 ) {
-    val filesManager = koinInject<ChatFileStore>()
+    val filesManager = koinInject<FilesManager>()
     val scope = rememberCoroutineScope()
     val managedFiles by filesManager.observe().collectAsState(initial = emptyList())
     val displayNameByRelativePath = remember(managedFiles) {

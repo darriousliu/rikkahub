@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.repository
 
+import me.rerere.rikkahub.data.files.FilesManager
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
@@ -25,16 +26,12 @@ import me.rerere.rikkahub.utils.JsonInstant
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
-fun interface ConversationFileStore {
-    suspend fun deleteChatFiles(urls: List<String>)
-}
-
 class ConversationRepository(
     private val conversationDAO: ConversationDAO,
     private val messageNodeDAO: MessageNodeDAO,
     private val favoriteDAO: FavoriteDAO,
     private val database: AppDatabase,
-    private val conversationFileStore: ConversationFileStore,
+    private val filesManager: FilesManager,
     private val messageFtsManager: MessageFtsManager,
 ) {
     companion object {
@@ -322,7 +319,7 @@ class ConversationRepository(
                 conversationToConversationEntity(conversation)
             )
         }
-        conversationFileStore.deleteChatFiles(fullConversation.files)
+        filesManager.deleteConversationFiles(fullConversation.files)
     }
 
     suspend fun searchMessages(

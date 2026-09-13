@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.platform
 
+import kotlinx.io.files.Path
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.repository.FilesRepository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -64,8 +67,9 @@ class FileKitFileCleanerTest {
         BundledSQLiteDriver(), MessageFtsDialect.UNICODE61,
     )
     private val cleaner = FileKitFileCleaner(database, settings)
+    private val filesManager = FilesManager(Path(root.path), FilesRepository(database.managedFileDao()), scope, cleaner, true)
     private val repository = ConversationRepository(
-        database.conversationDao(), database.messageNodeDao(), database.favoriteDao(), database, cleaner,
+        database.conversationDao(), database.messageNodeDao(), database.favoriteDao(), database, filesManager,
         MessageFtsManager(database, MessageFtsDialect.UNICODE61),
     )
 
@@ -101,6 +105,7 @@ class FileKitFileCleanerTest {
     fun `shared files in upload are also preserved and ordinary independent files are removed`() = runTest {
         val shared = file("upload/restored-from-backup.txt")
         val independent = file("upload/independent.txt")
+        filesManager.syncFolder()
         val source = conversation(listOf(document(shared), document(independent)))
         val fork = conversation(listOf(document(shared.replace("file://", "file:"))))
         repository.insertConversation(source)
@@ -108,6 +113,13 @@ class FileKitFileCleanerTest {
         repository.deleteConversation(source)
         assertTrue(File(shared.toLocalFilePath()).exists())
         assertFalse(File(independent.toLocalFilePath()).exists())
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) {
+                filesManager.observe().first { rows -> rows.none { it.relativePath == "upload/independent.txt" } }
+            }
+        }
+        assertNotNull(filesManager.getByRelativePath("upload/restored-from-backup.txt"))
+
     }
 
     @Test
@@ -145,7 +157,7 @@ class FileKitFileCleanerTest {
     @Test
     fun `assistant deletion through the original VM preserves another assistant and its background`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
-        val vm = AssistantVM(settings, MemoryRepository(database.memoryDao()), repository, cleaner)
+        val vm = AssistantVM(settings, MemoryRepository(database.memoryDao()), repository, filesManager)
         try {
             val shared = file("platform-files/images/background.png")
             val avatar = file("upload/avatar.png")

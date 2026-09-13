@@ -4,6 +4,15 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.path
 import io.github.vinceglb.filekit.readBytes
+import me.rerere.rikkahub.data.files.testFilesManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
@@ -38,10 +47,11 @@ class ChatAttachmentFilesTest {
     private val root = Path(SystemTemporaryDirectory, "cmp-attachment-test-${Uuid.random()}")
         .canonicalFile.apply { mkdirs() }
     private val store = FileKitPlatformFileStore(PlatformFile(root.toString()))
-    private val attachments = SharedChatAttachmentStore(store)
+    private val scope = CoroutineScope(SupervisorJob())
+    private val filesManager = testFilesManager(root, scope)
 
     @AfterTest
-    fun cleanUp() { root.deleteRecursively() }
+    fun cleanUp() { scope.cancel(); root.deleteRecursively() }
 
     @Test
     fun copiedFilesUseOriginalUploadDirectoryAndUuidExtension() = runTest {
@@ -86,24 +96,20 @@ class ChatAttachmentFilesTest {
     }
 
     @Test
-    fun importRetainsDisplayNamesAndMediaKinds() = runTest {
-        val sources = listOf("照片.PNG", "movie.mp4", "song.mp3", "中文 note.txt")
-            .map { source(it, byteArrayOf(1, 3, 5)) }
-        val imported = attachments.import(sources)
-        assertIs<UIMessagePart.Image>(imported[0])
-        assertIs<UIMessagePart.Video>(imported[1])
-        assertIs<UIMessagePart.Audio>(imported[2])
-        val document = assertIs<UIMessagePart.Document>(imported[3])
-        assertEquals("中文 note.txt", document.fileName)
-        assertEquals("text/plain", document.mime)
-        assertContentEquals(sources.last().readBytes(), PlatformFile(document.url.toLocalFilePath()).readBytes())
+    fun importRetainsDisplayNamesAndMimeTypes() = runTest {
+        val names = listOf("照片.PNG", "movie.mp4", "song.mp3", "中文 note.txt")
+        val sources = names.map { source(it, byteArrayOf(1, 3, 5)) }
+        val imported = filesManager.importChatFiles(sources)
+        val records = withContext(Dispatchers.Default) { withTimeout(5_000) { filesManager.observe().first { it.size == 4 } } }
+        assertEquals(names.toSet(), records.map { it.displayName }.toSet())
+        assertEquals("text/plain", records.single { it.displayName == "中文 note.txt" }.mimeType)
+        assertContentEquals(sources.last().readBytes(), PlatformFile(imported.last().toLocalFilePath()).readBytes())
     }
 
     @Test
     fun pickerCopiesAllFilesInOrderWithoutChangingTheSources() = runTest {
         val sources = (1..20).map { source("附件 $it.txt", byteArrayOf(it.toByte())) }
-        val filesManager = FileKitChatFileStore(this, attachments)
-        val copied = filesManager.createChatFilesByContents(sources)
+        val copied = filesManager.importChatFiles(sources)
         assertEquals(20, copied.size)
         copied.forEachIndexed { index, location ->
             assertContentEquals(byteArrayOf((index + 1).toByte()), filesManager.fileFromLocation(location).readBytes())
@@ -116,8 +122,10 @@ class ChatAttachmentFilesTest {
     @Test
     fun missingSourceDoesNotDiscardTheOtherImportedFiles() = runTest {
         val valid = source("good.txt", byteArrayOf(1))
-        val imported = attachments.import(listOf(PlatformFile(root.resolve("missing.txt").toString()), valid))
-        assertEquals("good.txt", assertIs<UIMessagePart.Document>(imported.single()).fileName)
+        val imported = filesManager.importChatFiles(listOf(PlatformFile(root.resolve("missing.txt").toString()), valid))
+        assertEquals(1, imported.size)
+        val records = withContext(Dispatchers.Default) { withTimeout(5_000) { filesManager.observe().first { it.size == 1 } } }
+        assertEquals("good.txt", records.single().displayName)
     }
 
     @Test
@@ -162,22 +170,36 @@ class ChatAttachmentFilesTest {
     fun deletionOnlyTargetsRequestedLocalFilesAndToleratesMissingFiles() = runTest {
         val selected = source("selected.txt", byteArrayOf(1))
         val other = source("other.txt", byteArrayOf(2))
-        attachments.delete(listOf(selected.toFileUri(), "https://example.invalid/other.txt", "data:text/plain,other"))
+        filesManager.deleteChatFiles(listOf(selected.toFileUri(), "https://example.invalid/other.txt", "data:text/plain,other"))
+        scope.coroutineContext.job.children.toList().joinAll()
         assertFalse(Path(selected.path).exists())
         assertTrue(Path(other.path).exists())
-        attachments.delete(listOf(selected.toFileUri()))
+        filesManager.deleteChatFiles(listOf(selected.toFileUri()))
     }
 
     @Test
     fun oldDirectoryFilesCanStillBeReadAndImportedWithoutMovingTheOriginal() = runTest {
         val legacyDirectory = root.resolve("platform-files/attachments").apply { mkdirs() }
         val legacy = legacyDirectory.resolve("old name +.txt").apply { writeBytes(byteArrayOf(9, 8, 7)) }
-        val imported = assertIs<UIMessagePart.Document>(
-            attachments.importLocations(listOf(PlatformFile(legacy.toString()).toFileUri())).single(),
-        )
+        val imported = filesManager.copyChatFile(PlatformFile(legacy.toString()).toFileUri())!!
         assertTrue(legacy.exists())
-        assertNotEquals(legacy.toString(), imported.url.toLocalFilePath())
-        assertContentEquals(byteArrayOf(9, 8, 7), PlatformFile(imported.url.toLocalFilePath()).readBytes())
+        assertNotEquals(legacy.toString(), imported.toLocalFilePath())
+        assertContentEquals(byteArrayOf(9, 8, 7), PlatformFile(imported.toLocalFilePath()).readBytes())
+    }
+
+    @Test
+    fun managedCopyRegistersOriginalMetadataAndDeletionRemovesTheRecord() = runTest {
+        val original = source("原文件 +.txt", "same content".encodeToByteArray())
+        val location = filesManager.importChatFiles(listOf(original)).single()
+        val record = withContext(Dispatchers.Default) { withTimeout(5_000) { filesManager.observe().first { it.size == 1 }.single() } }
+        assertEquals("原文件 +.txt", record.displayName)
+        assertEquals("text/plain", record.mimeType)
+        assertEquals(12L, record.sizeBytes)
+        assertEquals(1 to 12L, filesManager.countChatFiles())
+        filesManager.deleteChatFiles(listOf(location), this)
+        withContext(Dispatchers.Default) { withTimeout(5_000) { filesManager.observe().first { it.isEmpty() } } }
+        assertEquals(0 to 0L, filesManager.countChatFiles())
+        assertContentEquals("same content".encodeToByteArray(), original.readBytes())
     }
 
     private fun source(name: String, bytes: ByteArray): PlatformFile {

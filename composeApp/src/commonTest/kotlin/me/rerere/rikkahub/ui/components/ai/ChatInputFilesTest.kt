@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.components.ai
 
+import me.rerere.rikkahub.data.files.testFilesManager
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -11,9 +12,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemTemporaryDirectory
-import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.service.FileKitChatFileStore
-import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.service.toFileUri
 import me.rerere.rikkahub.utils.canonicalFile
 import me.rerere.rikkahub.utils.deleteRecursively
@@ -31,10 +29,7 @@ class ChatInputFilesTest {
     private val root = Path(SystemTemporaryDirectory, "cmp-input-files-${Uuid.random()}")
         .canonicalFile.apply { mkdirs() }
     private val appScope = CoroutineScope(SupervisorJob())
-    private val filesManager = FileKitChatFileStore(
-        appScope,
-        SharedChatAttachmentStore(FileKitPlatformFileStore(PlatformFile(root.toString()))),
-    )
+    private val filesManager = testFilesManager(root, appScope)
 
     @AfterTest
     fun cleanUp() { appScope.cancel(); root.deleteRecursively() }

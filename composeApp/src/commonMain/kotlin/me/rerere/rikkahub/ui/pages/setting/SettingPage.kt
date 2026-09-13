@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.setting
 
+import me.rerere.rikkahub.data.files.FilesManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -86,7 +87,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
     val navController = LocalNavController.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val externalUriOpener: ExternalUriOpener = koinInject()
-    val storageSummaryProvider: ChatStorageSummaryProvider = koinInject()
+    val filesManager: FilesManager = koinInject()
     val textSharer = rememberPlatformTextSharer()
 
     if (settings.launchCount > 100 && (settings.launchCount - settings.sponsorAlertDismissedAt) >= 50) {
@@ -246,8 +247,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
             }
 
             item("dataSettings") {
-                val storageState by produceState<ChatStorageSummary?>(null, storageSummaryProvider) {
-                    value = storageSummaryProvider.load()
+                val storageState by produceState<Pair<Int, Long>?>(null, filesManager) {
+                    value = filesManager.countChatFiles()
                 }
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),
@@ -270,8 +271,8 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                                 Text(
                                     stringResource(
                                         Res.string.setting_page_chat_storage_desc,
-                                        summary.fileCount,
-                                        (summary.totalBytes / 1024 / 1024.0).toFixed(2)
+                                        summary.first,
+                                        (summary.second / 1024 / 1024.0).toFixed(2)
                                     )
                                 )
                             }

@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.shared
 
+import androidx.compose.runtime.LaunchedEffect
+import org.koin.compose.koinInject
+import me.rerere.rikkahub.data.files.FilesManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -27,7 +30,6 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.data.files.ChatFileStore
 import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
@@ -35,7 +37,6 @@ import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
@@ -52,12 +53,7 @@ import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.UnavailableChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
-import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
-import me.rerere.rikkahub.service.FileKitChatFileStore
-import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.ui.hooks.rememberSharedCustomTtsState
-import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
-import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.ui.theme.UnavailableChatFontRuntime
@@ -136,19 +132,16 @@ fun SharedProductApp(
             single { oauthCallbackSessionFactory }
             single<Path>(named("filesDir")) { FileKit.filesDir.toKotlinxIoPath() }
             single<Path>(named("cacheDir")) { (FileKit.cacheDir / "imggen").toKotlinxIoPath() }
-            single<ChatFileStore> { FileKitChatFileStore(appScope, get()) }
             single { settingsStore }
             single { database }
             single { buildInfo }
             single { externalUriOpener }
-            single { SharedChatAttachmentStore() }
             single<ChatInputPlatformContent> { UnavailableChatInputPlatformContent }
             single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
             single { webServerRuntime }
             single { booleanPreferenceStore }
             single { stringPreferenceStore }
             single<ChatFontRuntime> { UnavailableChatFontRuntime }
-            single<ChatStorageSummaryProvider> { UnavailableChatStorageSummaryProvider }
             single { httpClient }
             single { providerManager }
             single { eventBus }
@@ -157,12 +150,11 @@ fun SharedProductApp(
             single<CrashReporter> { crashReporter }
             single { MessageFtsManager(database, MessageFtsDialect.UNICODE61) }
             single { FileKitFileCleaner(database, settingsStore) }
-            single<ConversationFileStore> { get<FileKitFileCleaner>() }
+            single { FilesManager(get(named("filesDir")), get(), appScope, get(), asyncFileIo = true) }
             single<Base64ImageStore> { SharedBase64ImageStore() }
             single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
             single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
             single { templateEngine }
-            single<AssistantAssetCleaner> { get<FileKitFileCleaner>() }
             single { backupFileLayout }
         }
     }
@@ -186,6 +178,9 @@ fun SharedProductApp(
     )
 
     KoinApplication(configuration = koinConfiguration) {
+        val filesManager = koinInject<FilesManager>()
+        LaunchedEffect(filesManager) { filesManager.syncFolder() }
+
         RikkahubTheme {
             AppRoutes(
                 startScreen = initialScreen,

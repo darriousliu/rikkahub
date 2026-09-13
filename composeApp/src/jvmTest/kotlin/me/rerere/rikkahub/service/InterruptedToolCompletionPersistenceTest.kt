@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.service
 
+import me.rerere.rikkahub.data.files.testFilesManager
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.test.runTest
@@ -10,7 +11,6 @@ import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
-import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import java.nio.file.Files
 import kotlin.test.Test
@@ -79,7 +79,7 @@ class InterruptedToolCompletionPersistenceTest {
         messageNodeDAO = database.messageNodeDao(),
         favoriteDAO = database.favoriteDao(),
         database = database,
-        conversationFileStore = ConversationFileStore { error("Tool completion must not delete files") },
+        filesManager = testFilesManager(),
         messageFtsManager = MessageFtsManager(database, MessageFtsDialect.UNICODE61),
     )
 }

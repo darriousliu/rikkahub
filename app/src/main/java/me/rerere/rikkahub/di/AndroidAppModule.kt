@@ -25,8 +25,6 @@ import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.data.files.AndroidChatFileStore
-import me.rerere.rikkahub.data.files.ChatFileStore
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
@@ -48,8 +46,6 @@ import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.createPlatformBuildInfo
 import me.rerere.rikkahub.ui.components.ai.AndroidChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
-import me.rerere.rikkahub.ui.pages.assistant.AndroidAssistantAssetCleaner
-import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
 import me.rerere.rikkahub.ui.pages.chat.AndroidChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
@@ -73,9 +69,6 @@ val androidAppModule = module {
     }
     single<Path>(named("cacheDir")) {
         Path(get<Context>().appTempFolder.path)
-    }
-    single<ChatFileStore> {
-        AndroidChatFileStore(get())
     }
     single<InputMessageTransformer>(named("workspaceReminder")) {
         WorkspaceReminderTransformer(get())
@@ -108,7 +101,6 @@ val androidAppModule = module {
     single<StringPreferenceStore> { AndroidStringPreferenceStore(get()) }
     single<ChatFontRuntime> { AndroidChatFontRuntime(get()) }
 
-    single<AssistantAssetCleaner> { AndroidAssistantAssetCleaner(get()) }
     single<DocumentTextExtractor> { AndroidDocumentTextExtractor }
     single<Base64ImageStore> { AndroidBase64ImageStore(get()) }
 

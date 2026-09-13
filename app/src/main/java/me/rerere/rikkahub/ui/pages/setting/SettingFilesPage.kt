@@ -203,7 +203,7 @@ fun SettingFilesPage(
                     items(files, key = { it.id }) { file ->
                         FileItem(
                             file = file,
-                            fileOnDisk = filesManager.getFile(file),
+                            fileOnDisk = File(filesManager.getFile(file).toString()),
                             onDelete = { pendingDelete = file }
                         )
                     }
