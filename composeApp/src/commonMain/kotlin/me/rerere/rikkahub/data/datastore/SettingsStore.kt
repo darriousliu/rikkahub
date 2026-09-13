@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.datastore
 
+import androidx.compose.runtime.Composable
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import me.rerere.ai.core.ReasoningLevel
-import me.rerere.ai.provider.ProviderDescription
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.ai.prompts.DEFAULT_COMPRESS_PROMPT
@@ -56,7 +56,7 @@ private fun <T> Flow<T>.toMutableStateFlow(
 class SettingsStore(
     private val dataStore: DataStore<Preferences>,
     scope: CoroutineScope,
-    private val defaultProviderDescriptions: Map<Uuid, ProviderDescription> = emptyMap(),
+    private val defaultProviderDescriptions: Map<Uuid, @Composable () -> Unit> = emptyMap(),
     private val onSettingsChanged: () -> Unit = {},
 ) {
     companion object {
