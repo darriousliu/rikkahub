@@ -15,6 +15,10 @@ import me.rerere.rikkahub.platform.FileKitPlatformFileStore
 internal class SharedChatAttachmentStore(
     private val fileStore: FileKitPlatformFileStore = FileKitPlatformFileStore(),
 ) {
+    suspend fun createChatFilesByContents(files: List<PlatformFile>): List<String> = files.mapNotNull { source ->
+        fileStore.copyIntoSandbox(source).getOrNull()?.toFileUri()
+    }
+
     suspend fun import(files: List<PlatformFile>): List<UIMessagePart> = buildList {
         files.forEach { source ->
             val stored = fileStore.copyIntoSandbox(source).getOrNull()

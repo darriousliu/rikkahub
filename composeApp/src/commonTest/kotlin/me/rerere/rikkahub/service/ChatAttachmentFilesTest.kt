@@ -100,6 +100,20 @@ class ChatAttachmentFilesTest {
     }
 
     @Test
+    fun pickerCopiesAllFilesInOrderWithoutChangingTheSources() = runTest {
+        val sources = (1..20).map { source("附件 $it.txt", byteArrayOf(it.toByte())) }
+        val filesManager = FileKitChatFileStore(this, attachments)
+        val copied = filesManager.createChatFilesByContents(sources)
+        assertEquals(20, copied.size)
+        copied.forEachIndexed { index, location ->
+            assertContentEquals(byteArrayOf((index + 1).toByte()), filesManager.fileFromLocation(location).readBytes())
+            assertContentEquals(byteArrayOf((index + 1).toByte()), sources[index].readBytes())
+            assertEquals("附件 ${index + 1}.txt", filesManager.getFileName(sources[index]))
+            assertEquals("text/plain", filesManager.getFileMimeType(sources[index]))
+        }
+    }
+
+    @Test
     fun missingSourceDoesNotDiscardTheOtherImportedFiles() = runTest {
         val valid = source("good.txt", byteArrayOf(1))
         val imported = attachments.import(listOf(PlatformFile(root.resolve("missing.txt").toString()), valid))

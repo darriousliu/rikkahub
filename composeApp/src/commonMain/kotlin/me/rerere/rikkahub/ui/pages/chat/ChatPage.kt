@@ -12,6 +12,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PermanentNavigationDrawer
@@ -39,8 +41,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.provider.Model
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
@@ -48,6 +54,8 @@ import me.rerere.hugeicons.stroke.LeftToRightListBullet
 import me.rerere.hugeicons.stroke.Menu03
 import me.rerere.hugeicons.stroke.MessageAdd01
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.platform.PlatformBackHandler
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -56,6 +64,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.service.ChatError
+import me.rerere.rikkahub.ui.components.ai.FilesPicker
 import me.rerere.rikkahub.ui.components.ai.ChatInput
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
@@ -64,7 +73,9 @@ import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
 import me.rerere.rikkahub.ui.layout.currentWindowDpSize
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import me.rerere.rikkahub.utils.isAllowedFileType
 import me.rerere.rikkahub.utils.base64Decode
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
@@ -79,6 +90,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
         }
     )
     val platformContent = koinInject<ChatPagePlatformContent>()
+    val filesManager = koinInject<ChatFileStore>()
     val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
 
@@ -94,7 +106,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
     val softwareKeyboardController = LocalSoftwareKeyboardController.current
 
     // Handle back press when drawer is open
-    platformContent.RegisterBackHandler(enabled = drawerState.isOpen) {
+    PlatformBackHandler(enabled = drawerState.isOpen) {
         scope.launch {
             drawerState.close()
         }
@@ -127,7 +139,21 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
     // 初始化输入状态（处理传入的 files 和 text 参数）
     LaunchedEffect(files, text) {
         if (files.isNotEmpty()) {
-            inputState.messageContent = platformContent.importInitialFiles(files)
+            val sourceFiles = files.map(filesManager::fileFromLocation)
+            val localFiles = filesManager.createChatFilesByContents(sourceFiles)
+            val contentTypes = sourceFiles.mapNotNull(filesManager::getFileMimeType)
+            inputState.messageContent = buildList {
+                localFiles.forEachIndexed { index, file ->
+                    when {
+                        contentTypes.getOrNull(index)?.startsWith("image/") == true ->
+                            add(UIMessagePart.Image(url = file))
+                        contentTypes.getOrNull(index)?.startsWith("video/") == true ->
+                            add(UIMessagePart.Video(url = file))
+                        contentTypes.getOrNull(index)?.startsWith("audio/") == true ->
+                            add(UIMessagePart.Audio(url = file))
+                    }
+                }
+            }
         }
         text?.base64Decode()?.let { decodedText ->
             if (decodedText.isNotEmpty()) {
@@ -217,7 +243,7 @@ fun ChatPage(id: Uuid, text: String?, files: List<String>, nodeId: Uuid? = null)
                     platformContent = platformContent,
                 )
             }
-            platformContent.RegisterBackHandler(drawerState.isOpen) {
+            PlatformBackHandler(drawerState.isOpen) {
                 scope.launch { drawerState.close() }
             }
         }
@@ -457,15 +483,161 @@ private fun ChatPageContent(
         }
 
         if (showFilesSheet) {
-            platformContent.RenderFilesPicker(
+            ChatFilesPickerSheet(
                 inputState = inputState,
                 setting = setting,
                 conversation = conversation,
                 assistant = assistant,
                 vm = vm,
                 onDismiss = { showFilesSheet = false },
+                platformContent = platformContent,
             )
         }
+    }
+}
+
+@Composable
+private fun ChatFilesPickerSheet(
+    inputState: ChatInputState,
+    setting: Settings,
+    conversation: Conversation,
+    assistant: Assistant,
+    vm: ChatVM,
+    onDismiss: () -> Unit,
+    platformContent: ChatPagePlatformContent,
+) {
+    val toaster = LocalToaster.current
+    val scope = rememberCoroutineScope()
+    val filesManager = koinInject<ChatFileStore>()
+    var showInjectionSheet by remember { mutableStateOf(false) }
+    var showCompressDialog by remember { mutableStateOf(false) }
+
+    fun dismissAll() {
+        showInjectionSheet = false
+        showCompressDialog = false
+        onDismiss()
+    }
+
+    val onUpdateAssistant: (Assistant) -> Unit = {
+        vm.updateSettings(
+            setting.copy(
+                assistants = setting.assistants.map { assistant ->
+                    if (assistant.id == it.id) it else assistant
+                }
+            )
+        )
+    }
+    val onUpdateConversation: (Conversation) -> Unit = {
+        vm.updateConversation(it)
+        vm.saveConversationAsync()
+    }
+    val onLaunchCamera = platformContent.rememberCameraLauncher(
+        inputState = inputState,
+        skipCropImage = setting.displaySetting.skipCropImage,
+        onDismiss = ::dismissAll,
+    )
+    val launchImageCrop = platformContent.rememberImageCropLauncher(inputState, ::dismissAll)
+    val filesSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(sheetState = filesSheetState, onDismissRequest = ::dismissAll) {
+        // FileKit needs the sheet's view controller until the native iOS picker returns.
+        val imagePickerLauncher = rememberFilePickerLauncher(
+            type = FileKitType.Image,
+            mode = FileKitMode.Multiple(),
+        ) { selectedFiles ->
+            if (!selectedFiles.isNullOrEmpty()) {
+                if (!setting.displaySetting.skipCropImage && selectedFiles.size == 1 && launchImageCrop != null) {
+                    launchImageCrop(selectedFiles.first())
+                } else {
+                    scope.launch {
+                        inputState.addImages(filesManager.createChatFilesByContents(selectedFiles))
+                        dismissAll()
+                    }
+                }
+            }
+        }
+        val videoPickerLauncher = rememberFilePickerLauncher(
+            type = FileKitType.Video,
+            mode = FileKitMode.Multiple(),
+        ) { selectedFiles ->
+            if (!selectedFiles.isNullOrEmpty()) {
+                scope.launch {
+                    inputState.addVideos(filesManager.createChatFilesByContents(selectedFiles))
+                    dismissAll()
+                }
+            }
+        }
+        val audioPickerLauncher = rememberFilePickerLauncher(
+            type = FileKitType.File("mp3", "m4a", "wav", "ogg", "aac", "flac", "opus", "aiff", "amr"),
+            mode = FileKitMode.Multiple(),
+        ) { selectedFiles ->
+            if (!selectedFiles.isNullOrEmpty()) {
+                scope.launch {
+                    inputState.addAudios(filesManager.createChatFilesByContents(selectedFiles))
+                    dismissAll()
+                }
+            }
+        }
+        val filePickerLauncher = rememberFilePickerLauncher(
+            type = FileKitType.File(extensions = null),
+            mode = FileKitMode.Multiple(),
+        ) { selectedFiles ->
+            if (!selectedFiles.isNullOrEmpty()) {
+                scope.launch {
+                    val documents = selectedFiles.mapNotNull { file ->
+                        val fileName = filesManager.getFileName(file) ?: "file"
+                        val mime = filesManager.getFileMimeType(file) ?: "text/plain"
+                        if (isAllowedFileType(fileName, mime)) {
+                            val localUri = filesManager.createChatFilesByContents(listOf(file)).firstOrNull()
+                                ?: run {
+                                    toaster.show(
+                                        getString(Res.string.chat_input_file_read_failed, fileName),
+                                        type = ToastType.Error,
+                                    )
+                                    return@mapNotNull null
+                                }
+                            UIMessagePart.Document(url = localUri, fileName = fileName, mime = mime)
+                        } else {
+                            toaster.show(
+                                getString(Res.string.chat_input_unsupported_file_type, fileName),
+                                type = ToastType.Error,
+                            )
+                            null
+                        }
+                    }
+                    if (documents.isNotEmpty()) {
+                        inputState.addFiles(documents)
+                        dismissAll()
+                    }
+                }
+            }
+        }
+        FilesPicker(
+            conversation = conversation,
+            state = inputState,
+            assistant = assistant,
+            mcpManager = koinInject(),
+            onCompressContext = vm::handleCompressContext,
+            onUpdateAssistant = onUpdateAssistant,
+            onUpdateConversation = onUpdateConversation,
+            showInjectionSheet = showInjectionSheet,
+            onShowInjectionSheetChange = { showInjectionSheet = it },
+            showCompressDialog = showCompressDialog,
+            onShowCompressDialogChange = { showCompressDialog = it },
+            onDismiss = ::dismissAll,
+            onTakePic = onLaunchCamera,
+            onPickImage = { imagePickerLauncher.launch() },
+            onPickVideo = { videoPickerLauncher.launch() },
+            onPickAudio = { audioPickerLauncher.launch() },
+            onPickFile = { filePickerLauncher.launch() },
+            workspacePicker = {
+                platformContent.WorkspacePicker(
+                    assistant, conversation, onUpdateAssistant, onUpdateConversation, ::dismissAll,
+                )
+            },
+            workspaceCwdPicker = {
+                platformContent.WorkspaceCwdPicker(assistant, conversation, onUpdateConversation)
+            },
+        )
     }
 }
 

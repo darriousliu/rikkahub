@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.service
 
+import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import me.rerere.rikkahub.data.files.ChatFileStore
@@ -13,4 +14,7 @@ internal class FileKitChatFileStore(
     }
 
     override suspend fun copyChatFile(location: String): String? = attachmentStore.copyIntoSandbox(location)
+
+    override suspend fun createChatFilesByContents(files: List<PlatformFile>): List<String> =
+        attachmentStore.createChatFilesByContents(files)
 }

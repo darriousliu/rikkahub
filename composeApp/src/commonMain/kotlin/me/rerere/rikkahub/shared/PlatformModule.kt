@@ -46,7 +46,7 @@ import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.SharedChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
-import me.rerere.rikkahub.ui.pages.chat.SharedChatPagePlatformContent
+import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.UpdateChecker
@@ -93,7 +93,7 @@ internal fun platformModule(
     single { SharedChatAttachmentStore() }
     single<ChatMessagePlatformActions> { chatMessagePlatformActions }
     single<ChatInputPlatformContent> { SharedChatInputPlatformContent(get()) }
-    single<ChatPagePlatformContent> { SharedChatPagePlatformContent(get()) }
+    single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
     single { webServerRuntime }
     single { booleanPreferenceStore }
     single { stringPreferenceStore }
