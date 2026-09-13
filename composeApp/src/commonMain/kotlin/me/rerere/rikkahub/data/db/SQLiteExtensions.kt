@@ -5,6 +5,8 @@ import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.async.prepare
 import androidx.sqlite.async.step
 
+internal expect fun Throwable.isSQLiteBlobTooBigException(): Boolean
+
 internal suspend fun SQLiteConnection.execute(
     sql: String,
     arguments: List<Any?> = emptyList(),

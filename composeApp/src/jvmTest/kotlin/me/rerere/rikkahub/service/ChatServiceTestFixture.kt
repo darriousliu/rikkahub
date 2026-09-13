@@ -38,7 +38,6 @@ import me.rerere.rikkahub.data.files.ChatFileStore
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.ConversationRepository
-import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
@@ -85,7 +84,6 @@ internal class ChatServiceTestFixture(
             single<StringPreferenceStore> { DataStoreStringPreferenceStore(preferences) }
             single { fts }
             single<ConversationFileStore> { ConversationFileStore { error("Unexpected repository file deletion") } }
-            single<MessageNodeReadErrorPolicy> { MessageNodeReadErrorPolicy.Default }
             single<ChatFileStore> {
                 FileKitChatFileStore(scope, SharedChatAttachmentStore(FileKitPlatformFileStore(PlatformFile(root))))
             }

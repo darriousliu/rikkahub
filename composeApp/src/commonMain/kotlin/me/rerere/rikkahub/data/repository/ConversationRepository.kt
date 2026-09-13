@@ -18,6 +18,7 @@ import me.rerere.rikkahub.data.db.dao.FavoriteDAO
 import me.rerere.rikkahub.data.db.dao.MessageNodeDAO
 import me.rerere.rikkahub.data.db.entity.ConversationEntity
 import me.rerere.rikkahub.data.db.entity.MessageNodeEntity
+import me.rerere.rikkahub.data.db.isSQLiteBlobTooBigException
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.MessageNode
 import me.rerere.rikkahub.utils.JsonInstant
@@ -28,14 +29,6 @@ fun interface ConversationFileStore {
     suspend fun deleteChatFiles(urls: List<String>)
 }
 
-fun interface MessageNodeReadErrorPolicy {
-    fun canSkip(error: Throwable): Boolean
-
-    companion object {
-        val Default = MessageNodeReadErrorPolicy { error -> error is IllegalStateException }
-    }
-}
-
 class ConversationRepository(
     private val conversationDAO: ConversationDAO,
     private val messageNodeDAO: MessageNodeDAO,
@@ -43,7 +36,6 @@ class ConversationRepository(
     private val database: AppDatabase,
     private val conversationFileStore: ConversationFileStore,
     private val messageFtsManager: MessageFtsManager,
-    private val messageNodeReadErrorPolicy: MessageNodeReadErrorPolicy = MessageNodeReadErrorPolicy.Default,
 ) {
     companion object {
         private const val PAGE_SIZE = 20
@@ -451,7 +443,7 @@ class ConversationRepository(
                 val page = try {
                     messageNodeDAO.getNodesOfConversationPaged(conversationId, pageSize, offset)
                 } catch (error: Throwable) {
-                    if (!messageNodeReadErrorPolicy.canSkip(error)) throw error
+                    if (!error.isSQLiteBlobTooBigException() && error !is IllegalStateException) throw error
                     error.printStackTrace()
                     offset += pageSize
                     continue

@@ -5,10 +5,8 @@ import java.io.File
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.repository.AndroidConversationFileStore
-import me.rerere.rikkahub.data.repository.AndroidMessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.ConversationFileStore
 import me.rerere.rikkahub.data.repository.FilesRepository
-import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummary
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
@@ -21,8 +19,6 @@ import org.koin.dsl.module
 val androidRepositoryModule = module {
     includes(repositoryModule)
     single<ConversationFileStore> { AndroidConversationFileStore(get()) }
-
-    single<MessageNodeReadErrorPolicy> { AndroidMessageNodeReadErrorPolicy }
 
     single {
         FilesRepository(get())

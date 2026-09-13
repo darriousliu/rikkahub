@@ -36,7 +36,6 @@ import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
 import me.rerere.rikkahub.data.repository.ConversationFileStore
-import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
@@ -166,7 +165,6 @@ fun SharedProductApp(
             single { MessageFtsManager(database, MessageFtsDialect.UNICODE61) }
             single { FileKitFileCleaner(database, settingsStore) }
             single<ConversationFileStore> { get<FileKitFileCleaner>() }
-            single<MessageNodeReadErrorPolicy> { MessageNodeReadErrorPolicy.Default }
             single<Base64ImageStore> { SharedBase64ImageStore() }
             single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
             single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }

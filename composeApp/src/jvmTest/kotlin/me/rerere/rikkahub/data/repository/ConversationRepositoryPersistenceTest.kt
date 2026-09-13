@@ -2,6 +2,7 @@ package me.rerere.rikkahub.data.repository
 
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerializationException
 import me.rerere.ai.ui.UIMessage
@@ -9,6 +10,7 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
+import me.rerere.rikkahub.data.db.dao.MessageNodeDAO
 import me.rerere.rikkahub.data.db.entity.ConversationEntity
 import me.rerere.rikkahub.data.db.entity.MessageNodeEntity
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
@@ -23,6 +25,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 
@@ -37,14 +40,7 @@ class ConversationRepositoryPersistenceTest {
             BundledSQLiteDriver(),
             MessageFtsDialect.UNICODE61,
         )
-        repository = ConversationRepository(
-            database.conversationDao(),
-            database.messageNodeDao(),
-            database.favoriteDao(),
-            database,
-            ConversationFileStore {},
-            MessageFtsManager(database, MessageFtsDialect.UNICODE61),
-        )
+        repository = createRepository()
     }
 
     @AfterTest
@@ -209,6 +205,70 @@ class ConversationRepositoryPersistenceTest {
     }
 
     @Test
+    fun `skippable page errors preserve earlier nodes and continue at the next page`() = runTest {
+        val original = conversation().copy(
+            messageNodes = List(130) { index -> MessageNode(messages = listOf(UIMessage.assistant("node $index"))) },
+        )
+        repository.insertConversation(original)
+        val dao = database.messageNodeDao()
+
+        // CancellationException inherits IllegalStateException on JVM, as in the original Android catch.
+        for (failure in listOf(IllegalStateException("unreadable page"), CancellationException("read cancelled"))) {
+            val reads = mutableListOf<Pair<Int, Int>>()
+            val reader = createRepository(object : MessageNodeDAO by dao {
+                override suspend fun getNodesOfConversationPaged(
+                    conversationId: String,
+                    limit: Int,
+                    offset: Int,
+                ): List<MessageNodeEntity> {
+                    reads.add(limit to offset)
+                    if (offset == 64) throw failure
+                    return dao.getNodesOfConversationPaged(conversationId, limit, offset)
+                }
+            })
+
+            assertEquals(
+                original.copy(messageNodes = original.messageNodes.take(64) + original.messageNodes.drop(128)),
+                reader.getConversationById(original.id),
+            )
+            assertEquals(listOf(64 to 0, 64 to 64, 64 to 128, 64 to 130), reads)
+        }
+    }
+
+    @Test
+    fun `other page errors propagate unchanged without skipping or retrying`() = runTest {
+        val original = conversation()
+        repository.insertConversation(original)
+        val dao = database.messageNodeDao()
+
+        for (failure in listOf(
+            IllegalArgumentException("bad query"),
+            java.sql.SQLException("database error"),
+            AssertionError("read error"),
+        )) {
+            val offsets = mutableListOf<Int>()
+            val reader = createRepository(object : MessageNodeDAO by dao {
+                override suspend fun getNodesOfConversationPaged(
+                    conversationId: String,
+                    limit: Int,
+                    offset: Int,
+                ): List<MessageNodeEntity> {
+                    offsets.add(offset)
+                    throw failure
+                }
+            })
+
+            val thrown = assertFailsWith<Throwable> { reader.getConversationById(original.id) }
+            assertEquals(failure::class, thrown::class)
+            assertEquals(failure.message, thrown.message)
+            // Coroutine stack-trace recovery may copy the exception, retaining the original as its cause.
+            assertSame(failure, generateSequence(thrown) { it.cause }.last())
+            assertEquals(listOf(0), offsets)
+            assertEquals(original, repository.getConversationById(original.id))
+        }
+    }
+
+    @Test
     fun `paged summaries preserve list fields and omit full conversation content`() = runTest {
         val pinned = conversation()
         val unfiled = conversation().copy(assistantId = pinned.assistantId, isPinned = false, folderId = null)
@@ -247,6 +307,15 @@ class ConversationRepositoryPersistenceTest {
             repository.searchConversationsOfAssistantPage(pinned.assistantId, "会话", offset = 0, limit = 10).items,
         )
     }
+
+    private fun createRepository(messageNodeDAO: MessageNodeDAO = database.messageNodeDao()) = ConversationRepository(
+        database.conversationDao(),
+        messageNodeDAO,
+        database.favoriteDao(),
+        database,
+        ConversationFileStore {},
+        MessageFtsManager(database, MessageFtsDialect.UNICODE61),
+    )
 
     private fun conversation() = Conversation(
         id = Uuid.random(),
