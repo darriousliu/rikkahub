@@ -24,7 +24,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.ui)
+            implementation(libs.cmp.ui)
         }
     }
 }

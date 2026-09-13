@@ -1,3 +1,6 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -43,7 +46,7 @@ kotlin {
     }
 
     sourceSets {
-        val androidJvmMain by creating {
+        val androidJvmMain = create("androidJvmMain") {
             dependsOn(commonMain.get())
         }
         androidMain { dependsOn(androidJvmMain) }
@@ -61,13 +64,13 @@ kotlin {
             implementation(kotlin("test"))
         }
         // The Android and desktop ZIP adapters use the same Java API as 2.4.5.
-        val javaZipTest by creating {
+        val javaZipTest = create("javaZipTest") {
             dependsOn(commonTest.get())
         }
         named("jvmTest") { dependsOn(javaZipTest) }
         named("androidHostTest") { dependsOn(javaZipTest) }
         // Android host tests cannot load the Android JNI runtime; use device tests there.
-        val javaScriptTest by creating {
+        val javaScriptTest = create("javaScriptTest") {
             dependsOn(commonTest.get())
             dependencies {
                 implementation(libs.ktor.client.mock)

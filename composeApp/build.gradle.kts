@@ -1,4 +1,7 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
 import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -28,7 +31,11 @@ kotlin {
 
     android {
         namespace = "me.rerere.rikkahub.shared"
-        compileSdk = 37
+        compileSdk {
+            version = release(37) {
+                minorApiLevel = 2
+            }
+        }
         minSdk = 26
 
         androidResources.enable = true
@@ -84,12 +91,12 @@ kotlin {
             implementation(project(":speech"))
             implementation(project(":web"))
             api(libs.androidx.datastore.preferences)
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(libs.jetbrains.material3)
-            implementation(compose.ui)
-            implementation(compose.components.uiToolingPreview)
-            api(compose.components.resources)
+            implementation(libs.cmp.runtime)
+            implementation(libs.cmp.foundation)
+            implementation(libs.cmp.material3)
+            implementation(libs.cmp.ui)
+            implementation(libs.cmp.ui.tooling.preview)
+            api(libs.cmp.components.resources)
             api(libs.androidx.room3.runtime)
             api(libs.androidx.room3.paging)
             api(libs.androidx.sqlite.bundled)
@@ -131,10 +138,10 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
         }
 
-        val mobileMain by creating {
+        val mobileMain = create("mobileMain") {
             dependsOn(commonMain.get())
         }
-        val androidJvmMain by creating {
+        val androidJvmMain = create("androidJvmMain") {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.ktor.client.okhttp)
@@ -179,7 +186,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
         }
-        val androidJvmTest by creating {
+        val androidJvmTest = create("androidJvmTest") {
             dependsOn(commonTest.get())
         }
         named("jvmTest") { dependsOn(androidJvmTest) }

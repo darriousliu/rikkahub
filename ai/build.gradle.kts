@@ -37,7 +37,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
+            implementation(libs.cmp.runtime)
             implementation(project(":common"))
             api(libs.kotlinx.serialization.json)
             api(libs.kotlinx.coroutines.core)

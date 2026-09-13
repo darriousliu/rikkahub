@@ -43,7 +43,7 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     sourceSets {
-        val androidJvmMain by creating {
+        val androidJvmMain = create("androidJvmMain") {
             dependsOn(commonMain.get())
         }
         androidMain { dependsOn(androidJvmMain) }

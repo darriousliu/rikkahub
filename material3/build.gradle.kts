@@ -31,8 +31,8 @@ kotlin {
         commonMain {
             kotlin.srcDir("material-color-utilities/kotlin")
             dependencies {
-                implementation(compose.material3)
-                implementation(compose.ui)
+                implementation(libs.cmp.material3)
+                implementation(libs.cmp.ui)
             }
         }
         commonTest.dependencies {

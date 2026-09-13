@@ -42,10 +42,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.material3)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
+            implementation(libs.cmp.runtime)
+            implementation(libs.cmp.material3)
+            implementation(libs.cmp.ui)
+            implementation(libs.cmp.components.resources)
             implementation(project(":ai"))
             implementation(project(":common"))
             implementation(libs.ktor.client.core)

@@ -67,7 +67,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
 
-        val androidJvmMain by creating {
+        val androidJvmMain = create("androidJvmMain") {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.ktor.server.default.headers)
@@ -99,7 +99,7 @@ kotlin {
             resources.srcDir(webResourcesDir)
         }
 
-        val androidJvmTest by creating {
+        val androidJvmTest = create("androidJvmTest") {
             dependsOn(commonTest.get())
             dependencies {
                 implementation(libs.junit)

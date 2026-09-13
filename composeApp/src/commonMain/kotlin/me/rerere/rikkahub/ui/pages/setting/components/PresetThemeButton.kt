@@ -36,7 +36,7 @@ import androidx.compose.ui.util.fastForEach
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.PresetTheme
 import me.rerere.rikkahub.ui.theme.PresetThemes
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun PresetThemeButton(
