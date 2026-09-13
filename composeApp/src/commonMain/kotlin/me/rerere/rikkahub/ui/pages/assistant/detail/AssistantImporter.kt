@@ -41,7 +41,7 @@ import io.github.vinceglb.filekit.readBytes
 import io.github.vinceglb.filekit.readString
 import kotlinx.coroutines.IO
 import me.rerere.rikkahub.platform.FileKitPlatformFileStore
-import me.rerere.rikkahub.platform.createCharacterCardMetadataReader
+import me.rerere.rikkahub.platform.readCharacterCardMetadata
 import me.rerere.rikkahub.service.toFileUri
 import kotlin.io.encoding.Base64
 
@@ -251,7 +251,7 @@ private suspend fun importAssistantFromUri(
         val (jsonString, backgroundStr) = withContext(Dispatchers.IO) {
             when (mime) {
                 "image/png" -> {
-                    val result = createCharacterCardMetadataReader().read(file.readBytes())
+                    val result = readCharacterCardMetadata(file.readBytes())
                     result.map { base64Data ->
                         val json = Base64.Default
                             .withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)

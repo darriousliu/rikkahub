@@ -9,7 +9,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
-import me.rerere.rikkahub.platform.createCharacterCardMetadataReader
+import me.rerere.rikkahub.platform.readCharacterCardMetadata
 
 /**
  * 图片处理工具类
@@ -251,7 +251,7 @@ object ImageUtils {
             context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 ?: error("Metadata is null, please check if the image is a character card")
         }.getOrElse { return Result.failure(it) }
-        return createCharacterCardMetadataReader().read(imageBytes)
+        return readCharacterCardMetadata(imageBytes)
     }
 
     data class ImageInfo(

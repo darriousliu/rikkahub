@@ -1,51 +1,46 @@
 package me.rerere.rikkahub.platform
 
-public actual fun createCharacterCardMetadataReader(): CharacterCardMetadataReader =
-    IosPngCharacterCardMetadataReader
+public actual fun readCharacterCardMetadata(imageBytes: ByteArray): Result<String> = runCatching {
+    require(imageBytes.size >= PNG_SIGNATURE.size &&
+        imageBytes.copyOfRange(0, PNG_SIGNATURE.size).contentEquals(PNG_SIGNATURE)
+    ) { "Invalid PNG signature" }
 
-private object IosPngCharacterCardMetadataReader : CharacterCardMetadataReader {
-    override fun read(imageBytes: ByteArray): Result<String> = runCatching {
-        require(imageBytes.size >= PNG_SIGNATURE.size &&
-            imageBytes.copyOfRange(0, PNG_SIGNATURE.size).contentEquals(PNG_SIGNATURE)
-        ) { "Invalid PNG signature" }
+    var offset = PNG_SIGNATURE.size
+    var characterData: String? = null
+    var reachedEnd = false
+    while (offset < imageBytes.size) {
+        require(offset + PNG_CHUNK_OVERHEAD <= imageBytes.size) { "Truncated PNG chunk header" }
+        val length = imageBytes.readUnsignedInt(offset)
+        require(length <= Int.MAX_VALUE) { "PNG chunk is too large" }
+        val dataStart = offset + PNG_CHUNK_HEADER_SIZE
+        val dataEnd = dataStart.toLong() + length
+        val chunkEnd = dataEnd + PNG_CRC_SIZE
+        require(chunkEnd <= imageBytes.size) { "Truncated PNG chunk data" }
 
-        var offset = PNG_SIGNATURE.size
-        var characterData: String? = null
-        var reachedEnd = false
-        while (offset < imageBytes.size) {
-            require(offset + PNG_CHUNK_OVERHEAD <= imageBytes.size) { "Truncated PNG chunk header" }
-            val length = imageBytes.readUnsignedInt(offset)
-            require(length <= Int.MAX_VALUE) { "PNG chunk is too large" }
-            val dataStart = offset + PNG_CHUNK_HEADER_SIZE
-            val dataEnd = dataStart.toLong() + length
-            val chunkEnd = dataEnd + PNG_CRC_SIZE
-            require(chunkEnd <= imageBytes.size) { "Truncated PNG chunk data" }
+        val type = imageBytes.ascii(offset + PNG_LENGTH_SIZE, dataStart)
+        val dataEndIndex = dataEnd.toInt()
+        val expectedCrc = imageBytes.readUnsignedInt(dataEndIndex)
+        val actualCrc = imageBytes.crc32(
+            startIndex = offset + PNG_LENGTH_SIZE,
+            endIndex = dataEndIndex,
+        )
+        require(actualCrc == expectedCrc) { "Invalid PNG chunk CRC" }
 
-            val type = imageBytes.ascii(offset + PNG_LENGTH_SIZE, dataStart)
-            val dataEndIndex = dataEnd.toInt()
-            val expectedCrc = imageBytes.readUnsignedInt(dataEndIndex)
-            val actualCrc = imageBytes.crc32(
-                startIndex = offset + PNG_LENGTH_SIZE,
-                endIndex = dataEndIndex,
-            )
-            require(actualCrc == expectedCrc) { "Invalid PNG chunk CRC" }
-
-            if (type == TEXT_CHUNK) {
-                val separator = imageBytes.indexOf(0, startIndex = dataStart, endIndex = dataEndIndex)
-                if (separator > dataStart && imageBytes.ascii(dataStart, separator) == CHARACTER_KEYWORD) {
-                    characterData = imageBytes.ascii(separator + 1, dataEndIndex)
-                }
-            }
-            offset = chunkEnd.toInt()
-            if (type == END_CHUNK) {
-                require(length == 0L) { "Invalid IEND chunk" }
-                reachedEnd = true
-                break
+        if (type == TEXT_CHUNK) {
+            val separator = imageBytes.indexOf(0, startIndex = dataStart, endIndex = dataEndIndex)
+            if (separator > dataStart && imageBytes.ascii(dataStart, separator) == CHARACTER_KEYWORD) {
+                characterData = imageBytes.ascii(separator + 1, dataEndIndex)
             }
         }
-        require(reachedEnd) { "Missing IEND chunk" }
-        characterData ?: error("No tEXt chunk found, please check if the image is a character card")
+        offset = chunkEnd.toInt()
+        if (type == END_CHUNK) {
+            require(length == 0L) { "Invalid IEND chunk" }
+            reachedEnd = true
+            break
+        }
     }
+    require(reachedEnd) { "Missing IEND chunk" }
+    characterData ?: error("No tEXt chunk found, please check if the image is a character card")
 }
 
 private fun ByteArray.readUnsignedInt(offset: Int): Long =

@@ -138,6 +138,7 @@ kotlin {
             dependsOn(commonMain.get())
             dependencies {
                 implementation(libs.ktor.client.okhttp)
+                implementation(libs.metadata.extractor)
             }
         }
         androidMain {
@@ -152,7 +153,6 @@ kotlin {
                 implementation(libs.coil.svg)
                 implementation(libs.floatingx)
                 implementation(libs.jmdns)
-                implementation(libs.metadata.extractor)
                 implementation(libs.ucrop)
                 implementation(libs.zxing.core)
             }
@@ -170,7 +170,6 @@ kotlin {
                 implementation(libs.ktor.server.cio)
                 implementation(libs.sentry)
                 implementation(libs.jmdns)
-                implementation(libs.metadata.extractor)
                 implementation(libs.zxing.core)
             }
         }
