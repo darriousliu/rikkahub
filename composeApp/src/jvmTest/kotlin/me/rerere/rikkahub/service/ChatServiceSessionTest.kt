@@ -49,11 +49,9 @@ import me.rerere.ai.ui.MessageChunk
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessageChoice
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
-import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
@@ -264,7 +262,7 @@ class ChatServiceSessionTest {
             startKoin { modules(module {
                 single<SettingsStore> { settings }
                 single<DocumentTextExtractor> { DocumentTextExtractor { _, _ -> error("No document expected") } }
-                single<Base64ImageStore> { Base64ImageStore { error("No image expected") } }
+                single<FilesManager> { filesManager }
             }) }
         }
 
@@ -304,7 +302,7 @@ class ChatServiceSessionTest {
             booleanPreferenceStore = DataStoreBooleanPreferenceStore(preferences),
             stringPreferenceStore = DataStoreStringPreferenceStore(preferences),
             filesManager = filesManager,
-            mcpManager = McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
+            mcpManager = McpManager(settings, scope, filesManager,
                 OAuthCallbackSessionFactory { error("No OAuth expected") }, client),
             templateTransformer = TemplateTransformer(createMessageTemplateEngine().apply {
                 val loader = AssistantTemplateLoader(settings)

@@ -21,7 +21,6 @@ import me.rerere.ai.provider.Provider
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.data.ai.GenerationHandler
-import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
@@ -82,7 +81,6 @@ internal class ChatServiceTestFixture(
             single<StringPreferenceStore> { DataStoreStringPreferenceStore(preferences) }
             single { fts }
             single { FilesManager(Path(root.path), get(), scope, asyncFileIo = true) }
-            single<McpImageStore> { McpImageStore { _, _ -> error("Unexpected MCP image") } }
             single<OAuthCallbackSessionFactory> { OAuthCallbackSessionFactory { error("Unexpected OAuth") } }
             single { LocalTools(get(), settings, null) }
             existingRepository?.let { repository -> single { repository } }

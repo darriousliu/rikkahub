@@ -65,7 +65,7 @@ val dataSourceModule = module {
         McpManager(
             settingsStore = get(),
             appScope = get<CoroutineScope>(),
-            imageStore = get(),
+            filesManager = get(),
             callbackSessionFactory = get(),
         )
     }

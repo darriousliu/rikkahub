@@ -1,6 +1,18 @@
 package me.rerere.rikkahub.data.ai.mcp
 
 import androidx.datastore.core.DataStore
+import androidx.room3.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import kotlinx.io.files.Path
+import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.db.AppDatabaseConstructor
+import me.rerere.rikkahub.data.db.buildAppDatabase
+import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.repository.FilesRepository
+import me.rerere.rikkahub.service.toLocalFilePath
+import java.io.File
+import java.nio.file.Files
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.preferencesOf
 import io.ktor.client.HttpClient
@@ -43,6 +55,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -59,6 +72,8 @@ class McpManagerContractTest {
             fixture.scope.cancel()
             fixture.client.close()
             fixture.engine.close()
+            fixture.database.close()
+            fixture.root.deleteRecursively()
         }
     }
 
@@ -123,9 +138,16 @@ class McpManagerContractTest {
         val result = fixture.runtime.callTool(fixture.current().id, "echo", args)
 
         assertEquals(UIMessagePart.Text("fixed text"), result[0])
-        assertEquals(UIMessagePart.Image(url = "file:///fixture.png"), result[1])
-        assertContentEquals(byteArrayOf(1, 2, 3), fixture.images.single().first)
-        assertEquals("image/png", fixture.images.single().second)
+        val image = assertIs<UIMessagePart.Image>(result[1])
+        val record = fixture.filesManager.list().single()
+        val file = File(image.url.toLocalFilePath())
+        assertEquals(fixture.filesManager.getFile(record).toString(), file.path)
+        assertContentEquals(byteArrayOf(1, 2, 3), file.readBytes())
+        assertEquals("image/png", record.mimeType)
+        assertEquals("mcp_image.png", record.displayName)
+        assertEquals(3L, record.sizeBytes)
+        assertEquals(File(fixture.root, "upload"), file.parentFile)
+        Uuid.parse(file.nameWithoutExtension)
         assertEquals(
             json("""{"type":"resource","resource":{"uri":"fixture://document","mimeType":"text/plain","text":"embedded content","_meta":null},"annotations":null,"_meta":null}"""),
             json(assertIs<UIMessagePart.Text>(result[2]).text),
@@ -196,6 +218,63 @@ class McpManagerContractTest {
         assertEquals("https://auth.example.test/authorize", fixture.current().commonOptions.oauth?.authorizationEndpoint)
     }
 
+    @Test
+    fun `MCP image MIME bytes and managed names survive without PNG normalization`() = runBlocking {
+        val fixture = fixture()
+        fixture.enable()
+        val cases = listOf(
+            "image/png" to setOf("png"),
+            "image/jpeg" to setOf("jpg"),
+            "image/gif" to setOf("gif"),
+            "image/webp" to setOf("webp"),
+            "image/svg+xml" to setOf("svg"),
+            "image/heic" to setOf("heic"),
+            "image/heif" to setOf("heic"),
+            "image/x-cmp60" to setOf("bin"),
+        )
+        cases.forEach { (mime, extensions) ->
+            fixture.toolResult = """{"content":[{"type":"image","data":"AQID","mimeType":"$mime"}]}"""
+            val image = assertIs<UIMessagePart.Image>(
+                fixture.runtime.callTool(fixture.current().id, "image", json("{}")).single(),
+            )
+            val file = File(image.url.toLocalFilePath())
+            val entity = fixture.filesManager.list().single { it.relativePath == "upload/${file.name}" }
+            assertContentEquals(byteArrayOf(1, 2, 3), file.readBytes())
+            assertEquals(mime, entity.mimeType)
+            assertEquals("mcp_image.${file.extension}", entity.displayName)
+            assertTrue(file.extension in extensions, "$mime -> ${file.extension}")
+            assertEquals(3L, entity.sizeBytes)
+            Uuid.parse(file.nameWithoutExtension)
+        }
+        assertEquals(cases.size to cases.size * 3L, fixture.filesManager.countChatFiles())
+    }
+
+    @Test
+    fun `MCP write failure propagates and leaves the original blocking file intact`() = runBlocking {
+        val fixture = fixture()
+        fixture.enable()
+        val blocker = File(fixture.root, "upload").apply { writeText("original") }
+        assertFailsWith<kotlinx.io.IOException> {
+            fixture.runtime.callTool(fixture.current().id, "image", json("{}"))
+        }
+        assertEquals("original", blocker.readText())
+        assertTrue(fixture.filesManager.list().isEmpty())
+        assertEquals(listOf(blocker), fixture.root.listFiles().orEmpty().toList())
+    }
+
+    @Test
+    fun `invalid later MCP base64 keeps the earlier managed image and stops conversion`() = runBlocking {
+        val fixture = fixture()
+        fixture.enable()
+        fixture.toolResult = """{"content":[{"type":"image","data":"AQID","mimeType":"image/png"},{"type":"image","data":"!invalid!","mimeType":"image/png"},{"type":"image","data":"BAUG","mimeType":"image/png"}]}"""
+        assertFailsWith<IllegalArgumentException> {
+            fixture.runtime.callTool(fixture.current().id, "image", json("{}"))
+        }
+        val record = fixture.filesManager.list().single()
+        assertContentEquals(byteArrayOf(1, 2, 3), File(fixture.filesManager.getFile(record).toString()).readBytes())
+        assertEquals(1 to 3L, fixture.filesManager.countChatFiles())
+    }
+
     private fun fixture(servers: List<McpServerConfig> = listOf(server())) = Fixture(servers).also(fixtures::add)
 
     private class Fixture(servers: List<McpServerConfig>) {
@@ -205,7 +284,13 @@ class McpManagerContractTest {
         val store = SettingsStore(preferences, scope)
         val requests = ConcurrentLinkedQueue<HttpRequestData>()
         val rpc = ConcurrentLinkedQueue<RpcRequest>()
-        val images = ConcurrentLinkedQueue<Pair<ByteArray, String>>()
+        val root = Files.createTempDirectory("cmp-mcp-image-中文 +").toFile()
+        val database = buildAppDatabase(
+            Room.inMemoryDatabaseBuilder<AppDatabase>(AppDatabaseConstructor::initialize),
+            BundledSQLiteDriver(), MessageFtsDialect.UNICODE61,
+        )
+        val filesManager = FilesManager(Path(root.path), FilesRepository(database.managedFileDao()), scope,
+            asyncFileIo = true)
         @Volatile var description = "initial description"
         @Volatile var toolResult = """{"content":[{"type":"text","text":"fixed text"},{"type":"image","data":"AQID","mimeType":"image/png"},$EMBEDDED_RESOURCE]}"""
         @Volatile var rpcError = false
@@ -258,10 +343,7 @@ class McpManagerContractTest {
         val manager = McpManager(
             settingsStore = store,
             appScope = scope,
-            imageStore = McpImageStore { bytes, mime ->
-                images += bytes to mime
-                UIMessagePart.Image(url = "file:///fixture.png")
-            },
+            filesManager = filesManager,
             callbackSessionFactory = OAuthCallbackSessionFactory {
                 callbackCreations++
                 object : OAuthCallbackSession {

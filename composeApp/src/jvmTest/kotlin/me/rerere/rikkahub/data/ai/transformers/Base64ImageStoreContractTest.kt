@@ -1,8 +1,14 @@
 package me.rerere.rikkahub.data.ai.transformers
 
-import io.github.vinceglb.filekit.PlatformFile
+import kotlinx.io.files.Path
 import kotlinx.coroutines.test.runTest
-import me.rerere.rikkahub.platform.FileKitPlatformFileStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import me.rerere.ai.ui.UIMessage
+import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.files.testFilesManager
 import me.rerere.rikkahub.service.toLocalFilePath
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -20,14 +26,15 @@ import kotlin.uuid.Uuid
 
 class Base64ImageStoreContractTest {
     private val root = Files.createTempDirectory("cmp-base64-image-").toFile()
-    private val store = SharedBase64ImageStore(FileKitPlatformFileStore(PlatformFile(root)))
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val filesManager = testFilesManager(Path(root.path), scope)
 
     @AfterTest
-    fun close() { root.deleteRecursively() }
+    fun close() { scope.cancel(); root.deleteRecursively() }
 
     @Test
     fun jpegIsReencodedAsReadablePngInTheOriginalUploadDirectory() = runTest {
-        val uri = assertNotNull(store.storeAsPng(jpeg()))
+        val uri = assertNotNull(convert(jpeg()))
         val file = File(uri.toLocalFilePath())
         assertEquals(File(root, "upload"), file.parentFile)
         assertEquals("png", file.extension)
@@ -40,14 +47,14 @@ class Base64ImageStoreContractTest {
 
     @Test
     fun undecodableImageFailsWithoutCreatingAnAttachment() = runTest {
-        assertFailsWith<NullPointerException> { store.storeAsPng(byteArrayOf(1, 2, 3)) }
+        assertFailsWith<NullPointerException> { convert(byteArrayOf(1, 2, 3)) }
         assertTrue(root.listFiles().orEmpty().isEmpty())
     }
 
     @Test
     fun fileWriteFailurePropagatesWithoutReplacingTheExistingFile() = runTest {
         val blocker = File(root, "upload").apply { writeText("original") }
-        assertFailsWith<Exception> { store.storeAsPng(jpeg()) }
+        assertFailsWith<Exception> { convert(jpeg()) }
         assertEquals("original", blocker.readText())
         assertEquals(listOf(blocker), root.listFiles().orEmpty().toList())
     }
@@ -56,4 +63,11 @@ class Base64ImageStoreContractTest {
         ImageIO.write(BufferedImage(3, 2, BufferedImage.TYPE_INT_RGB), "jpeg", output)
         output.toByteArray()
     }
+    private suspend fun convert(bytes: ByteArray): String {
+        val message = UIMessage.user("unused").copy(parts = listOf(
+            UIMessagePart.Image("data:image/png;base64," + kotlin.io.encoding.Base64.encode(bytes)),
+        ))
+        return (filesManager.convertBase64ImagePartToLocalFile(message).parts.single() as UIMessagePart.Image).url
+    }
+
 }

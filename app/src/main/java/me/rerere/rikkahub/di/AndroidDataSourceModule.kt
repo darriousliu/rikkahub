@@ -19,8 +19,6 @@ import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
-import me.rerere.rikkahub.data.ai.mcp.AndroidMcpImageStore
-import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.createAndroidSettingsDataStore
@@ -59,7 +57,6 @@ val androidDataSourceModule = module {
     single { createMessageTemplateEngine() }
     single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
 
-    single<McpImageStore> { AndroidMcpImageStore(get()) }
 
     single<OkHttpClient> {
         val acceptLang = AcceptLanguageBuilder.fromAndroid(get())

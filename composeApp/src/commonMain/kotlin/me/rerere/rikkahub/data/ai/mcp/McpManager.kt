@@ -23,6 +23,10 @@ import me.rerere.common.crypto.PlatformSecureRandom
 import me.rerere.common.crypto.PlatformSha256Crypto
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.files.extensionFromMimeType
+import me.rerere.rikkahub.data.files.saveUploadFromBytes
+import me.rerere.rikkahub.data.files.toFileUri
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.utils.JsonInstant
 import kotlin.io.encoding.Base64
@@ -34,7 +38,7 @@ import kotlin.uuid.Uuid
 class McpManager(
     private val settingsStore: SettingsStore,
     private val appScope: CoroutineScope,
-    private val imageStore: McpImageStore,
+    private val filesManager: FilesManager,
     callbackSessionFactory: OAuthCallbackSessionFactory,
     private val httpClient: HttpClient = createMcpHttpClient(),
 ) {
@@ -102,7 +106,7 @@ class McpManager(
         return result.content.map { content ->
             when (content) {
                 is TextContent -> UIMessagePart.Text(content.text)
-                is ImageContent -> imageStore.save(Base64.decode(content.data), content.mimeType)
+                is ImageContent -> convertImageContentToFilePart(content)
                 else -> UIMessagePart.Text(JsonInstant.encodeToString(content))
             }
         }
@@ -125,6 +129,17 @@ class McpManager(
     suspend fun clearAuthorization(config: McpServerConfig) {
         val freshConfig = oauthCoordinator.clearAuthorization(config)
         sessionRegistry.addClient(freshConfig)
+    }
+
+    private suspend fun convertImageContentToFilePart(image: ImageContent): UIMessagePart.Image {
+        val bytes = Base64.decode(image.data)
+        val extension = extensionFromMimeType(image.mimeType) ?: "bin"
+        val entity = filesManager.saveUploadFromBytes(
+            bytes = bytes,
+            displayName = "mcp_image.$extension",
+            mimeType = image.mimeType,
+        )
+        return UIMessagePart.Image(url = filesManager.getFile(entity).toFileUri())
     }
 }
 

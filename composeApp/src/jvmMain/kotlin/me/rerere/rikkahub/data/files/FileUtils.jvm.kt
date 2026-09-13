@@ -9,10 +9,9 @@ import io.ktor.http.fromFileExtension
 import kotlinx.io.RawSource
 import me.rerere.rikkahub.service.toLocalFilePath
 import io.ktor.http.ContentType
-import io.ktor.http.fileExtensions
 
 internal actual fun extensionFromMimeType(mimeType: String): String? =
-    runCatching { ContentType.parse(mimeType).fileExtensions().firstOrNull() }.getOrNull()
+    commonExtensionFromMimeType(mimeType)
 
 internal actual fun platformFileFromLocation(location: String): PlatformFile = PlatformFile(location.toLocalFilePath())
 internal actual fun fileDisplayName(file: PlatformFile): String? = file.name

@@ -20,7 +20,6 @@ import kotlinx.io.files.Path
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
-import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
@@ -96,7 +95,7 @@ class ChatAttachmentPersistenceTest {
         booleanPreferenceStore = DataStoreBooleanPreferenceStore(preferences),
         stringPreferenceStore = DataStoreStringPreferenceStore(preferences),
         filesManager = filesManager,
-        mcpManager = McpManager(settings, scope, McpImageStore { _, _ -> error("No MCP image expected") },
+        mcpManager = McpManager(settings, scope, filesManager,
             OAuthCallbackSessionFactory { error("No OAuth expected") }, client),
         templateTransformer = TemplateTransformer(createMessageTemplateEngine()),
         localTools = LocalTools(eventBus, settings, null), skillManager = SkillManager(Path(root.path), settings),

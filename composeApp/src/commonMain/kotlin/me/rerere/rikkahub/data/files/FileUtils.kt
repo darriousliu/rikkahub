@@ -1,5 +1,7 @@
 package me.rerere.rikkahub.data.files
 
+import io.ktor.http.ContentType
+import io.ktor.http.fileExtensions
 import kotlin.uuid.Uuid
 import kotlin.io.encoding.Base64
 import kotlinx.io.RawSource
@@ -38,6 +40,17 @@ fun buildUuidFileName(displayName: String?, mimeType: String?): String {
 }
 
 internal expect fun extensionFromMimeType(mimeType: String): String?
+
+// Preserve image extensions when using Ktor's MIME table (whose JPEG list starts with jfif).
+internal fun commonExtensionFromMimeType(mimeType: String): String? = when (mimeType.lowercase()) {
+    "image/png" -> "png"
+    "image/jpeg" -> "jpg"
+    "image/gif" -> "gif"
+    "image/webp" -> "webp"
+    "image/heic", "image/heif" -> "heic"
+    "image/svg+xml" -> "svg"
+    else -> runCatching { ContentType.parse(mimeType).fileExtensions().firstOrNull() }.getOrNull()
+}
 
 internal expect fun platformFileFromLocation(location: String): PlatformFile
 internal expect fun fileDisplayName(file: PlatformFile): String?

@@ -30,12 +30,8 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.event.AppEventBus
-import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
-import me.rerere.rikkahub.data.ai.mcp.McpImageStore
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
-import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
-import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
 import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.di.appModule
@@ -145,13 +141,11 @@ fun SharedProductApp(
             single { httpClient }
             single { providerManager }
             single { eventBus }
-            single<McpImageStore> { FileKitMcpImageStore() }
             single<AnalyticsTracker> { analyticsTracker }
             single<CrashReporter> { crashReporter }
             single { MessageFtsManager(database, MessageFtsDialect.UNICODE61) }
             single { FileKitFileCleaner(database, settingsStore) }
             single { FilesManager(get(named("filesDir")), get(), appScope, get(), asyncFileIo = true) }
-            single<Base64ImageStore> { SharedBase64ImageStore() }
             single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
             single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
             single { templateEngine }

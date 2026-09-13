@@ -3,6 +3,7 @@ package me.rerere.rikkahub.data.files
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.copyTo
 import io.github.vinceglb.filekit.delete
+import io.github.vinceglb.filekit.write
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.CoroutineScope
@@ -14,12 +15,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.logging.Logging
 import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
 import me.rerere.rikkahub.data.repository.FilesRepository
 import me.rerere.rikkahub.platform.FileKitFileCleaner
+import me.rerere.rikkahub.platform.encodeImageToPng
 import me.rerere.rikkahub.service.toLocalFilePath
 import me.rerere.rikkahub.utils.delete
 import me.rerere.rikkahub.utils.deleteRecursively
@@ -32,6 +35,7 @@ import me.rerere.rikkahub.utils.mkdirs
 import me.rerere.rikkahub.utils.resolve
 import me.rerere.rikkahub.utils.writeBytes
 import me.rerere.rikkahub.utils.writeText
+import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
 class FilesManager(
@@ -160,7 +164,13 @@ class FilesManager(
         return newUris
     }
 
-    fun createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<String> {
+    fun createChatFilesByByteArrays(byteArrays: List<ByteArray>): List<String> =
+        createChatFilesByByteArrays(byteArrays) { file, bytes -> file.writeBytes(bytes) }
+
+    private inline fun createChatFilesByByteArrays(
+        byteArrays: List<ByteArray>,
+        writeContents: (Path, ByteArray) -> Unit,
+    ): List<String> {
         val newUris = mutableListOf<String>()
         val dir = filesDir.resolve(FileFolders.UPLOAD)
         if (!dir.exists()) {
@@ -173,7 +183,7 @@ class FilesManager(
                 SystemFileSystem.sink(file).close()
             }
             val newUri = file.toFileUri()
-            file.writeBytes(byteArray)
+            writeContents(file, byteArray)
             trackManagedFile(
                 folder = FileFolders.UPLOAD,
                 file = file,
@@ -184,6 +194,40 @@ class FilesManager(
         }
         return newUris
     }
+
+    suspend fun convertBase64ImagePartToLocalFile(message: UIMessage): UIMessage =
+        withContext(Dispatchers.IO) {
+            message.copy(
+                parts = message.parts.map { part ->
+                    when (part) {
+                        is UIMessagePart.Image -> {
+                            if (part.url.startsWith("data:image")) {
+                                val sourceByteArray = Base64.decode(part.url.substringAfter("base64,").encodeToByteArray())
+                                val byteArray = encodeImageToPng(sourceByteArray)!!
+                                val urls = if (asyncFileIo) {
+                                    createChatFilesByByteArrays(listOf(byteArray)) { file, bytes ->
+                                        PlatformFile(file.toString()).write(bytes)
+                                    }
+                                } else {
+                                    createChatFilesByByteArrays(listOf(byteArray))
+                                }
+                                Log.i(
+                                    TAG,
+                                    "convertBase64ImagePartToLocalFile: convert base64 img to ${urls.joinToString(", ")}"
+                                )
+                                part.copy(
+                                    url = urls.first(),
+                                )
+                            } else {
+                                part
+                            }
+                        }
+
+                        else -> part
+                    }
+                }
+            )
+        }
 
     fun deleteChatFiles(uris: List<String>) {
         if (asyncFileIo) {

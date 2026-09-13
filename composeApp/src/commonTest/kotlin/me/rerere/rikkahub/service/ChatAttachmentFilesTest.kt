@@ -85,6 +85,7 @@ class ChatAttachmentFilesTest {
             Triple("trailing.", null, "bin"),
             Triple("no-extension", "APPLICATION/PDF", "pdf"),
             Triple(null, "image/png", "png"),
+            Triple(null, "image/jpeg", "jpg"),
             Triple("", "application/x-unknown-cmp", "bin"),
             Triple(null, null, "bin"),
         )

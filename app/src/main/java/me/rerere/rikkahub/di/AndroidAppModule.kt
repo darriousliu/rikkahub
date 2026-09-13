@@ -13,9 +13,7 @@ import me.rerere.common.android.appTempFolder
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
-import me.rerere.rikkahub.data.ai.transformers.AndroidBase64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.AndroidDocumentTextExtractor
-import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.WorkspaceReminderTransformer
@@ -102,7 +100,6 @@ val androidAppModule = module {
     single<ChatFontRuntime> { AndroidChatFontRuntime(get()) }
 
     single<DocumentTextExtractor> { AndroidDocumentTextExtractor }
-    single<Base64ImageStore> { AndroidBase64ImageStore(get()) }
 
     single<ExternalUriOpener> { AndroidExternalUriOpener(get()) }
     single<ChatInputPlatformContent> { AndroidChatInputPlatformContent(get(), get()) }
