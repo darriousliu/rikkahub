@@ -5,11 +5,13 @@ import me.rerere.ai.core.Tool
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.rikkahub.utils.UpdateChecker
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val appModule = module {
     single<Json> { JsonInstant }
+    single { UpdateChecker(client = get(), buildInfo = get()) }
     single {
         ChatService(
             appScope = get(),

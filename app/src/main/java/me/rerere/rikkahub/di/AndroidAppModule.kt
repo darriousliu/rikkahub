@@ -57,7 +57,6 @@ import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
 import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.SoundEffectPlayer
-import me.rerere.rikkahub.utils.UpdateChecker
 import me.rerere.rikkahub.web.AndroidWebServerRuntime
 import me.rerere.rikkahub.web.KtorWebServerHost
 import me.rerere.rikkahub.web.WebServerManager
@@ -138,10 +137,6 @@ val androidAppModule = module {
             ttsManager = get(),
             platformTools = AndroidLocalTools(context = get(), eventBus = get()),
         )
-    }
-
-    single {
-        UpdateChecker(client = get(), buildInfo = get())
     }
 
     single {

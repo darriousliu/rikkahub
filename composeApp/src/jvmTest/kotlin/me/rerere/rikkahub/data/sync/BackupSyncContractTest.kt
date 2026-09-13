@@ -30,6 +30,10 @@ import me.rerere.rikkahub.data.sync.s3.S3Config
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.rikkahub.di.appModule
+import me.rerere.rikkahub.di.dataSourceModule
+import org.koin.dsl.koinApplication
+import org.koin.dsl.module
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
@@ -374,8 +378,15 @@ class BackupSyncContractTest {
             }
         })
         val layout = BackupFileLayout(PlatformFile(files), PlatformFile(cache), databaseFiles.mapValues { PlatformFile(it.value) })
-        val web = WebDavSync(store, JsonInstant, layout, http)
-        val s3 = S3Sync(store, JsonInstant, layout, http)
+        private val application = koinApplication {
+            modules(appModule, dataSourceModule, module {
+                single { store }
+                single { layout }
+                single { http }
+            })
+        }
+        val web: WebDavSync = application.koin.get()
+        val s3: S3Sync = application.koin.get()
 
         fun configure(database: Boolean, files: Boolean) {
             webConfig = webConfig.copy(items = WebDavConfig.BackupItem.entries.filter {
@@ -401,7 +412,7 @@ class BackupSyncContractTest {
             s3.restoreFromS3(s3Config, S3BackupItem("rikkahub_backups/$backupName", backupName, download.size.toLong(), Instant.fromEpochMilliseconds(0)))
         else web.restore(webConfig, WebDavBackupItem("/unused-href", backupName, download.size.toLong(), Instant.fromEpochMilliseconds(0)))
 
-        override fun close() { http.close(); scope.cancel(); root.deleteRecursively() }
+        override fun close() { application.close(); http.close(); scope.cancel(); root.deleteRecursively() }
     }
 
     private class MemoryPreferences : DataStore<Preferences> {

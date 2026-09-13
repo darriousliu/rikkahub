@@ -9,11 +9,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import korlibs.template.KorteTemplates
 import me.rerere.search.SearchService
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.io.files.Path
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.persistentLru
@@ -23,18 +24,40 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
+import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.files.ChatFileStore
+import me.rerere.rikkahub.data.ai.mcp.FileKitMcpImageStore
+import me.rerere.rikkahub.data.ai.mcp.McpImageStore
+import me.rerere.rikkahub.data.ai.tools.local.LocalTools
+import me.rerere.rikkahub.data.ai.transformers.Base64ImageStore
+import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
+import me.rerere.rikkahub.data.ai.transformers.SharedBase64ImageStore
+import me.rerere.rikkahub.data.ai.transformers.UnsupportedDocumentTextExtractor
+import me.rerere.rikkahub.data.repository.ConversationFileStore
+import me.rerere.rikkahub.data.repository.MessageNodeReadErrorPolicy
 import me.rerere.rikkahub.data.sync.BackupFileLayout
+import me.rerere.rikkahub.di.appModule
+import me.rerere.rikkahub.di.dataSourceModule
+import me.rerere.rikkahub.di.repositoryModule
+import me.rerere.rikkahub.di.viewModelModule
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.platform.ChatNotificationPresenter
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
-import me.rerere.rikkahub.platform.NoOpMonitoring
+import me.rerere.rikkahub.platform.FileKitFileCleaner
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
-import me.rerere.rikkahub.ui.hooks.CustomTtsState
+import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
+import me.rerere.rikkahub.ui.components.ai.UnavailableChatInputPlatformContent
+import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
+import me.rerere.rikkahub.ui.pages.chat.UnavailableChatPagePlatformContent
+import me.rerere.rikkahub.ui.pages.assistant.AssistantAssetCleaner
+import me.rerere.rikkahub.service.FileKitChatFileStore
+import me.rerere.rikkahub.service.SharedChatAttachmentStore
 import me.rerere.rikkahub.ui.hooks.rememberSharedCustomTtsState
 import me.rerere.rikkahub.ui.pages.setting.ChatStorageSummaryProvider
 import me.rerere.rikkahub.ui.pages.setting.UnavailableChatStorageSummaryProvider
@@ -42,18 +65,17 @@ import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.ui.theme.UnavailableChatFontRuntime
 import me.rerere.rikkahub.web.WebServerRuntime
-import me.rerere.tts.model.PlaybackState
 import me.rerere.tts.controller.PlatformAudioPlayer
 import me.rerere.tts.provider.TTSManager
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
 import kotlin.uuid.Uuid
 
-/**
- * Product entry used by non-Android shells while the remaining platform-only routes are migrated.
- */
+/** Compose entry shared by the iOS and desktop application shells. */
 @Composable
 fun SharedProductApp(
     settingsStore: SettingsStore,
@@ -64,16 +86,13 @@ fun SharedProductApp(
     webServerRuntime: WebServerRuntime,
     booleanPreferenceStore: BooleanPreferenceStore,
     stringPreferenceStore: StringPreferenceStore,
-    chatFontRuntime: ChatFontRuntime = UnavailableChatFontRuntime,
-    chatStorageSummaryProvider: ChatStorageSummaryProvider = UnavailableChatStorageSummaryProvider,
-    analyticsTracker: AnalyticsTracker = NoOpMonitoring,
-    crashReporter: CrashReporter = NoOpMonitoring,
-    chatNotificationPresenter: ChatNotificationPresenter? = null,
-    systemTtsProvider: TTSProvider<TTSProviderSetting.SystemTTS>? = null,
-    platformAudioPlayer: PlatformAudioPlayer? = null,
-    chatMessagePlatformActions: ChatMessagePlatformActions? = null,
+    analyticsTracker: AnalyticsTracker,
+    crashReporter: CrashReporter,
+    chatNotificationPresenter: ChatNotificationPresenter,
+    systemTtsProvider: TTSProvider<TTSProviderSetting.SystemTTS>,
+    platformAudioPlayer: PlatformAudioPlayer,
     startScreen: Screen? = null,
-    backupFileLayout: BackupFileLayout = BackupFileLayout.create(),
+    backupFileLayout: BackupFileLayout,
     oauthCallbackSessionFactory: OAuthCallbackSessionFactory,
 ) {
     val appScope = rememberCoroutineScope()
@@ -89,10 +108,10 @@ fun SharedProductApp(
     }
     val providerManager = remember(httpClient, keyRoulette) { ProviderManager(httpClient, keyRoulette) }
     val ttsManager = remember(httpClient, systemTtsProvider) {
-        systemTtsProvider?.let { TTSManager(httpClient = httpClient, systemProvider = it) }
+        TTSManager(httpClient = httpClient, systemProvider = systemTtsProvider)
     }
-    val resolvedChatMessagePlatformActions = remember(externalUriOpener, chatMessagePlatformActions) {
-        chatMessagePlatformActions ?: SharedChatMessagePlatformActions(externalUriOpener)
+    val chatMessagePlatformActions = remember(externalUriOpener) {
+        SharedChatMessagePlatformActions(externalUriOpener)
     }
     val resolvedStartScreen by produceState<Screen?>(initialValue = startScreen, startScreen, stringPreferenceStore) {
         if (value == null) {
@@ -110,38 +129,51 @@ fun SharedProductApp(
         webServerRuntime,
         booleanPreferenceStore,
         stringPreferenceStore,
-        chatFontRuntime,
-        chatStorageSummaryProvider,
         eventBus,
         providerManager,
         analyticsTracker,
         crashReporter,
-        resolvedChatMessagePlatformActions,
+        chatMessagePlatformActions,
         backupFileLayout,
         oauthCallbackSessionFactory,
     ) {
-        platformModule(
-            settingsStore = settingsStore,
-            templateEngine = templateEngine,
-            database = database,
-            buildInfo = buildInfo,
-            externalUriOpener = externalUriOpener,
-            webServerRuntime = webServerRuntime,
-            booleanPreferenceStore = booleanPreferenceStore,
-            stringPreferenceStore = stringPreferenceStore,
-            chatFontRuntime = chatFontRuntime,
-            chatStorageSummaryProvider = chatStorageSummaryProvider,
-            httpClient = httpClient,
-            providerManager = providerManager,
-            appScope = appScope,
-            analyticsTracker = analyticsTracker,
-            crashReporter = crashReporter,
-            eventBus = eventBus,
-            chatMessagePlatformActions = resolvedChatMessagePlatformActions,
-            backupFileLayout = backupFileLayout,
-            oauthCallbackSessionFactory = oauthCallbackSessionFactory,
-            ttsManager = ttsManager,
-        )
+        module {
+            includes(appModule, dataSourceModule, repositoryModule, viewModelModule)
+            single<CoroutineScope> { appScope }
+            single { oauthCallbackSessionFactory }
+            single<Path>(named("filesDir")) { FileKit.filesDir.toKotlinxIoPath() }
+            single<Path>(named("cacheDir")) { (FileKit.cacheDir / "imggen").toKotlinxIoPath() }
+            single<ChatFileStore> { FileKitChatFileStore(appScope, get()) }
+            single { settingsStore }
+            single { database }
+            single { buildInfo }
+            single { externalUriOpener }
+            single { SharedChatAttachmentStore() }
+            single<ChatMessagePlatformActions> { chatMessagePlatformActions }
+            single<ChatInputPlatformContent> { UnavailableChatInputPlatformContent }
+            single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
+            single { webServerRuntime }
+            single { booleanPreferenceStore }
+            single { stringPreferenceStore }
+            single<ChatFontRuntime> { UnavailableChatFontRuntime }
+            single<ChatStorageSummaryProvider> { UnavailableChatStorageSummaryProvider }
+            single { httpClient }
+            single { providerManager }
+            single { eventBus }
+            single<McpImageStore> { FileKitMcpImageStore() }
+            single<AnalyticsTracker> { analyticsTracker }
+            single<CrashReporter> { crashReporter }
+            single { MessageFtsManager(database, MessageFtsDialect.UNICODE61) }
+            single { FileKitFileCleaner(database, settingsStore) }
+            single<ConversationFileStore> { get<FileKitFileCleaner>() }
+            single<MessageNodeReadErrorPolicy> { MessageNodeReadErrorPolicy.Default }
+            single<Base64ImageStore> { SharedBase64ImageStore() }
+            single { LocalTools(eventBus = eventBus, settingsStore = settingsStore, ttsManager = ttsManager) }
+            single<DocumentTextExtractor> { UnsupportedDocumentTextExtractor }
+            single { templateEngine }
+            single<AssistantAssetCleaner> { get<FileKitFileCleaner>() }
+            single { backupFileLayout }
+        }
     }
     val koinConfiguration = remember(productModule) {
         koinConfiguration { modules(productModule) }
@@ -151,22 +183,16 @@ fun SharedProductApp(
         onDispose { httpClient.close() }
     }
     DisposableEffect(chatNotificationPresenter, appScope, eventBus, settingsStore) {
-        val notificationManager = chatNotificationPresenter?.let {
-            ChatNotificationManager(appScope, eventBus, settingsStore, it)
-        }
-        onDispose { notificationManager?.close() }
+        val notificationManager = ChatNotificationManager(appScope, eventBus, settingsStore, chatNotificationPresenter)
+        onDispose { notificationManager.close() }
     }
 
     val initialScreen = resolvedStartScreen ?: return
-    val ttsState = if (ttsManager != null && platformAudioPlayer != null) {
-        rememberSharedCustomTtsState(
-            settingsStore = settingsStore,
-            ttsManager = ttsManager,
-            audioPlayer = platformAudioPlayer,
-        )
-    } else {
-        UnavailableCustomTtsState
-    }
+    val ttsState = rememberSharedCustomTtsState(
+        settingsStore = settingsStore,
+        ttsManager = ttsManager,
+        audioPlayer = platformAudioPlayer,
+    )
 
     KoinApplication(configuration = koinConfiguration) {
         RikkahubTheme {
@@ -179,21 +205,3 @@ fun SharedProductApp(
 }
 
 private const val LAST_CONVERSATION_KEY = "lastConversationId"
-
-private object UnavailableCustomTtsState : CustomTtsState {
-    override val isAvailable: StateFlow<Boolean> = MutableStateFlow(false)
-    override val isSpeaking: StateFlow<Boolean> = MutableStateFlow(false)
-    override val error: StateFlow<String?> = MutableStateFlow(null)
-    override val currentChunk: StateFlow<Int> = MutableStateFlow(0)
-    override val totalChunks: StateFlow<Int> = MutableStateFlow(0)
-    override val playbackState: StateFlow<PlaybackState> = MutableStateFlow(PlaybackState())
-
-    override fun speak(text: String, flushCalled: Boolean) = Unit
-    override fun stop() = Unit
-    override fun pause() = Unit
-    override fun resume() = Unit
-    override fun skipNext() = Unit
-    override fun fastForward(ms: Long) = Unit
-    override fun setSpeed(speed: Float) = Unit
-    override fun cleanup() = Unit
-}

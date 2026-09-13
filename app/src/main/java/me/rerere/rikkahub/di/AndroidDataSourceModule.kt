@@ -21,7 +21,6 @@ import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.mcp.AndroidMcpImageStore
 import me.rerere.rikkahub.data.ai.mcp.McpImageStore
-import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.createAndroidSettingsDataStore
@@ -32,8 +31,6 @@ import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.db.fts.SimpleDictManager
 import me.rerere.rikkahub.data.sync.BackupFileLayout
-import me.rerere.rikkahub.data.sync.S3Sync
-import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.apiUserAgent
 import me.rerere.rikkahub.shared.applyAppTimeouts
@@ -116,10 +113,6 @@ val androidDataSourceModule = module {
             }
     }
 
-    single<SponsorAPI> {
-        SponsorAPI.create(get<HttpClient>())
-    }
-
     single {
         val aiOkHttpClient = get<OkHttpClient>()
         ProviderManager(
@@ -145,15 +138,6 @@ val androidDataSourceModule = module {
         )
     }
 
-    single {
-        WebDavSync(
-            settingsStore = get(),
-            json = get(),
-            layout = get(),
-            httpClient = get()
-        )
-    }
-
     single<HttpClient> {
         HttpClient(OkHttp) {
             install(WebSockets) {
@@ -170,15 +154,6 @@ val androidDataSourceModule = module {
                 }
             }
         }
-    }
-
-    single {
-        S3Sync(
-            settingsStore = get(),
-            json = get(),
-            layout = get(),
-            httpClient = get()
-        )
     }
 
 }
