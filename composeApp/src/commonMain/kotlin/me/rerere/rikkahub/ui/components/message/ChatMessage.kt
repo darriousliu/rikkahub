@@ -92,6 +92,7 @@ import me.rerere.rikkahub.ui.theme.extendColors
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.urlDecode
 import me.rerere.rikkahub.platform.ExternalUriOpener
+import me.rerere.rikkahub.platform.rememberFileOpener
 import org.koin.compose.koinInject
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -129,7 +130,6 @@ fun ChatMessage(
     var showActionsSheet by remember { mutableStateOf(false) }
     var showSelectCopySheet by remember { mutableStateOf(false) }
     val navController = LocalNavController.current
-    val platformActions = koinInject<ChatMessagePlatformActions>()
     val colorScheme = MaterialTheme.colorScheme
     val previewScope = rememberCoroutineScope()
     Column(
@@ -208,10 +208,7 @@ fun ChatMessage(
             }
         }
 
-        platformActions.RenderEditedFiles(
-            parts = message.parts,
-            assistant = assistant,
-        )
+        LocalEditedFilesContent.current(message.parts, assistant)
 
         ProvideTextStyle(textStyle) {
             ChatMessageNerdLine(message = message)
@@ -274,7 +271,7 @@ private fun MessagePartsBlock(
     onUserMessageClick: (() -> Unit)? = null,
 ) {
     val externalUriOpener = koinInject<ExternalUriOpener>()
-    val platformActions = koinInject<ChatMessagePlatformActions>()
+    val openFile = rememberFileOpener()
     val contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
 
     // 消息输出HapticFeedback
@@ -426,7 +423,7 @@ private fun MessagePartsBlock(
                         Surface(
                             tonalElevation = 2.dp,
                             onClick = {
-                                platformActions.openAttachment(part.url)
+                                openFile(part.url)
                             },
                             modifier = Modifier,
                             shape = RoundedCornerShape(8.dp),
@@ -441,7 +438,7 @@ private fun MessagePartsBlock(
                         Surface(
                             tonalElevation = 2.dp,
                             onClick = {
-                                platformActions.openAttachment(part.url)
+                                openFile(part.url)
                             },
                             modifier = Modifier,
                             shape = RoundedCornerShape(50),
@@ -489,7 +486,7 @@ private fun MessagePartsBlock(
                         Surface(
                             tonalElevation = 2.dp,
                             onClick = {
-                                platformActions.openAttachment(part.url)
+                                openFile(part.url)
                             },
                             modifier = Modifier,
                             shape = RoundedCornerShape(50),

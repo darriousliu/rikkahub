@@ -26,6 +26,8 @@ import io.ktor.client.HttpClient
 import me.rerere.rikkahub.platform.addPlatformGifDecoder
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.context.LocalASRState
+import me.rerere.rikkahub.ui.components.message.EditedFilesList
+import me.rerere.rikkahub.ui.components.message.LocalEditedFilesContent
 import me.rerere.rikkahub.ui.hooks.readBooleanPreference
 import me.rerere.rikkahub.ui.hooks.readStringPreference
 import me.rerere.rikkahub.ui.hooks.rememberCustomAsrState
@@ -140,7 +142,12 @@ class RouteActivity : ComponentActivity() {
         val shareScreen = remember { initialShareScreen() }
         var shareHandled by remember { mutableStateOf(false) }
 
-        CompositionLocalProvider(LocalASRState provides asr) {
+        CompositionLocalProvider(
+            LocalASRState provides asr,
+            LocalEditedFilesContent provides { parts, assistant ->
+                EditedFilesList(parts = parts, assistant = assistant)
+            },
+        ) {
             me.rerere.rikkahub.AppRoutes(
                 startScreen = startScreen,
                 ttsState = tts,

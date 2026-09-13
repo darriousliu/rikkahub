@@ -48,8 +48,6 @@ import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.FileKitFileCleaner
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
-import me.rerere.rikkahub.ui.components.message.ChatMessagePlatformActions
-import me.rerere.rikkahub.ui.components.message.SharedChatMessagePlatformActions
 import me.rerere.rikkahub.ui.components.ai.ChatInputPlatformContent
 import me.rerere.rikkahub.ui.components.ai.UnavailableChatInputPlatformContent
 import me.rerere.rikkahub.ui.pages.chat.ChatPagePlatformContent
@@ -109,9 +107,6 @@ fun SharedProductApp(
     val ttsManager = remember(httpClient, systemTtsProvider) {
         TTSManager(httpClient = httpClient, systemProvider = systemTtsProvider)
     }
-    val chatMessagePlatformActions = remember(externalUriOpener) {
-        SharedChatMessagePlatformActions(externalUriOpener)
-    }
     val resolvedStartScreen by produceState<Screen?>(initialValue = startScreen, startScreen, stringPreferenceStore) {
         if (value == null) {
             val rememberedId = stringPreferenceStore.get(LAST_CONVERSATION_KEY)
@@ -132,7 +127,6 @@ fun SharedProductApp(
         providerManager,
         analyticsTracker,
         crashReporter,
-        chatMessagePlatformActions,
         backupFileLayout,
         oauthCallbackSessionFactory,
     ) {
@@ -148,7 +142,6 @@ fun SharedProductApp(
             single { buildInfo }
             single { externalUriOpener }
             single { SharedChatAttachmentStore() }
-            single<ChatMessagePlatformActions> { chatMessagePlatformActions }
             single<ChatInputPlatformContent> { UnavailableChatInputPlatformContent }
             single<ChatPagePlatformContent> { UnavailableChatPagePlatformContent }
             single { webServerRuntime }
