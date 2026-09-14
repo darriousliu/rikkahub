@@ -161,7 +161,7 @@ fun Application.configureWebApi(
                 )
             }
 
-            aiIconRoutes(context)
+            aiIconRoutes()
 
             if (jwtEnabled) {
                 authenticate("auth-jwt") {

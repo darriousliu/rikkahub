@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.web.routes
 
-import android.content.Context
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.server.response.header
@@ -9,10 +8,11 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
+import me.rerere.rikkahub.generated.resources.Res
 import me.rerere.rikkahub.utils.computeAIIconByName
 import me.rerere.rikkahub.web.BadRequestException
 
-fun Route.aiIconRoutes(context: Context) {
+fun Route.aiIconRoutes() {
     route("/ai-icon") {
         get {
             val name = call.request.queryParameters["name"]?.trim()
@@ -23,9 +23,9 @@ fun Route.aiIconRoutes(context: Context) {
 
             val iconPath = computeAIIconByName(name)
             if (iconPath != null) {
-                val assetPath = "icons/$iconPath"
+                val assetPath = "files/icons/$iconPath"
                 runCatching {
-                    context.assets.open(assetPath).use { input ->
+                    Res.readBytes(assetPath).inputStream().use { input ->
                         call.response.header(HttpHeaders.CacheControl, "public, max-age=86400")
                         call.response.header(HttpHeaders.ContentType, resolveContentType(iconPath).toString())
                         call.respondOutputStream {
