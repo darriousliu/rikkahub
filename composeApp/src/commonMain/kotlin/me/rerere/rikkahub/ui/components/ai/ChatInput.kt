@@ -45,6 +45,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
@@ -105,6 +107,8 @@ import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.utils.onReceiveContent
+import me.rerere.rikkahub.utils.rememberReceiveContentClipboard
+import io.github.vinceglb.filekit.PlatformFile
 import me.rerere.rikkahub.utils.playAsrSound
 import me.rerere.rikkahub.utils.preloadAsrSounds
 import org.koin.compose.koinInject
@@ -463,15 +467,15 @@ private fun TextInputRow(
         var isFocused by remember { mutableStateOf(false) }
         var isFullScreen by remember { mutableStateOf(false) }
         var completionList by remember { mutableStateOf<ChatCompletionList?>(null) }
-        val contentReceiverModifier = remember(
+        val (receiveImage, receiveText) = remember(
             settings.displaySetting.pasteLongTextAsFile, settings.displaySetting.pasteLongTextThreshold
         ) {
-            Modifier.onReceiveContent(
-                onImage = { file ->
+            Pair<(PlatformFile) -> Boolean, (String) -> Boolean>(
+                first = { file ->
                     state.addImages(filesManager.createChatFilesByContents(listOf(file)))
                     true
                 },
-                onText = { text ->
+                second = { text ->
                     if (settings.displaySetting.pasteLongTextAsFile &&
                         text.length > settings.displaySetting.pasteLongTextThreshold
                     ) {
@@ -484,6 +488,11 @@ private fun TextInputRow(
                 },
             )
         }
+
+        val contentReceiverModifier = remember(receiveImage, receiveText) {
+            Modifier.onReceiveContent(receiveImage, receiveText)
+        }
+        val clipboard = rememberReceiveContentClipboard(receiveImage, receiveText)
 
         LaunchedEffect(completionProviders, isFocused) {
             if (!isFocused || completionProviders.isEmpty()) {
@@ -534,50 +543,52 @@ private fun TextInputRow(
             )
         }
 
-        TextField(
-            state = state.textContent,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("chat_input")
-                .then(contentReceiverModifier)
-                .onFocusChanged {
-                    isFocused = it.isFocused
+        CompositionLocalProvider(LocalClipboard provides clipboard) {
+            TextField(
+                state = state.textContent,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("chat_input")
+                    .then(contentReceiverModifier)
+                    .onFocusChanged {
+                        isFocused = it.isFocused
+                    },
+                shape = MaterialTheme.shapes.large,
+                placeholder = {
+                    Text(stringResource(Res.string.chat_input_placeholder))
                 },
-            shape = MaterialTheme.shapes.large,
-            placeholder = {
-                Text(stringResource(Res.string.chat_input_placeholder))
-            },
-            lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
-            keyboardOptions = KeyboardOptions(
-                imeAction = if (settings.displaySetting.sendOnEnter) ImeAction.Send else ImeAction.Default
-            ),
-            onKeyboardAction = {
-                if (settings.displaySetting.sendOnEnter && !state.isEmpty()) {
-                    onSendMessage()
-                }
-            },
-            colors = TextFieldDefaults.colors().copy(
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-            ),
-            trailingIcon = {
-                if (isFocused) {
-                    IconButton(
-                        onClick = {
-                            isFullScreen = !isFullScreen
-                        }) {
-                        Icon(HugeIcons.FullScreen, null)
+                lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 5),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = if (settings.displaySetting.sendOnEnter) ImeAction.Send else ImeAction.Default
+                ),
+                onKeyboardAction = {
+                    if (settings.displaySetting.sendOnEnter && !state.isEmpty()) {
+                        onSendMessage()
                     }
-                }
-            },
-            leadingIcon = if (quickMessages.isNotEmpty()) {
-                {
-                    QuickMessageButton(quickMessages = quickMessages, state = state)
-                }
-            } else null,
-        )
+                },
+                colors = TextFieldDefaults.colors().copy(
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                ),
+                trailingIcon = {
+                    if (isFocused) {
+                        IconButton(
+                            onClick = {
+                                isFullScreen = !isFullScreen
+                            }) {
+                            Icon(HugeIcons.FullScreen, null)
+                        }
+                    }
+                },
+                leadingIcon = if (quickMessages.isNotEmpty()) {
+                    {
+                        QuickMessageButton(quickMessages = quickMessages, state = state)
+                    }
+                } else null,
+            )
+        }
         if (isFullScreen) {
             FullScreenEditor(state = state) {
                 isFullScreen = false

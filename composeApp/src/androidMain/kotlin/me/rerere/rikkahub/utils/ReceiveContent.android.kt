@@ -5,7 +5,10 @@ import androidx.compose.foundation.content.ReceiveContentListener
 import androidx.compose.foundation.content.consume
 import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.content.hasMediaType
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.Clipboard
+import androidx.compose.ui.platform.LocalClipboard
 import io.github.vinceglb.filekit.PlatformFile
 
 actual fun Modifier.onReceiveContent(
@@ -22,3 +25,9 @@ actual fun Modifier.onReceiveContent(
         else -> content
     }
 })
+
+@Composable
+actual fun rememberReceiveContentClipboard(
+    onImage: (PlatformFile) -> Boolean,
+    onText: (String) -> Boolean,
+): Clipboard = LocalClipboard.current
