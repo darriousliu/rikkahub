@@ -31,8 +31,6 @@ import me.rerere.rikkahub.platform.FileKitFileCleaner
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.shared.createAppHttpClient
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
-import me.rerere.rikkahub.ui.theme.ChatFontRuntime
-import me.rerere.rikkahub.ui.theme.UnavailableChatFontRuntime
 import me.rerere.search.SearchService
 import me.rerere.tts.provider.TTSManager
 import org.koin.core.module.Module
@@ -56,7 +54,6 @@ fun createAppModule(appScope: CoroutineScope): Module = module {
     }
     single<BooleanPreferenceStore> { DataStoreBooleanPreferenceStore(get()) }
     single<StringPreferenceStore> { DataStoreStringPreferenceStore(get()) }
-    single<ChatFontRuntime> { UnavailableChatFontRuntime }
     single { KeyRoulette.persistentLru((FileKit.cacheDir / "lru_key_roulette.json").toKotlinxIoPath()) }
     single<HttpClient>(createdAtStart = true) {
         createAppHttpClient().also { SearchService.init(client = it, keyRoulette = get()) }

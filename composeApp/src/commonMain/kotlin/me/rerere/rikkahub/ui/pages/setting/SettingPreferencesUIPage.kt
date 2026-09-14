@@ -252,9 +252,7 @@ fun SettingPreferencesUIPage(
                         headlineContent = { Text(stringResource(Res.string.setting_display_page_chat_font_family_title)) },
                         supportingContent = {
                             Select(
-                                options = ChatFontFamily.entries.filter {
-                                    it != ChatFontFamily.CUSTOM || chatFontRuntime.canImportCustomFont
-                                },
+                                options = ChatFontFamily.entries,
                                 selectedOption = displaySetting.chatFontFamily,
                                 onOptionSelected = { family ->
                                     if (family == ChatFontFamily.CUSTOM && displaySetting.chatCustomFontPath.isBlank()) {
@@ -276,7 +274,7 @@ fun SettingPreferencesUIPage(
                             )
                         }
                     )
-                    if (chatFontRuntime.canImportCustomFont) item(
+                    item(
                         headlineContent = { Text(stringResource(Res.string.setting_display_page_custom_font_title)) },
                         supportingContent = {
                             Text(

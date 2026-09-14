@@ -42,8 +42,6 @@ import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.service.createWorkspaceToolsIfReady
 import me.rerere.rikkahub.shared.PlatformBuildInfo
 import me.rerere.rikkahub.shared.createPlatformBuildInfo
-import me.rerere.rikkahub.ui.theme.AndroidChatFontRuntime
-import me.rerere.rikkahub.ui.theme.ChatFontRuntime
 import me.rerere.rikkahub.utils.SoundEffectPlayer
 import me.rerere.rikkahub.web.AndroidWebServerRuntime
 import me.rerere.rikkahub.web.KtorWebServerHost
@@ -93,7 +91,6 @@ val androidAppModule = module {
 
     single<BooleanPreferenceStore> { AndroidBooleanPreferenceStore(get()) }
     single<StringPreferenceStore> { AndroidStringPreferenceStore(get()) }
-    single<ChatFontRuntime> { AndroidChatFontRuntime(get()) }
 
     single<DocumentTextExtractor> { AndroidDocumentTextExtractor }
 
