@@ -73,8 +73,10 @@ ktorfit = "2.7.5"
 firebaseApple = "12.17.0"
 sentry = "8.56.0"
 javafx = "21.0.12"
+jna = "5.19.1"
 
 [libraries]
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }

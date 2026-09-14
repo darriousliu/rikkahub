@@ -68,6 +68,8 @@ kotlin {
             implementation(libs.androidx.media3.common)
         }
         jvmMain.dependencies {
+            implementation(libs.jna)
+            implementation(libs.kotlinx.coroutines.swing)
             implementation("org.openjfx:javafx-base:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
             implementation("org.openjfx:javafx-graphics:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
             implementation("org.openjfx:javafx-media:${libs.versions.javafx.get()}:$javafxPlatformClassifier")

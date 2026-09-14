@@ -19,6 +19,7 @@ import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
 import me.rerere.rikkahub.web.WebServerRuntime
 import me.rerere.rikkahub.web.createJvmWebServerRuntime
 import me.rerere.tts.controller.JvmAudioPlayer
+import me.rerere.tts.controller.MacAudioPlayer
 import me.rerere.tts.controller.PlatformAudioPlayer
 import me.rerere.tts.provider.TTSProvider
 import me.rerere.tts.provider.TTSProviderSetting
@@ -39,5 +40,7 @@ fun createJvmAppModule(appScope: CoroutineScope) = module {
     single<CrashReporter> { get<JvmSentryMonitoring>() }
     single<ChatNotificationPresenter> { JvmSystemTrayChatNotificationPresenter() }
     single<TTSProvider<TTSProviderSetting.SystemTTS>> { JvmSystemTTSProvider() }
-    single<PlatformAudioPlayer> { JvmAudioPlayer() }
+    single<PlatformAudioPlayer> {
+        if (System.getProperty("os.name").startsWith("Mac")) MacAudioPlayer() else JvmAudioPlayer()
+    }
 }
