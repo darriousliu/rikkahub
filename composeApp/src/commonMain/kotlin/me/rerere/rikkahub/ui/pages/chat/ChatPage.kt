@@ -79,8 +79,6 @@ import me.rerere.rikkahub.ui.components.ai.completion.rememberWorkspaceCompletio
 import me.rerere.rikkahub.ui.components.ai.useCropLauncher
 import me.rerere.rikkahub.utils.rememberCameraLauncher
 import me.rerere.rikkahub.utils.prepareImageForCrop
-import me.rerere.rikkahub.shared.PlatformKind
-import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
@@ -572,9 +570,7 @@ private fun ChatFilesPickerSheet(
             mode = FileKitMode.Multiple(),
         ) { selectedFiles ->
             if (!selectedFiles.isNullOrEmpty()) {
-                if (!setting.displaySetting.skipCropImage && selectedFiles.size == 1 &&
-                    currentPlatformKind == PlatformKind.ANDROID
-                ) {
+                if (!setting.displaySetting.skipCropImage && selectedFiles.size == 1) {
                     val selectedFile = selectedFiles.first()
                     runCatching {
                         preCropTempFile = prepareImageForCrop(selectedFile)
