@@ -6,7 +6,7 @@ import android.os.Environment
 import android.widget.Toast
 import androidx.core.net.toUri
 
-fun UpdateChecker.downloadUpdate(context: Context, download: UpdateDownload) {
+actual fun UpdateChecker.downloadUpdate(context: Context, download: UpdateDownload) {
     runCatching {
         val request = DownloadManager.Request(download.url.toUri()).apply {
             setTitle(download.name)
