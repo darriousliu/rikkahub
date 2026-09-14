@@ -8,8 +8,6 @@ import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Book02
 import me.rerere.hugeicons.stroke.Book04
 import me.rerere.hugeicons.stroke.Earth
-import me.rerere.hugeicons.stroke.File02
-import me.rerere.hugeicons.stroke.Image02
 import me.rerere.hugeicons.stroke.Search01
 import me.rerere.hugeicons.stroke.Wrench01
 import androidx.compose.foundation.Image
@@ -24,35 +22,21 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -60,16 +44,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.compose.runtime.mutableStateListOf
 import androidx.navigation3.runtime.NavKey
-import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.ui.context.Navigator
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.request.crossfade
-import com.dokar.sonner.ToastType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -77,7 +58,6 @@ import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.ai.ui.isEmptyUIMessage
-import me.rerere.ai.util.encodeBase64
 import me.rerere.common.android.appTempFolder
 import me.rerere.common.time.toDashedFileTimestamp
 import me.rerere.rikkahub.shared.R
@@ -101,7 +81,6 @@ import me.rerere.rikkahub.ui.resources.stringResource
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.exportImage
 import me.rerere.rikkahub.utils.getActivity
-import me.rerere.rikkahub.utils.JsonInstantPretty
 import me.rerere.rikkahub.utils.jsonPrimitiveOrNull
 import me.rerere.rikkahub.utils.toLocalDateTime
 import org.jetbrains.compose.resources.painterResource as sharedPainterResource
@@ -110,283 +89,14 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
-@Composable
-actual fun ChatExportSheet(
-    visible: Boolean,
-    onDismissRequest: () -> Unit,
-    conversation: Conversation,
-    selectedMessages: List<UIMessage>
-) {
-    val context = LocalContext.current
-    val toaster = LocalToaster.current
-    val scope = rememberCoroutineScope()
-    val density = LocalDensity.current
-    val settings = LocalSettings.current
-    var imageExportOptions by remember { mutableStateOf(ImageExportOptions()) }
-
-    if (visible) {
-        ModalBottomSheet(
-            onDismissRequest = onDismissRequest,
-            sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(text = stringResource(id = Res.string.chat_page_export_format))
-
-                val markdownSuccessMessage =
-                    stringResource(id = Res.string.chat_page_export_success, "Markdown")
-                OutlinedCard(
-                    onClick = {
-                        exportToMarkdown(context, conversation, selectedMessages)
-                        toaster.show(
-                            markdownSuccessMessage,
-                            type = ToastType.Success
-                        )
-                        onDismissRequest()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    ListItem(
-                        headlineContent = {
-                            Text(stringResource(id = Res.string.chat_page_export_markdown))
-                        },
-                        supportingContent = {
-                            Text(stringResource(id = Res.string.chat_page_export_markdown_desc))
-                        },
-                        leadingContent = {
-                            Icon(HugeIcons.File02, contentDescription = null)
-                        }
-                    )
-                }
-
-                val imageSuccessMessage =
-                    stringResource(id = Res.string.chat_page_export_success, "Image")
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column {
-                        ListItem(
-                            headlineContent = {
-                                Text(stringResource(id = Res.string.chat_page_export_image))
-                            },
-                            supportingContent = {
-                                Text(stringResource(id = Res.string.chat_page_export_image_desc))
-                            },
-                            leadingContent = {
-                                Icon(HugeIcons.Image02, contentDescription = null)
-                            }
-                        )
-
-                        HorizontalDivider()
-
-                        ListItem(
-                            headlineContent = { Text(stringResource(Res.string.chat_page_export_image_expand_reasoning)) },
-                            trailingContent = {
-                                Switch(
-                                    checked = imageExportOptions.expandReasoning,
-                                    onCheckedChange = {
-                                        imageExportOptions = imageExportOptions.copy(expandReasoning = it)
-                                    }
-                                )
-                            }
-                        )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            Button(
-                                onClick = {
-                                    scope.launch {
-                                        runCatching {
-                                            exportToImage(
-                                                context = context,
-                                                scope = scope,
-                                                density = density,
-                                                conversation = conversation,
-                                                messages = selectedMessages,
-                                                settings = settings,
-                                                options = imageExportOptions
-                                            )
-                                        }.onFailure {
-                                            it.printStackTrace()
-                                            toaster.show(
-                                                message = "Failed to export image: ${it.message}",
-                                                type = ToastType.Error
-                                            )
-                                        }
-                                    }
-                                    toaster.show(
-                                        imageSuccessMessage,
-                                        type = ToastType.Success
-                                    )
-                                    onDismissRequest()
-                                }
-                            ) {
-                                Text(stringResource(Res.string.mermaid_export))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun exportToMarkdown(
-    context: Context,
-    conversation: Conversation,
-    messages: List<UIMessage>
-) {
-    val filename = "chat-export-${Clock.System.now().toDashedFileTimestamp()}.md"
-
-    val sb = buildAnnotatedString {
-        append("# ${conversation.title}\n\n")
-        append("*Exported on ${Clock.System.now().toLocalDateTime()}*\n\n")
-
-        messages.forEach { message ->
-            val role = if (message.role == MessageRole.USER) "**User**" else "**Assistant**"
-            append("$role:\n\n")
-            message.parts.forEach { part ->
-                when (part) {
-                    is UIMessagePart.Text -> {
-                        append(part.text)
-                        appendLine()
-                    }
-
-                    is UIMessagePart.Image -> {
-                        append("![Image](${part.encodeBase64().getOrNull()?.base64})")
-                        appendLine()
-                    }
-
-                    is UIMessagePart.Reasoning -> {
-                        part.reasoning.lines()
-                            .filter { it.isNotBlank() }
-                            .map { "> $it" }
-                            .forEach {
-                                append(it)
-                            }
-                        appendLine()
-                        appendLine()
-                    }
-
-                    is UIMessagePart.Tool -> {
-                        append("**Tool**: `${part.toolName}`")
-                        appendLine()
-                        if (part.toolCallId.isNotBlank()) {
-                            append("- Call ID: `${part.toolCallId}`")
-                            appendLine()
-                        }
-
-                        append("Input:")
-                        appendLine()
-                        append("```json")
-                        appendLine()
-                        append(JsonInstantPretty.encodeToString(part.inputAsJson()))
-                        appendLine()
-                        append("```")
-                        appendLine()
-
-                        if (part.output.isNotEmpty()) {
-                            append("Output:")
-                            appendLine()
-                            part.output.forEach { outputPart ->
-                                when (outputPart) {
-                                    is UIMessagePart.Text -> {
-                                        append("```text")
-                                        appendLine()
-                                        append(outputPart.text)
-                                        appendLine()
-                                        append("```")
-                                        appendLine()
-                                    }
-
-                                    is UIMessagePart.Reasoning -> {
-                                        outputPart.reasoning.lines()
-                                            .filter { it.isNotBlank() }
-                                            .forEach {
-                                                append("> $it")
-                                                appendLine()
-                                            }
-                                    }
-
-                                    is UIMessagePart.Image -> {
-                                        append("![Tool Image](${outputPart.encodeBase64().getOrNull()?.base64})")
-                                        appendLine()
-                                    }
-
-                                    is UIMessagePart.Document -> {
-                                        append("[Document: ${outputPart.fileName}](${outputPart.url})")
-                                        appendLine()
-                                    }
-
-                                    is UIMessagePart.Video -> {
-                                        append("[Video](${outputPart.url})")
-                                        appendLine()
-                                    }
-
-                                    is UIMessagePart.Audio -> {
-                                        append("[Audio](${outputPart.url})")
-                                        appendLine()
-                                    }
-
-                                    else -> {}
-                                }
-                            }
-                        }
-                        appendLine()
-                    }
-
-                    else -> {}
-                }
-            }
-            appendLine()
-            append("---")
-            appendLine()
-        }
-    }
-
-    try {
-        val dir = context.appTempFolder
-        val file = dir.resolve(filename)
-        if (!file.exists()) {
-            file.createNewFile()
-        } else {
-            file.delete()
-            file.createNewFile()
-        }
-        FileOutputStream(file).use {
-            it.write(sb.toString().toByteArray())
-        }
-
-        // Share the file
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        shareFile(context, uri, "text/markdown")
-
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
-
-private suspend fun exportToImage(
+internal actual suspend fun exportToImage(
     context: Context,
     scope: CoroutineScope,
     density: Density,
     conversation: Conversation,
     messages: List<UIMessage>,
     settings: Settings,
-    options: ImageExportOptions = ImageExportOptions()
+    options: ImageExportOptions
 ) {
     val filename = "chat-export-${Clock.System.now().toDashedFileTimestamp()}.png"
     val composer = BitmapComposer(scope)
@@ -446,8 +156,6 @@ private suspend fun exportToImage(
         bitmap.recycle()
     }
 }
-
-data class ImageExportOptions(val expandReasoning: Boolean = false)
 
 @Composable
 private fun ExportedChatImage(
