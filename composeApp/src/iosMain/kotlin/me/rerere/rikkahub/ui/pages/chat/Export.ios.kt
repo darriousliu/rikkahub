@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.chat
 
+import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.ui.unit.Density
 import coil3.PlatformContext
 import kotlinx.coroutines.CoroutineScope
@@ -9,6 +10,7 @@ import me.rerere.rikkahub.data.model.Conversation
 
 internal actual suspend fun exportToImage(
     context: PlatformContext,
+    compositionLocalContext: CompositionLocalContext,
     scope: CoroutineScope,
     density: Density,
     conversation: Conversation,
@@ -16,5 +18,5 @@ internal actual suspend fun exportToImage(
     settings: Settings,
     options: ImageExportOptions,
 ) {
-    error("Image export is only available on Android")
+    error("Image export is not yet available on iOS")
 }

@@ -21,6 +21,9 @@ import io.github.kdroidfilter.webview.web.WebViewNavigator
 import io.github.kdroidfilter.webview.web.WebViewState
 import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
 import kotlinx.serialization.Serializable
+import me.rerere.rikkahub.ui.components.ui.LocalExportContext
+import me.rerere.rikkahub.shared.PlatformKind
+import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.utils.JsonInstant
 import io.github.kdroidfilter.webview.web.WebView as KmpWebView
 
@@ -42,6 +45,11 @@ fun WebView(
     webViewJsBridge: WebViewJsBridge = rememberWebViewJsBridge(navigator),
     onConsoleMessage: (WebViewConsoleMessage) -> Unit = {},
 ) {
+    // Desktop image export captures Compose only; keep the preview's layout without creating a native view.
+    if (LocalExportContext.current && currentPlatformKind == PlatformKind.DESKTOP) {
+        Box(modifier)
+        return
+    }
     val currentOnConsoleMessage by rememberUpdatedState(onConsoleMessage)
     val factory = remember {
         { param: WebViewFactoryParam -> createWebView(param) { currentOnConsoleMessage(it) } }

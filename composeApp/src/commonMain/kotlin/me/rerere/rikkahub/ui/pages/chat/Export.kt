@@ -16,6 +16,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalContext
+import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +35,7 @@ import com.dokar.sonner.ToastType
 import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import io.github.vinceglb.filekit.writeString
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import me.rerere.ai.core.MessageRole
@@ -71,6 +74,7 @@ fun ChatExportSheet(
     selectedMessages: List<UIMessage>
 ) {
     val context = LocalPlatformContext.current
+    val compositionLocalContext = currentCompositionLocalContext
     val toaster = LocalToaster.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -135,7 +139,7 @@ fun ChatExportSheet(
                     )
                 }
 
-                if (currentPlatformKind == PlatformKind.ANDROID) {
+                if (currentPlatformKind != PlatformKind.IOS) {
                     val imageSuccessMessage =
                         stringResource(Res.string.chat_page_export_success, "Image")
                     OutlinedCard(
@@ -180,6 +184,7 @@ fun ChatExportSheet(
                                             runCatching {
                                                 exportToImage(
                                                     context = context,
+                                                    compositionLocalContext = compositionLocalContext,
                                                     scope = scope,
                                                     density = density,
                                                     conversation = conversation,
@@ -187,7 +192,10 @@ fun ChatExportSheet(
                                                     settings = settings,
                                                     options = imageExportOptions
                                                 )
+                                            }.onSuccess {
+                                                toaster.show(imageSuccessMessage, type = ToastType.Success)
                                             }.onFailure {
+                                                if (it is CancellationException) throw it
                                                 it.printStackTrace()
                                                 toaster.show(
                                                     message = "Failed to export image: ${it.message}",
@@ -195,10 +203,6 @@ fun ChatExportSheet(
                                                 )
                                             }
                                         }
-                                        toaster.show(
-                                            imageSuccessMessage,
-                                            type = ToastType.Success
-                                        )
                                         onDismissRequest()
                                     }
                                 ) {
@@ -326,6 +330,7 @@ data class ImageExportOptions(val expandReasoning: Boolean = false)
 
 internal expect suspend fun exportToImage(
     context: PlatformContext,
+    compositionLocalContext: CompositionLocalContext,
     scope: CoroutineScope,
     density: Density,
     conversation: Conversation,
