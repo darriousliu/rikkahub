@@ -19,6 +19,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import coil3.compose.rememberAsyncImagePainter
 import com.jvziyaoyao.scale.image.pager.ImagePager
+import com.jvziyaoyao.scale.zoomable.pager.PagerGestureScope
 import com.jvziyaoyao.scale.zoomable.pager.rememberZoomablePagerState
 import kotlinx.coroutines.launch
 import me.rerere.hugeicons.HugeIcons
@@ -43,6 +44,7 @@ fun ImagePreviewDialog(
             ImagePager(
                 modifier = Modifier.fillMaxSize(),
                 pagerState = state,
+                detectGesture = PagerGestureScope(onTap = onDismissRequest),
                 imageLoader = { index ->
                     val painter = rememberAsyncImagePainter(images[index])
                     return@ImagePager Pair(painter, painter.intrinsicSize)
