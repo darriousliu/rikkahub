@@ -32,6 +32,13 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.IOException
 import kotlinx.io.buffered
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import me.rerere.rikkahub.utils.exists
+import me.rerere.rikkahub.utils.mkdirs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -65,8 +72,10 @@ class ImgGenVM(
     val settingsStore: SettingsStore,
     val providerManager: ProviderManager,
     val genMediaRepository: GenMediaRepository,
-    private val filesDir: Path,
-    private val appTempFolder: Path,
+    private val filesDir: Path = FileKit.filesDir.toKotlinxIoPath(),
+    private val appTempFolder: Path = (FileKit.cacheDir / "temp").toKotlinxIoPath().also {
+        if (!it.exists()) it.mkdirs()
+    },
 ) : ViewModel() {
     val settings = settingsStore.settingsFlow
 

@@ -2,6 +2,9 @@ package me.rerere.rikkahub.ui.theme
 
 import androidx.compose.ui.text.font.FontFamily
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +30,7 @@ public data class ImportedChatFont(
 )
 
 public class ChatFontRuntime(
-    private val filesDir: Path,
+    private val filesDir: Path = FileKit.filesDir.toKotlinxIoPath(),
 ) {
     public suspend fun import(source: PlatformFile): Result<ImportedChatFont> = withContext(Dispatchers.IO) {
         runCatching {

@@ -5,13 +5,11 @@ import androidx.datastore.preferences.core.Preferences
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.cacheDir
 import io.github.vinceglb.filekit.div
-import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.ktor.client.HttpClient
 import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
 import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.persistentLru
@@ -34,7 +32,6 @@ import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import me.rerere.search.SearchService
 import me.rerere.tts.provider.TTSManager
 import org.koin.core.module.Module
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.dsl.onClose
 
@@ -42,8 +39,6 @@ import org.koin.dsl.onClose
 fun createAppModule(appScope: CoroutineScope): Module = module {
     includes(appModule, dataSourceModule, repositoryModule, viewModelModule)
     single<CoroutineScope> { appScope }
-    single<Path>(named("filesDir")) { FileKit.filesDir.toKotlinxIoPath() }
-    single<Path>(named("cacheDir")) { (FileKit.cacheDir / "imggen").toKotlinxIoPath() }
     single { createMessageTemplateEngine() }
     single {
         SettingsStore(
@@ -64,7 +59,9 @@ fun createAppModule(appScope: CoroutineScope): Module = module {
     single { MessageFtsManager(get(), MessageFtsDialect.UNICODE61) }
     single { FileKitFileCleaner(get(), get()) }
     single(createdAtStart = true) {
-        FilesManager(get(named("filesDir")), get(), appScope, get(), asyncFileIo = true).also { manager ->
+        FilesManager(
+            repository = get(), appScope = appScope, legacyFileCleaner = get(), asyncFileIo = true,
+        ).also { manager ->
             appScope.launch { manager.syncFolder() }
         }
     }

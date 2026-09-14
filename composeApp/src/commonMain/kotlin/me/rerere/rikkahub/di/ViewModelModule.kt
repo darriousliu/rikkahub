@@ -21,7 +21,6 @@ import me.rerere.rikkahub.ui.pages.stats.StatsVM
 import me.rerere.rikkahub.ui.pages.translator.TranslatorVM
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val viewModelModule = module {
@@ -65,7 +64,7 @@ val viewModelModule = module {
 
     viewModel { BackupVM(get(), get(), get(), get()) }
     viewModel {
-        ImgGenVM(get(), get(), get(), get(named("filesDir")), get(named("cacheDir")))
+        ImgGenVM(get(), get(), get())
     }
     viewModelOf(::PromptVM)
     viewModelOf(::QuickMessagesVM)

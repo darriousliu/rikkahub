@@ -11,7 +11,6 @@ import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.sync.S3Sync
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val dataSourceModule = module {
@@ -71,7 +70,6 @@ val dataSourceModule = module {
     }
     single {
         GenerationHandler(
-            filesDir = get(named("filesDir")),
             providerManager = get(),
             json = get(),
             memoryRepo = get(),

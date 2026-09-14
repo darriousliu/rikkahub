@@ -30,6 +30,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.files.Path
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonPrimitive
 import me.rerere.ai.provider.CustomBody
 import me.rerere.ai.provider.CustomHeader
@@ -52,6 +53,7 @@ import me.rerere.rikkahub.data.db.dao.GenMediaDAO
 import me.rerere.rikkahub.data.db.entity.GenMediaEntity
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.repository.GenMediaRepository
+import me.rerere.rikkahub.utils.JsonInstant
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Files
@@ -98,7 +100,11 @@ class ImgGenVMContractTest {
             model = f.model, prompt = "original prompt", numOfImages = 2, size = "1536x1024",
             customHeaders = f.model.customHeaders, customBody = f.model.customBodies,
         ), call.generation)
-        assertEquals(f.providerSetting, call.setting)
+        // 设置往返序列化会重建 @Transient 的 Compose 文案 lambda；核对实际提供商配置。
+        assertEquals(
+            JsonInstant.encodeToString<ProviderSetting>(f.providerSetting),
+            JsonInstant.encodeToString(call.setting),
+        )
         vm.updatePrompt("later prompt")
 
         call.reply(partial = true, index = 7)

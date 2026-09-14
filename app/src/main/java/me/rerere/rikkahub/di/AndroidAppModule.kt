@@ -7,9 +7,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.io.files.Path
 import me.rerere.ai.core.Tool
-import me.rerere.common.android.appTempFolder
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
@@ -56,12 +54,6 @@ import org.koin.dsl.module
 val androidAppModule = module {
     includes(appModule)
     single<CoroutineScope> { get<AppScope>() }
-    single<Path>(named("filesDir")) {
-        Path(get<Context>().filesDir.path)
-    }
-    single<Path>(named("cacheDir")) {
-        Path(get<Context>().appTempFolder.path)
-    }
     single<InputMessageTransformer>(named("workspaceReminder")) {
         WorkspaceReminderTransformer(get())
     }

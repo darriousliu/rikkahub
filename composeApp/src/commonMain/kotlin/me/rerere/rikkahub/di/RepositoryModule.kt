@@ -7,7 +7,6 @@ import me.rerere.rikkahub.data.repository.FavoriteRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val repositoryModule = module {
@@ -34,7 +33,7 @@ val repositoryModule = module {
     }
 
     single {
-        SkillManager(get(named("filesDir")), get())
+        SkillManager(settingsStore = get())
     }
 
 }

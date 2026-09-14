@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.data.ai
 
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlin.time.Clock
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.CancellationException
@@ -65,7 +68,7 @@ sealed interface GenerationChunk {
 }
 
 class GenerationHandler(
-    private val filesDir: Path,
+    private val filesDir: Path = FileKit.filesDir.toKotlinxIoPath(),
     private val providerManager: ProviderManager,
     private val json: Json,
     private val memoryRepo: MemoryRepository,

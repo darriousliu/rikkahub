@@ -1,6 +1,9 @@
 package me.rerere.rikkahub.data.files
 
 import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.github.vinceglb.filekit.copyTo
 import io.github.vinceglb.filekit.delete
 import io.github.vinceglb.filekit.write
@@ -39,7 +42,7 @@ import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
 class FilesManager(
-    private val filesDir: Path,
+    private val filesDir: Path = FileKit.filesDir.toKotlinxIoPath(),
     private val repository: FilesRepository,
     private val appScope: CoroutineScope,
     private val legacyFileCleaner: FileKitFileCleaner? = null,

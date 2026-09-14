@@ -1,7 +1,6 @@
 package me.rerere.rikkahub.di
 
 import me.rerere.rikkahub.data.files.FilesManager
-import org.koin.core.qualifier.named
 import android.content.Context
 import java.io.File
 import me.rerere.rikkahub.data.files.FileFolders
@@ -14,7 +13,7 @@ import org.koin.dsl.module
 
 val androidRepositoryModule = module {
     includes(repositoryModule)
-    single { FilesManager(get(named("filesDir")), get(), get()) }
+    single { FilesManager(repository = get(), appScope = get()) }
 
 
     single {

@@ -1,5 +1,8 @@
 package me.rerere.rikkahub.data.files
 
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -19,7 +22,7 @@ import me.rerere.rikkahub.utils.writeBytes
 import me.rerere.rikkahub.utils.writeText
 
 class SkillManager(
-    private val filesDir: Path,
+    private val filesDir: Path = FileKit.filesDir.toKotlinxIoPath(),
     private val settingsStore: SettingsStore,
 ) {
     companion object {

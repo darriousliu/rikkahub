@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.service
 
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.files.SkillManager
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -41,7 +42,6 @@ import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
-import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import java.nio.file.Files
@@ -76,11 +76,12 @@ internal class ChatServiceTestFixture(
             single { providers }
             single { AppEventBus() }
             single { createMessageTemplateEngine() }
-            single<Path>(named("filesDir")) { Path(root.path) }
             single<BooleanPreferenceStore> { DataStoreBooleanPreferenceStore(preferences) }
             single<StringPreferenceStore> { DataStoreStringPreferenceStore(preferences) }
             single { fts }
             single { FilesManager(Path(root.path), get(), scope, asyncFileIo = true) }
+            single { SkillManager(Path(root.path), get()) }
+            single { GenerationHandler(Path(root.path), get(), get(), get()) }
             single<OAuthCallbackSessionFactory> { OAuthCallbackSessionFactory { error("Unexpected OAuth") } }
             single { LocalTools(get(), settings, null) }
             existingRepository?.let { repository -> single { repository } }

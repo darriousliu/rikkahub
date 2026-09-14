@@ -12,7 +12,7 @@ import org.koin.dsl.module
 
 val appModule = module {
     single<Json> { JsonInstant }
-    single { ChatFontRuntime(get(named("filesDir"))) }
+    single { ChatFontRuntime() }
     single { UpdateChecker(client = get(), buildInfo = get()) }
     single {
         ChatService(
