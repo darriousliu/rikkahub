@@ -1,10 +1,8 @@
 package me.rerere.rikkahub.utils
 
 import android.content.Context
-import me.rerere.common.logging.RikkaLog as Log
 import androidx.core.content.edit
 
-private const val TAG = "CrashHandler"
 private const val PREFS_NAME = "crash_handler"
 private const val KEY_CRASHED = "crashed"
 private const val KEY_STACKTRACE = "stacktrace"
@@ -13,11 +11,8 @@ private const val MAX_STACKTRACE_LENGTH = 8000
 object CrashHandler {
     fun install(context: Context) {
         val appContext = context.applicationContext
-        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            Log.e(TAG, "Uncaught exception on thread ${thread.name}", throwable)
+        installUncaughtExceptionHandler { thread, throwable ->
             markCrashed(appContext, thread, throwable)
-            defaultHandler?.uncaughtException(thread, throwable)
         }
     }
 
