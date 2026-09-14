@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.web
 
-import android.content.Context
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
@@ -36,6 +35,8 @@ import me.rerere.rikkahub.web.routes.eventsRoutes
 import me.rerere.rikkahub.web.routes.filesRoutes
 import me.rerere.rikkahub.web.routes.folderRoutes
 import me.rerere.rikkahub.web.routes.settingsRoutes
+import java.io.File
+import java.io.InputStream
 import java.security.MessageDigest
 import java.util.Date
 import kotlin.uuid.Uuid
@@ -54,12 +55,13 @@ internal fun createMissingWebPasswordSecret(): String = "__missing_password_${Uu
  * This is passed to the platform web-server host by [WebServerManager].
  */
 fun Application.configureWebApi(
-    context: Context,
+    filesDir: File,
     chatService: ChatService,
     conversationRepo: ConversationRepository,
     folderRepo: FolderRepository,
     settingsStore: SettingsStore,
-    filesManager: FilesManager
+    filesManager: FilesManager,
+    openAsset: suspend (String) -> InputStream,
 ) {
     val jwtEnabled = settingsStore.settingsFlow.value.webServerJwtEnabled
 
@@ -169,16 +171,16 @@ fun Application.configureWebApi(
                     folderRoutes(chatService, folderRepo, settingsStore)
                     eventsRoutes(chatService, conversationRepo, folderRepo, settingsStore)
                     settingsRoutes(settingsStore)
-                    filesRoutes(filesManager, context)
-                    assetsRoutes(context)
+                    filesRoutes(filesManager, filesDir)
+                    assetsRoutes(openAsset)
                 }
             } else {
                 conversationRoutes(chatService, conversationRepo, folderRepo, settingsStore)
                 folderRoutes(chatService, folderRepo, settingsStore)
                 eventsRoutes(chatService, conversationRepo, folderRepo, settingsStore)
                 settingsRoutes(settingsStore)
-                filesRoutes(filesManager, context)
-                assetsRoutes(context)
+                filesRoutes(filesManager, filesDir)
+                assetsRoutes(openAsset)
             }
         }
     }

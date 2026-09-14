@@ -15,11 +15,9 @@ export function resolveFileUrl(url: string): string {
     return url;
   }
 
-  // Handle file:// protocol URLs from Android
+  // Handle Android files/ and desktop FileKit RikkaHub/ directories.
   if (url.startsWith("file://")) {
-    // Extract path after /files/
-    // Format: file:///data/user/0/package.name/files/upload/xxx
-    const match = url.match(/file:\/\/.*?\/files\/(.+)/);
+    const match = url.match(/file:\/\/.*?\/(?:files|RikkaHub)\/(.+)/);
     if (match && match[1]) {
       return appendWebAuthQuery(`/api/files/path/${match[1]}`);
     }

@@ -1,7 +1,5 @@
 package me.rerere.rikkahub.web.routes
 
-import android.content.Context
-import androidx.core.net.toUri
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.PartData
@@ -19,18 +17,20 @@ import io.ktor.utils.io.readAvailable
 import me.rerere.rikkahub.data.db.entity.ManagedFileEntity
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
+import me.rerere.rikkahub.data.files.toFileUri
 import me.rerere.rikkahub.web.BadRequestException
 import me.rerere.rikkahub.web.NotFoundException
 import me.rerere.rikkahub.web.dto.UploadFilesResponseDto
 import me.rerere.rikkahub.web.dto.UploadedFileDto
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 
 private const val MAX_UPLOAD_FILE_SIZE_BYTES = 20 * 1024 * 1024 // 20 MB
 
 fun Route.filesRoutes(
     filesManager: FilesManager,
-    context: Context
+    filesDir: File
 ) {
     route("/files") {
         // POST /api/files/upload - Upload files
@@ -124,7 +124,6 @@ fun Route.filesRoutes(
                 throw BadRequestException("Invalid file path")
             }
 
-            val filesDir = context.filesDir
             val file = File(filesDir, relativePath)
 
             // Ensure the file is within the app's files directory
@@ -176,7 +175,7 @@ fun Route.filesRoutes(
 }
 
 // GET /api/assets/{...} - Get file from app assets
-fun Route.assetsRoutes(context: Context) {
+fun Route.assetsRoutes(openAsset: suspend (String) -> InputStream) {
     route("/assets") {
         get("/{path...}") {
             val relativePath = call.pathParameters.getAll("path")?.joinToString("/")
@@ -199,7 +198,7 @@ fun Route.assetsRoutes(context: Context) {
             }
 
             try {
-                val inputStream = context.assets.open(relativePath)
+                val inputStream = openAsset(relativePath)
                 call.response.header("Content-Type", contentType.toString())
                 call.respondOutputStream {
                     inputStream.use { it.copyTo(this) }
@@ -241,7 +240,7 @@ private fun sanitizeDisplayName(fileName: String): String {
 
 private fun ManagedFileEntity.toUploadedFileDto(filesManager: FilesManager) = UploadedFileDto(
     id = id,
-    url = File(filesManager.getFile(this).toString()).toUri().toString(),
+    url = filesManager.getFile(this).toFileUri(),
     fileName = displayName,
     mime = mimeType,
     size = sizeBytes,

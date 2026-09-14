@@ -148,7 +148,9 @@ val androidAppModule = module {
         WebServerManager(
             appScope = appScope,
             host = KtorWebServerHost {
-                configureWebApi(context, chatService, conversationRepo, folderRepo, settingsStore, filesManager)
+                configureWebApi(context.filesDir, chatService, conversationRepo, folderRepo, settingsStore, filesManager) {
+                    context.assets.open(it)
+                }
             },
             nsdRegistrar = AndroidJmDnsServiceRegistrar(context),
         )

@@ -37,6 +37,7 @@ import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.di.appModule
 import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
@@ -90,6 +91,9 @@ internal class ChatServiceTestFixture(
     val repository: ConversationRepository = application.koin.get()
     val service: ChatService = application.koin.get()
     val generationHandler: GenerationHandler = application.koin.get()
+    val filesManager: FilesManager = application.koin.get()
+    val folderRepository: FolderRepository = application.koin.get()
+    val filesDir get() = root
 
     suspend fun configure(value: Settings) = settings.update(value.copy(init = false))
 

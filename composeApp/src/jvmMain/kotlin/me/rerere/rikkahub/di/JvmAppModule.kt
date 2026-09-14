@@ -34,7 +34,16 @@ fun createJvmAppModule(appScope: CoroutineScope) = module {
     single { BackupFileLayout.create(PlatformFile(defaultJvmDatabaseFile())) }
     single<ExternalUriOpener> { JvmExternalUriOpener() }
     single<OAuthCallbackSessionFactory> { JvmOAuthCallbackSessionFactory(get()) }
-    single<WebServerRuntime> { createJvmWebServerRuntime(appScope) }
+    single<WebServerRuntime> {
+        createJvmWebServerRuntime(
+            scope = appScope,
+            chatService = get(),
+            conversationRepo = get(),
+            folderRepo = get(),
+            settingsStore = get(),
+            filesManager = get(),
+        )
+    }
     single { JvmSentryMonitoring() }
     single<AnalyticsTracker> { get<JvmSentryMonitoring>() }
     single<CrashReporter> { get<JvmSentryMonitoring>() }
