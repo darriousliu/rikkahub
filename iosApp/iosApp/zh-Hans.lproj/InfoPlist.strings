@@ -1,2 +1,2 @@
-"NSCameraUsageDescription" = "RikkaHub 使用相机扫描供应商配置二维码。";
+"NSCameraUsageDescription" = "RikkaHub 使用相机为聊天拍摄照片，以及扫描供应商配置二维码。";
 "NSLocalNetworkUsageDescription" = "RikkaHub 使用局域网发布 Web 服务器，供同一网络内的设备访问。";

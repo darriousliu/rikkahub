@@ -1,2 +1,2 @@
-"NSCameraUsageDescription" = "RikkaHub はプロバイダー設定の QR コードを読み取るためにカメラを使用します。";
+"NSCameraUsageDescription" = "RikkaHub は、チャット用の写真撮影とプロバイダー設定の QR コード読み取りのためにカメラを使用します。";
 "NSLocalNetworkUsageDescription" = "RikkaHub は同じネットワーク上のデバイスから Web サーバーにアクセスできるよう、ローカルネットワークを使用します。";
