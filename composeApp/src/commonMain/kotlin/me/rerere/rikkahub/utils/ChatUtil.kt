@@ -1,5 +1,10 @@
 package me.rerere.rikkahub.utils
 
+import me.rerere.common.logging.RikkaLog as Log
+import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.ui.context.Navigator
+import kotlin.uuid.Uuid
+
 private val ALLOWED_MIME_TYPES = setOf(
     "text/plain", "text/html", "text/css", "text/javascript", "text/csv", "text/xml",
     "application/json", "application/javascript", "application/pdf",
@@ -28,4 +33,24 @@ fun isAllowedFileType(fileName: String, mime: String): Boolean {
     if (mime in ALLOWED_MIME_TYPES || mime.startsWith("text/")) return true
     val extension = fileName.substringAfterLast('.', "").lowercase()
     return extension in ALLOWED_FILE_EXTENSIONS
+}
+
+private const val TAG = "ChatUtil"
+
+fun navigateToChatPage(
+    navigator: Navigator,
+    chatId: Uuid = Uuid.random(),
+    initText: String? = null,
+    initFiles: List<String> = emptyList(),
+    nodeId: Uuid? = null,
+) {
+    Log.i(TAG, "navigateToChatPage: navigate to $chatId")
+    navigator.clearAndNavigate(
+        Screen.Chat(
+            id = chatId.toString(),
+            text = initText,
+            files = initFiles,
+            nodeId = nodeId?.toString(),
+        )
+    )
 }

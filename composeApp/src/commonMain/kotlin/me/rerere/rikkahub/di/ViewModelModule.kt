@@ -16,6 +16,7 @@ import me.rerere.rikkahub.ui.pages.history.HistoryVM
 import me.rerere.rikkahub.ui.pages.imggen.ImgGenVM
 import me.rerere.rikkahub.ui.pages.search.SearchVM
 import me.rerere.rikkahub.ui.pages.setting.SettingVM
+import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerVM
 import me.rerere.rikkahub.ui.pages.stats.StatsVM
 import me.rerere.rikkahub.ui.pages.translator.TranslatorVM
 import org.koin.core.module.dsl.viewModel
@@ -24,6 +25,12 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val viewModelModule = module {
+    viewModel<ShareHandlerVM> {
+        ShareHandlerVM(
+            text = it.get(),
+            settingsStore = get(),
+        )
+    }
     viewModel<ChatVM> { params ->
         ChatVM(
             id = params.get(),

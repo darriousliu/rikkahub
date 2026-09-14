@@ -11,7 +11,24 @@
 		25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05595FD5C7727F5CBFBF8295 /* ContentView.swift */; };
 		73482863C362D67EBAA72DD8 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89C95284DD0819285255FEC3 /* iOSApp.swift */; };
 		CA7FFAADAC6E2F230FB531FF /* KotlinMultiplatformLinkedPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 2111C1D106A86FDBC8498D42 /* KotlinMultiplatformLinkedPackage */; };
+		C07600000000000000000001 /* SharedTextURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07600000000000000000002; };
+		C07600000000000000000003 /* SharedTextURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07600000000000000000002; };
+		C07600000000000000000004 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07600000000000000000005; };
+		C07600000000000000000006 /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C07600000000000000000007; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C07600000000000000000030 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C07600000000000000000031; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C07600000000000000000009 = {isa = PBXContainerItemProxy; containerPortal = 506AD0E849C5245970C96915; proxyType = 1; remoteGlobalIDString = C07600000000000000000010; remoteInfo = ShareExtension; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C07600000000000000000011 /* Embed App Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (C07600000000000000000006, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C07600000000000000000018 = {isa = PBXTargetDependency; target = C07600000000000000000010; targetProxy = C07600000000000000000009; };
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		05595FD5C7727F5CBFBF8295 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -24,6 +41,16 @@
 		6DF3FFE105BE40D48018739F /* RikkaHub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RikkaHub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A7EB0135A764D8C92C3AF10 /* Configuration/Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Signing.xcconfig; sourceTree = "<group>"; };
 		89C95284DD0819285255FEC3 /* iOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
+		C07600000000000000000002 /* SharedTextURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedTextURL.swift; sourceTree = "<group>"; };
+		C07600000000000000000005 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		C07600000000000000000007 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C07600000000000000000008 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C07600000000000000000032 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "en.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C07600000000000000000033 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C07600000000000000000034 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C07600000000000000000035 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "ja.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C07600000000000000000036 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "ko.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		C07600000000000000000037 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ru"; path = "ru.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +62,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C07600000000000000000016 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -52,6 +80,8 @@
 			isa = PBXGroup;
 			children = (
 				7A7EB0135A764D8C92C3AF10 /* Configuration/Signing.xcconfig */,
+				C07600000000000000000012 /* Shared */,
+				C07600000000000000000013 /* ShareExtension */,
 				F314196457A06B495FA325FF /* Products */,
 				0D03B36F28C12D0220BE39FC /* iosApp */,
 			);
@@ -61,10 +91,13 @@
 			isa = PBXGroup;
 			children = (
 				6DF3FFE105BE40D48018739F /* RikkaHub.app */,
+				C07600000000000000000007 /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
+		C07600000000000000000012 /* Shared */ = {isa = PBXGroup; children = (C07600000000000000000002, ); path = Shared; sourceTree = "<group>"; };
+		C07600000000000000000013 /* ShareExtension */ = {isa = PBXGroup; children = (C07600000000000000000005, C07600000000000000000008, C07600000000000000000031, ); path = ShareExtension; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -76,10 +109,12 @@
 				85208D01A6C41215C2BA4DF5 /* Sources */,
 				50B5CEEEF6A25D0FC80E255A /* Frameworks */,
 				DCB56637C41495CD44053AFC /* Resources */,
+				C07600000000000000000011 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C07600000000000000000018,
 			);
 			name = iosApp;
 			packageProductDependencies = (
@@ -88,6 +123,17 @@
 			productName = iosApp;
 			productReference = 6DF3FFE105BE40D48018739F /* RikkaHub.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C07600000000000000000010 /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C07600000000000000000014;
+			buildPhases = (C07600000000000000000015, C07600000000000000000016, C07600000000000000000017, );
+			buildRules = ();
+			dependencies = ();
+			name = ShareExtension;
+			productName = ShareExtension;
+			productReference = C07600000000000000000007;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -120,6 +166,7 @@
 			projectRoot = "";
 			targets = (
 				72B829E2DA42113C941BAE3F /* iosApp */,
+				C07600000000000000000010 /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -133,6 +180,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C07600000000000000000017 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (C07600000000000000000030, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -164,9 +212,11 @@
 			files = (
 				73482863C362D67EBAA72DD8 /* iOSApp.swift in Sources */,
 				25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */,
+				C07600000000000000000001 /* SharedTextURL.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C07600000000000000000015 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (C07600000000000000000003, C07600000000000000000004, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -183,6 +233,7 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
+		C07600000000000000000031 /* Localizable.strings */ = {isa = PBXVariantGroup; children = (C07600000000000000000032, C07600000000000000000033, C07600000000000000000034, C07600000000000000000035, C07600000000000000000036, C07600000000000000000037, ); name = Localizable.strings; sourceTree = "<group>"; };
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -392,6 +443,52 @@
 			};
 			name = Debug;
 		};
+		C07600000000000000000019 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 172;
+				DEVELOPMENT_TEAM = 656W8T2CR9;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+				MARKETING_VERSION = 2.4.5;
+				PRODUCT_BUNDLE_IDENTIFIER = me.rerere.rikkahub.ios.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C07600000000000000000020 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7A7EB0135A764D8C92C3AF10;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 172;
+				DEVELOPMENT_TEAM = 656W8T2CR9;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+				MARKETING_VERSION = 2.4.5;
+				PRODUCT_BUNDLE_IDENTIFIER = me.rerere.rikkahub.ios.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -413,6 +510,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		C07600000000000000000014 = {isa = XCConfigurationList; buildConfigurations = (C07600000000000000000019, C07600000000000000000020, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
