@@ -12,6 +12,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
@@ -19,11 +24,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -51,6 +60,37 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalComposeUiApi::class)
 class ChatImageExportTest {
+    @Test
+    fun waitsForWebViewSnapshotRegisteredAfterMeasurement() = runBlocking(Dispatchers.Main) {
+        var locals: CompositionLocalContext? = null
+        val host = ImageComposeScene(1, 1) { locals = currentCompositionLocalContext }
+        try {
+            host.render().close()
+            val png = renderComposeImage(checkNotNull(locals), Density(1f)) {
+                val snapshots = LocalWebViewSnapshots.current
+                val state = rememberWebViewStateWithHTMLData("snapshot fixture")
+                var size by remember { mutableStateOf(IntSize.Zero) }
+                var ready by remember { mutableStateOf(false) }
+                LaunchedEffect(size) {
+                    if (size.width > 0) {
+                        val job = CompletableDeferred<Unit>()
+                        snapshots[state] = job
+                        delay(200)
+                        ready = true
+                        job.complete(Unit)
+                    }
+                }
+                Box(Modifier.width(540.dp).height(200.dp)
+                    .onSizeChanged { size = it }
+                    .background(if (ready) Color.Green else Color.Red))
+            }
+            val image = ImageIO.read(png.inputStream())
+            assertEquals(0xff00ff00.toInt(), image.getRGB(540, 200))
+        } finally {
+            host.close()
+        }
+    }
+
     @Test
     fun sharedChatRendererInheritsThemeContextAndIncludesImageAttachments() = runBlocking(Dispatchers.Main) {
         val directory = Files.createTempDirectory("chat-image-export-").toFile()

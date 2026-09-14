@@ -45,9 +45,9 @@ fun WebView(
     webViewJsBridge: WebViewJsBridge = rememberWebViewJsBridge(navigator),
     onConsoleMessage: (WebViewConsoleMessage) -> Unit = {},
 ) {
-    // Desktop image export captures Compose only; keep the preview's layout without creating a native view.
-    if (LocalExportContext.current && currentPlatformKind == PlatformKind.DESKTOP) {
-        Box(modifier)
+    // Replace native views with their platform export representation.
+    if (LocalExportContext.current && currentPlatformKind != PlatformKind.ANDROID) {
+        ExportWebView(state, modifier)
         return
     }
     val currentOnConsoleMessage by rememberUpdatedState(onConsoleMessage)
@@ -116,3 +116,6 @@ internal fun webViewConsoleScript(sendMessage: String): String = """
         });
     })();
 """.trimIndent()
+
+@Composable
+internal expect fun ExportWebView(state: WebViewState, modifier: Modifier)

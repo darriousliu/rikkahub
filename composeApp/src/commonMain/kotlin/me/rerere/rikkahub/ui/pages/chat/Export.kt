@@ -57,8 +57,6 @@ import me.rerere.rikkahub.generated.resources.chat_page_export_markdown
 import me.rerere.rikkahub.generated.resources.chat_page_export_markdown_desc
 import me.rerere.rikkahub.generated.resources.chat_page_export_success
 import me.rerere.rikkahub.generated.resources.mermaid_export
-import me.rerere.rikkahub.shared.PlatformKind
-import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.ui.context.LocalSettings
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.utils.JsonInstantPretty
@@ -139,75 +137,73 @@ fun ChatExportSheet(
                     )
                 }
 
-                if (currentPlatformKind != PlatformKind.IOS) {
-                    val imageSuccessMessage =
-                        stringResource(Res.string.chat_page_export_success, "Image")
-                    OutlinedCard(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column {
-                            ListItem(
-                                headlineContent = {
-                                    Text(stringResource(Res.string.chat_page_export_image))
-                                },
-                                supportingContent = {
-                                    Text(stringResource(Res.string.chat_page_export_image_desc))
-                                },
-                                leadingContent = {
-                                    Icon(HugeIcons.Image02, contentDescription = null)
-                                }
-                            )
+                val imageSuccessMessage =
+                    stringResource(Res.string.chat_page_export_success, "Image")
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        ListItem(
+                            headlineContent = {
+                                Text(stringResource(Res.string.chat_page_export_image))
+                            },
+                            supportingContent = {
+                                Text(stringResource(Res.string.chat_page_export_image_desc))
+                            },
+                            leadingContent = {
+                                Icon(HugeIcons.Image02, contentDescription = null)
+                            }
+                        )
 
-                            HorizontalDivider()
+                        HorizontalDivider()
 
-                            ListItem(
-                                headlineContent = { Text(stringResource(Res.string.chat_page_export_image_expand_reasoning)) },
-                                trailingContent = {
-                                    Switch(
-                                        checked = imageExportOptions.expandReasoning,
-                                        onCheckedChange = {
-                                            imageExportOptions = imageExportOptions.copy(expandReasoning = it)
-                                        }
-                                    )
-                                }
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Button(
-                                    onClick = {
-                                        scope.launch {
-                                            runCatching {
-                                                exportToImage(
-                                                    context = context,
-                                                    compositionLocalContext = compositionLocalContext,
-                                                    scope = scope,
-                                                    density = density,
-                                                    conversation = conversation,
-                                                    messages = selectedMessages,
-                                                    settings = settings,
-                                                    options = imageExportOptions
-                                                )
-                                            }.onSuccess {
-                                                toaster.show(imageSuccessMessage, type = ToastType.Success)
-                                            }.onFailure {
-                                                if (it is CancellationException) throw it
-                                                it.printStackTrace()
-                                                toaster.show(
-                                                    message = "Failed to export image: ${it.message}",
-                                                    type = ToastType.Error
-                                                )
-                                            }
-                                        }
-                                        onDismissRequest()
+                        ListItem(
+                            headlineContent = { Text(stringResource(Res.string.chat_page_export_image_expand_reasoning)) },
+                            trailingContent = {
+                                Switch(
+                                    checked = imageExportOptions.expandReasoning,
+                                    onCheckedChange = {
+                                        imageExportOptions = imageExportOptions.copy(expandReasoning = it)
                                     }
-                                ) {
-                                    Text(stringResource(Res.string.mermaid_export))
+                                )
+                            }
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        runCatching {
+                                            exportToImage(
+                                                context = context,
+                                                compositionLocalContext = compositionLocalContext,
+                                                scope = scope,
+                                                density = density,
+                                                conversation = conversation,
+                                                messages = selectedMessages,
+                                                settings = settings,
+                                                options = imageExportOptions
+                                            )
+                                        }.onSuccess {
+                                            toaster.show(imageSuccessMessage, type = ToastType.Success)
+                                        }.onFailure {
+                                            if (it is CancellationException) throw it
+                                            it.printStackTrace()
+                                            toaster.show(
+                                                message = "Failed to export image: ${it.message}",
+                                                type = ToastType.Error
+                                            )
+                                        }
+                                    }
+                                    onDismissRequest()
                                 }
+                            ) {
+                                Text(stringResource(Res.string.mermaid_export))
                             }
                         }
                     }
