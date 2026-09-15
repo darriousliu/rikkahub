@@ -1,10 +1,6 @@
 package me.rerere.rikkahub.data.ai.transformers
 
 import io.github.vinceglb.filekit.PlatformFile
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Buffer
 import kotlinx.io.buffered
@@ -17,31 +13,23 @@ import me.rerere.ai.ui.UIMessagePart
 import me.rerere.common.archive.PlatformZipArchive
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
-import me.rerere.rikkahub.di.createAppModule
 import me.rerere.rikkahub.service.toFileUri
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class OfficeDocumentTransformerTest {
     @Test
-    fun productionRegistrationAddsParsedTextAndKeepsOriginalAttachments() = runTest {
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        // Use the real registration without creating unrelated eager application services.
-        val app = koinApplication(createEagerInstances = false) { modules(createAppModule(scope)) }
-        val extractor = app.koin.get<DocumentTextExtractor>()
-        startKoin { modules(module { single<DocumentTextExtractor> { extractor } }) }
+    fun addsParsedTextAndKeepsOriginalAttachments() = runTest {
+        startKoin { modules(module { single<DocumentTextExtractor> { OfficeDocumentTextExtractor } }) }
         val root = Path(SystemTemporaryDirectory, "office-transformer-${Uuid.random()}")
         SystemFileSystem.createDirectories(root)
         val files = mutableListOf<Path>()
         try {
-            assertSame(OfficeDocumentTextExtractor, app.koin.get<DocumentTextExtractor>())
             val formats = listOf(
                 Triple("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", mapOf(
                     "word/document.xml" to "<document><body><p><r><t>DOCX 中文</t></r></p></body></document>",
@@ -79,8 +67,6 @@ class OfficeDocumentTransformerTest {
             }
         } finally {
             stopKoin()
-            app.close()
-            scope.cancel()
             files.forEach { SystemFileSystem.delete(it) }
             SystemFileSystem.delete(root)
         }

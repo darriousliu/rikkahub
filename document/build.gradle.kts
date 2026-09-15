@@ -29,6 +29,7 @@ kotlin {
             implementation(libs.xmlutil.core.io)
         }
         commonTest.dependencies { implementation(kotlin("test")) }
+        jvmMain.dependencies { implementation(libs.pdfbox) }
         named("androidDeviceTest").dependencies {
             implementation(libs.androidx.junit)
             implementation(libs.androidx.espresso.core)

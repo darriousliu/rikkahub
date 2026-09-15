@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C08000000000000000000001 /* PdfKitTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08000000000000000000002; };
 		1F0CA11000000000000000B0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1F0CA11000000000000000A0 /* InfoPlist.strings */; };
 		25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05595FD5C7727F5CBFBF8295 /* ContentView.swift */; };
 		73482863C362D67EBAA72DD8 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89C95284DD0819285255FEC3 /* iOSApp.swift */; };
@@ -31,6 +32,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
+		C08000000000000000000002 /* PdfKitTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfKitTextExtractor.swift; sourceTree = "<group>"; };
 		05595FD5C7727F5CBFBF8295 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1F0CA11000000000000000C1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1F0CA11000000000000000C2 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
@@ -71,6 +73,7 @@
 			children = (
 				89C95284DD0819285255FEC3 /* iOSApp.swift */,
 				05595FD5C7727F5CBFBF8295 /* ContentView.swift */,
+				C08000000000000000000002 /* PdfKitTextExtractor.swift */,
 				1F0CA11000000000000000A0 /* InfoPlist.strings */,
 			);
 			path = iosApp;
@@ -212,6 +215,7 @@
 			files = (
 				73482863C362D67EBAA72DD8 /* iOSApp.swift in Sources */,
 				25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */,
+				C08000000000000000000001 /* PdfKitTextExtractor.swift in Sources */,
 				C07600000000000000000001 /* SharedTextURL.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

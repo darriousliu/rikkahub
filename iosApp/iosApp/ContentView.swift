@@ -3,7 +3,7 @@ import SwiftUI
 
 private struct ComposeView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
+        MainViewControllerKt.MainViewController(pdfTextExtractor: PdfKitTextExtractor())
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

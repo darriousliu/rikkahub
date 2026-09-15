@@ -67,6 +67,7 @@ korlibsTemplate = "6.1.0"
 fastKotlinDiff = "1.0.0"
 filekit = "0.16.0"
 xmlutil = "1.0.2"
+pdfbox = "3.0.8"
 cache4k = "0.14.0"
 composeWebView = "1.0.0-beta-02"
 kotlinxIo = "0.9.1"
@@ -77,6 +78,7 @@ javafx = "21.0.12"
 jna = "5.19.1"
 
 [libraries]
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }

@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.coroutines.channels.Channel
 import me.rerere.rikkahub.AppRoutes
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.data.ai.transformers.PdfTextExtractor
 import me.rerere.rikkahub.di.createIosAppModule
 import me.rerere.rikkahub.ui.pages.safemode.SafeModePage
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
@@ -29,7 +30,7 @@ fun receiveSharedText(text: String) {
 
 /** UIKit bridge used by the iOS application shell. */
 @OptIn(ExperimentalFoundationApi::class)
-fun MainViewController(): UIViewController {
+fun MainViewController(pdfTextExtractor: PdfTextExtractor): UIViewController {
     // CMP 1.12 disables menu extensions by default; image paste needs the native menu extension.
     ComposeFoundationFlags.isNewContextMenuEnabled = true
     CrashHandler.install()
@@ -44,8 +45,8 @@ fun MainViewController(): UIViewController {
             for (text in sharedTexts) stack.add(Screen.ShareHandler(text))
         }
         val appScope = rememberCoroutineScope()
-        val configuration = remember(appScope) {
-            koinConfiguration { modules(createIosAppModule(appScope)) }
+        val configuration = remember(appScope, pdfTextExtractor) {
+            koinConfiguration { modules(createIosAppModule(appScope, pdfTextExtractor)) }
         }
         KoinApplication(configuration = configuration) {
             RikkahubTheme {

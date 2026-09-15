@@ -14,8 +14,6 @@ import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.persistentLru
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
-import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
-import me.rerere.rikkahub.data.ai.transformers.OfficeDocumentTextExtractor
 import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
@@ -66,7 +64,6 @@ fun createAppModule(appScope: CoroutineScope): Module = module {
         }
     }
     single { LocalTools(eventBus = get(), settingsStore = get(), ttsManager = get()) }
-    single<DocumentTextExtractor> { OfficeDocumentTextExtractor }
     single(createdAtStart = true) {
         ChatNotificationManager(appScope, get(), get(), get())
     } onClose { it?.close() }

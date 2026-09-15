@@ -2,6 +2,8 @@ package me.rerere.rikkahub.di
 
 import io.github.vinceglb.filekit.PlatformFile
 import kotlinx.coroutines.CoroutineScope
+import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
+import me.rerere.rikkahub.data.ai.transformers.JvmDocumentTextExtractor
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.data.db.createJvmAppDatabase
 import me.rerere.rikkahub.data.db.defaultJvmDatabaseFile
@@ -28,6 +30,7 @@ import org.koin.dsl.module
 
 fun createJvmAppModule(appScope: CoroutineScope) = module {
     includes(createAppModule(appScope))
+    single<DocumentTextExtractor> { JvmDocumentTextExtractor }
     single { createJvmSettingsDataStore(appScope) }
     single { createJvmAppDatabase(defaultJvmDatabaseFile()) }
     single { currentDesktopPlatformBuildInfo() }
