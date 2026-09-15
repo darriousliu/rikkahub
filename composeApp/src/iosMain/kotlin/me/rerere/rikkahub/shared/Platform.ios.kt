@@ -4,3 +4,9 @@ public actual val currentPlatformKind: PlatformKind = PlatformKind.IOS
 
 actual val PlatformKind.isLinux: Boolean
     get() = false
+
+actual val PlatformKind.isWindows: Boolean
+    get() = false
+
+actual val PlatformKind.isMacOS: Boolean
+    get() = false

@@ -5,6 +5,7 @@ import me.rerere.rikkahub.data.ai.tools.local.LocalToolOption
 import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.shared.isLinux
+import me.rerere.rikkahub.shared.isWindows
 
 internal val platformLocalToolOptions: Set<LocalToolOption> = buildSet {
     add(LocalToolOption.JavascriptEngine)
@@ -13,7 +14,7 @@ internal val platformLocalToolOptions: Set<LocalToolOption> = buildSet {
     add(LocalToolOption.Tts)
     add(LocalToolOption.AskUser)
     if (currentPlatformKind != PlatformKind.DESKTOP) add(LocalToolOption.ScreenTime)
-    if (!currentPlatformKind.isLinux) add(LocalToolOption.Calendar)
+    if (!currentPlatformKind.isLinux && !currentPlatformKind.isWindows) add(LocalToolOption.Calendar)
 }
 
 /**

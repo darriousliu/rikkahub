@@ -6,6 +6,7 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.shared.isLinux
+import me.rerere.rikkahub.shared.isWindows
 import me.rerere.tts.provider.TTSManager
 
 class LocalTools(
@@ -38,7 +39,7 @@ class LocalTools(
         if (options.contains(LocalToolOption.Tts)) ttsTool?.let(::add)
         if (options.contains(LocalToolOption.AskUser)) add(askUserTool)
         if (LocalToolOption.ScreenTime in options && currentPlatformKind != PlatformKind.DESKTOP) add(screenTimeTool)
-        if (LocalToolOption.Calendar in options && !currentPlatformKind.isLinux) {
+        if (LocalToolOption.Calendar in options && !currentPlatformKind.isLinux && !currentPlatformKind.isWindows) {
             add(calendarQueryTool)
             add(calendarCreateTool)
         }

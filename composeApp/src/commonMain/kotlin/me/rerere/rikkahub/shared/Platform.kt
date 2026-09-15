@@ -12,3 +12,7 @@ public enum class PlatformKind(
 public expect val currentPlatformKind: PlatformKind
 
 expect val PlatformKind.isLinux: Boolean
+
+expect val PlatformKind.isWindows: Boolean
+
+expect val PlatformKind.isMacOS: Boolean
