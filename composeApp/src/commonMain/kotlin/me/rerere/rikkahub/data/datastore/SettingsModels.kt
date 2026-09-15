@@ -21,6 +21,8 @@ import me.rerere.rikkahub.data.model.PromptInjection
 import me.rerere.rikkahub.data.model.QuickMessage
 import me.rerere.rikkahub.data.model.Tag
 import me.rerere.rikkahub.data.sync.s3.S3Config
+import me.rerere.rikkahub.shared.PlatformKind
+import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.ui.theme.CustomTheme
 import me.rerere.search.SearchCommonOptions
 import me.rerere.search.SearchServiceOptions
@@ -245,11 +247,12 @@ val DEFAULT_ASSISTANTS = listOf(
 
 val DEFAULT_SYSTEM_TTS_ID = Uuid.parse("026a01a2-c3a0-4fd5-8075-80e03bdef200")
 
-val DEFAULT_TTS_PROVIDERS = listOf(
-    TTSProviderSetting.SystemTTS(
-        id = DEFAULT_SYSTEM_TTS_ID,
-        name = "",
-    ),
+val DEFAULT_TTS_PROVIDERS = listOfNotNull(
+    if (currentPlatformKind != PlatformKind.DESKTOP)
+        TTSProviderSetting.SystemTTS(
+            id = DEFAULT_SYSTEM_TTS_ID,
+            name = "",
+        ) else null,
     TTSProviderSetting.OpenAI(
         id = Uuid.parse("e36b22ef-ca82-40ab-9e70-60cad861911c"),
         name = "AiHubMix",
