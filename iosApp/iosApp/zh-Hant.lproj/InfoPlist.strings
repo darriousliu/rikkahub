@@ -3,3 +3,4 @@
 
 "NSCalendarsFullAccessUsageDescription" = "允許助理查詢您的行事曆，並在您核准工具呼叫後建立行程。";
 "NSCalendarsUsageDescription" = "允許助理查詢您的行事曆，並在您核准工具呼叫後建立行程。";
+"NSMicrophoneUsageDescription" = "RikkaHub 使用麥克風，透過您選擇的語音辨識服務將語音轉換為聊天輸入文字。";

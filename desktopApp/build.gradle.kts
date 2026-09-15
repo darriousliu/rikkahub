@@ -72,6 +72,8 @@ compose.desktop {
                 bundleID = "me.rerere.rikkahub.desktop"
                 infoPlist {
                     extraKeysRawXml = """
+                        <key>NSMicrophoneUsageDescription</key>
+                        <string>RikkaHub uses the microphone to convert your speech into chat input with your selected speech recognition provider.</string>
                         <key>NSCalendarsFullAccessUsageDescription</key>
                         <string>Allow assistants to query your calendar and create events after you approve the tool call.</string>
                         <key>NSCalendarsUsageDescription</key>

@@ -43,7 +43,7 @@ actual val PermissionLocalNetwork: PermissionInfo = passivePermission(
 
 actual val RuntimeLocalNetworkPermissionRequired: Boolean = false
 
-/** The desktop platform grants these without a runtime prompt. */
+/** Desktop permissions are handled by the OS when the corresponding native API is used. */
 private fun passivePermission(
     id: String,
     displayName: StringResource,

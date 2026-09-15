@@ -3,3 +3,4 @@
 
 "NSCalendarsFullAccessUsageDescription" = "Allow assistants to query your calendar and create events after you approve the tool call.";
 "NSCalendarsUsageDescription" = "Allow assistants to query your calendar and create events after you approve the tool call.";
+"NSMicrophoneUsageDescription" = "RikkaHub uses the microphone to convert your speech into chat input with your selected speech recognition provider.";

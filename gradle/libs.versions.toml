@@ -28,6 +28,8 @@ datastore = "1.2.1"
 serialization-json = "1.11.0"
 json-jvm = "20260814"
 kotlin-coroutines-core = "1.11.0"
+atomicfu = "0.33.0"
+okio = "3.18.2"
 kotlinx-datetime = "0.8.0"
 ksp = "2.3.11"
 paging = "3.5.1"
@@ -78,6 +80,8 @@ javafx = "21.0.12"
 jna = "5.19.1"
 
 [libraries]
+kotlinx-atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

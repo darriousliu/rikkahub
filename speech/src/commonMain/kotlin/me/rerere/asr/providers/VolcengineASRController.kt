@@ -1,14 +1,11 @@
 package me.rerere.asr.providers
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.pm.PackageManager
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
 import me.rerere.common.logging.RikkaLog as Log
-import androidx.core.content.ContextCompat
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,23 +18,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import me.rerere.asr.Microphone
+import me.rerere.asr.PcmRecorder
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.IO
 import me.rerere.asr.ASRController
 import me.rerere.asr.ASRProviderSetting
 import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
-import org.json.JSONObject
-import java.io.ByteArrayOutputStream
-import java.util.zip.GZIPInputStream
-import java.util.zip.GZIPOutputStream
 import kotlin.uuid.Uuid
 
 private const val TAG = "VolcengineASR"
 private const val MAX_WEBSOCKET_QUEUE_BYTES = 100_000L
 
 class VolcengineASRController(
-    private val context: Context,
+    private val microphone: Microphone,
     private val webSocketTransport: AsrWebSocketTransport,
     private val provider: ASRProviderSetting.Volcengine
 ) : ASRController {
@@ -48,17 +45,13 @@ class VolcengineASRController(
 
     private var webSocket: AsrWebSocketSession? = null
     private var recorderJob: Job? = null
-    private var audioRecord: AudioRecord? = null
+    private var audioRecord: PcmRecorder? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
     private var lastText = ""
 
     override fun start(onTranscriptChange: (String) -> Unit) {
         if (state.value.isRecording) return
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!microphone.hasPermission) {
             setError("Microphone permission is required")
             return
         }
@@ -148,27 +141,24 @@ class VolcengineASRController(
     }
 
     private fun buildFullClientRequestPayload(): ByteArray {
-        val audio = JSONObject()
-            .put("format", "pcm")
-            .put("rate", SAMPLE_RATE)
-            .put("bits", 16)
-            .put("channel", 1)
-        if (provider.language.isNotBlank()) {
-            audio.put("language", provider.language)
+        val json = buildJsonObject {
+            put("user", buildJsonObject { put("uid", "rikkahub") })
+            put("audio", buildJsonObject {
+                put("format", "pcm")
+                put("rate", SAMPLE_RATE)
+                put("bits", 16)
+                put("channel", 1)
+                if (provider.language.isNotBlank()) put("language", provider.language)
+            })
+            put("request", buildJsonObject {
+                put("model_name", "bigmodel")
+                put("enable_itn", true)
+                put("enable_punc", true)
+                put("show_utterances", true)
+                put("result_type", "full")
+            })
         }
-
-        val json = JSONObject()
-            .put("user", JSONObject().put("uid", "rikkahub"))
-            .put("audio", audio)
-            .put(
-                "request", JSONObject()
-                    .put("model_name", "bigmodel")
-                    .put("enable_itn", true)
-                    .put("enable_punc", true)
-                    .put("show_utterances", true)
-                    .put("result_type", "full")
-            )
-        return json.toString().toByteArray(Charsets.UTF_8)
+        return json.toString().encodeToByteArray()
     }
 
     private fun handleBinaryResponse(data: ByteArray) {
@@ -183,13 +173,13 @@ class VolcengineASRController(
                 }
 
                 val json = runCatching {
-                    JSONObject(String(payload, Charsets.UTF_8))
+                    Json.parseToJsonElement(payload.decodeToString()).jsonObject
                 }.getOrElse {
                     Log.w(TAG, "Failed to parse response JSON", it)
                     return
                 }
 
-                val text = json.optJSONObject("result")?.optString("text", "") ?: ""
+                val text = (json["result"] as? JsonObject)?.optString("text", "") ?: ""
                 if (text.isNotEmpty() && text != lastText) {
                     lastText = text
                     _state.update { it.copy(transcript = text, errorMessage = null) }
@@ -198,7 +188,7 @@ class VolcengineASRController(
             }
 
             is VolcengineFrameCodec.ServerFrame.Error -> {
-                val errorMsg = frame.message?.toString(Charsets.UTF_8) ?: "Volcengine ASR error"
+                val errorMsg = frame.message?.decodeToString() ?: "Volcengine ASR error"
                 Log.e(TAG, "Volcengine ASR error: $errorMsg")
                 setError(errorMsg)
             }
@@ -209,24 +199,11 @@ class VolcengineASRController(
         }
     }
 
-    @SuppressLint("MissingPermission")
     private fun startRecorder(socket: AsrWebSocketSession) {
         recorderJob?.cancel()
         recorderJob = scope.launch(Dispatchers.IO) {
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val chunkSize = (SAMPLE_RATE * 2 * 200 / 1000).coerceAtLeast(minBufferSize)
-
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                chunkSize * 2
-            )
+            val recorder = microphone.createRecorder(SAMPLE_RATE, SAMPLE_RATE * 2 * 200 / 1000)
+            val chunkSize = recorder.bufferSize
             audioRecord = recorder
 
             try {
@@ -253,6 +230,8 @@ class VolcengineASRController(
                         throw IllegalStateException("AudioRecord read error: $read")
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Audio recording failed", e)
                 setError(e.message ?: "Audio recording failed")
@@ -283,14 +262,5 @@ class VolcengineASRController(
         private const val COMP_GZIP = 0x01
         private const val FLAG_LAST_PACKET = 0x02
 
-        private fun gzipCompress(data: ByteArray): ByteArray {
-            val bos = ByteArrayOutputStream()
-            GZIPOutputStream(bos).use { it.write(data) }
-            return bos.toByteArray()
-        }
-
-        private fun gzipDecompress(data: ByteArray): ByteArray {
-            return GZIPInputStream(data.inputStream()).use { it.readBytes() }
-        }
     }
 }

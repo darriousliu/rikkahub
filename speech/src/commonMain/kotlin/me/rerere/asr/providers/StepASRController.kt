@@ -1,16 +1,12 @@
 package me.rerere.asr.providers
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.pm.PackageManager
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
-import android.os.SystemClock
 import io.ktor.client.HttpClient
 import me.rerere.common.logging.RikkaLog as Log
-import androidx.core.content.ContextCompat
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,13 +18,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import me.rerere.asr.Microphone
+import me.rerere.asr.PcmRecorder
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.IO
 import me.rerere.asr.ASRController
 import me.rerere.asr.ASRProviderSetting
 import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
-import java.io.ByteArrayOutputStream
 
 private const val TAG = "StepASR"
 
@@ -50,7 +49,7 @@ private const val MIN_SEGMENT_BYTES = 3200
  * 官方文档: https://platform.stepfun.com/docs/zh/api-reference/audio/asr-sse
  */
 class StepASRController(
-    private val context: Context,
+    private val microphone: Microphone,
     private val httpClient: HttpClient,
     private val provider: ASRProviderSetting.Step
 ) : ASRController {
@@ -60,32 +59,28 @@ class StepASRController(
     override val state: StateFlow<ASRState> = _state.asStateFlow()
 
     private var recorderJob: Job? = null
-    private var audioRecord: AudioRecord? = null
+    private var audioRecord: PcmRecorder? = null
     private var onTranscriptChange: ((String) -> Unit)? = null
 
     // 同一时刻只允许一个 flush 协程在跑, 避免乱序拼结果
     private var flushJob: Job? = null
 
-    private val bufferLock = Any()
-    private var currentBuffer = ByteArrayOutputStream()
-    private var segmentStartElapsedMs = 0L
+    private val bufferLock = SynchronizedObject()
+    private var currentBuffer = Buffer()
+    private var segmentStart = TimeSource.Monotonic.markNow()
     private val completedTranscripts = MutableStateFlow<List<String>>(emptyList())
 
     override fun start(onTranscriptChange: (String) -> Unit) {
         if (state.value.isRecording) return
-        if (ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!microphone.hasPermission) {
             setError("Microphone permission is required")
             return
         }
 
         this.onTranscriptChange = onTranscriptChange
         synchronized(bufferLock) {
-            currentBuffer = ByteArrayOutputStream()
-            segmentStartElapsedMs = SystemClock.elapsedRealtime()
+            currentBuffer = Buffer()
+            segmentStart = TimeSource.Monotonic.markNow()
         }
         completedTranscripts.value = emptyList()
         flushJob = null
@@ -127,27 +122,12 @@ class StepASRController(
         scope.cancel()
     }
 
-    @SuppressLint("MissingPermission")
     private fun startRecorder() {
         recorderJob?.cancel()
         recorderJob = scope.launch(Dispatchers.IO) {
             val sampleRate = provider.sampleRate
-            val minBufferSize = AudioRecord.getMinBufferSize(
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            val bufferSize = minBufferSize
-                .coerceAtLeast(sampleRate / 10 * 2)
-                .coerceAtLeast(4096)
-
-            val recorder = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-                sampleRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufferSize * 2
-            )
+            val recorder = microphone.createRecorder(sampleRate, (sampleRate / 10 * 2).coerceAtLeast(4096))
+            val bufferSize = recorder.bufferSize
             audioRecord = recorder
 
             try {
@@ -163,10 +143,10 @@ class StepASRController(
                         val shouldFlush = synchronized(bufferLock) {
                             currentBuffer.write(buffer, 0, read)
                             if (segmentMs <= 0) {
-                                currentBuffer.size() >= MAX_SEGMENT_BYTES
+                                currentBuffer.size >= MAX_SEGMENT_BYTES
                             } else {
-                                val elapsed = SystemClock.elapsedRealtime() - segmentStartElapsedMs
-                                currentBuffer.size() >= MAX_SEGMENT_BYTES || elapsed >= segmentMs
+                                val elapsed = segmentStart.elapsedNow().inWholeMilliseconds
+                                currentBuffer.size >= MAX_SEGMENT_BYTES || elapsed >= segmentMs
                             }
                         }
 
@@ -178,6 +158,8 @@ class StepASRController(
                         throw IllegalStateException("AudioRecord read error: $read")
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Audio recording failed", e)
                 setError(e.message ?: "Audio recording failed")
@@ -204,10 +186,10 @@ class StepASRController(
      */
     private suspend fun flushSegment() {
         val pcmBytes = synchronized(bufferLock) {
-            if (currentBuffer.size() == 0) return
-            val bytes = currentBuffer.toByteArray()
-            currentBuffer = ByteArrayOutputStream()
-            segmentStartElapsedMs = SystemClock.elapsedRealtime()
+            if (currentBuffer.size == 0L) return
+            val bytes = currentBuffer.readByteArray()
+            currentBuffer = Buffer()
+            segmentStart = TimeSource.Monotonic.markNow()
             bytes
         }
 

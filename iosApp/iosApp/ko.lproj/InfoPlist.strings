@@ -3,3 +3,4 @@
 
 "NSCalendarsFullAccessUsageDescription" = "어시스턴트가 캘린더를 조회하고 사용자가 도구 호출을 승인한 후 일정을 만들도록 허용합니다.";
 "NSCalendarsUsageDescription" = "어시스턴트가 캘린더를 조회하고 사용자가 도구 호출을 승인한 후 일정을 만들도록 허용합니다.";
+"NSMicrophoneUsageDescription" = "RikkaHub는 마이크와 선택한 음성 인식 서비스를 사용하여 음성을 채팅 입력 텍스트로 변환합니다.";

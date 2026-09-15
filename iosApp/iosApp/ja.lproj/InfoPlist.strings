@@ -3,3 +3,4 @@
 
 "NSCalendarsFullAccessUsageDescription" = "アシスタントによるカレンダーの検索と、ツールの実行を承認した後の予定の作成を許可します。";
 "NSCalendarsUsageDescription" = "アシスタントによるカレンダーの検索と、ツールの実行を承認した後の予定の作成を許可します。";
+"NSMicrophoneUsageDescription" = "RikkaHub はマイクを使用し、選択した音声認識サービスで音声をチャットの入力テキストに変換します。";
