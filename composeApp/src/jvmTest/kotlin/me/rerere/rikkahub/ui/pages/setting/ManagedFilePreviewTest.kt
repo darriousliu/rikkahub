@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -13,6 +12,7 @@ import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.testFilesManager
 import me.rerere.rikkahub.data.files.toFileUri
 import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.platform.createDesktopImageLoader
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +26,7 @@ class ManagedFilePreviewTest {
         val root = Files.createTempDirectory("CMP66 中文 + %# ").toFile()
         val scope = CoroutineScope(SupervisorJob())
         val manager = testFilesManager(Path(root.path), scope)
-        val loader = ImageLoader.Builder(PlatformContext.INSTANCE).build()
+        val loader = createDesktopImageLoader(PlatformContext.INSTANCE)
         try {
             val bytes = Res.readBytes("files/icons/bing.png")
             val file = manager.saveManagedFromBytes(FileFolders.UPLOAD, bytes, "图片 + %#.png", "image/png")

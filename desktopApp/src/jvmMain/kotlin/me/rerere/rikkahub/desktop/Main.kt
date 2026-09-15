@@ -9,15 +9,16 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import io.github.vinceglb.filekit.FileKit
-import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.AppRoutes
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.di.initKoin
 import me.rerere.rikkahub.di.jvmModule
+import me.rerere.rikkahub.platform.initializeDesktopImageLoader
 import me.rerere.rikkahub.ui.pages.safemode.SafeModePage
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
 import org.koin.core.context.stopKoin
+import java.awt.GraphicsEnvironment
 import kotlin.system.exitProcess
 
 internal enum class DesktopLaunchMode {
@@ -53,6 +54,7 @@ fun main(args: Array<String>) {
     val stackTrace = if (hasCrashed) CrashHandler.getStackTrace() else null
     if (hasCrashed) CrashHandler.clearCrashed()
 
+    initializeDesktopImageLoader()
     initKoin { modules(jvmModule) }
     try {
         application(exitProcessOnExit = false) {

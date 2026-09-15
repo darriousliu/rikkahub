@@ -1,13 +1,13 @@
 package me.rerere.rikkahub.ui.components.ui
 
 import androidx.compose.ui.graphics.Color
-import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.toBitmap
 import kotlinx.coroutines.test.runTest
 import me.rerere.rikkahub.generated.resources.Res
+import me.rerere.rikkahub.platform.createDesktopImageLoader
 import org.jetbrains.skia.Bitmap
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,7 +36,7 @@ class AIIconDecodingTest {
     }
 
     private suspend fun decode(path: String, color: Color): Bitmap {
-        val loader = ImageLoader.Builder(PlatformContext.INSTANCE).build()
+        val loader = createDesktopImageLoader(PlatformContext.INSTANCE)
         try {
             val result = loader.execute(
                 ImageRequest.Builder(PlatformContext.INSTANCE)

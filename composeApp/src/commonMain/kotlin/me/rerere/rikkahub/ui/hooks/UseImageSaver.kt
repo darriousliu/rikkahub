@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.io.files.Path
 import me.rerere.rikkahub.platform.encodeImageToPng
 import me.rerere.rikkahub.service.toLocalFilePath
 import me.rerere.rikkahub.ui.context.LocalToaster
@@ -65,7 +66,7 @@ internal suspend fun readImageForSave(image: String, client: HttpClient): ByteAr
     when {
         image.startsWith("data:image") -> encodeImageToPng(Base64.decode(image.substringAfter("base64,")))!!
         image.startsWith("file:") -> PlatformFile(image.toLocalFilePath()).readBytes()
-        image.startsWith("/") -> PlatformFile(image).readBytes()
+        image.startsWith("/") || Path(image).isAbsolute -> PlatformFile(image).readBytes()
         image.startsWith("http") -> runCatching {
             val response = client.get(image)
             if (response.status == HttpStatusCode.OK) encodeImageToPng(response.body()) else null
