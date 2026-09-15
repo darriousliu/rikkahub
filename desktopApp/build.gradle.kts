@@ -51,6 +51,8 @@ kotlin {
             implementation(libs.cmp.material3)
             implementation(libs.nucleus.application)
             implementation(libs.nucleus.window.tao)
+            // Nucleus primes the Windows process AUMID before creating a window only when this module is present.
+            runtimeOnly(libs.nucleus.launcher.windows)
             implementation(libs.filekit.core)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.compose)

@@ -21,8 +21,13 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import me.rerere.common.logging.Logging
 import me.rerere.common.logging.RikkaLog as Log
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.LogRecord
+import java.util.logging.Logger
 import kotlin.coroutines.resume
 import kotlin.uuid.Uuid
 
@@ -36,13 +41,32 @@ public class JvmNucleusChatNotificationPresenter(appScope: CoroutineScope) : Cha
     // Only accessed by the serial notification dispatcher. Share a pending macOS permission prompt.
     private var authorization: Deferred<Boolean>? = null
     private var initialized = false
+    private var availabilityLogged = false
+    private var lastAuthorization: Boolean? = null
+    private val nativeLoggers = listOf(
+        Logger.getLogger("dev.nucleusframework.notification"),
+        Logger.getLogger("dev.nucleusframework.launcher.windows"),
+    )
+    private val nativeLogHandler = object : Handler() {
+        override fun publish(record: LogRecord) {
+            if (record.level.intValue() < Level.WARNING.intValue()) return
+            // The common API may return Success before Windows reports an asynchronous native failure.
+            Logging.log(TAG, "${record.loggerName}: ${record.message}" +
+                (record.thrown?.let { "\n${it.stackTraceToString()}" } ?: ""))
+        }
+
+        override fun flush() = Unit
+        override fun close() = Unit
+    }
 
     init {
+        nativeLoggers.forEach { it.addHandler(nativeLogHandler) }
         job.invokeOnCompletion {
             if (isWindows && initialized) {
                 runCatching { WindowsNotificationCenter.uninitialize() }
                     .onFailure { Log.w(TAG, "Failed to release native notifications", it) }
             }
+            nativeLoggers.forEach { it.removeHandler(nativeLogHandler) }
         }
     }
 
@@ -64,6 +88,7 @@ public class JvmNucleusChatNotificationPresenter(appScope: CoroutineScope) : Cha
     }
 
     override fun showGenerationCompleted(conversationId: Uuid, senderName: String, contentPreview: String) {
+        Logging.log(TAG, "Generation completed; scheduling desktop notification")
         cancelLiveUpdate(conversationId)
         scope.launch { showMessage(senderName, contentPreview) }
     }
@@ -78,22 +103,33 @@ public class JvmNucleusChatNotificationPresenter(appScope: CoroutineScope) : Cha
     }
 
     private suspend fun showMessage(title: String, body: String): NotificationHandle? = try {
-        if ((!isMacOS && !isWindows) || !NotificationManager.isAvailable() || !requestAuthorization()) {
+        val available = (isMacOS || isWindows) && NotificationManager.isAvailable()
+        if (!availabilityLogged) {
+            Logging.log(TAG, "Native notifications available=$available, " +
+                "OS=${System.getProperty("os.name")}, package=${System.getProperty("nucleus.executable.type")}")
+            availabilityLogged = true
+        }
+        if (!available || !requestAuthorization()) {
             null
         } else {
             currentCoroutineContext().ensureActive()
             if (!initialized) {
-                // Windows resolves its AUMID and Start Menu shortcut from Nucleus package metadata.
-                NotificationManager.initialize()
-                initialized = true
+                // notification-common ignores Windows initialize()'s Boolean result. Check it ourselves
+                // so a failed shortcut/WinRT setup can be retried on the next notification.
+                initialized = if (isWindows) WindowsNotificationCenter.initialize() else true
+                Logging.log(TAG, "Native notification initialization succeeded=$initialized")
             }
-            when (val result = notification(
+            if (!initialized) null else when (val result = notification(
                 title = title,
                 message = body,
-                onFailed = { Log.w(TAG, "The OS could not display a chat notification") },
+                onFailed = {
+                    Logging.log(TAG, "The OS reported a notification display failure")
+                    Log.w(TAG, "The OS could not display a chat notification")
+                },
             ).send()) {
                 is NotificationResult.Success -> result.handle
                 is NotificationResult.Failure -> {
+                    Logging.log(TAG, "Could not send chat notification: ${result.reason}")
                     Log.w(TAG, "Could not send chat notification: ${result.reason}")
                     null
                 }
@@ -102,7 +138,13 @@ public class JvmNucleusChatNotificationPresenter(appScope: CoroutineScope) : Cha
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
+        Logging.log(TAG, "Could not send chat notification: ${e.stackTraceToString()}")
         Log.w(TAG, "Could not send chat notification", e)
+        null
+    } catch (e: LinkageError) {
+        // Missing DLL dependencies and JNI entry points are Errors, not Exceptions.
+        Logging.log(TAG, "Could not load native notifications: ${e.stackTraceToString()}")
+        Log.w(TAG, "Could not load native notifications", e)
         null
     }
 
@@ -114,12 +156,20 @@ public class JvmNucleusChatNotificationPresenter(appScope: CoroutineScope) : Cha
                 NotificationCenter.requestAuthorization(
                     options = setOf(AuthorizationOption.ALERT, AuthorizationOption.SOUND),
                 ) { granted, error ->
-                    if (error != null) Log.w(TAG, "Could not request notification permission: $error")
+                    if (error != null) {
+                        Logging.log(TAG, "Could not request notification permission: $error")
+                        Log.w(TAG, "Could not request notification permission: $error")
+                    }
                     continuation.resume(granted)
                 }
             }
         }.also { authorization = it }
-        return pending.await()
+        return pending.await().also { granted ->
+            if (lastAuthorization != granted) {
+                Logging.log(TAG, "macOS notification authorization granted=$granted")
+                lastAuthorization = granted
+            }
+        }
     }
 
     private fun ChatNotificationPhase.toDisplayContent(): Pair<String, String> = when (this) {

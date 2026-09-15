@@ -26,6 +26,14 @@
 -keep class dev.nucleusframework.notification.macos.NativeMacNotificationBridge { *; }
 -keep class dev.nucleusframework.notification.windows.NativeWindowsNotificationBridge { *; }
 
+# PlatformBootstrap finds this optional Windows integration and its method through reflection.
+-keep class dev.nucleusframework.launcher.windows.WindowsJumpListManager {
+    public static ** INSTANCE;
+    public *** setProcessAppId(java.lang.String);
+}
+# The launcher DLL also looks up its shared taskbar callback interface by JNI name.
+-keep interface dev.nucleusframework.launcher.windows.ThumbBarClickListener { *; }
+
 # Tao is the UI dispatcher, including when dependencies still bring in coroutines-swing.
 # Nucleus's ProGuard task does not automatically read dependency META-INF/proguard files.
 -keep class dev.nucleusframework.window.tao.dispatch.TaoMainDispatcherFactory { *; }

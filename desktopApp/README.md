@@ -53,12 +53,19 @@ Windows/macOS 使用 `nucleus.notification-common:2.5.15` 发送原生通知，�
 
 - macOS 在首次需要通知时请求系统授权；拒绝后可在系统设置中开启，后续通知会重新读取授权结果。
   需使用带 bundle ID 的打包 `.app`（如 DMG 内的应用），`./gradlew :desktopApp:run` 无法验证系统通知。
-- Windows 使用 Nucleus 的应用标识（AUMID）和开始菜单快捷方式；使用 NSIS 安装后的应用验证。
+- Windows 通过 `nucleus.launcher-windows` 让 Nucleus 在创建窗口前设置进程应用标识（AUMID），
+  与通知和 NSIS 开始菜单快捷方式使用同一标识。此模块由 Nucleus 反射发现，相关入口须保留混淆规则。
+  使用 NSIS 安装后的应用验证。
 - 手动验证：开启消息生成通知并完成一轮回复；再开启实时更新，核对生成中的提示、结束/取消后的清理；
   关闭通知后再次生成应无提示。首次授权、拒绝后重新开启权限，以及 Windows/macOS 实际展示由人工核对。
+- 系统专注/勿扰模式可能延迟或隐藏通知横幅。2026-09-16 的 macOS 系统日志已确认聊天通知提交成功，
+  随后被专注模式判定为 `delay delivery`；可关闭专注模式，或在该模式下允许 RikkaHub。
+- 应用日志中的 `ChatNotification` 记录通知是否进入发送流程、原生后端是否可用、授权/初始化结果及错误；
+  Windows 的原生异步失败和 AUMID 初始化错误也写入该日志。不记录通知标题或消息正文。
 
 接口与平台条件见 [Nucleus 通知文档](https://nucleusframework.dev/en/docs/os/notifications/)。
-本次接入通过 `:desktopApp:compileKotlinJvm` 编译；按用户要求，通知 GUI 验证交由人工，现有安装包需重新构建。
+代码通过 `:desktopApp:compileKotlinJvm` 和 `:desktopApp:proguardReleaseJars` 构建，并确认混淆后的
+Windows AUMID 入口及 JNI 回调仍可查找。按用户要求，通知 GUI 验证交由人工；Windows 修复需重新打包 NSIS 安装验证。
 
 参考：[Nucleus 安装](https://nucleusframework.dev/en/docs/start/install/)、
 [Tao 迁移](https://nucleusframework.dev/en/docs/tao/migration-from-jbr/)、
