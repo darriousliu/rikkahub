@@ -64,6 +64,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.asr.ASRProviderSetting
 import me.rerere.rikkahub.data.datastore.DEFAULT_SYSTEM_TTS_ID
 import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.data.datastore.getAvailableTTSProviders
+import me.rerere.rikkahub.data.datastore.getSelectedAvailableTTSProvider
+import me.rerere.rikkahub.data.datastore.moveTtsProvider
+import me.rerere.rikkahub.data.datastore.newTtsProvider
+import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.shared.isLinux
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.AutoAIIcon
@@ -304,11 +310,10 @@ private fun TTSProviderList(
     onEdit: (TTSProviderSetting) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val providers = settings.getAvailableTTSProviders()
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        val newProviders = settings.ttsProviders.toMutableList().apply {
-            add(to.index, removeAt(from.index))
-        }
+        val newProviders = settings.moveTtsProvider(providers[from.index].id, providers[to.index].id)
         onUpdateSettings(settings.copy(ttsProviders = newProviders))
     }
 
@@ -320,7 +325,7 @@ private fun TTSProviderList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         state = lazyListState
     ) {
-        items(settings.ttsProviders, key = { it.id }) { provider ->
+        items(providers, key = { it.id }) { provider ->
             ReorderableItem(
                 state = reorderableState,
                 key = provider.id
@@ -350,7 +355,9 @@ private fun TTSProviderList(
                             )
                         }
                     },
-                    isSelected = settings.selectedTTSProviderId == provider.id,
+                    isSelected = if (currentPlatformKind.isLinux) {
+                        settings.getSelectedAvailableTTSProvider()?.id == provider.id
+                    } else settings.selectedTTSProviderId == provider.id,
                     onSelect = {
                         onUpdateSettings(settings.copy(selectedTTSProviderId = provider.id))
                     },
@@ -505,11 +512,11 @@ private fun ASRProviderList(
 @Composable
 private fun AddTTSProviderButton(onAdd: (TTSProviderSetting) -> Unit) {
     var showBottomSheet by remember { mutableStateOf(false) }
-    var currentProvider: TTSProviderSetting by remember { mutableStateOf(TTSProviderSetting.SystemTTS()) }
+    var currentProvider by remember { mutableStateOf(newTtsProvider()) }
 
     IconButton(
         onClick = {
-            currentProvider = TTSProviderSetting.SystemTTS()
+            currentProvider = newTtsProvider()
             showBottomSheet = true
         }
     ) {

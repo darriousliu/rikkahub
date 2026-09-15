@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import me.rerere.rikkahub.data.datastore.availableTtsProviderTypes
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.ui.components.ui.FormItem
 import me.rerere.rikkahub.ui.components.ui.OutlinedNumberInput
@@ -29,7 +30,7 @@ fun TTSProviderConfigure(
         modifier = modifier.verticalScroll(rememberScrollState())
     ) {
         // Provider type selector
-        val providers = remember { TTSProviderSetting.Types }
+        val providers = remember { availableTtsProviderTypes() }
 
         FormItem(
             label = { Text(stringResource(Res.string.setting_tts_page_provider_type)) },

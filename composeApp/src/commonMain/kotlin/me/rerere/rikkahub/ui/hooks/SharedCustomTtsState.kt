@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.StateFlow
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.datastore.getSelectedTTSProvider
+import me.rerere.rikkahub.data.datastore.getSelectedAvailableTTSProvider
 import me.rerere.rikkahub.utils.stripMarkdown
 import me.rerere.tts.controller.PlatformAudioPlayer
 import me.rerere.tts.controller.TtsController
@@ -35,7 +35,7 @@ internal fun rememberSharedCustomTtsState(
         settings.ttsProviders,
         settings.defaultTTSPlaybackSpeed,
     ) {
-        state.updateProvider(settings.getSelectedTTSProvider())
+        state.updateProvider(settings.getSelectedAvailableTTSProvider())
         state.setSpeed(settings.defaultTTSPlaybackSpeed)
         onDispose { }
     }

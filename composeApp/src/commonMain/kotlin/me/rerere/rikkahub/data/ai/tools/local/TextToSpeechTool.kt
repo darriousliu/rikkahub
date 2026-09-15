@@ -9,7 +9,7 @@ import me.rerere.ai.core.InputSchema
 import me.rerere.ai.core.Tool
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.datastore.getSelectedTTSProvider
+import me.rerere.rikkahub.data.datastore.getSelectedAvailableTTSProvider
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.tts.provider.TTSManager
@@ -28,7 +28,7 @@ internal fun buildTextToSpeechTool(
     """.trimIndent().replace("\n", " "),
     systemPrompt = { _, _ ->
         // 当前选中的 TTS provider 若硬编码了语气标记引导，则注入 system prompt（否则为空）
-        settingsStore.settingsFlow.value.getSelectedTTSProvider()
+        settingsStore.settingsFlow.value.getSelectedAvailableTTSProvider()
             ?.let { ttsManager.getPromptGuidance(it) }
             .orEmpty()
     },
