@@ -13,9 +13,9 @@ import me.rerere.rikkahub.platform.ChatNotificationPresenter
 import me.rerere.rikkahub.platform.CrashReporter
 import me.rerere.rikkahub.platform.ExternalUriOpener
 import me.rerere.rikkahub.platform.JvmExternalUriOpener
+import me.rerere.rikkahub.platform.JvmNucleusChatNotificationPresenter
 import me.rerere.rikkahub.platform.JvmOAuthCallbackSessionFactory
 import me.rerere.rikkahub.platform.JvmSentryMonitoring
-import me.rerere.rikkahub.platform.JvmSystemTrayChatNotificationPresenter
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.shared.createAppHttpClient
 import me.rerere.rikkahub.shared.currentDesktopPlatformBuildInfo
@@ -63,7 +63,7 @@ val jvmModule = module {
     single { JvmSentryMonitoring() }
     single<AnalyticsTracker> { get<JvmSentryMonitoring>() }
     single<CrashReporter> { get<JvmSentryMonitoring>() }
-    single<ChatNotificationPresenter> { JvmSystemTrayChatNotificationPresenter() }
+    single<ChatNotificationPresenter> { JvmNucleusChatNotificationPresenter(get()) }
     single<TTSProvider<TTSProviderSetting.SystemTTS>> { JvmSystemTTSProvider() }
     single<PlatformAudioPlayer> {
         if (System.getProperty("os.name").startsWith("Mac")) MacAudioPlayer() else JvmAudioPlayer()

@@ -193,6 +193,7 @@ kotlin {
             dependsOn(iosJvmMain)
             dependencies {
                 implementation(libs.nucleus.window.tao)
+                implementation(libs.nucleus.notification.common)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
                 implementation(libs.sentry)

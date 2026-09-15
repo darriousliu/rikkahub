@@ -45,18 +45,20 @@ WebView 使用正常的原生视图工厂，在首次加载前安装平台设置
 使它能显示在 Tao 原生 WebView 表面上方。1.0.3 的 `LocalWebViewFactory` 是隐藏原生视图的测试入口，生产代码不要提供它。
 Android 保留原来的 viewport/文本选择行为，兼容层需要在升级 WebView 时复查。
 
-## 隔离验证
+## 聊天通知
 
-`--smoke` 打开历史页面、等待帧并检查 `Dispatchers.Main.immediate` 与 Tao 窗口线程一致，随后退出。
-隔离 GUI 配置时同时设置两个 JVM 属性（不要更改系统 HOME）：
+Windows/macOS 使用 `nucleus.notification-common:2.5.15` 发送原生通知，替换 AWT SystemTray。
+沿用「消息生成通知」「实时更新通知」开关及每个会话一秒的节流；实时更新替换上一条，生成结束或取消时清理。
+原生调用由 Nucleus 处理线程切换，不占用 Tao UI 线程。
 
-```sh
-JAVA_TOOL_OPTIONS="-Duser.home=/private/tmp/rikkahub-check/home -Drikkahub.dataDir=/private/tmp/rikkahub-check/files" \
-  desktopApp/build/compose/binaries/main-release/app/RikkaHub.app/Contents/MacOS/RikkaHub --smoke
-```
+- macOS 在首次需要通知时请求系统授权；拒绝后可在系统设置中开启，后续通知会重新读取授权结果。
+  需使用带 bundle ID 的打包 `.app`（如 DMG 内的应用），`./gradlew :desktopApp:run` 无法验证系统通知。
+- Windows 使用 Nucleus 的应用标识（AUMID）和开始菜单快捷方式；使用 NSIS 安装后的应用验证。
+- 手动验证：开启消息生成通知并完成一轮回复；再开启实时更新，核对生成中的提示、结束/取消后的清理；
+  关闭通知后再次生成应无提示。首次授权、拒绝后重新开启权限，以及 Windows/macOS 实际展示由人工核对。
 
-`user.home` 隔离偏好和崩溃记录，`rikkahub.dataDir` 隔离 FileKit 文件、数据库和缓存；未设置时仍使用原目录。
-去掉 `--smoke` 可进行交互回归。测试结束后退出该进程并删除测试目录。
+接口与平台条件见 [Nucleus 通知文档](https://nucleusframework.dev/en/docs/os/notifications/)。
+本次接入通过 `:desktopApp:compileKotlinJvm` 编译；按用户要求，通知 GUI 验证交由人工，现有安装包需重新构建。
 
 参考：[Nucleus 安装](https://nucleusframework.dev/en/docs/start/install/)、
 [Tao 迁移](https://nucleusframework.dev/en/docs/tao/migration-from-jbr/)、

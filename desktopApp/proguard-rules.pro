@@ -20,6 +20,12 @@
 -keep class dev.nucleusframework.webview.** { *; }
 -keep class com.dokar.quickjs.** { *; }
 
+# notification-common discovers platform centers by name; JNI calls bridge callbacks by name as well.
+-keepnames class dev.nucleusframework.notification.NotificationCenter
+-keepnames class dev.nucleusframework.notification.windows.WindowsNotificationCenter
+-keep class dev.nucleusframework.notification.macos.NativeMacNotificationBridge { *; }
+-keep class dev.nucleusframework.notification.windows.NativeWindowsNotificationBridge { *; }
+
 # Tao is the UI dispatcher, including when dependencies still bring in coroutines-swing.
 # Nucleus's ProGuard task does not automatically read dependency META-INF/proguard files.
 -keep class dev.nucleusframework.window.tao.dispatch.TaoMainDispatcherFactory { *; }
