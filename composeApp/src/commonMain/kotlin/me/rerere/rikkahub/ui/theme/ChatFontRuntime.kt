@@ -1,12 +1,12 @@
 package me.rerere.rikkahub.ui.theme
 
 import androidx.compose.ui.text.font.FontFamily
-import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.filesDir
-import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -24,15 +24,15 @@ import me.rerere.rikkahub.utils.renameTo
 import me.rerere.rikkahub.utils.writeBytes
 import kotlin.time.Clock
 
-public data class ImportedChatFont(
-    public val relativePath: String,
-    public val displayName: String,
+data class ImportedChatFont(
+    val relativePath: String,
+    val displayName: String,
 )
 
-public class ChatFontRuntime(
+class ChatFontRuntime(
     private val filesDir: Path = FileKit.filesDir.toKotlinxIoPath(),
 ) {
-    public suspend fun import(source: PlatformFile): Result<ImportedChatFont> = withContext(Dispatchers.IO) {
+    suspend fun import(source: PlatformFile): Result<ImportedChatFont> = withContext(Dispatchers.IO) {
         runCatching {
             val displayName = source.name.takeIf { it.isNotBlank() } ?: "custom_font"
             val extension = displayName.substringAfterLast('.', "")
@@ -63,13 +63,12 @@ public class ChatFontRuntime(
         }
     }
 
-    public fun delete(relativePath: String): Result<Unit> = runCatching {
+    fun delete(relativePath: String): Result<Unit> = runCatching {
         val file = resolveFilesDirFile(relativePath) ?: return@runCatching
         file.delete()
-        Unit
     }
 
-    public fun load(relativePath: String): FontFamily? {
+    fun load(relativePath: String): FontFamily? {
         val file = resolveFilesDirFile(relativePath)?.takeIf { it.isFile } ?: return null
         return runCatching {
             loadCustomFont(file)

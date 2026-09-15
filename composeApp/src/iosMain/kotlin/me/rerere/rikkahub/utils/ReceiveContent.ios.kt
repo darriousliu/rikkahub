@@ -26,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import platform.Foundation.NSData
 import platform.Foundation.NSIndexSet
+import platform.UIKit.UIPasteboard
 import platform.UIKit.UIPasteboardTypeListImage
 import platform.UniformTypeIdentifiers.UTType
 import kotlin.uuid.Uuid
@@ -37,7 +38,7 @@ actual fun Modifier.onReceiveContent(
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     imagePasteMenu(
-        hasImageOnly = { clipboard.nativeClipboard.hasImages && !clipboard.nativeClipboard.hasStrings },
+        hasImageOnly = { UIPasteboard.generalPasteboard.hasImages && !UIPasteboard.generalPasteboard.hasStrings },
         onPaste = { scope.launch { clipboard.getClipEntry() } },
     )
 }
@@ -58,7 +59,7 @@ internal class ReceivingClipboard(
 ) : Clipboard by clipboard {
     // CMP checks native pasteboard flags for menu availability; reading happens only on paste.
     override suspend fun getClipEntry(): ClipEntry? {
-        val pasteboard = nativeClipboard
+        val pasteboard = UIPasteboard.generalPasteboard
         if (pasteboard.hasImages) {
             val remainingText = mutableListOf<String>()
             repeat(pasteboard.numberOfItems.toInt()) { index ->
