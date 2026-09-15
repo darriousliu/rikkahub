@@ -33,6 +33,19 @@ android {
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
+        externalNativeBuild {
+            cmake {
+                arguments += "-DANDROID_STL=c++_static"
+                targets += "simple"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = rootProject.file("native/simple/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     splits {

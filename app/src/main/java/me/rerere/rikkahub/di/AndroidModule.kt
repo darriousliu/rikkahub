@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import androidx.room3.Room
-import androidx.sqlite.async.prepare
-import androidx.sqlite.async.step
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
@@ -22,7 +20,6 @@ import me.rerere.ai.provider.ProviderManager
 import me.rerere.ai.util.KeyRoulette
 import me.rerere.ai.util.lru
 import me.rerere.common.http.AcceptLanguageBuilder
-import me.rerere.common.logging.RikkaLog as Log
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
@@ -44,7 +41,6 @@ import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.db.fts.MessageFtsManager
-import me.rerere.rikkahub.data.db.fts.SimpleDictManager
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.repository.ConversationRepository
@@ -349,21 +345,5 @@ internal fun createAndroidAppDatabase(
         ),
         driver = driver,
         ftsDialect = MessageFtsDialect.SIMPLE,
-        platformOnOpen = { connection ->
-            val dictDir = SimpleDictManager.extractDict(context)
-            connection.prepare("SELECT jieba_dict(?)").use { statement ->
-                statement.bindText(1, dictDir.absolutePath)
-                if (statement.step()) {
-                    val result = statement.getText(0)
-                    val success = result.trimEnd('/') == dictDir.absolutePath.trimEnd('/')
-                    if (!success) {
-                        Log.e(
-                            "DataSourceModule",
-                            "jieba_dict failed: $result, path=${dictDir.absolutePath}"
-                        )
-                    }
-                }
-            }
-        },
     )
 }

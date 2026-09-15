@@ -68,7 +68,7 @@ val jvmModule = module {
         createAppHttpClient().also { SearchService.init(client = it, keyRoulette = get()) }
     } onClose { it?.close() }
     single { ProviderManager(get(), get()) }
-    single { MessageFtsManager(get(), MessageFtsDialect.UNICODE61) }
+    single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
     single { FileKitFileCleaner(get(), get()) }
     single(createdAtStart = true) {
         val appScope = get<CoroutineScope>()

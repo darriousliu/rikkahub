@@ -233,3 +233,8 @@ compose.resources {
     publicResClass = true
     packageOfResClass = "me.rerere.rikkahub.generated.resources"
 }
+
+apply(from = rootProject.file("gradle/simple.gradle.kts"))
+kotlin.sourceSets.named("jvmMain") {
+    resources.srcDir(tasks.named("prepareSimpleJvmResources"))
+}

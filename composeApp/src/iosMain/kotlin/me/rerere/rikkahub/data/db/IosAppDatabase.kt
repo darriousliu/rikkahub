@@ -8,6 +8,7 @@ import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.cinterop.ExperimentalForeignApi
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.files.LegacyIosFileMigration
+import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHomeDirectory
 
@@ -26,8 +27,8 @@ fun createIosAppDatabase(
             name = "$directory/rikka_hub.db",
             factory = AppDatabaseConstructor::initialize,
         ),
-        driver = BundledSQLiteDriver(),
-        ftsDialect = MessageFtsDialect.UNICODE61,
+        driver = createIosSQLiteDriver(),
+        ftsDialect = MessageFtsDialect.SIMPLE,
         platformOnOpen = LegacyIosFileMigration(FileKit.filesDir.toKotlinxIoPath())::migrateDatabase,
     )
 }
@@ -36,3 +37,8 @@ fun defaultIosDatabaseDirectory(): String =
     "${NSHomeDirectory()}/Library/Application Support/RikkaHub/database"
 
 fun defaultIosDatabaseFilePath(): String = "${defaultIosDatabaseDirectory()}/rikka_hub.db"
+
+@OptIn(ExperimentalForeignApi::class)
+internal fun createIosSQLiteDriver(): BundledSQLiteDriver = BundledSQLiteDriver().apply {
+    addExtension("${NSBundle.mainBundle.privateFrameworksPath}/simple.framework/simple", "sqlite3_simple_init")
+}
