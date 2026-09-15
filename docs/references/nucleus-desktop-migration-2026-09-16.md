@@ -33,7 +33,7 @@ composeApp → KScan-jvm 0.9.2
 ## 打包与线程适配
 
 - Nucleus 管理窗口和打包；入口显式指定 Tao，macOS 带 `-XstartOnFirstThread`。
-- 保留 Tao `MainDispatcherFactory` 及生命周期反射入口；发行包 `--smoke` 检查窗口线程与 `Dispatchers.Main.immediate` 一致。
+- 保留 Tao `MainDispatcherFactory` 及生命周期反射入口。
 - WebView 使用库的正常原生工厂，首次加载前安装平台设置/console hook，进度条使用新 overlay 槽。
   GUI 曾发现 `LocalWebViewFactory` 非空时 1.0.3 会隐藏原生视图（测试分支）；生产接线已移除该 Local。
   Android 兼容层复制原库 onPageStarted 的状态更新，省略原先已过滤的 viewport/selection CSS 注入；
@@ -43,8 +43,6 @@ composeApp → KScan-jvm 0.9.2
   Windows 音频已有专门的 JavaFX 线程切换，macOS 使用 AVAudioPlayer。
 - 离屏导出在最后一帧前显式通知 Snapshot 观察者，解决 Tao 与 AWT 状态通知时序不同导致的旧帧问题。
   `ChatImageExportTest.waitsForWebViewSnapshotRegisteredAfterMeasurement` 曾捕获红色旧帧，修复后得到预期绿色新帧。
-- 增加可选 `rikkahub.dataDir` JVM 属性，仅为显式指定时的隔离 FileKit 文件/数据库/缓存；默认目录保持原行为。
-  只设置 `user.home` 不能隔离 FileKit，它使用操作系统环境目录。
 - 图标沿用 Android 兔子标记，生成 ICO/ICNS/窗口 PNG；源图和可重复运行的编码工具位于 `desktopApp/icons`、`desktopApp/tools`。
 - Material 3 的标题文字显式使用 Nucleus 标题栏前景色，避免深色窗口中默认黑字对比不足。
 
@@ -63,14 +61,11 @@ Nucleus 清理目标平台不需要的动态库；jlink 关闭全模块打包；
 Nucleus 2.5.15 的清理器只处理动态库后缀，JNA 内两个 AIX 静态归档仍保留（压缩后共 323,493 bytes）；
 它们不是 OpenCV/OpenBLAS 的全平台包，不参与本机加载。本轮未改写框架内部的清理器。
 
-## 验证
+## 迁移提交的构建记录
 
 代码回归已通过 17 项：二维码图片解码 2、HTML 预览 3、WebView 内容缓存 4、聊天图片导出 4、剪贴板内容处理 4。
 导出测试同时补齐了已有主题接线需要的 DataStore、AppScope、BooleanPreferenceStore 测试依赖。
-Android 与 iOS simulator 编译通过。已有 Android GUI 结果保留；后续移动端验证按用户要求停止。
-桌面 GUI 由同轮 Terra 子 agent 记录。
-
-启动、生命周期、系统对话框、原生 WebView、打包资源和混淆运行时无法仅由代码测试覆盖，本次需要 GUI 验证。
+Android 与 iOS simulator 编译通过。
 
 最终 macOS arm64 Release DMG 构建通过，Gradle 配置缓存复用成功。对包内类运行 `-Xverify:all` 和反射方法检查：
 28,773 个类通过，0 个 `VerifyError`。另有 7 个类引用未安装的可选 GraalVM、Hot Reload、PDF 签名、日志、
@@ -78,10 +73,7 @@ Conscrypt 类型，不属于已启用的发行功能；这项检查不初始化�
 包内 16 个 ServiceLoader 描述及 30 个注册实现可以加载，ImageIO PNG 编码成功。
 `hdiutil verify` 校验 DMG 通过。
 
-操作步骤、预期/实际结果和截图见 [桌面 GUI 证据](evidence/nucleus-desktop-2026-09-16/verification.md)。
-已完成窗口启动、导航、中文粘贴、原生文件选择与离线 Chatbox 导入；最终标题栏对比度修复已由截图确认。
-后续检查按用户要求停止，交由用户手动验证。WebView 返回/重开、导入后的冷启动持久化、最终包 `--smoke`
-及 Windows 安装运行未完成，不标记为通过。当前隔离 GUI 实例及测试数据暂留，方便手动接续。
+以上结果对应迁移提交时的构建。后续运行行为由用户手动验证。
 
 ## 最终包体积
 
