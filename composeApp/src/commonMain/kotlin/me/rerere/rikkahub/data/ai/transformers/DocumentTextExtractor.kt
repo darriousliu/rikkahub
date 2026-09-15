@@ -1,6 +1,9 @@
 package me.rerere.rikkahub.data.ai.transformers
 
 import io.github.vinceglb.filekit.PlatformFile
+import me.rerere.document.DocxParser
+import me.rerere.document.EpubParser
+import me.rerere.document.PptxParser
 
 /**
  * Extracts text from binary document formats such as PDF or DOCX.
@@ -12,7 +15,11 @@ fun interface DocumentTextExtractor {
     suspend fun extract(file: PlatformFile, mime: String): String?
 }
 
-/** Used by shells that bundle no document parsers. */
-object UnsupportedDocumentTextExtractor : DocumentTextExtractor {
-    override suspend fun extract(file: PlatformFile, mime: String): String? = null
+object OfficeDocumentTextExtractor : DocumentTextExtractor {
+    override suspend fun extract(file: PlatformFile, mime: String): String? = when (mime) {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> DocxParser.parse(file)
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> PptxParser.parse(file)
+        "application/epub+zip" -> EpubParser.parse(file)
+        else -> null
+    }
 }

@@ -1,11 +1,9 @@
 package me.rerere.document
 
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserFactory
-import java.io.File
-import java.io.InputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import me.rerere.common.archive.ZipFileReader
+import nl.adaptivity.xmlutil.EventType
 
 private data class SlideContent(
     val slideNumber: Int,
@@ -14,16 +12,16 @@ private data class SlideContent(
 )
 
 object PptxParser {
-    fun parse(file: File): String {
+    fun parse(file: PlatformFile): String {
         return try {
-            ZipFile(file).use { zipFile ->
+            ZipFileReader(file.toKotlinxIoPath()).use { zipFile ->
                 val slides = mutableListOf<SlideContent>()
 
                 // Find all slide XML files and sort them by number
-                val slideEntries = zipFile.entries().toList()
-                    .filter { it.name.matches(Regex("ppt/slides/slide\\d+\\.xml")) }
+                val slideEntries = zipFile.entries()
+                    .filter { it.matches(Regex("ppt/slides/slide\\d+\\.xml")) }
                     .sortedBy { entry ->
-                        entry.name.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0
+                        entry.substringAfter("slide").substringBefore(".xml").toIntOrNull() ?: 0
                     }
 
                 if (slideEntries.isEmpty()) {
@@ -33,16 +31,12 @@ object PptxParser {
                 // Parse each slide
                 slideEntries.forEachIndexed { index, entry ->
                     val slideNumber = index + 1
-                    val slideContent = zipFile.getInputStream(entry).use { stream ->
-                        parseSlideXml(stream)
-                    }
+                    val slideContent = parseSlideXml(zipFile.readEntry(entry)!!.decodeToString())
 
                     // Try to get notes for this slide
-                    val notesEntry = zipFile.getEntry("ppt/notesSlides/notesSlide${slideNumber}.xml")
+                    val notesEntry = zipFile.readEntry("ppt/notesSlides/notesSlide${slideNumber}.xml")
                     val notes = if (notesEntry != null) {
-                        zipFile.getInputStream(notesEntry).use { stream ->
-                            parseNotesXml(stream)
-                        }
+                        parseNotesXml(notesEntry.decodeToString())
                     } else ""
 
                     slides.add(SlideContent(slideNumber, slideContent, notes))
@@ -74,23 +68,21 @@ object PptxParser {
         return result.toString().trim()
     }
 
-    private fun parseSlideXml(inputStream: InputStream): String {
+    private fun parseSlideXml(xml: String): String {
         return try {
-            val factory = XmlPullParserFactory.newInstance()
-            factory.isNamespaceAware = true
-            val parser = factory.newPullParser()
-            parser.setInput(inputStream, "UTF-8")
+            val parser = DocumentXmlReader(xml)
 
             val result = StringBuilder()
 
-            while (parser.eventType != XmlPullParser.END_DOCUMENT) {
+            while (parser.eventType != EventType.END_DOCUMENT) {
                 when (parser.eventType) {
-                    XmlPullParser.START_TAG -> {
+                    EventType.START_ELEMENT -> {
                         when (parser.name) {
                             "sp" -> processShape(parser, result)  // Text box/shape
                             "graphicFrame" -> processGraphicFrame(parser, result)  // Table
                         }
                     }
+                    else -> Unit
                 }
                 parser.next()
             }
@@ -101,16 +93,16 @@ object PptxParser {
         }
     }
 
-    private fun processShape(parser: XmlPullParser, result: StringBuilder) {
+    private fun processShape(parser: DocumentXmlReader, result: StringBuilder) {
         val shapeStartDepth = parser.depth
         val textContent = StringBuilder()
         var hasBullet = false
         var bulletLevel = 0
         var isNumbered = false
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     when (parser.name) {
                         "p" -> {
                             // Start of paragraph - check for bullet/numbering
@@ -122,11 +114,12 @@ object PptxParser {
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "sp" && parser.depth == shapeStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
 
@@ -137,16 +130,16 @@ object PptxParser {
         }
     }
 
-    private fun processParagraph(parser: XmlPullParser, result: StringBuilder): Triple<Boolean, Int, Boolean> {
+    private fun processParagraph(parser: DocumentXmlReader, result: StringBuilder): Triple<Boolean, Int, Boolean> {
         val paragraphStartDepth = parser.depth
         val paragraphText = StringBuilder()
         var hasBullet = false
         var bulletLevel = 0
         var isNumbered = false
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     when (parser.name) {
                         "pPr" -> {
                             // Paragraph properties - check for bullets
@@ -163,11 +156,12 @@ object PptxParser {
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "p" && parser.depth == paragraphStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
 
@@ -185,15 +179,15 @@ object PptxParser {
         return Triple(hasBullet, bulletLevel, isNumbered)
     }
 
-    private fun extractBulletInfo(parser: XmlPullParser): Triple<Boolean, Int, Boolean> {
+    private fun extractBulletInfo(parser: DocumentXmlReader): Triple<Boolean, Int, Boolean> {
         val pPrStartDepth = parser.depth
         var hasBullet = false
         var level = 0
         var isNumbered = false
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     when (parser.name) {
                         "buChar" -> {
                             hasBullet = true
@@ -213,67 +207,70 @@ object PptxParser {
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "pPr" && parser.depth == pPrStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
 
         return Triple(hasBullet, level, isNumbered)
     }
 
-    private fun extractTextRun(parser: XmlPullParser, result: StringBuilder) {
+    private fun extractTextRun(parser: DocumentXmlReader, result: StringBuilder) {
         val runStartDepth = parser.depth
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "t") {
                         parser.next()
-                        if (parser.eventType == XmlPullParser.TEXT) {
+                        if (parser.eventType == EventType.TEXT) {
                             result.append(parser.text ?: "")
                         }
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "r" && parser.depth == runStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
     }
 
-    private fun processGraphicFrame(parser: XmlPullParser, result: StringBuilder) {
+    private fun processGraphicFrame(parser: DocumentXmlReader, result: StringBuilder) {
         val frameStartDepth = parser.depth
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "tbl") {
                         processTable(parser, result)
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "graphicFrame" && parser.depth == frameStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
     }
 
-    private fun processTable(parser: XmlPullParser, result: StringBuilder) {
+    private fun processTable(parser: DocumentXmlReader, result: StringBuilder) {
         val tableStartDepth = parser.depth
         val rows = mutableListOf<List<String>>()
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "tr") {
                         val cells = extractTableRow(parser)
                         if (cells.isNotEmpty()) {
@@ -282,11 +279,12 @@ object PptxParser {
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "tbl" && parser.depth == tableStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
 
@@ -315,40 +313,41 @@ object PptxParser {
         }
     }
 
-    private fun extractTableRow(parser: XmlPullParser): List<String> {
+    private fun extractTableRow(parser: DocumentXmlReader): List<String> {
         val rowStartDepth = parser.depth
         val cells = mutableListOf<String>()
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "tc") {
                         val cellText = extractTableCell(parser)
                         cells.add(cellText)
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "tr" && parser.depth == rowStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
 
         return cells
     }
 
-    private fun extractTableCell(parser: XmlPullParser): String {
+    private fun extractTableCell(parser: DocumentXmlReader): String {
         val cellStartDepth = parser.depth
         val result = StringBuilder()
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "t") {
                         parser.next()
-                        if (parser.eventType == XmlPullParser.TEXT) {
+                        if (parser.eventType == EventType.TEXT) {
                             if (result.isNotEmpty()) {
                                 result.append(" ")
                             }
@@ -357,30 +356,28 @@ object PptxParser {
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "tc" && parser.depth == cellStartDepth) {
                         break
                     }
                 }
+                else -> Unit
             }
         }
 
         return result.toString().trim()
     }
 
-    private fun parseNotesXml(inputStream: InputStream): String {
+    private fun parseNotesXml(xml: String): String {
         return try {
-            val factory = XmlPullParserFactory.newInstance()
-            factory.isNamespaceAware = true
-            val parser = factory.newPullParser()
-            parser.setInput(inputStream, "UTF-8")
+            val parser = DocumentXmlReader(xml)
 
             val result = StringBuilder()
             var inNotesShape = false
 
-            while (parser.eventType != XmlPullParser.END_DOCUMENT) {
+            while (parser.eventType != EventType.END_DOCUMENT) {
                 when (parser.eventType) {
-                    XmlPullParser.START_TAG -> {
+                    EventType.START_ELEMENT -> {
                         when (parser.name) {
                             "sp" -> {
                                 // Check if this is a notes text shape (not the slide preview)
@@ -391,6 +388,7 @@ object PptxParser {
                             }
                         }
                     }
+                    else -> Unit
                 }
                 parser.next()
             }
@@ -401,45 +399,46 @@ object PptxParser {
         }
     }
 
-    private fun isNotesTextShape(parser: XmlPullParser): Boolean {
+    private fun isNotesTextShape(parser: DocumentXmlReader): Boolean {
         // Notes text typically has ph type="body"
         val currentDepth = parser.depth
         val originalPosition = parser
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "ph") {
                         val type = parser.getAttributeValue(null, "type")
                         return type == "body"
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.depth <= currentDepth) {
                         return false
                     }
                 }
+                else -> Unit
             }
         }
         return false
     }
 
-    private fun extractShapeText(parser: XmlPullParser, result: StringBuilder) {
+    private fun extractShapeText(parser: DocumentXmlReader, result: StringBuilder) {
         val shapeStartDepth = parser.depth
 
-        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        while (parser.next() != EventType.END_DOCUMENT) {
             when (parser.eventType) {
-                XmlPullParser.START_TAG -> {
+                EventType.START_ELEMENT -> {
                     if (parser.name == "t") {
                         parser.next()
-                        if (parser.eventType == XmlPullParser.TEXT) {
+                        if (parser.eventType == EventType.TEXT) {
                             result.append(parser.text ?: "")
                         }
                     }
                 }
 
-                XmlPullParser.END_TAG -> {
+                EventType.END_ELEMENT -> {
                     if (parser.name == "sp" && parser.depth == shapeStartDepth) {
                         break
                     }
@@ -447,6 +446,7 @@ object PptxParser {
                         result.append("\n")
                     }
                 }
+                else -> Unit
             }
         }
     }

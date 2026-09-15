@@ -84,6 +84,7 @@ kotlin {
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(project(":ai"))
             implementation(project(":common"))
+            implementation(project(":document"))
             implementation(project(":highlight"))
             implementation(project(":hugeicons"))
             implementation(project(":material3"))

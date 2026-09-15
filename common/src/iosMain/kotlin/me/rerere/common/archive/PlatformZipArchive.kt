@@ -120,7 +120,7 @@ actual object PlatformZipArchive : ZipArchive {
     private fun normalizeName(name: String): String = ZipEntryPathPolicy.normalizeOrNull(name)
         ?: throw ZipArchiveException("Unsafe ZIP entry path: $name")
 
-    private inline fun <T> checked(block: (CPointer<ObjCObjectVar<NSError?>>) -> T): T = memScoped {
+    internal inline fun <T> checked(block: (CPointer<ObjCObjectVar<NSError?>>) -> T): T = memScoped {
         val error = alloc<ObjCObjectVar<NSError?>>()
         error.value = null
         val result = block(error.ptr)

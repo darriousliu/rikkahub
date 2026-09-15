@@ -38,6 +38,12 @@ public final class ZipArchiveBridge: NSObject {
     @objc public var entryName: String { currentEntry!.path }
     @objc public var entryIsDirectory: Bool { currentEntry!.type == .directory }
 
+    @objc(selectEntryNamed:)
+    public func selectEntry(named name: String) -> Bool {
+        currentEntry = archive?[name]
+        return currentEntry != nil
+    }
+
     @objc(readCurrentEntryWithConsumer:error:)
     public func readCurrentEntry(consumer: (UnsafeRawPointer?, Int) -> Bool) throws {
         let entry = currentEntry!

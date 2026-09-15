@@ -1,10 +1,9 @@
 package me.rerere.document
 
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserFactory
-import java.io.File
-import java.io.InputStream
-import java.util.zip.ZipFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.toKotlinxIoPath
+import me.rerere.common.archive.ZipFileReader
+import nl.adaptivity.xmlutil.EventType
 
 private data class ManifestItem(
     val id: String,
@@ -13,16 +12,16 @@ private data class ManifestItem(
 )
 
 object EpubParser {
-    fun parse(file: File): String {
+    fun parse(file: PlatformFile): String {
         return try {
-            ZipFile(file).use { zip ->
+            ZipFileReader(file.toKotlinxIoPath()).use { zip ->
                 val opfPath = findOpfPath(zip)
                     ?: return "Unable to find OPF file in EPUB"
                 val opfDir = opfPath.substringBeforeLast('/', "")
 
-                val opfEntry = zip.getEntry(opfPath)
+                val opfEntry = zip.readEntry(opfPath)
                     ?: return "Unable to read OPF file in EPUB"
-                val (manifest, spine) = zip.getInputStream(opfEntry).use { parseOpf(it) }
+                val (manifest, spine) = parseOpf(opfEntry.decodeToString())
 
                 val result = StringBuilder()
                 for (itemId in spine) {
@@ -30,8 +29,8 @@ object EpubParser {
                     if (!item.mediaType.contains("html")) continue
 
                     val itemPath = if (opfDir.isEmpty()) item.href else "$opfDir/${item.href}"
-                    val entry = zip.getEntry(itemPath) ?: continue
-                    val content = zip.getInputStream(entry).use { parseXhtml(it) }
+                    val entry = zip.readEntry(itemPath) ?: continue
+                    val content = parseXhtml(entry.decodeToString())
                     if (content.isNotBlank()) {
                         result.append(content)
                         result.append("\n\n")
@@ -45,35 +44,27 @@ object EpubParser {
         }
     }
 
-    private fun findOpfPath(zip: ZipFile): String? {
-        val containerEntry = zip.getEntry("META-INF/container.xml") ?: return null
-        return zip.getInputStream(containerEntry).use { stream ->
-            val factory = XmlPullParserFactory.newInstance()
-            factory.isNamespaceAware = true
-            val parser = factory.newPullParser()
-            parser.setInput(stream, "UTF-8")
+    private fun findOpfPath(zip: ZipFileReader): String? {
+        val containerEntry = zip.readEntry("META-INF/container.xml") ?: return null
+        val parser = DocumentXmlReader(containerEntry.decodeToString())
 
-            while (parser.eventType != XmlPullParser.END_DOCUMENT) {
-                if (parser.eventType == XmlPullParser.START_TAG && parser.name == "rootfile") {
-                    return@use parser.getAttributeValue(null, "full-path")
-                }
-                parser.next()
+        while (parser.eventType != EventType.END_DOCUMENT) {
+            if (parser.eventType == EventType.START_ELEMENT && parser.name == "rootfile") {
+                return parser.getAttributeValue(null, "full-path")
             }
-            null
+            parser.next()
         }
+        return null
     }
 
-    private fun parseOpf(inputStream: InputStream): Pair<Map<String, ManifestItem>, List<String>> {
-        val factory = XmlPullParserFactory.newInstance()
-        factory.isNamespaceAware = true
-        val parser = factory.newPullParser()
-        parser.setInput(inputStream, "UTF-8")
+    private fun parseOpf(xml: String): Pair<Map<String, ManifestItem>, List<String>> {
+        val parser = DocumentXmlReader(xml)
 
         val manifest = mutableMapOf<String, ManifestItem>()
         val spine = mutableListOf<String>()
 
-        while (parser.eventType != XmlPullParser.END_DOCUMENT) {
-            if (parser.eventType == XmlPullParser.START_TAG) {
+        while (parser.eventType != EventType.END_DOCUMENT) {
+            if (parser.eventType == EventType.START_ELEMENT) {
                 when (parser.name) {
                     "item" -> {
                         val id = parser.getAttributeValue(null, "id") ?: ""
@@ -98,22 +89,18 @@ object EpubParser {
         return manifest to spine
     }
 
-    private fun parseXhtml(inputStream: InputStream): String {
+    private fun parseXhtml(xml: String): String {
         return try {
-            val factory = XmlPullParserFactory.newInstance()
-            factory.isNamespaceAware = false
-            val parser = factory.newPullParser()
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false)
-            parser.setInput(inputStream, "UTF-8")
+            val parser = DocumentXmlReader(xml, namespaceAware = false)
 
             val result = StringBuilder()
             val tagStack = ArrayDeque<String>()
             var inBody = false
             var listCounter = 0
 
-            while (parser.eventType != XmlPullParser.END_DOCUMENT) {
+            while (parser.eventType != EventType.END_DOCUMENT) {
                 when (parser.eventType) {
-                    XmlPullParser.START_TAG -> {
+                    EventType.START_ELEMENT -> {
                         val tag = parser.name.lowercase()
                         tagStack.addLast(tag)
 
@@ -165,7 +152,7 @@ object EpubParser {
                         }
                     }
 
-                    XmlPullParser.TEXT -> {
+                    EventType.TEXT -> {
                         if (inBody) {
                             val text = parser.text
                                 ?.replace('\n', ' ')
@@ -177,7 +164,7 @@ object EpubParser {
                         }
                     }
 
-                    XmlPullParser.END_TAG -> {
+                    EventType.END_ELEMENT -> {
                         val tag = parser.name.lowercase()
                         if (tagStack.isNotEmpty()) tagStack.removeLast()
 
@@ -213,6 +200,7 @@ object EpubParser {
                             }
                         }
                     }
+                    else -> Unit
                 }
                 try {
                     parser.next()
