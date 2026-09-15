@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.kotlinx.io.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.atomicfu)
+            implementation(libs.okio)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -74,9 +75,6 @@ kotlin {
             implementation("org.openjfx:javafx-base:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
             implementation("org.openjfx:javafx-graphics:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
             implementation("org.openjfx:javafx-media:${libs.versions.javafx.get()}:$javafxPlatformClassifier")
-        }
-        iosMain.dependencies {
-            implementation(libs.okio)
         }
         named("androidHostTest") {
             dependencies {

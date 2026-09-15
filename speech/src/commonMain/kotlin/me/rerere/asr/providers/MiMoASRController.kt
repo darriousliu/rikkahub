@@ -5,8 +5,6 @@ import me.rerere.common.logging.RikkaLog as Log
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.io.Buffer
-import kotlinx.io.writeIntLe
-import kotlinx.io.writeShortLe
 import kotlinx.io.readByteArray
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +28,7 @@ import me.rerere.asr.ASRState
 import me.rerere.asr.ASRStatus
 import me.rerere.asr.appendAmplitude
 import me.rerere.asr.calculateRmsAmplitude
+import me.rerere.speech.utils.pcmToWav
 
 private const val TAG = "MiMoASR"
 
@@ -190,7 +189,7 @@ class MiMoASRController(
             bytes
         }
 
-        val wavBytes = pcm16ToWav(
+        val wavBytes = pcmToWav(
             pcm = pcmBytes,
             sampleRate = provider.sampleRate,
             channels = 1,
@@ -226,43 +225,5 @@ class MiMoASRController(
         runCatching { audioRecord?.stop() }
         runCatching { audioRecord?.release() }
         audioRecord = null
-    }
-
-    companion object {
-        /**
-         * 把 raw PCM16 little-endian 数据封装成最小 WAV (RIFF/WAVE/fmt/data)。
-         * MiMo 官方只接受 WAV/MP3, AudioRecord 输出的是 PCM, 必须自己包 WAV 头。
-         */
-        private fun pcm16ToWav(
-            pcm: ByteArray,
-            sampleRate: Int,
-            channels: Int,
-            bitsPerSample: Int
-        ): ByteArray {
-            val byteRate = sampleRate * channels * bitsPerSample / 8
-            val blockAlign = channels * bitsPerSample / 8
-            val dataSize = pcm.size
-            val out = Buffer()
-
-            // RIFF header
-            out.write("RIFF".encodeToByteArray())
-            out.writeIntLe(36 + dataSize) // chunk size = file size - 8
-            out.write("WAVE".encodeToByteArray())
-            // fmt chunk
-            out.write("fmt ".encodeToByteArray())
-            out.writeIntLe(16)            // PCM fmt chunk size
-            out.writeShortLe(1.toShort())           // audio format = PCM
-            out.writeShortLe(channels.toShort())
-            out.writeIntLe(sampleRate)
-            out.writeIntLe(byteRate)
-            out.writeShortLe(blockAlign.toShort())
-            out.writeShortLe(bitsPerSample.toShort())
-            // data chunk
-            out.write("data".encodeToByteArray())
-            out.writeIntLe(dataSize)
-            out.write(pcm)
-            return out.readByteArray()
-        }
-
     }
 }
