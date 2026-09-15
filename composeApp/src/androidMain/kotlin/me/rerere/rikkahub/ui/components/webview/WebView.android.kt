@@ -7,6 +7,7 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.runtime.Composable
 import dev.nucleusframework.webview.web.LoadingState
 import dev.nucleusframework.webview.web.NativeWebView
 import dev.nucleusframework.webview.web.WebViewState
@@ -70,3 +71,8 @@ internal actual fun configureNativeWebView(
 }
 
 internal actual fun disposeWebView(view: NativeWebView) = Unit
+
+@Composable
+internal actual fun WebViewLifecycle(content: @Composable ((NativeWebView) -> Unit) -> Unit) {
+    content(::disposeWebView)
+}

@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.components.webview
 
+import androidx.compose.runtime.Composable
 import dev.nucleusframework.webview.web.NativeWebView
 import dev.nucleusframework.webview.web.WebViewState
 import me.rerere.rikkahub.utils.JsonInstant
@@ -35,4 +36,9 @@ internal actual fun configureNativeWebView(
 
 internal actual fun disposeWebView(view: NativeWebView) {
     view.configuration.userContentController.removeScriptMessageHandlerForName("rikkaConsole")
+}
+
+@Composable
+internal actual fun WebViewLifecycle(content: @Composable ((NativeWebView) -> Unit) -> Unit) {
+    content(::disposeWebView)
 }

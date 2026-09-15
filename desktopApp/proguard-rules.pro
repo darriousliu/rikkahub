@@ -18,6 +18,10 @@
 -keep class * extends com.sun.jna.Structure { *; }
 -keep class * extends com.sun.jna.Union { *; }
 -keep class dev.nucleusframework.webview.** { *; }
+# The macOS WebView lifecycle adapter obtains the interop scheduler from this captured scene host.
+-keepclassmembers class dev.nucleusframework.window.tao.scene.TaoComposeSceneHost$nativeViewHost$1 {
+    dev.nucleusframework.window.tao.scene.TaoComposeSceneHost *;
+}
 -keep class com.dokar.quickjs.** { *; }
 
 # notification-common discovers platform centers by name; JNI calls bridge callbacks by name as well.

@@ -19,9 +19,9 @@ import dev.nucleusframework.webview.web.WebViewNavigator
 import dev.nucleusframework.webview.web.WebViewState
 import dev.nucleusframework.webview.web.rememberWebViewNavigator
 import kotlinx.serialization.Serializable
-import me.rerere.rikkahub.ui.components.ui.LocalExportContext
 import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.ui.components.ui.LocalExportContext
 import me.rerere.rikkahub.utils.JsonInstant
 import dev.nucleusframework.webview.web.WebView as KmpWebView
 
@@ -72,19 +72,21 @@ fun WebView(
         androidWebSettings.useWideViewPort = true
     }
     Box(modifier) {
-        KmpWebView(
-            state = state,
-            modifier = Modifier.fillMaxSize(),
-            navigator = navigator,
-            webViewJsBridge = webViewJsBridge,
-            onDispose = ::disposeWebView,
-        ) {
-            // Tao's NativeView needs overlays inside this slot to draw above the native web surface.
-            if (state.isLoading) {
-                LinearProgressIndicator(
-                    progress = { (state.loadingState as? LoadingState.Loading)?.progress ?: 0f },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+        WebViewLifecycle { onDispose ->
+            KmpWebView(
+                state = state,
+                modifier = Modifier.fillMaxSize(),
+                navigator = navigator,
+                webViewJsBridge = webViewJsBridge,
+                onDispose = onDispose,
+            ) {
+                // Tao's NativeView needs overlays inside this slot to draw above the native web surface.
+                if (state.isLoading) {
+                    LinearProgressIndicator(
+                        progress = { (state.loadingState as? LoadingState.Loading)?.progress ?: 0f },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -100,6 +102,9 @@ internal expect fun configureNativeWebView(
 )
 
 internal expect fun disposeWebView(view: NativeWebView)
+
+@Composable
+internal expect fun WebViewLifecycle(content: @Composable ((NativeWebView) -> Unit) -> Unit)
 
 internal fun webViewConsoleScript(sendMessage: String): String = """
     (function() {
