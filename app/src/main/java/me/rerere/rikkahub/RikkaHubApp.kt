@@ -11,22 +11,16 @@ import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import me.rerere.rikkahub.data.files.FileFolders
 import java.io.File
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import me.rerere.common.android.appTempFolder
-import me.rerere.rikkahub.di.androidAppModule
-import me.rerere.rikkahub.di.androidDataSourceModule
-import me.rerere.rikkahub.di.androidRepositoryModule
-import me.rerere.rikkahub.di.androidViewModelModule
+import me.rerere.rikkahub.di.androidModule
+import me.rerere.rikkahub.di.initKoin
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.service.WebServerService
@@ -37,7 +31,6 @@ import me.rerere.workspace.WorkspaceManager
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.startKoin
 
 private const val TAG = "RikkaHubApp"
 
@@ -48,10 +41,10 @@ const val WEB_SERVER_NOTIFICATION_CHANNEL_ID = "web_server"
 class RikkaHubApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        startKoin {
+        initKoin {
             androidLogger()
             androidContext(this@RikkaHubApp)
-            modules(androidAppModule, androidViewModelModule, androidDataSourceModule, androidRepositoryModule)
+            modules(androidModule)
         }
         this.createNotificationChannel()
 
@@ -223,12 +216,3 @@ class RikkaHubApp : Application() {
         stopService(Intent(this, WebServerService::class.java))
     }
 }
-
-class AppScope : CoroutineScope by CoroutineScope(
-    SupervisorJob()
-        + Dispatchers.Main
-        + CoroutineName("AppScope")
-        + CoroutineExceptionHandler { _, e ->
-        Log.e(TAG, "AppScope exception", e)
-    }
-)

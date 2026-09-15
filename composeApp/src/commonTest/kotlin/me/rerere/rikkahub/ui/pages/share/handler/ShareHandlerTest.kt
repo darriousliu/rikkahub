@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.pages.share.handler
 
+import me.rerere.rikkahub.di.commonModule
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -13,7 +14,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.di.viewModelModule
 import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.utils.base64Decode
 import me.rerere.rikkahub.utils.base64Encode
@@ -38,7 +38,7 @@ class ShareHandlerTest {
             }
         }
         val store = SettingsStore(preferences, backgroundScope)
-        val koin = koinApplication { modules(module { single { store } }, viewModelModule) }
+        val koin = koinApplication(createEagerInstances = false) { modules(commonModule, module { single { store } }) }
         val models = ViewModelStore()
         try {
             val text = "  CMP76 分享 🐇\nhttps://example.com/?a=1&b=中文+%20  "

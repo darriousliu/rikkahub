@@ -4,7 +4,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.Window
@@ -13,12 +12,13 @@ import io.github.vinceglb.filekit.FileKit
 import java.awt.GraphicsEnvironment
 import me.rerere.rikkahub.AppRoutes
 import me.rerere.rikkahub.Screen
-import me.rerere.rikkahub.di.createJvmAppModule
+import me.rerere.rikkahub.di.initKoin
+import me.rerere.rikkahub.di.jvmModule
 import me.rerere.rikkahub.ui.pages.safemode.SafeModePage
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
-import org.koin.compose.KoinApplication
-import org.koin.dsl.koinConfiguration
+import org.koin.core.context.stopKoin
+import kotlin.system.exitProcess
 
 internal enum class DesktopLaunchMode {
     Interactive,
@@ -53,17 +53,14 @@ fun main(args: Array<String>) {
     val stackTrace = if (hasCrashed) CrashHandler.getStackTrace() else null
     if (hasCrashed) CrashHandler.clearCrashed()
 
-    application {
-        var showSafeMode by remember { mutableStateOf(hasCrashed) }
-        Window(
-            onCloseRequest = ::exitApplication,
-            title = "RikkaHub",
-        ) {
-            val appScope = rememberCoroutineScope()
-            val configuration = remember(appScope) {
-                koinConfiguration { modules(createJvmAppModule(appScope)) }
-            }
-            KoinApplication(configuration = configuration) {
+    initKoin { modules(jvmModule) }
+    try {
+        application(exitProcessOnExit = false) {
+            var showSafeMode by remember { mutableStateOf(hasCrashed) }
+            Window(
+                onCloseRequest = ::exitApplication,
+                title = "RikkaHub",
+            ) {
                 RikkahubTheme {
                     if (showSafeMode) {
                         SafeModePage(stackTrace = stackTrace, onEnterApp = { showSafeMode = false })
@@ -71,14 +68,17 @@ fun main(args: Array<String>) {
                         AppRoutes(startScreen = if (policy.mode == DesktopLaunchMode.Smoke) Screen.History else null)
                     }
                 }
-            }
 
-            if (policy.mode == DesktopLaunchMode.Smoke) {
-                LaunchedEffect(Unit) {
-                    withFrameNanos { }
-                    exitApplication()
+                if (policy.mode == DesktopLaunchMode.Smoke) {
+                    LaunchedEffect(Unit) {
+                        withFrameNanos { }
+                        exitApplication()
+                    }
                 }
             }
         }
+    } finally {
+        stopKoin()
     }
+    exitProcess(0)
 }

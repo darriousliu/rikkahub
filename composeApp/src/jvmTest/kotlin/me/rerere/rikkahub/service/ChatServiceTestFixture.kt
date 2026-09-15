@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.service
 
+import me.rerere.rikkahub.di.commonModule
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
 import androidx.datastore.core.DataStore
@@ -38,9 +39,6 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
-import me.rerere.rikkahub.di.appModule
-import me.rerere.rikkahub.di.dataSourceModule
-import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.platform.OAuthCallbackSessionFactory
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
 import org.koin.dsl.koinApplication
@@ -69,8 +67,8 @@ internal class ChatServiceTestFixture(
     val fts = MessageFtsManager(database, MessageFtsDialect.UNICODE61)
     private val client = HttpClient(MockEngine { error("Unexpected network request") })
     val providers = ProviderManager(client).apply { provider?.let { registerProvider("openai", it) } }
-    private val application = koinApplication {
-        modules(appModule, dataSourceModule, repositoryModule, module {
+    private val application = koinApplication(createEagerInstances = false) {
+        modules(commonModule, module {
             single<CoroutineScope> { scope }
             single { settings }
             single { database }

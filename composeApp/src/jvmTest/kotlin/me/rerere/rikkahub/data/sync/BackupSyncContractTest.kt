@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.data.sync
 
+import me.rerere.rikkahub.di.commonModule
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
@@ -30,8 +31,6 @@ import me.rerere.rikkahub.data.sync.s3.S3Config
 import me.rerere.rikkahub.data.sync.webdav.WebDavBackupItem
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
 import me.rerere.rikkahub.utils.JsonInstant
-import me.rerere.rikkahub.di.appModule
-import me.rerere.rikkahub.di.dataSourceModule
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import java.io.ByteArrayOutputStream
@@ -378,8 +377,8 @@ class BackupSyncContractTest {
             }
         })
         val layout = BackupFileLayout(PlatformFile(files), PlatformFile(cache), databaseFiles.mapValues { PlatformFile(it.value) })
-        private val application = koinApplication {
-            modules(appModule, dataSourceModule, module {
+        private val application = koinApplication(createEagerInstances = false) {
+            modules(commonModule, module {
                 single { store }
                 single { layout }
                 single { http }

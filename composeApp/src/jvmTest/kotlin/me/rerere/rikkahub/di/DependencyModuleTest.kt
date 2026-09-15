@@ -56,7 +56,8 @@ class DependencyModuleTest {
         try {
             ChatServiceTestFixture().use { fixture ->
                 val application = koinApplication(createEagerInstances = false) {
-                    modules(createAppModule(fixture.scope), module {
+                    modules(commonModule, jvmModule, module {
+                        single<kotlinx.coroutines.CoroutineScope> { fixture.scope }
                         single { fixture.settings }
                         single { fixture.database }
                         single { fixture.providers }
@@ -116,8 +117,8 @@ class DependencyModuleTest {
             }
             respond(body, headers = headersOf(HttpHeaders.ContentType, "application/json"))
         })
-        val application = koinApplication {
-            modules(appModule, dataSourceModule, module {
+        val application = koinApplication(createEagerInstances = false) {
+            modules(commonModule, module {
                 single { client }
                 single { PlatformBuildInfo("2.4.5", "245", true, "test", "test") }
             })

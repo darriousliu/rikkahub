@@ -15,8 +15,10 @@ import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
-import me.rerere.rikkahub.di.createIosAppModule
+import me.rerere.rikkahub.di.commonModule
+import me.rerere.rikkahub.di.iosModule
 import me.rerere.rikkahub.service.toFileUri
+import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.koinApplication
@@ -29,6 +31,13 @@ import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class PdfDocumentTransformerTest {
+    @Test
+    @OptIn(KoinInternalApi::class)
+    fun platformBindingsDoNotOverrideCommonBindings() {
+        val duplicates = commonModule.mappings.keys.intersect(iosModule(PdfTextExtractor { "" }).mappings.keys)
+        assertTrue(duplicates.isEmpty(), "Duplicate registrations: $duplicates")
+    }
+
     @Test
     fun productionRegistrationPassesFileUrlToInjectedPdfReader() = runTest {
         var receivedPath: String? = null
@@ -60,7 +69,7 @@ class PdfDocumentTransformerTest {
         block: suspend (DocumentTextExtractor, Path) -> Unit,
     ) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val app = koinApplication(createEagerInstances = false) { modules(createIosAppModule(scope, pdf)) }
+        val app = koinApplication(createEagerInstances = false) { modules(commonModule, iosModule(pdf), module { single<CoroutineScope> { scope } }) }
         assertSame(pdf, app.koin.get<PdfTextExtractor>())
         val extractor = app.koin.get<DocumentTextExtractor>()
         startKoin { modules(module { single<DocumentTextExtractor> { extractor } }) }
