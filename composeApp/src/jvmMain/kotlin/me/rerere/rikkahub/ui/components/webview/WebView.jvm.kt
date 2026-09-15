@@ -10,12 +10,16 @@ import dev.nucleusframework.webview.web.WebViewState
 import dev.nucleusframework.webview.web.macos.MacOsWebKitNativeWebView
 import dev.nucleusframework.window.tao.LocalTaoNativeViewHost
 import dev.nucleusframework.window.tao.LocalTaoWindow
+import dev.nucleusframework.window.tao.TaoNativeViewHost
+import dev.nucleusframework.window.tao.ffi.NativeTaoMacOsNativeViewBridge
+import dev.nucleusframework.window.tao.scene.TaoComposeSceneHost
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.filesDir
 import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.shared.isMacOS
 import me.rerere.rikkahub.shared.isWindows
 import java.io.File
+import java.lang.reflect.Field
 
 internal actual fun configureWebViewState(state: WebViewState) {
     if (currentPlatformKind.isWindows) {
@@ -50,7 +54,7 @@ internal actual fun WebViewLifecycle(content: @Composable ((NativeWebView) -> Un
         content(::disposeWebView)
         return
     }
-    val guardedHost = remember(host, window) { createMacOsWebViewHost(host, window.nativeHandle) }
+    val guardedHost = remember(host, window) { createWebViewLifecycleHost(host, window.nativeHandle) }
     CompositionLocalProvider(LocalTaoNativeViewHost provides guardedHost) {
         content { view ->
             // The library calls this immediately before nativeWebView.destroy(). Detach while the NSView is live,
@@ -62,3 +66,23 @@ internal actual fun WebViewLifecycle(content: @Composable ((NativeWebView) -> Un
         }
     }
 }
+
+private fun createWebViewLifecycleHost(host: TaoNativeViewHost, parentViewHandle: Long): WebViewLifecycleHost {
+    // Nucleus 2.5.15's macOS interop queues raw pointers, while composewebview 1.0.3 releases views immediately.
+    // Its transaction scheduler lives on the captured scene host. This adapter has an ABI test and a ProGuard
+    // keep rule; review it when upgrading Nucleus.
+    val sceneHost = findTaoSceneHostField(host.javaClass).get(host) as TaoComposeSceneHost
+    return WebViewLifecycleHost(
+        delegate = host,
+        enqueue = { action -> sceneHost.scheduleInteropAction(action) },
+        setNativeFrame = { handle, x, y, width, height ->
+            NativeTaoMacOsNativeViewBridge.nativeSetSubviewFrame(parentViewHandle, handle, x, y, width, height)
+        },
+        setNativeCornerRadius = { handle, radius ->
+            NativeTaoMacOsNativeViewBridge.nativeSetSubviewCornerRadius(parentViewHandle, handle, radius)
+        },
+    )
+}
+
+internal fun findTaoSceneHostField(hostClass: Class<*>): Field =
+    hostClass.declaredFields.single { it.type == TaoComposeSceneHost::class.java }.apply { isAccessible = true }

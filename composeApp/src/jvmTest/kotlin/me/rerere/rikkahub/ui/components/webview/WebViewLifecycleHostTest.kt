@@ -8,7 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class MacOsWebViewHostTest {
+class WebViewLifecycleHostTest {
     @Test
     fun mountedViewKeepsLayoutInTheRenderTransaction() {
         val fixture = Fixture()
@@ -90,13 +90,13 @@ class MacOsWebViewHostTest {
 
     @Test
     fun pinnedNucleusHostStillExposesTheCapturedInteropScheduler() {
-        // Load metadata only: this check must not initialize AppKit or launch a Tao window.
+        // Load metadata only: this check must not initialize native windowing or launch a Tao window.
         val hostClass = Class.forName(
             "dev.nucleusframework.window.tao.scene.TaoComposeSceneHost\$nativeViewHost\$1",
             false,
             javaClass.classLoader,
         )
-        assertEquals(TaoComposeSceneHost::class.java, macOsSceneHostField(hostClass).type)
+        assertEquals(TaoComposeSceneHost::class.java, findTaoSceneHostField(hostClass).type)
     }
 
     private class Fixture {
@@ -108,7 +108,7 @@ class MacOsWebViewHostTest {
             override fun attach(childHandle: Long, regionToken: Any) = Unit
 
             override fun detach(childHandle: Long, regionToken: Any) {
-                assertTrue(childHandle in liveViews, "Detaching a released NSView")
+                assertTrue(childHandle in liveViews, "Detaching a released native view")
                 detached += childHandle
             }
 
@@ -120,15 +120,15 @@ class MacOsWebViewHostTest {
                 error("The unsafe Nucleus radius queue must not receive the raw pointer")
             }
         }
-        val host = MacOsWebViewHost(
+        val host = WebViewLifecycleHost(
             delegate = delegate,
             enqueue = { queue += it },
             setNativeFrame = { handle, x, y, width, height ->
-                assertTrue(handle in liveViews, "Layout used a released NSView")
+                assertTrue(handle in liveViews, "Layout used a released native view")
                 nativeCalls += "frame:$handle:$x:$y:$width:$height"
             },
             setNativeCornerRadius = { handle, radius ->
-                assertTrue(handle in liveViews, "Radius used a released NSView")
+                assertTrue(handle in liveViews, "Radius used a released native view")
                 nativeCalls += "radius:$handle:$radius"
             },
         )

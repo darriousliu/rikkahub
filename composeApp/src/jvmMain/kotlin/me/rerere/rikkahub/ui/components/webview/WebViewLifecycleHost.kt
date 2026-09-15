@@ -3,16 +3,12 @@
 package me.rerere.rikkahub.ui.components.webview
 
 import dev.nucleusframework.window.tao.TaoNativeViewHost
-import dev.nucleusframework.window.tao.ffi.NativeTaoMacOsNativeViewBridge
-import dev.nucleusframework.window.tao.scene.TaoComposeSceneHost
-import java.lang.reflect.Field
 
 /**
- * Nucleus 2.5.15 queues frame/radius updates with raw NSView pointers, but composewebview 1.0.3 releases
- * those views immediately. Keep the same Metal interop transaction and skip actions from detached mounts.
- * All calls, including queued actions, run on the macOS main thread.
+ * Tracks native view mounts so queued frame/radius updates cannot outlive the view they target.
+ * Updates stay in the host's render transaction; all calls run on the host's UI thread.
  */
-internal class MacOsWebViewHost(
+internal class WebViewLifecycleHost(
     private val delegate: TaoNativeViewHost,
     private val enqueue: (() -> Unit) -> Unit,
     private val setNativeFrame: (Long, Int, Int, Int, Int) -> Unit,
@@ -57,22 +53,3 @@ internal class MacOsWebViewHost(
         }
     }
 }
-
-internal fun createMacOsWebViewHost(host: TaoNativeViewHost, parentNsView: Long): MacOsWebViewHost {
-    // Nucleus exposes its transaction scheduler only on the captured scene host. This version-specific
-    // adapter is covered by an ABI test and a ProGuard keep rule; review it when upgrading Nucleus.
-    val sceneHost = macOsSceneHostField(host.javaClass).get(host) as TaoComposeSceneHost
-    return MacOsWebViewHost(
-        delegate = host,
-        enqueue = { action -> sceneHost.scheduleInteropAction(action) },
-        setNativeFrame = { handle, x, y, width, height ->
-            NativeTaoMacOsNativeViewBridge.nativeSetSubviewFrame(parentNsView, handle, x, y, width, height)
-        },
-        setNativeCornerRadius = { handle, radius ->
-            NativeTaoMacOsNativeViewBridge.nativeSetSubviewCornerRadius(parentNsView, handle, radius)
-        },
-    )
-}
-
-internal fun macOsSceneHostField(hostClass: Class<*>): Field =
-    hostClass.declaredFields.single { it.type == TaoComposeSceneHost::class.java }.apply { isAccessible = true }
