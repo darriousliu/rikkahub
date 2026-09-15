@@ -8,14 +8,15 @@ include(FetchContent)
 
 # Simple revision available when 2.4.5 added the extension. Its embedded pinyin
 # table matches the original Android libraries. Keep cppjieba at that revision's pin.
+# Use ZIP archives so CMake can extract Unicode paths on Windows with a non-UTF-8 system locale.
 FetchContent_Declare(simple_source
-    URL https://codeload.github.com/wangfenjin/simple/tar.gz/ea854b0a727e9f15f4878ad0ae9f1b738a92afe4
-    URL_HASH SHA256=a5a63d9bdd079c9a2a6555a9f13cabbf236e6141857246f8d44cd91a450c63ed
+    URL https://codeload.github.com/wangfenjin/simple/zip/ea854b0a727e9f15f4878ad0ae9f1b738a92afe4
+    URL_HASH SHA256=7bfe2582157e6a6605657153048d26df926c50e26d1adc11467331c1c20227ce
     SOURCE_SUBDIR source_only
 )
 FetchContent_Declare(cppjieba_source
-    URL https://codeload.github.com/yanyiwu/cppjieba/tar.gz/194c144d8b5ed1baf3190d07c5226e804454ab47
-    URL_HASH SHA256=95e19dccad97c8607461452fab539d125a1354707f84f3179818aff34c26c800
+    URL https://codeload.github.com/yanyiwu/cppjieba/zip/194c144d8b5ed1baf3190d07c5226e804454ab47
+    URL_HASH SHA256=c451bcab3e9ae9c080a41815b7cff4b0f398de36e9ae6b84bde56971dc68926f
     SOURCE_SUBDIR source_only
 )
 FetchContent_MakeAvailable(simple_source cppjieba_source)
@@ -46,6 +47,10 @@ target_include_directories(simple PRIVATE
 )
 target_link_libraries(simple PRIVATE simple_pinyin)
 
+if(MSVC)
+    # Match upstream's UTF-8 source and string literal encoding for pinyin and Chinese text.
+    target_compile_options(simple PRIVATE /utf-8)
+endif()
 if(WIN32)
     set_target_properties(simple PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
