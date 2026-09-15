@@ -2,6 +2,7 @@ package me.rerere.document
 
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.toKotlinxIoPath
+import kotlinx.io.Source
 import me.rerere.common.archive.ZipFileReader
 import nl.adaptivity.xmlutil.EventType
 
@@ -31,12 +32,12 @@ object PptxParser {
                 // Parse each slide
                 slideEntries.forEachIndexed { index, entry ->
                     val slideNumber = index + 1
-                    val slideContent = parseSlideXml(zipFile.readEntry(entry)!!.decodeToString())
+                    val slideContent = zipFile.openEntry(entry)!!.use { parseSlideXml(it) }
 
                     // Try to get notes for this slide
-                    val notesEntry = zipFile.readEntry("ppt/notesSlides/notesSlide${slideNumber}.xml")
+                    val notesEntry = zipFile.openEntry("ppt/notesSlides/notesSlide${slideNumber}.xml")
                     val notes = if (notesEntry != null) {
-                        parseNotesXml(notesEntry.decodeToString())
+                        notesEntry.use { parseNotesXml(it) }
                     } else ""
 
                     slides.add(SlideContent(slideNumber, slideContent, notes))
@@ -68,9 +69,9 @@ object PptxParser {
         return result.toString().trim()
     }
 
-    private fun parseSlideXml(xml: String): String {
+    private fun parseSlideXml(inputStream: Source): String {
         return try {
-            val parser = DocumentXmlReader(xml)
+            val parser = DocumentXmlReader(inputStream)
 
             val result = StringBuilder()
 
@@ -368,9 +369,9 @@ object PptxParser {
         return result.toString().trim()
     }
 
-    private fun parseNotesXml(xml: String): String {
+    private fun parseNotesXml(inputStream: Source): String {
         return try {
-            val parser = DocumentXmlReader(xml)
+            val parser = DocumentXmlReader(inputStream)
 
             val result = StringBuilder()
             var inNotesShape = false

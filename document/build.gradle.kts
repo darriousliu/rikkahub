@@ -26,7 +26,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":common"))
             api(libs.filekit.core)
-            implementation(libs.xmlutil.core)
+            implementation(libs.xmlutil.core.io)
         }
         commonTest.dependencies { implementation(kotlin("test")) }
         named("androidDeviceTest").dependencies {

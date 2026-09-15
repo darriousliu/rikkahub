@@ -2,6 +2,7 @@ package me.rerere.document
 
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.toKotlinxIoPath
+import kotlinx.io.Source
 import me.rerere.common.archive.ZipFileReader
 import nl.adaptivity.xmlutil.EventType
 
@@ -20,18 +21,18 @@ object DocxParser {
     fun parse(file: PlatformFile): String {
         return try {
             ZipFileReader(file.toKotlinxIoPath()).use { zip ->
-                val document = zip.readEntry("word/document.xml")
+                val document = zip.openEntry("word/document.xml")
                     ?: return "Unable to find document content in DOCX file"
-                parseDocumentXml(document.decodeToString())
+                document.use { parseDocumentXml(it) }
             }
         } catch (e: Exception) {
             "Error parsing DOCX file: ${e.message}"
         }
     }
 
-    private fun parseDocumentXml(xml: String): String {
+    private fun parseDocumentXml(inputStream: Source): String {
         return try {
-            val parser = DocumentXmlReader(xml)
+            val parser = DocumentXmlReader(inputStream)
 
             val result = StringBuilder()
             var inBody = false

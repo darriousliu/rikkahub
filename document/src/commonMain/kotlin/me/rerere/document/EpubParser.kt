@@ -2,6 +2,7 @@ package me.rerere.document
 
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.toKotlinxIoPath
+import kotlinx.io.Source
 import me.rerere.common.archive.ZipFileReader
 import nl.adaptivity.xmlutil.EventType
 
@@ -19,9 +20,9 @@ object EpubParser {
                     ?: return "Unable to find OPF file in EPUB"
                 val opfDir = opfPath.substringBeforeLast('/', "")
 
-                val opfEntry = zip.readEntry(opfPath)
+                val opfEntry = zip.openEntry(opfPath)
                     ?: return "Unable to read OPF file in EPUB"
-                val (manifest, spine) = parseOpf(opfEntry.decodeToString())
+                val (manifest, spine) = opfEntry.use { parseOpf(it) }
 
                 val result = StringBuilder()
                 for (itemId in spine) {
@@ -29,8 +30,8 @@ object EpubParser {
                     if (!item.mediaType.contains("html")) continue
 
                     val itemPath = if (opfDir.isEmpty()) item.href else "$opfDir/${item.href}"
-                    val entry = zip.readEntry(itemPath) ?: continue
-                    val content = parseXhtml(entry.decodeToString())
+                    val entry = zip.openEntry(itemPath) ?: continue
+                    val content = entry.use { parseXhtml(it) }
                     if (content.isNotBlank()) {
                         result.append(content)
                         result.append("\n\n")
@@ -45,20 +46,22 @@ object EpubParser {
     }
 
     private fun findOpfPath(zip: ZipFileReader): String? {
-        val containerEntry = zip.readEntry("META-INF/container.xml") ?: return null
-        val parser = DocumentXmlReader(containerEntry.decodeToString())
+        val containerEntry = zip.openEntry("META-INF/container.xml") ?: return null
+        return containerEntry.use { stream ->
+            val parser = DocumentXmlReader(stream)
 
-        while (parser.eventType != EventType.END_DOCUMENT) {
-            if (parser.eventType == EventType.START_ELEMENT && parser.name == "rootfile") {
-                return parser.getAttributeValue(null, "full-path")
+            while (parser.eventType != EventType.END_DOCUMENT) {
+                if (parser.eventType == EventType.START_ELEMENT && parser.name == "rootfile") {
+                    return@use parser.getAttributeValue(null, "full-path")
+                }
+                parser.next()
             }
-            parser.next()
+            null
         }
-        return null
     }
 
-    private fun parseOpf(xml: String): Pair<Map<String, ManifestItem>, List<String>> {
-        val parser = DocumentXmlReader(xml)
+    private fun parseOpf(inputStream: Source): Pair<Map<String, ManifestItem>, List<String>> {
+        val parser = DocumentXmlReader(inputStream)
 
         val manifest = mutableMapOf<String, ManifestItem>()
         val spine = mutableListOf<String>()
@@ -89,9 +92,9 @@ object EpubParser {
         return manifest to spine
     }
 
-    private fun parseXhtml(xml: String): String {
+    private fun parseXhtml(inputStream: Source): String {
         return try {
-            val parser = DocumentXmlReader(xml, namespaceAware = false)
+            val parser = DocumentXmlReader(inputStream, namespaceAware = false)
 
             val result = StringBuilder()
             val tagStack = ArrayDeque<String>()

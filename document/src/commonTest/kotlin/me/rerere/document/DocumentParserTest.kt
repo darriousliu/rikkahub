@@ -3,6 +3,8 @@ package me.rerere.document
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.io.buffered
+import kotlinx.io.readByteArray
+import kotlinx.io.readString
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
@@ -40,10 +42,10 @@ class DocumentParserTest {
         ZipFileReader(file.toKotlinxIoPath()).use { zip ->
             assertEquals(listOf("ppt/slides/slide2.xml", "ppt/slides/slide1.xml", "ppt/notesSlides/notesSlide1.xml"),
                 zip.entries())
-            val first = zip.readEntry("ppt/slides/slide1.xml")!!
-            assertTrue(zip.readEntry("ppt/slides/slide2.xml")!!.decodeToString().contains("CMP79 Slide TWO"))
-            assertNull(zip.readEntry("missing.xml"))
-            assertContentEquals(first, zip.readEntry("ppt/slides/slide1.xml"))
+            val first = zip.openEntry("ppt/slides/slide1.xml")!!.use { it.readByteArray() }
+            assertTrue(zip.openEntry("ppt/slides/slide2.xml")!!.use { it.readString() }.contains("CMP79 Slide TWO"))
+            assertNull(zip.openEntry("missing.xml"))
+            assertContentEquals(first, zip.openEntry("ppt/slides/slide1.xml")!!.use { it.readByteArray() })
         }
     }
 

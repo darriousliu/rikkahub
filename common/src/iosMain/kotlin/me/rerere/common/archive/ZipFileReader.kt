@@ -2,12 +2,13 @@
 
 package me.rerere.common.archive
 
-import kotlinx.cinterop.ByteVar
-import kotlinx.cinterop.readBytes
-import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.io.Buffer
+import kotlinx.io.RawSource
+import kotlinx.io.Source
+import kotlinx.io.buffered
 import kotlinx.io.files.Path
-import kotlinx.io.readByteArray
 import swiftPMImport.rikkahub.common.RKHZipArchive
 
 actual class ZipFileReader actual constructor(path: Path) : AutoCloseable {
@@ -17,20 +18,38 @@ actual class ZipFileReader actual constructor(path: Path) : AutoCloseable {
     private val names = buildList {
         while (zip.nextEntry()) add(zip.entryName)
     }
+    private val sources = mutableSetOf<RawSource>()
 
     actual fun entries(): List<String> = names
 
-    actual fun readEntry(name: String): ByteArray? {
-        if (!zip.selectEntryNamed(name)) return null
-        val buffer = Buffer()
-        PlatformZipArchive.checked { error ->
-            zip.readCurrentEntryWithConsumer({ bytes, length ->
-                if (length > 0) buffer.write(bytes!!.reinterpret<ByteVar>().readBytes(length.toInt()))
-                true
-            }, error = error)
+    actual fun openEntry(name: String): Source? {
+        val entry = PlatformZipArchive.checked { zip.openEntryNamed(name, error = it) } ?: return null
+        val source = object : RawSource {
+            private val bytes = ByteArray(8192)
+
+            override fun readAtMostTo(sink: Buffer, byteCount: Long): Long {
+                require(byteCount >= 0)
+                if (byteCount == 0L) return 0
+                val count = bytes.usePinned { pinned ->
+                    PlatformZipArchive.checked { error ->
+                        entry.readInto(pinned.addressOf(0), count = minOf(byteCount, bytes.size.toLong()), error = error)
+                    }
+                }
+                if (count > 0) sink.write(bytes, 0, count.toInt())
+                return count
+            }
+
+            override fun close() {
+                entry.close()
+                sources.remove(this)
+            }
         }
-        return buffer.readByteArray()
+        sources.add(source)
+        return source.buffered()
     }
 
-    actual override fun close() = zip.close()
+    actual override fun close() {
+        sources.toList().forEach { it.close() }
+        zip.close()
+    }
 }

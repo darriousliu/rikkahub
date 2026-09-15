@@ -1,11 +1,14 @@
 package me.rerere.document
 
+import kotlinx.io.Source
 import nl.adaptivity.xmlutil.EventType
+import nl.adaptivity.xmlutil.XmlException
+import nl.adaptivity.xmlutil.core.kxio.newGenericReader
 import nl.adaptivity.xmlutil.xmlStreaming
 
 /** Keeps XmlPullParser.next() semantics when using xmlutil on all platforms. */
-internal class DocumentXmlReader(xml: String, private val namespaceAware: Boolean = true) {
-    private val reader = xmlStreaming.newGenericReader(xml, expandEntities = true)
+internal class DocumentXmlReader(source: Source, private val namespaceAware: Boolean = true) {
+    private val reader = xmlStreaming.newGenericReader(source)
     private var pending = false
     var eventType = EventType.START_DOCUMENT
         private set
@@ -37,6 +40,9 @@ internal class DocumentXmlReader(xml: String, private val namespaceAware: Boolea
             // XmlPullParser coalesces text, entities and CDATA, including across comments.
             // The original DOCX/PPTX code reads exactly one TEXT event per run.
             do {
+                if (event == EventType.ENTITY_REF && !reader.isKnownEntity) {
+                    throw XmlException("Unknown XML entity: ${reader.localName}")
+                }
                 if (event in textEvents) content.append(reader.text)
                 event = reader.next()
             } while (event in textEvents || event in skippedEvents)
@@ -50,7 +56,7 @@ internal class DocumentXmlReader(xml: String, private val namespaceAware: Boolea
     }
 
     private companion object {
-        val textEvents = setOf(EventType.TEXT, EventType.CDSECT, EventType.IGNORABLE_WHITESPACE)
+        val textEvents = setOf(EventType.TEXT, EventType.CDSECT, EventType.IGNORABLE_WHITESPACE, EventType.ENTITY_REF)
         val skippedEvents = setOf(EventType.COMMENT, EventType.PROCESSING_INSTRUCTION, EventType.DOCDECL)
     }
 }

@@ -193,6 +193,7 @@ korlibs-template = { module = "org.korge:korlibs-template", version.ref = "korli
 fast-kotlin-diff-core = { module = "io.github.bernaferrari:fast-kotlin-diff-core", version.ref = "fastKotlinDiff" }
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 xmlutil-core = { module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlutil" }
+xmlutil-core-io = { module = "io.github.pdvrieze.xmlutil:core-io", version.ref = "xmlutil" }
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
