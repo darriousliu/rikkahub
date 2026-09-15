@@ -23,14 +23,11 @@ import coil3.svg.SvgDecoder
 import io.ktor.client.HttpClient
 import me.rerere.rikkahub.platform.addPlatformGifDecoder
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
-import me.rerere.rikkahub.ui.hooks.readBooleanPreference
-import me.rerere.rikkahub.ui.hooks.readStringPreference
 import me.rerere.rikkahub.ui.pages.chat.VolumeKeyEventSource
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.openUsageAccessSettings
 import org.koin.android.ext.android.inject
-import kotlin.uuid.Uuid
 
 class RouteActivity : ComponentActivity(), VolumeKeyEventSource {
     private val httpClient by inject<HttpClient>()
@@ -87,20 +84,9 @@ class RouteActivity : ComponentActivity(), VolumeKeyEventSource {
                         }
                         .build()
                 }
-                val startScreen = remember {
-                    Screen.Chat(
-                        id = if (readBooleanPreference("create_new_conversation_on_start", true)) {
-                            Uuid.random().toString()
-                        } else {
-                            readStringPreference("lastConversationId", Uuid.random().toString())
-                                ?: Uuid.random().toString()
-                        },
-                    )
-                }
                 val shareScreen = remember { initialShareScreen() }
                 var shareHandled by remember { mutableStateOf(false) }
                 AppRoutes(
-                    startScreen = startScreen,
                     onOpenUsageAccessSettings = { openUsageAccessSettings() },
                     onBackStackChanged = { backStack ->
                         navStack = backStack

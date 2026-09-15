@@ -12,6 +12,7 @@ import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ModelAbility
 import me.rerere.ai.provider.ProviderSetting
+import me.rerere.rikkahub.ui.components.richtext.MarkdownBlock
 import me.rerere.rikkahub.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 import kotlin.uuid.Uuid
@@ -95,8 +96,8 @@ val DEFAULT_PROVIDERS = listOf(
         apiKey = "",
         builtIn = true,
         description = {
-            Text(
-                text = """
+            MarkdownBlock(
+                content = """
                     ${stringResource(Res.string.silicon_flow_description)}
                     ${stringResource(Res.string.silicon_flow_website)}
                 """.trimIndent(),
@@ -166,8 +167,8 @@ val DEFAULT_PROVIDERS = listOf(
         enabled = false,
         builtIn = true,
         description = {
-            Text(
-                text = """
+            MarkdownBlock(
+                content = """
                     小马算力是一家提供国产模型的API网关服务，使用统一接口接入多种模型
                     官网: [tokenpony.cn](https://www.tokenpony.cn/79clb)
                 """.trimIndent(),

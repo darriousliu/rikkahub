@@ -9,7 +9,7 @@ import java.security.MessageDigest
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 
 fun createJvmAppDatabase(
-    file: File = defaultJvmDatabaseFile(),
+    file: File = FileKit.databaseFile.file,
 ): AppDatabase {
     file.parentFile?.mkdirs()
     return buildAppDatabase(
@@ -21,9 +21,6 @@ fun createJvmAppDatabase(
         ftsDialect = MessageFtsDialect.SIMPLE,
     )
 }
-
-fun defaultJvmDatabaseFile(): File =
-    File(System.getProperty("user.home"), ".rikkahub/database/rikka_hub.db")
 
 internal fun createJvmSQLiteDriver(): BundledSQLiteDriver = BundledSQLiteDriver().apply {
     addExtension(simpleExtensionFile.absolutePath, "sqlite3_simple_init")

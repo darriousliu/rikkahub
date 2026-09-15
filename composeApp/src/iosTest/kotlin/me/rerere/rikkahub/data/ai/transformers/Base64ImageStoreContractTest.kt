@@ -44,7 +44,7 @@ class Base64ImageStoreContractTest {
         .canonicalFile.apply { mkdirs() }
     private val root = workRoot.resolve("files").apply { mkdirs() }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val database = createIosAppDatabase(workRoot.resolve("database").toString())
+    private val database = createIosAppDatabase(PlatformFile(workRoot.resolve("database/rikka_hub").toString()))
     private val filesManager = FilesManager(root, FilesRepository(database.managedFileDao()), scope, asyncFileIo = true)
     private val png = Base64.decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",

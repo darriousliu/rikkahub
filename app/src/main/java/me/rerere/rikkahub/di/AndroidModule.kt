@@ -8,45 +8,35 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
-import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.http.HttpHeaders
-import java.io.File
-import korlibs.template.KorteTemplates
 import me.rerere.ai.core.Tool
-import me.rerere.ai.provider.ProviderManager
-import me.rerere.ai.util.KeyRoulette
-import me.rerere.ai.util.lru
 import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
-import me.rerere.rikkahub.data.ai.tools.local.LocalTools
+import me.rerere.rikkahub.data.ai.tools.local.PlatformLocalTools
 import me.rerere.rikkahub.data.ai.transformers.AndroidDocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.WorkspaceReminderTransformer
-import me.rerere.rikkahub.data.datastore.ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS
-import me.rerere.rikkahub.data.datastore.AndroidBooleanPreferenceStore
-import me.rerere.rikkahub.data.datastore.AndroidStringPreferenceStore
-import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
-import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.datastore.createAndroidSettingsDataStore
 import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.db.AppDatabaseConstructor
 import me.rerere.rikkahub.data.db.buildAppDatabase
+import me.rerere.rikkahub.data.db.databaseFile
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
-import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
-import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.platform.AnalyticsTracker
 import me.rerere.rikkahub.platform.AndroidExternalUriOpener
 import me.rerere.rikkahub.platform.AndroidFirebaseAnalyticsTracker
@@ -86,6 +76,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import java.io.File
 
 val androidModule = module {
     single<ChatNotificationPresenter> { AndroidChatNotificationPresenter(get()) }
@@ -118,8 +109,7 @@ val androidModule = module {
         )
     }
 
-    single<BooleanPreferenceStore> { AndroidBooleanPreferenceStore(get()) }
-    single<StringPreferenceStore> { AndroidStringPreferenceStore(get()) }
+    single { createAndroidSettingsDataStore(context = get(), scope = get<AppScope>()) }
 
     single<DocumentTextExtractor> { AndroidDocumentTextExtractor }
 
@@ -132,14 +122,7 @@ val androidModule = module {
         )
     }
 
-    single {
-        LocalTools(
-            eventBus = get(),
-            settingsStore = get(),
-            ttsManager = get(),
-            platformTools = AndroidLocalTools(context = get(), eventBus = get()),
-        )
-    }
+    single<PlatformLocalTools> { AndroidLocalTools(context = get(), eventBus = get()) }
 
     single<AnalyticsTracker> { AndroidFirebaseAnalyticsTracker(Firebase.analytics) }
     single<CrashReporter> { AndroidFirebaseCrashReporter(Firebase.crashlytics) }
@@ -176,20 +159,9 @@ val androidModule = module {
     }
 
     single {
-        SettingsStore(
-            dataStore = createAndroidSettingsDataStore(context = get(), scope = get<AppScope>()),
-            scope = get<AppScope>(),
-            defaultProviderDescriptions = ANDROID_DEFAULT_PROVIDER_DESCRIPTIONS,
-            onSettingsChanged = { get<KorteTemplates>().invalidateCache() },
-        )
-    }
-
-    single {
         val context: Context = get()
         createAndroidAppDatabase(context)
     }
-
-    single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
 
     single<OkHttpClient> {
         val acceptLang = AcceptLanguageBuilder.fromAndroid(get())
@@ -238,34 +210,16 @@ val androidModule = module {
                     client = HttpClient(OkHttp) {
                         engine { preconfigured = okHttpClient }
                     },
-                    keyRoulette = KeyRoulette.lru(get()),
+                    keyRoulette = get(),
                 )
             }
     }
 
-    single {
+    single<HttpClient>(named("ai")) {
         val aiOkHttpClient = get<OkHttpClient>()
-        ProviderManager(
-            client = HttpClient(OkHttp) {
-                engine {
-                    preconfigured = aiOkHttpClient
-                }
-            },
-            keyRoulette = KeyRoulette.lru(get()),
-        )
-    }
-
-    single {
-        val context: Context = get()
-        BackupFileLayout(
-            filesRoot = PlatformFile(context.filesDir),
-            cacheRoot = PlatformFile(context.cacheDir),
-            databaseFiles = mapOf(
-                "rikka_hub.db" to PlatformFile(context.getDatabasePath("rikka_hub")),
-                "rikka_hub-wal" to PlatformFile(context.getDatabasePath("rikka_hub-wal")),
-                "rikka_hub-shm" to PlatformFile(context.getDatabasePath("rikka_hub-shm")),
-            ),
-        )
+        HttpClient(OkHttp) {
+            engine { preconfigured = aiOkHttpClient }
+        }
     }
 
     single<HttpClient> {
@@ -332,7 +286,7 @@ val androidModule = module {
 
 internal fun createAndroidAppDatabase(
     context: Context,
-    name: String = "rikka_hub",
+    name: String = FileKit.databaseFile.toKotlinxIoPath().toString(),
 ): AppDatabase {
     val driver = BundledSQLiteDriver().apply {
         addExtension(context.applicationInfo.nativeLibraryDir + "/libsimple.so")

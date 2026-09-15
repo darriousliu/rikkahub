@@ -39,6 +39,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
 import kotlin.uuid.Uuid
+import kotlinx.coroutines.flow.first
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
@@ -123,9 +125,13 @@ fun AppRoutes(
     val ttsState = rememberCustomTtsState()
     val asrState = rememberCustomAsrState()
     val stringPreferenceStore = koinInject<StringPreferenceStore>()
-    val resolvedStartScreen by produceState<Screen?>(startScreen, startScreen, stringPreferenceStore) {
+    val booleanPreferenceStore = koinInject<BooleanPreferenceStore>()
+    val resolvedStartScreen by produceState<Screen?>(
+        startScreen, startScreen, stringPreferenceStore, booleanPreferenceStore,
+    ) {
         if (value == null) {
-            val rememberedId = stringPreferenceStore.get("lastConversationId")
+            val createNew = booleanPreferenceStore.observe("create_new_conversation_on_start", true).first()
+            val rememberedId = if (createNew) null else stringPreferenceStore.get("lastConversationId")
                 ?.let { stored -> runCatching { Uuid.parse(stored) }.getOrNull() }
             value = Screen.Chat((rememberedId ?: Uuid.random()).toString())
         }

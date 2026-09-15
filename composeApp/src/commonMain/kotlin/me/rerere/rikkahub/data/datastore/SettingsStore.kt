@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.data.datastore
 
-import androidx.compose.runtime.Composable
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
@@ -56,7 +55,6 @@ private fun <T> Flow<T>.toMutableStateFlow(
 class SettingsStore(
     private val dataStore: DataStore<Preferences>,
     scope: CoroutineScope,
-    private val defaultProviderDescriptions: Map<Uuid, @Composable () -> Unit> = emptyMap(),
     private val onSettingsChanged: () -> Unit = {},
 ) {
     companion object {
@@ -237,10 +235,9 @@ class SettingsStore(
             providers = providers.map { provider ->
                 val defaultProvider = DEFAULT_PROVIDERS.find { it.id == provider.id }
                 if (defaultProvider != null) {
-                    val platformDescription = defaultProviderDescriptions[provider.id]
                     provider.copyProvider(
                         builtIn = defaultProvider.builtIn,
-                        description = platformDescription ?: defaultProvider.description,
+                        description = defaultProvider.description,
                         shortDescription = defaultProvider.shortDescription,
                     )
                 } else provider

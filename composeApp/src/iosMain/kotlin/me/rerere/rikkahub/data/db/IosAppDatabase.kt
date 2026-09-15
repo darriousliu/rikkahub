@@ -3,28 +3,24 @@ package me.rerere.rikkahub.data.db
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.createDirectories
 import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.parent
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import kotlinx.cinterop.ExperimentalForeignApi
 import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
 import me.rerere.rikkahub.data.files.LegacyIosFileMigration
 import platform.Foundation.NSBundle
-import platform.Foundation.NSFileManager
-import platform.Foundation.NSHomeDirectory
 
 @OptIn(ExperimentalForeignApi::class)
 fun createIosAppDatabase(
-    directory: String = defaultIosDatabaseDirectory(),
+    file: PlatformFile = FileKit.databaseFile,
 ): AppDatabase {
-    NSFileManager.defaultManager.createDirectoryAtPath(
-        path = directory,
-        withIntermediateDirectories = true,
-        attributes = null,
-        error = null,
-    )
+    file.parent()?.createDirectories()
     return buildAppDatabase(
         builder = Room.databaseBuilder<AppDatabase>(
-            name = "$directory/rikka_hub.db",
+            name = file.toKotlinxIoPath().toString(),
             factory = AppDatabaseConstructor::initialize,
         ),
         driver = createIosSQLiteDriver(),
@@ -32,11 +28,6 @@ fun createIosAppDatabase(
         platformOnOpen = LegacyIosFileMigration(FileKit.filesDir.toKotlinxIoPath())::migrateDatabase,
     )
 }
-
-fun defaultIosDatabaseDirectory(): String =
-    "${NSHomeDirectory()}/Library/Application Support/RikkaHub/database"
-
-fun defaultIosDatabaseFilePath(): String = "${defaultIosDatabaseDirectory()}/rikka_hub.db"
 
 @OptIn(ExperimentalForeignApi::class)
 internal fun createIosSQLiteDriver(): BundledSQLiteDriver = BundledSQLiteDriver().apply {

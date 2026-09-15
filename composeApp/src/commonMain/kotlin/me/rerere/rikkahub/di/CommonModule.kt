@@ -1,19 +1,36 @@
 package me.rerere.rikkahub.di
 
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.cacheDir
+import io.github.vinceglb.filekit.div
+import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.ktor.client.HttpClient
 import korlibs.template.KorteTemplates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 import me.rerere.ai.core.Tool
+import me.rerere.ai.provider.ProviderManager
+import me.rerere.ai.util.KeyRoulette
+import me.rerere.ai.util.persistentLru
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.ai.tools.local.LocalTools
+import me.rerere.rikkahub.data.ai.tools.local.PlatformLocalTools
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
 import me.rerere.rikkahub.data.api.SponsorAPI
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.DataStoreStringPreferenceStore
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.StringPreferenceStore
 import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.db.databaseFile
+import me.rerere.rikkahub.data.db.fts.MessageFtsDialect
+import me.rerere.rikkahub.data.db.fts.MessageFtsManager
 import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.files.SkillManager
 import me.rerere.rikkahub.data.repository.ConversationRepository
@@ -23,7 +40,9 @@ import me.rerere.rikkahub.data.repository.FolderRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.sync.S3Sync
+import me.rerere.rikkahub.data.sync.BackupFileLayout
 import me.rerere.rikkahub.data.sync.webdav.WebDavSync
+import me.rerere.rikkahub.platform.FileKitFileCleaner
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.shared.template.createMessageTemplateEngine
@@ -59,6 +78,33 @@ val commonModule = module {
     single { AppScope() } onClose { it?.cancel() }
     single<CoroutineScope> { get<AppScope>() }
     single { createMessageTemplateEngine() }
+    single {
+        SettingsStore(
+            dataStore = get(),
+            scope = get(),
+            onSettingsChanged = get<KorteTemplates>()::invalidateCache,
+        )
+    }
+    single<BooleanPreferenceStore> { DataStoreBooleanPreferenceStore(get()) }
+    single<StringPreferenceStore> { DataStoreStringPreferenceStore(get()) }
+    single { MessageFtsManager(get(), MessageFtsDialect.SIMPLE) }
+    single { BackupFileLayout.create(FileKit.databaseFile) }
+    single { KeyRoulette.persistentLru((FileKit.cacheDir / "lru_key_roulette.json").toKotlinxIoPath()) }
+    single {
+        ProviderManager(
+            client = getOrNull<HttpClient>(named("ai")) ?: get(),
+            keyRoulette = get(),
+        )
+    }
+    single {
+        LocalTools(
+            eventBus = get(),
+            settingsStore = get(),
+            ttsManager = get(),
+            platformTools = getOrNull<PlatformLocalTools>() ?: PlatformLocalTools.None,
+        )
+    }
+    single { FileKitFileCleaner(get(), get()) }
     single { AppEventBus() }
     single { TTSManager(httpClient = get(), systemProvider = get()) }
     single(createdAtStart = true) {

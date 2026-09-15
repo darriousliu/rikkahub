@@ -3,6 +3,7 @@ package me.rerere.rikkahub.data.files
 import me.rerere.rikkahub.data.files.testFilesManager
 import androidx.datastore.preferences.core.edit
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.ktor.http.encodeURLPath
@@ -61,14 +62,14 @@ class IosFileCompatibilityWiringTest {
             parts = listOf(UIMessagePart.Image(oldUri)))), selectIndex = 0)
         val source = Conversation.ofId(Uuid.random(), messages = listOf(node)).copy(title = "old source")
         val fork = source.copy(id = Uuid.random(), title = "old fork", messageNodes = listOf(node.copy(id = Uuid.random())))
-        createIosAppDatabase(root.resolve("database").toString()).let { db ->
+        createIosAppDatabase(PlatformFile(root.resolve("database/rikka_hub").toString())).let { db ->
             try {
                 val repository = repository(db)
                 repository.insertConversation(source)
                 repository.insertConversation(fork)
             } finally { db.close() }
         }
-        createIosAppDatabase(root.resolve("database").toString()).let { db ->
+        createIosAppDatabase(PlatformFile(root.resolve("database/rikka_hub").toString())).let { db ->
             try {
                 val repository = repository(db)
                 listOf(source, fork).forEach { before ->
