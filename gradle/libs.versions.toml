@@ -3,6 +3,7 @@ agp = "9.4.0"
 dom4j = "2.2.0"
 kotlin = "2.4.20"
 composeMultiplatform = "1.12.0"
+nucleus = "2.5.15"
 buildkonfig = "0.22.0"
 coreKtx = "1.19.0"
 junit = "4.13.2"
@@ -71,7 +72,7 @@ filekit = "0.16.0"
 xmlutil = "1.0.2"
 pdfbox = "3.0.8"
 cache4k = "0.14.0"
-composeWebView = "1.0.0-beta-02"
+composeWebView = "1.0.3"
 kotlinxIo = "0.9.1"
 ktorfit = "2.7.5"
 firebaseApple = "12.17.0"
@@ -203,7 +204,9 @@ xmlutil-core-io = { module = "io.github.pdvrieze.xmlutil:core-io", version.ref =
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
-composewebview = { module = "io.github.kdroidfilter:composewebview", version.ref = "composeWebView" }
+composewebview = { module = "dev.nucleusframework:composewebview", version.ref = "composeWebView" }
+nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
+nucleus-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
 ktorfit-lib-light = { module = "de.jensklingenberg.ktorfit:ktorfit-lib-light", version.ref = "ktorfit" }
 ktorfit-lib = { module = "de.jensklingenberg.ktorfit:ktorfit-lib", version.ref = "ktorfit" }
@@ -221,6 +224,7 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+nucleus = { id = "dev.nucleusframework", version.ref = "nucleus" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

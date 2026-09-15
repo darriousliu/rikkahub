@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.kmp.library) apply false
     alias(libs.plugins.buildkonfig) apply false
     alias(libs.plugins.compose.multiplatform) apply false
+    alias(libs.plugins.nucleus) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.ktorfit) apply false

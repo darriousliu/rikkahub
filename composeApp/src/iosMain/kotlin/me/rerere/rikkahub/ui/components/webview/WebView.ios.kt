@@ -1,8 +1,7 @@
 package me.rerere.rikkahub.ui.components.webview
 
-import io.github.kdroidfilter.webview.web.NativeWebView
-import io.github.kdroidfilter.webview.web.WebViewFactoryParam
-import io.github.kdroidfilter.webview.web.defaultWebViewFactory
+import dev.nucleusframework.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.WebViewState
 import me.rerere.rikkahub.utils.JsonInstant
 import platform.WebKit.WKScriptMessage
 import platform.WebKit.WKScriptMessageHandlerProtocol
@@ -11,11 +10,14 @@ import platform.WebKit.WKUserScript
 import platform.WebKit.WKUserScriptInjectionTime
 import platform.darwin.NSObject
 
-internal actual fun createWebView(
-    param: WebViewFactoryParam,
+internal actual fun configureWebViewState(state: WebViewState) = Unit
+
+internal actual fun configureNativeWebView(
+    view: NativeWebView,
+    state: WebViewState,
     onConsoleMessage: (WebViewConsoleMessage) -> Unit,
-): NativeWebView {
-    param.config.userContentController.apply {
+) {
+    view.configuration.userContentController.apply {
         addScriptMessageHandler(object : NSObject(), WKScriptMessageHandlerProtocol {
             override fun userContentController(userContentController: WKUserContentController, didReceiveScriptMessage: WKScriptMessage) {
                 onConsoleMessage(JsonInstant.decodeFromString<WebViewConsoleMessage>(didReceiveScriptMessage.body as String))
@@ -29,7 +31,6 @@ internal actual fun createWebView(
             ),
         )
     }
-    return defaultWebViewFactory(param)
 }
 
 internal actual fun disposeWebView(view: NativeWebView) {

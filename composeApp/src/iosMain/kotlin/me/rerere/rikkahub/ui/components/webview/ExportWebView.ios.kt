@@ -17,8 +17,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
-import io.github.kdroidfilter.webview.web.WebContent
-import io.github.kdroidfilter.webview.web.WebViewState
+import dev.nucleusframework.webview.web.WebContent
+import dev.nucleusframework.webview.web.WebViewState
 import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf

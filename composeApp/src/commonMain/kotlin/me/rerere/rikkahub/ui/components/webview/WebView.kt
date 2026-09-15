@@ -7,25 +7,23 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import io.github.kdroidfilter.webview.jsbridge.IJsMessageHandler
-import io.github.kdroidfilter.webview.jsbridge.JsMessage
-import io.github.kdroidfilter.webview.jsbridge.WebViewJsBridge
-import io.github.kdroidfilter.webview.jsbridge.rememberWebViewJsBridge
-import io.github.kdroidfilter.webview.web.LoadingState
-import io.github.kdroidfilter.webview.web.NativeWebView
-import io.github.kdroidfilter.webview.web.WebViewFactoryParam
-import io.github.kdroidfilter.webview.web.WebViewNavigator
-import io.github.kdroidfilter.webview.web.WebViewState
-import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
+import dev.nucleusframework.webview.jsbridge.IJsMessageHandler
+import dev.nucleusframework.webview.jsbridge.JsMessage
+import dev.nucleusframework.webview.jsbridge.WebViewJsBridge
+import dev.nucleusframework.webview.jsbridge.rememberWebViewJsBridge
+import dev.nucleusframework.webview.web.LoadingState
+import dev.nucleusframework.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.WebViewNavigator
+import dev.nucleusframework.webview.web.WebViewState
+import dev.nucleusframework.webview.web.rememberWebViewNavigator
 import kotlinx.serialization.Serializable
 import me.rerere.rikkahub.ui.components.ui.LocalExportContext
 import me.rerere.rikkahub.shared.PlatformKind
 import me.rerere.rikkahub.shared.currentPlatformKind
 import me.rerere.rikkahub.utils.JsonInstant
-import io.github.kdroidfilter.webview.web.WebView as KmpWebView
+import dev.nucleusframework.webview.web.WebView as KmpWebView
 
 const val WEB_VIEW_BASE_URL = "https://rikkahub.local"
 
@@ -51,8 +49,13 @@ fun WebView(
         return
     }
     val currentOnConsoleMessage by rememberUpdatedState(onConsoleMessage)
-    val factory = remember {
-        { param: WebViewFactoryParam -> createWebView(param) { currentOnConsoleMessage(it) } }
+    configureWebViewState(state)
+    // Attach platform hooks before the library's load/navigation effects start. In 1.0.3,
+    // LocalWebViewFactory is a test hook that suppresses the visible native view on every platform.
+    val webView = state.webView
+    DisposableEffect(webView, state) {
+        webView?.let { configureNativeWebView(it.nativeWebView, state) { currentOnConsoleMessage(it) } }
+        onDispose { }
     }
     DisposableEffect(webViewJsBridge) {
         val handler = object : IJsMessageHandler {
@@ -74,23 +77,27 @@ fun WebView(
             modifier = Modifier.fillMaxSize(),
             navigator = navigator,
             webViewJsBridge = webViewJsBridge,
-            factory = factory,
             onDispose = ::disposeWebView,
-        )
-        if (state.isLoading) {
-            LinearProgressIndicator(
-                progress = { (state.loadingState as? LoadingState.Loading)?.progress ?: 0f },
-                modifier = Modifier.fillMaxWidth(),
-            )
+        ) {
+            // Tao's NativeView needs overlays inside this slot to draw above the native web surface.
+            if (state.isLoading) {
+                LinearProgressIndicator(
+                    progress = { (state.loadingState as? LoadingState.Loading)?.progress ?: 0f },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }
 
 // The library owns loading/navigation state. Only missing native settings and console callbacks live here.
-internal expect fun createWebView(
-    param: WebViewFactoryParam,
+internal expect fun configureWebViewState(state: WebViewState)
+
+internal expect fun configureNativeWebView(
+    view: NativeWebView,
+    state: WebViewState,
     onConsoleMessage: (WebViewConsoleMessage) -> Unit,
-): NativeWebView
+)
 
 internal expect fun disposeWebView(view: NativeWebView)
 

@@ -76,7 +76,7 @@ import io.github.vinceglb.filekit.toKotlinxIoPath
 import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 import io.github.vinceglb.filekit.dialogs.compose.rememberFileSaverLauncher
 import io.github.vinceglb.filekit.writeString
-import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
+import dev.nucleusframework.webview.web.rememberWebViewStateWithHTMLData
 import me.rerere.rikkahub.generated.resources.*
 import me.rerere.rikkahub.utils.createPlainTextClipEntry
 import org.jetbrains.compose.resources.stringResource

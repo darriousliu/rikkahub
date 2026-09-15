@@ -16,6 +16,14 @@ plugins {
     alias(libs.plugins.ktorfit)
 }
 
+// Desktop uses KScan.scanImage (ZXing/ImageIO); ScannerView is only used by mobileMain.
+// Its camera dependencies otherwise bundle OpenCV/OpenBLAS for every platform and the full icon set.
+configurations.matching { it.name.startsWith("jvm", ignoreCase = true) }.configureEach {
+    exclude(group = "org.bytedeco")
+    exclude(group = "org.jetbrains.compose.material", module = "material-icons-extended")
+    exclude(group = "org.jetbrains.compose.material", module = "material-icons-extended-desktop")
+}
+
 kotlin {
     compilerOptions {
         optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
@@ -184,6 +192,7 @@ kotlin {
             dependsOn(androidJvmMain)
             dependsOn(iosJvmMain)
             dependencies {
+                implementation(libs.nucleus.window.tao)
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
                 implementation(libs.sentry)

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.FrameRecomposer
@@ -11,7 +12,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import io.github.kdroidfilter.webview.web.WebViewState
+import dev.nucleusframework.webview.web.WebViewState
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -66,6 +67,9 @@ internal suspend fun renderComposeImage(
             }
             webViewSnapshots.values.forEach { it.await() }
         }
+        // Native Tao and Compose's AWT snapshot dispatcher can be on different threads.
+        // Deliver completed snapshot state changes before drawing the final offscreen frame.
+        Snapshot.sendApplyNotifications()
         recomposer.performFrame(started.elapsedNow().inWholeNanoseconds)
         val size = scene.measureContent(constraints)
         scene.size = size

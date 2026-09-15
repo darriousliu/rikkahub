@@ -30,7 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
+import dev.nucleusframework.webview.web.rememberWebViewStateWithHTMLData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -41,8 +41,11 @@ import kotlinx.coroutines.runBlocking
 import me.rerere.ai.core.MessageRole
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.BooleanPreferenceStore
+import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.webview.WebView
@@ -95,9 +98,9 @@ class ChatImageExportTest {
     fun sharedChatRendererInheritsThemeContextAndIncludesImageAttachments() = runBlocking(Dispatchers.Main) {
         val directory = Files.createTempDirectory("chat-image-export-").toFile()
         val settingsScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val settingsStore = SettingsStore(
-            createJvmSettingsDataStore(scope = settingsScope, directory = directory), settingsScope,
-        )
+        val appScope = AppScope()
+        val dataStore = createJvmSettingsDataStore(scope = settingsScope, directory = directory)
+        val settingsStore = SettingsStore(dataStore, settingsScope)
         val settings = Settings()
         val owner = object : LifecycleOwner {
             override val lifecycle = LifecycleRegistry(this).apply { currentState = Lifecycle.State.RESUMED }
@@ -114,7 +117,14 @@ class ChatImageExportTest {
         ImageIO.write(source, "png", file)
         var locals: CompositionLocalContext? = null
         val host = ImageComposeScene(1, 1) {
-            KoinApplication(configuration = koinConfiguration { modules(module { single { settingsStore } }) }) {
+            KoinApplication(configuration = koinConfiguration {
+                modules(module {
+                    single { dataStore }
+                    single { settingsStore }
+                    single { appScope }
+                    single<BooleanPreferenceStore> { DataStoreBooleanPreferenceStore(dataStore) }
+                })
+            }) {
                 CompositionLocalProvider(LocalLifecycleOwner provides owner) {
                     locals = currentCompositionLocalContext
                 }
@@ -144,6 +154,7 @@ class ChatImageExportTest {
             assertTrue(pixels.any { it == 0xff1428e6.toInt() }, "Image attachment's right half must be captured")
         } finally {
             host.close()
+            appScope.cancel()
             settingsScope.cancel()
             directory.deleteRecursively()
         }

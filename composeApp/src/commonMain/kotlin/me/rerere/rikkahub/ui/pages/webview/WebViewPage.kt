@@ -37,10 +37,10 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.webview.WEB_VIEW_BASE_URL
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
-import io.github.kdroidfilter.webview.web.rememberWebViewState
-import io.github.kdroidfilter.webview.web.rememberWebViewStateWithHTMLData
-import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
-import io.github.kdroidfilter.webview.web.WebContent
+import dev.nucleusframework.webview.web.rememberWebViewState
+import dev.nucleusframework.webview.web.rememberWebViewStateWithHTMLData
+import dev.nucleusframework.webview.web.rememberWebViewNavigator
+import dev.nucleusframework.webview.web.WebContent
 import androidx.compose.runtime.mutableStateListOf
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.cacheDir
