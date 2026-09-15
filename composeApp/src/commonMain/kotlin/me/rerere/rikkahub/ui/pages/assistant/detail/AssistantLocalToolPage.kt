@@ -15,6 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
@@ -96,14 +100,23 @@ private fun AssistantLocalToolContent(
         },
     )
 
-    fun toggleLocalTool(option: LocalToolOption, enabled: Boolean) {
-        if (enabled && !permissionGate(option)) return
-        val newLocalTools = if (enabled) {
-            assistant.localTools + option
-        } else {
-            assistant.localTools - option
+    val scope = rememberCoroutineScope()
+    val currentAssistant by rememberUpdatedState(assistant)
+    val currentOnUpdate by rememberUpdatedState(onUpdate)
+    fun toggleLocalTool(option: LocalToolOption, enabled: Boolean) = scope.launch {
+        try {
+            if (enabled && !permissionGate(option)) return@launch
+            val newLocalTools = if (enabled) {
+                currentAssistant.localTools + option
+            } else {
+                currentAssistant.localTools - option
+            }
+            currentOnUpdate(currentAssistant.copy(localTools = newLocalTools))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            toaster.show(message = e.message ?: "Permission request failed", type = ToastType.Warning)
         }
-        onUpdate(assistant.copy(localTools = newLocalTools))
     }
 
     Column(

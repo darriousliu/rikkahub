@@ -17,7 +17,6 @@ import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.mcp.McpManager
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
-import me.rerere.rikkahub.data.ai.tools.local.PlatformLocalTools
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
@@ -101,7 +100,6 @@ val commonModule = module {
             eventBus = get(),
             settingsStore = get(),
             ttsManager = get(),
-            platformTools = getOrNull<PlatformLocalTools>() ?: PlatformLocalTools.None,
         )
     }
     single { FileKitFileCleaner(get(), get()) }

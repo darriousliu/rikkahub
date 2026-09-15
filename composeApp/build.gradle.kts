@@ -187,6 +187,7 @@ kotlin {
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.cio)
                 implementation(libs.sentry)
+                implementation(libs.jna)
                 implementation(libs.jmdns)
                 implementation(libs.zxing.core)
             }

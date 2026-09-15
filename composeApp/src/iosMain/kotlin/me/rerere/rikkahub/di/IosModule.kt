@@ -3,6 +3,7 @@ package me.rerere.rikkahub.di
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import me.rerere.rikkahub.data.ai.tools.local.IosScreenTimeProvider
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.IosDocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.PdfTextExtractor
@@ -32,7 +33,8 @@ import me.rerere.tts.provider.providers.IosSystemTTSProvider
 import org.koin.dsl.module
 import org.koin.dsl.onClose
 
-fun iosModule(pdfTextExtractor: PdfTextExtractor) = module {
+fun iosModule(pdfTextExtractor: PdfTextExtractor, screenTimeProvider: IosScreenTimeProvider) = module {
+    single { screenTimeProvider }
     single<HttpClient>(createdAtStart = true) {
         createAppHttpClient().also { SearchService.init(client = it, keyRoulette = get()) }
     } onClose { it?.close() }

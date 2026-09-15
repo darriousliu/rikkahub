@@ -1,2 +1,5 @@
 "NSCameraUsageDescription" = "RikkaHub 使用相机为聊天拍摄照片，以及扫描供应商配置二维码。";
 "NSLocalNetworkUsageDescription" = "RikkaHub 使用局域网发布 Web 服务器，供同一网络内的设备访问。";
+
+"NSCalendarsFullAccessUsageDescription" = "允许助手查询您的日历，并在您批准工具调用后创建日程。";
+"NSCalendarsUsageDescription" = "允许助手查询您的日历，并在您批准工具调用后创建日程。";

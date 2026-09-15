@@ -13,6 +13,7 @@ import kotlinx.io.files.SystemTemporaryDirectory
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.rikkahub.data.ai.tools.local.IosScreenTimeProvider
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.di.commonModule
@@ -34,7 +35,7 @@ class PdfDocumentTransformerTest {
     @Test
     @OptIn(KoinInternalApi::class)
     fun platformBindingsDoNotOverrideCommonBindings() {
-        val duplicates = commonModule.mappings.keys.intersect(iosModule(PdfTextExtractor { "" }).mappings.keys)
+        val duplicates = commonModule.mappings.keys.intersect(iosModule(PdfTextExtractor { "" }, unusedScreenTimeProvider).mappings.keys)
         assertTrue(duplicates.isEmpty(), "Duplicate registrations: $duplicates")
     }
 
@@ -69,7 +70,7 @@ class PdfDocumentTransformerTest {
         block: suspend (DocumentTextExtractor, Path) -> Unit,
     ) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val app = koinApplication(createEagerInstances = false) { modules(commonModule, iosModule(pdf), module { single<CoroutineScope> { scope } }) }
+        val app = koinApplication(createEagerInstances = false) { modules(commonModule, iosModule(pdf, unusedScreenTimeProvider), module { single<CoroutineScope> { scope } }) }
         assertSame(pdf, app.koin.get<PdfTextExtractor>())
         val extractor = app.koin.get<DocumentTextExtractor>()
         startKoin { modules(module { single<DocumentTextExtractor> { extractor } }) }
@@ -91,4 +92,11 @@ class PdfDocumentTransformerTest {
     ))
 
     private fun context() = TransformerContext(Model(), Assistant(), Settings())
+}
+
+private val unusedScreenTimeProvider = object : IosScreenTimeProvider {
+    override val permissionError: String? get() = error("PDF tests must not access Screen Time")
+    override fun requestPermission(completion: (String?) -> Unit): () -> Unit = error("Unexpected permission request")
+    override fun query(startMillis: Double, endMillis: Double, completion: (String) -> Unit): () -> Unit =
+        error("Unexpected usage query")
 }

@@ -1,2 +1,5 @@
 "NSCameraUsageDescription" = "RikkaHub은 채팅용 사진을 촬영하고 제공업체 설정 QR 코드를 스캔하기 위해 카메라를 사용합니다.";
 "NSLocalNetworkUsageDescription" = "RikkaHub은 같은 네트워크의 기기에서 Web 서버에 접근할 수 있도록 로컬 네트워크를 사용합니다.";
+
+"NSCalendarsFullAccessUsageDescription" = "어시스턴트가 캘린더를 조회하고 사용자가 도구 호출을 승인한 후 일정을 만들도록 허용합니다.";
+"NSCalendarsUsageDescription" = "어시스턴트가 캘린더를 조회하고 사용자가 도구 호출을 승인한 후 일정을 만들도록 허용합니다.";

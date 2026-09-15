@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C08400000000000000000001 /* ScreenTimeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08400000000000000000002; };
 		C08000000000000000000001 /* PdfKitTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08000000000000000000002; };
 		1F0CA11000000000000000B0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1F0CA11000000000000000A0 /* InfoPlist.strings */; };
 		25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05595FD5C7727F5CBFBF8295 /* ContentView.swift */; };
@@ -32,6 +33,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
+		C08400000000000000000002 /* ScreenTimeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeProvider.swift; sourceTree = "<group>"; };
 		C08000000000000000000002 /* PdfKitTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PdfKitTextExtractor.swift; sourceTree = "<group>"; };
 		05595FD5C7727F5CBFBF8295 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		1F0CA11000000000000000C1 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 				89C95284DD0819285255FEC3 /* iOSApp.swift */,
 				05595FD5C7727F5CBFBF8295 /* ContentView.swift */,
 				C08000000000000000000002 /* PdfKitTextExtractor.swift */,
+				C08400000000000000000002 /* ScreenTimeProvider.swift */,
 				1F0CA11000000000000000A0 /* InfoPlist.strings */,
 			);
 			path = iosApp;
@@ -216,6 +219,7 @@
 				73482863C362D67EBAA72DD8 /* iOSApp.swift in Sources */,
 				25BA87A3D04B9A8111C33E3C /* ContentView.swift in Sources */,
 				C08000000000000000000001 /* PdfKitTextExtractor.swift in Sources */,
+				C08400000000000000000001 /* ScreenTimeProvider.swift in Sources */,
 				C07600000000000000000001 /* SharedTextURL.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -314,6 +318,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = iosApp/RikkaHub.entitlements;
 				INFOPLIST_KEY_CADisableMinimumFrameDurationOnPhone = YES;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "RikkaHub uses the local network to advertise its web service.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -421,6 +426,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = iosApp/RikkaHub.entitlements;
 				INFOPLIST_KEY_CADisableMinimumFrameDurationOnPhone = YES;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "RikkaHub uses the local network to advertise its web service.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

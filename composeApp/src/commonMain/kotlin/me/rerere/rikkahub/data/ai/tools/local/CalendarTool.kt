@@ -1,12 +1,5 @@
 package me.rerere.rikkahub.data.ai.tools.local
 
-import android.Manifest
-import android.content.ContentUris
-import android.content.ContentValues
-import android.content.Context
-import android.content.pm.PackageManager
-import android.provider.CalendarContract
-import androidx.core.content.ContextCompat
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -30,7 +23,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
+internal fun buildCalendarQueryTool(calendar: CalendarAccess = calendarAccess): Tool = Tool(
     name = "calendar_query",
     description = """
         Query calendar events on the user's device within a time range.
@@ -87,7 +80,7 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
         )
     },
     execute = { args ->
-        if (!hasCalendarReadPermission(context)) {
+        if (!calendar.hasReadPermission()) {
             val payload = buildJsonObject {
                 put("error", "NO_PERMISSION")
                 put(
@@ -146,79 +139,27 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
         val startMs = startTime.toEpochMilliseconds()
         val endMs = endTime.toEpochMilliseconds()
 
-        val projection = arrayOf(
-            CalendarContract.Instances.EVENT_ID,
-            CalendarContract.Instances.TITLE,
-            CalendarContract.Instances.DESCRIPTION,
-            CalendarContract.Instances.EVENT_LOCATION,
-            CalendarContract.Instances.BEGIN,
-            CalendarContract.Instances.END,
-            CalendarContract.Instances.ALL_DAY,
-            CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
-        )
-
-        val selection = if (query != null) {
-            "${CalendarContract.Instances.TITLE} LIKE ?"
-        } else null
-        val selectionArgs = if (query != null) {
-            arrayOf("%$query%")
-        } else null
-
-        val uri = CalendarContract.Instances.CONTENT_URI.buildUpon()
-            .appendPath(startMs.toString())
-            .appendPath(endMs.toString())
-            .build()
-
         val events = buildJsonArray {
-            context.contentResolver.query(
-                uri,
-                projection,
-                selection,
-                selectionArgs,
-                "${CalendarContract.Instances.BEGIN} ASC"
-            )?.use { cursor ->
-                var count = 0
-                while (cursor.moveToNext() && count < limit) {
-                    add(buildJsonObject {
-                        put("id", cursor.getLong(0))
-                        put("title", cursor.getString(1) ?: "")
-                        put("description", cursor.getString(2) ?: "")
-                        put("location", cursor.getString(3) ?: "")
-                        val dtStart = cursor.getLong(4)
-                        val dtEnd = cursor.getLong(5)
-                        val allDay = cursor.getInt(6) == 1
-                        if (allDay) {
-                            put(
-                                "start",
-                                Instant.fromEpochMilliseconds(dtStart).toLocalDateTime(TimeZone.UTC).date.toString()
-                            )
-                            put(
-                                "end",
-                                if (dtEnd > 0) {
-                                    Instant.fromEpochMilliseconds(dtEnd)
-                                        .toLocalDateTime(TimeZone.UTC)
-                                        .date
-                                        .toString()
-                                } else {
-                                    ""
-                                }
-                            )
-                        } else {
-                            put("start", Instant.fromEpochMilliseconds(dtStart).toLocalToolDateTimeString(zone))
-                            put(
-                                "end",
-                                if (dtEnd > 0) {
-                                    Instant.fromEpochMilliseconds(dtEnd).toLocalToolDateTimeString(zone)
-                                } else {
-                                    ""
-                                }
-                            )
-                        }
-                        put("all_day", allDay)
-                        put("calendar", cursor.getString(7) ?: "")
-                    })
-                    count++
-                }
+            calendar.query(startMs, endMs, query, limit).forEach { event ->
+                add(buildJsonObject {
+                    put("id", event.id)
+                    put("title", event.title)
+                    put("description", event.description)
+                    put("location", event.location)
+                    if (event.allDay) {
+                        put("start", Instant.fromEpochMilliseconds(event.startMillis).toLocalDateTime(TimeZone.UTC).date.toString())
+                        put("end", if (event.endMillis > 0) {
+                            Instant.fromEpochMilliseconds(event.endMillis).toLocalDateTime(TimeZone.UTC).date.toString()
+                        } else "")
+                    } else {
+                        put("start", Instant.fromEpochMilliseconds(event.startMillis).toLocalToolDateTimeString(zone))
+                        put("end", if (event.endMillis > 0) {
+                            Instant.fromEpochMilliseconds(event.endMillis).toLocalToolDateTimeString(zone)
+                        } else "")
+                    }
+                    put("all_day", event.allDay)
+                    put("calendar", event.calendar)
+                })
             }
         }
 
@@ -232,7 +173,7 @@ internal fun buildCalendarQueryTool(context: Context): Tool = Tool(
     }
 )
 
-internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
+internal fun buildCalendarCreateTool(calendar: CalendarAccess = calendarAccess): Tool = Tool(
     name = "calendar_create",
     description = """
         Create a new calendar event on the user's device.
@@ -282,7 +223,7 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
         )
     },
     execute = { args ->
-        if (!hasCalendarWritePermission(context)) {
+        if (!calendar.hasWritePermission()) {
             val payload = buildJsonObject {
                 put("error", "NO_PERMISSION")
                 put(
@@ -361,7 +302,7 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
             eventTimeZone = zone.id
         }
 
-        val calendarId = getDefaultCalendarId(context)
+        val calendarId = calendar.defaultCalendarId()
         if (calendarId == null) {
             val payload = buildJsonObject {
                 put("error", "NO_CALENDAR")
@@ -370,21 +311,12 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        val values = ContentValues().apply {
-            put(CalendarContract.Events.CALENDAR_ID, calendarId)
-            put(CalendarContract.Events.TITLE, title)
-            put(CalendarContract.Events.DESCRIPTION, description)
-            put(CalendarContract.Events.EVENT_LOCATION, location)
-            put(CalendarContract.Events.DTSTART, eventStartMillis)
-            put(CalendarContract.Events.DTEND, eventEndMillis)
-            put(CalendarContract.Events.EVENT_TIMEZONE, eventTimeZone)
-            if (allDay) {
-                put(CalendarContract.Events.ALL_DAY, 1)
-            }
-        }
-
-        val uri = context.contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)
-        if (uri == null) {
+        val eventId = calendar.create(calendarId, CalendarEventDraft(
+            title = title, description = description, location = location,
+            startMillis = eventStartMillis, endMillis = eventEndMillis,
+            timeZoneId = eventTimeZone, allDay = allDay,
+        ))
+        if (eventId == null) {
             val payload = buildJsonObject {
                 put("error", "INSERT_FAILED")
                 put("message", "Failed to insert calendar event.")
@@ -392,7 +324,6 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
             return@Tool listOf(UIMessagePart.Text(payload.toString()))
         }
 
-        val eventId = ContentUris.parseId(uri)
         val payload = buildJsonObject {
             put("success", true)
             put("event_id", eventId)
@@ -405,39 +336,6 @@ internal fun buildCalendarCreateTool(context: Context): Tool = Tool(
         listOf(UIMessagePart.Text(payload.toString()))
     }
 )
-
-private fun hasCalendarReadPermission(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
-
-private fun hasCalendarWritePermission(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED &&
-        ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED
-
-private fun getDefaultCalendarId(context: Context): Long? {
-    val projection = arrayOf(CalendarContract.Calendars._ID)
-    val writableSelection =
-        "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL} >= ? AND ${CalendarContract.Calendars.SYNC_EVENTS} = 1"
-    val writableArgs = arrayOf(CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR.toString())
-    context.contentResolver.query(
-        CalendarContract.Calendars.CONTENT_URI,
-        projection,
-        "$writableSelection AND ${CalendarContract.Calendars.IS_PRIMARY} = 1",
-        writableArgs,
-        null
-    )?.use { cursor ->
-        if (cursor.moveToFirst()) return cursor.getLong(0)
-    }
-    context.contentResolver.query(
-        CalendarContract.Calendars.CONTENT_URI,
-        projection,
-        writableSelection,
-        writableArgs,
-        "${CalendarContract.Calendars.VISIBLE} DESC"
-    )?.use { cursor ->
-        if (cursor.moveToFirst()) return cursor.getLong(0)
-    }
-    return null
-}
 
 private fun parseCalendarTime(raw: String, timeZone: TimeZone): Instant =
     Instant.fromEpochMilliseconds(parseLocalToolTimeEpochMillis(raw, timeZone.id))

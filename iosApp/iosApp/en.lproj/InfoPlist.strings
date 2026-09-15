@@ -1,2 +1,5 @@
 "NSCameraUsageDescription" = "RikkaHub uses the camera to take photos for chats and scan provider configuration QR codes.";
 "NSLocalNetworkUsageDescription" = "RikkaHub uses the local network to advertise its web service.";
+
+"NSCalendarsFullAccessUsageDescription" = "Allow assistants to query your calendar and create events after you approve the tool call.";
+"NSCalendarsUsageDescription" = "Allow assistants to query your calendar and create events after you approve the tool call.";

@@ -19,8 +19,6 @@ import me.rerere.common.http.AcceptLanguageBuilder
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.AIRequestInterceptor
 import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
-import me.rerere.rikkahub.data.ai.tools.local.AndroidLocalTools
-import me.rerere.rikkahub.data.ai.tools.local.PlatformLocalTools
 import me.rerere.rikkahub.data.ai.transformers.AndroidDocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.DocumentTextExtractor
 import me.rerere.rikkahub.data.ai.transformers.InputMessageTransformer
@@ -121,8 +119,6 @@ val androidModule = module {
             uriOpener = get(),
         )
     }
-
-    single<PlatformLocalTools> { AndroidLocalTools(context = get(), eventBus = get()) }
 
     single<AnalyticsTracker> { AndroidFirebaseAnalyticsTracker(Firebase.analytics) }
     single<CrashReporter> { AndroidFirebaseCrashReporter(Firebase.crashlytics) }

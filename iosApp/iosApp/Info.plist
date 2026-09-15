@@ -30,5 +30,9 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>RikkaHub uses the camera to take photos for chats and scan provider configuration QR codes.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Allow assistants to query your calendar and create events after you approve the tool call.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Allow assistants to query your calendar and create events after you approve the tool call.</string>
 </dict>
 </plist>

@@ -10,3 +10,5 @@ public enum class PlatformKind(
 }
 
 public expect val currentPlatformKind: PlatformKind
+
+expect val PlatformKind.isLinux: Boolean

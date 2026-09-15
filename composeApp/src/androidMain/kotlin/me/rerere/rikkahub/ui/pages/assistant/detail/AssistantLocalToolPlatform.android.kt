@@ -23,20 +23,10 @@ import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
 import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import org.jetbrains.compose.resources.stringResource
 
-internal actual val platformLocalToolOptions: Set<LocalToolOption> = setOf(
-    LocalToolOption.JavascriptEngine,
-    LocalToolOption.TimeInfo,
-    LocalToolOption.Clipboard,
-    LocalToolOption.Tts,
-    LocalToolOption.AskUser,
-    LocalToolOption.ScreenTime,
-    LocalToolOption.Calendar,
-)
-
 @Composable
 internal actual fun rememberLocalToolPermissionGate(
     onScreenTimePermissionRequired: () -> Unit,
-): (option: LocalToolOption) -> Boolean {
+): suspend (option: LocalToolOption) -> Boolean {
     val context = LocalContext.current
     val currentPermissionWarning = rememberUpdatedState(onScreenTimePermissionRequired)
     val calendarPermissionState = rememberPermissionState(

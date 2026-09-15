@@ -70,6 +70,14 @@ compose.desktop {
 
             macOS {
                 bundleID = "me.rerere.rikkahub.desktop"
+                infoPlist {
+                    extraKeysRawXml = """
+                        <key>NSCalendarsFullAccessUsageDescription</key>
+                        <string>Allow assistants to query your calendar and create events after you approve the tool call.</string>
+                        <key>NSCalendarsUsageDescription</key>
+                        <string>Allow assistants to query your calendar and create events after you approve the tool call.</string>
+                    """.trimIndent()
+                }
             }
         }
     }
