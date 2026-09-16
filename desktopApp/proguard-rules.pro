@@ -23,6 +23,9 @@
     dev.nucleusframework.window.tao.scene.TaoComposeSceneHost *;
 }
 -keep class com.dokar.quickjs.** { *; }
+# Diagram renderers resolve exported Rust function names through JNA.
+-keep interface me.rerere.mermaid.MermaidNativeLibrary { *; }
+-keep class com.hashsequence.coilresvg.** extends com.sun.jna.Library { *; }
 
 # notification-common discovers platform centers by name; JNI calls bridge callbacks by name as well.
 -keepnames class dev.nucleusframework.notification.NotificationCenter

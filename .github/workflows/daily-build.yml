@@ -88,7 +88,11 @@ jobs:
           echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
 
       - name: Gradle Build
+        # Mermaid is built from the pinned Rust source during Android JNI packaging.
+        # Install the NDK before Gradle starts its parallel native/Android tasks.
         run: |
+          rustup toolchain install 1.95.0 --profile minimal
+          sdkmanager 'ndk;29.0.14206865'
           chmod +x gradlew
           ./gradlew assembleRelease
 

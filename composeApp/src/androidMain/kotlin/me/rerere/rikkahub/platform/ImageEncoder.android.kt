@@ -2,6 +2,8 @@ package me.rerere.rikkahub.platform
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import java.io.ByteArrayOutputStream
 
 internal actual suspend fun encodeImageToPng(bytes: ByteArray): ByteArray? {
@@ -10,4 +12,9 @@ internal actual suspend fun encodeImageToPng(bytes: ByteArray): ByteArray? {
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
         output.toByteArray()
     }
+}
+
+internal actual fun encodeImageBitmapToPng(bitmap: ImageBitmap): ByteArray = ByteArrayOutputStream().use { output ->
+    check(bitmap.asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output))
+    output.toByteArray()
 }

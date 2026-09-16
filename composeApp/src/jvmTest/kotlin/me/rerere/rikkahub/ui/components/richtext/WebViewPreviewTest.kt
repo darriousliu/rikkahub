@@ -4,20 +4,21 @@ import androidx.compose.material3.lightColorScheme
 import kotlinx.coroutines.test.runTest
 import kotlin.io.encoding.Base64
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class WebViewPreviewTest {
     @Test
-    fun htmlPreviewKeepsTheOriginalDocumentAndScripts() {
-        val html = "<!doctype html><title>预览</title><script>document.body.textContent='rendered'</script>"
-        assertEquals(html, buildCodePreviewHtml(html, "html"))
-        val svg = "<svg><text>x &amp; y</text></svg>"
-        assertEquals(
-            "<!DOCTYPE html><html><body style=\"margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;\">$svg</body></html>",
-            buildCodePreviewHtml(svg, "svg"),
-        )
+    fun windowsHtmlKeepsSourceAndNativeDiagramsStillPreview() {
+        assertFalse(canInlineCodePreview("html", complete = true, isWindows = true))
+        assertTrue(canInlineCodePreview("html", complete = true, isWindows = false))
+        for (language in listOf("svg", "mermaid")) {
+            assertTrue(canInlineCodePreview(language, complete = true, isWindows = true))
+            assertTrue(canInlineCodePreview(language, complete = true, isWindows = false))
+            assertFalse(canInlineCodePreview(language, complete = false, isWindows = false))
+        }
+        assertFalse(canInlineCodePreview("html", complete = false, isWindows = false))
+        assertFalse(canInlineCodePreview("kotlin", complete = true, isWindows = false))
     }
 
     @Test
@@ -32,13 +33,4 @@ class WebViewPreviewTest {
         assertFalse(html.contains("{{BACKGROUND_COLOR}}"))
     }
 
-    @Test
-    fun mermaidLoadsBundledScriptAndKeepsRenderingAndExportBody() {
-        val html = buildMermaidHtml("graph TD; A[<label>]-->B", lightColorScheme(), "/* bundled mermaid */")
-        assertTrue(html.contains("<script>/* bundled mermaid */</script>"))
-        assertFalse(html.contains("<script src="))
-        assertTrue(html.contains("A[&lt;label&gt;]"))
-        assertTrue(html.contains("window.kmpJsBridge.callNative('exportImage', pngBase64)"))
-        assertTrue(html.contains("ctx.fillText('rikka-ai.com'"))
-    }
 }

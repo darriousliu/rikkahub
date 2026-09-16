@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -58,11 +59,12 @@ import me.rerere.hugeicons.stroke.Download04
 import me.rerere.hugeicons.stroke.Eye
 import me.rerere.hugeicons.stroke.View
 import me.rerere.rikkahub.Screen
+import me.rerere.rikkahub.shared.currentPlatformKind
+import me.rerere.rikkahub.shared.isWindows
 import me.rerere.rikkahub.ui.components.webview.WebView
 import me.rerere.rikkahub.ui.components.webview.WebViewContentCache
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalSettings
-import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.modifier.onClick
 import me.rerere.rikkahub.ui.theme.AtomOneDarkPalette
 import me.rerere.rikkahub.ui.theme.AtomOneLightPalette
@@ -82,7 +84,10 @@ import me.rerere.rikkahub.utils.createPlainTextClipEntry
 import org.jetbrains.compose.resources.stringResource
 
 private const val COLLAPSE_LINES = 10
-private val PREVIEWABLE_LANGUAGES = setOf("html", "svg")
+private val PREVIEWABLE_LANGUAGES = setOf("html", "svg", "mermaid")
+
+internal fun canInlineCodePreview(language: String, complete: Boolean, isWindows: Boolean): Boolean =
+    complete && language in PREVIEWABLE_LANGUAGES && (language != "html" || !isWindows)
 
 @Composable
 fun HighlightCodeBlock(
@@ -103,7 +108,9 @@ fun HighlightCodeBlock(
     val navController = LocalNavController.current
     val settings = LocalSettings.current
     val normalizedLanguage = remember(language) { language.lowercase() }
-    val canInlinePreview = completeCodeBlock && normalizedLanguage in PREVIEWABLE_LANGUAGES
+    val canInlinePreview = canInlineCodePreview(normalizedLanguage, completeCodeBlock, currentPlatformKind.isWindows)
+    val diagram = rememberDiagramSource(code, normalizedLanguage)
+    var showDiagramPreview by remember(code, normalizedLanguage) { mutableStateOf(false) }
     var previewMode by remember(canInlinePreview, code, normalizedLanguage) {
         mutableStateOf(canInlinePreview)
     }
@@ -144,12 +151,19 @@ fun HighlightCodeBlock(
                 clipboardManager = clipboardManager,
                 code = code,
                 createDocument = { name -> createDocumentLauncher.launch(suggestedName = name, defaultExtension = null) },
-                navController = navController,
                 completeCodeBlock = completeCodeBlock,
                 previewMode = previewMode,
                 canInlinePreview = canInlinePreview,
                 onTogglePreviewMode = {
                     previewMode = !previewMode
+                },
+                onPreview = {
+                    if (normalizedLanguage == "html") {
+                        val contentId = WebViewContentCache.store(FileKit.cacheDir.toKotlinxIoPath(), code)
+                        navController.navigate(Screen.WebView(contentId = contentId))
+                    } else {
+                        showDiagramPreview = true
+                    }
                 },
             )
         }
@@ -157,18 +171,17 @@ fun HighlightCodeBlock(
             modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)
         ) {
             when {
-                canInlinePreview && previewMode -> {
-                    CodeBlockPreview(
+                canInlinePreview && previewMode && normalizedLanguage == "html" -> {
+                    HtmlCodeBlockPreview(
                         code = code,
-                        language = normalizedLanguage,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp),
                     )
                 }
-                completeCodeBlock && normalizedLanguage == "mermaid" -> {
-                    Mermaid(
-                        code = code,
+                canInlinePreview && previewMode -> {
+                    DiagramPreview(
+                        diagram = diagram,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -242,6 +255,7 @@ fun HighlightCodeBlock(
             }
         }
     }
+    if (showDiagramPreview) DiagramPreviewDialog(diagram) { showDiagramPreview = false }
 }
 
 @Composable
@@ -351,11 +365,11 @@ private fun HighlightCodeActions(
     clipboardManager: Clipboard,
     code: String,
     createDocument: (String) -> Unit,
-    navController: Navigator,
     completeCodeBlock: Boolean = true,
     previewMode: Boolean = false,
     canInlinePreview: Boolean = false,
     onTogglePreviewMode: () -> Unit = {},
+    onPreview: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -435,6 +449,7 @@ private fun HighlightCodeActions(
                     contentDescription = if (previewMode) "Code" else stringResource(Res.string.code_block_preview),
                     tint = iconTint,
                     modifier = Modifier
+                        .testTag("code-block-source-toggle")
                         .clip(RoundedCornerShape(4.dp))
                         .onClick {
                             onTogglePreviewMode()
@@ -452,9 +467,7 @@ private fun HighlightCodeActions(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .onClick {
-                            val content = buildCodePreviewHtml(code = code, language = normalizedLanguage)
-                            val contentId = WebViewContentCache.store(FileKit.cacheDir.toKotlinxIoPath(), content)
-                            navController.navigate(Screen.WebView(contentId = contentId))
+                            onPreview()
                         }
                         .padding(4.dp)
                         .size(iconSize)
@@ -465,13 +478,12 @@ private fun HighlightCodeActions(
 }
 
 @Composable
-private fun CodeBlockPreview(
+private fun HtmlCodeBlockPreview(
     code: String,
-    language: String,
     modifier: Modifier = Modifier,
 ) {
     val state = rememberWebViewStateWithHTMLData(
-        data = buildCodePreviewHtml(code = code, language = language),
+        data = code,
         baseUrl = "https://rikkahub.local",
         mimeType = "text/html",
     )
@@ -480,14 +492,6 @@ private fun CodeBlockPreview(
         state = state,
         modifier = modifier.clip(RoundedCornerShape(4.dp)),
     )
-}
-
-internal fun buildCodePreviewHtml(code: String, language: String): String {
-    return if (language == "svg") {
-        """<!DOCTYPE html><html><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;">$code</body></html>"""
-    } else {
-        code
-    }
 }
 
 class HighlightCodeVisualTransformation(

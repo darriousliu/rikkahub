@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import me.rerere.rikkahub.ui.components.ui.LocalExportContext
+import me.rerere.rikkahub.ui.components.ui.LocalDiagramRenders
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Surface
 import org.jetbrains.skia.impl.use
@@ -38,6 +39,7 @@ internal suspend fun renderComposeImage(
     // The original layout is 540 dp wide. Use the same density for measurement and drawing.
     val exportDensity = Density(2f, screenDensity.fontScale)
     val webViewSnapshots = mutableMapOf<WebViewState, Deferred<Unit>>()
+    val diagramRenders = mutableSetOf<Deferred<Unit>>()
     val started = TimeSource.Monotonic.markNow()
     val recomposer = FrameRecomposer(coroutineContext)
     val scene = CanvasLayersComposeScene(frameRecomposer = recomposer, density = exportDensity)
@@ -47,6 +49,7 @@ internal suspend fun renderComposeImage(
             CompositionLocalProvider(
                 LocalDensity provides exportDensity,
                 LocalExportContext provides true,
+                LocalDiagramRenders provides diagramRenders,
                 LocalWebViewSnapshots provides webViewSnapshots,
                 content = content,
             )
@@ -60,12 +63,13 @@ internal suspend fun renderComposeImage(
         scene.measureContent(constraints)
         yield() // Start snapshot effects after their preview sizes are known.
         withTimeout(15_000) {
-            while (webViewSnapshots.values.any { !it.isCompleted }) {
+            while (webViewSnapshots.values.any { !it.isCompleted } || diagramRenders.any { !it.isCompleted }) {
                 delay(16)
                 recomposer.performFrame(started.elapsedNow().inWholeNanoseconds)
                 scene.measureContent(constraints)
             }
             webViewSnapshots.values.forEach { it.await() }
+            diagramRenders.forEach { it.await() }
         }
         // Native Tao and Compose's AWT snapshot dispatcher can be on different threads.
         // Deliver completed snapshot state changes before drawing the final offscreen frame.

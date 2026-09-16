@@ -1,0 +1,3 @@
+headers = rikkahub_mermaid.h
+package = me.rerere.mermaid.ffi
+staticLibraries = librikkahub_mermaid.a

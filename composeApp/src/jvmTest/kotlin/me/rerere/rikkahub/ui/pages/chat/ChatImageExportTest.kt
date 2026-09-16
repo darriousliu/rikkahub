@@ -49,6 +49,9 @@ import me.rerere.rikkahub.data.datastore.DataStoreBooleanPreferenceStore
 import me.rerere.rikkahub.data.datastore.createJvmSettingsDataStore
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.ui.components.webview.WebView
+import me.rerere.rikkahub.ui.components.richtext.DiagramSource
+import me.rerere.rikkahub.ui.components.richtext.NativeDiagramImage
+import me.rerere.rikkahub.ui.components.ui.LocalDiagramRenders
 import me.rerere.rikkahub.ui.context.LocalSettings
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
@@ -63,6 +66,42 @@ import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalComposeUiApi::class)
 class ChatImageExportTest {
+    @Test
+    fun waitsForNativeDiagramsAndIncludesTheirPixelsInChatExport() = runBlocking(Dispatchers.Main) {
+        var locals: CompositionLocalContext? = null
+        val host = ImageComposeScene(1, 1) { locals = currentCompositionLocalContext }
+        try {
+            host.render().close()
+            val png = renderComposeImage(checkNotNull(locals), Density(1f)) {
+                val pending = checkNotNull(LocalDiagramRenders.current)
+                var ready by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    val job = CompletableDeferred<Unit>()
+                    pending.add(job)
+                    delay(250)
+                    ready = true
+                    job.complete(Unit)
+                }
+                Column(Modifier.width(540.dp)) {
+                    NativeDiagramImage(
+                        DiagramSource("""<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><rect width="100" height="50" fill="#e6141e"/></svg>""", "svg"),
+                        Modifier.fillMaxWidth().height(200.dp),
+                    )
+                    NativeDiagramImage(
+                        DiagramSource("flowchart LR\nA[Native]-->B[Chat]", "mermaid"),
+                        Modifier.fillMaxWidth().height(200.dp),
+                    )
+                    Box(Modifier.fillMaxWidth().height(10.dp).background(if (ready) Color.Green else Color.Red))
+                }
+            }
+            val image = ImageIO.read(png.inputStream())
+            assertEquals(0xffe6141e.toInt(), image.getRGB(540, 200))
+            assertEquals(0xff00ff00.toInt(), image.getRGB(540, image.height - 5))
+        } finally {
+            host.close()
+        }
+    }
+
     @Test
     fun waitsForWebViewSnapshotRegisteredAfterMeasurement() = runBlocking(Dispatchers.Main) {
         var locals: CompositionLocalContext? = null
