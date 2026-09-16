@@ -11,8 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -24,8 +29,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
 import me.rerere.rikkahub.data.datastore.Settings
@@ -44,6 +53,8 @@ import kotlinx.coroutines.runBlocking
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
+import android.graphics.Bitmap
+import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -93,15 +104,35 @@ class NativeDiagramChatTest {
         compose.onAllNodesWithTag(SOURCE_TOGGLE_TAG, useUnmergedTree = true)[0].performClick()
         assertRenderedDiagramState()
 
-        // The inline preview action opens the zoomable native dialog. It is separate from the inline image
-        // so the dialog's close action and zoomable image pager can be checked without relying on WebView.
-        compose.onAllNodesWithContentDescription(codePreview, useUnmergedTree = true)[0].performScrollTo()
-        compose.onAllNodesWithContentDescription(codePreview, useUnmergedTree = true)[0].performClick()
+        val viewport = compose.onAllNodesWithTag(VIEWPORT_TAG, useUnmergedTree = true)[0]
+        val diagram = compose.onAllNodesWithTag(IMAGE_TAG, useUnmergedTree = true)[0]
+        viewport.performScrollTo().assertHeightIsEqualTo(200.dp)
+        val scroll = diagram.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
+        assertTrue("A tall Mermaid must overflow its fixed viewport when fitted to its width", scroll.maxValue() > 0f)
+        saveViewportEvidence("mermaid-fit-width.png")
+
+        // Tapping and scrolling the image must not open the full-screen preview.
+        viewport.performTouchInput { click(center) }
+        compose.onAllNodesWithTag(PREVIEW_TAG, useUnmergedTree = true).assertCountEquals(0)
+        val initialScroll = scroll.value()
+        viewport.performTouchInput { swipeUp() }
         compose.waitUntil(TIMEOUT_MILLIS) {
-            compose.onAllNodesWithTag(PREVIEW_TAG, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            scroll.value() > initialScroll
         }
-        compose.onAllNodesWithTag(PREVIEW_TAG, useUnmergedTree = true).assertCountEquals(1)
-        compose.onNodeWithContentDescription("Close", useUnmergedTree = true).performClick()
+        viewport.assertHeightIsEqualTo(200.dp)
+        compose.onAllNodesWithTag(PREVIEW_TAG, useUnmergedTree = true).assertCountEquals(0)
+        saveViewportEvidence("mermaid-scrolled.png")
+
+        // Both the code-block header and the original bottom-right button open the native preview.
+        for (index in 0..1) {
+            compose.onAllNodesWithContentDescription(codePreview, useUnmergedTree = true)[index].performScrollTo()
+            compose.onAllNodesWithContentDescription(codePreview, useUnmergedTree = true)[index].performClick()
+            compose.waitUntil(TIMEOUT_MILLIS) {
+                compose.onAllNodesWithTag(PREVIEW_TAG, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onAllNodesWithTag(PREVIEW_TAG, useUnmergedTree = true).assertCountEquals(1)
+            compose.onNodeWithContentDescription("Close", useUnmergedTree = true).performClick()
+        }
 
         // Export is intentionally asserted, not invoked: a platform file-saver is outside this isolated UI host.
         compose.onAllNodesWithContentDescription(export, useUnmergedTree = true).assertCountEquals(5)
@@ -109,6 +140,20 @@ class NativeDiagramChatTest {
         compose.runOnIdle { dark.value = true }
         assertRenderedDiagramState()
         assertInlineHtmlWebViewIsInteractive()
+    }
+
+    private fun saveViewportEvidence(name: String) {
+        if (InstrumentationRegistry.getArguments().getString("nativeDiagramEvidence") != "true") return
+        val bitmap = compose.onAllNodesWithTag(VIEWPORT_TAG, useUnmergedTree = true)[0]
+            .captureToImage().asAndroidBitmap()
+        val evidenceDir = File(
+            InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,
+            "native-diagram-layout-evidence",
+        )
+        check(evidenceDir.mkdirs() || evidenceDir.isDirectory) { "Unable to create $evidenceDir" }
+        File(evidenceDir, name).outputStream().use {
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
     }
 
     private fun assertRenderedDiagramState() {
@@ -169,6 +214,7 @@ class NativeDiagramChatTest {
     private companion object {
         const val TIMEOUT_MILLIS = 15_000L
         const val IMAGE_TAG = "native-diagram-image"
+        const val VIEWPORT_TAG = "native-diagram-viewport"
         const val ERROR_TAG = "native-diagram-error"
         const val PREVIEW_TAG = "native-diagram-preview"
         const val SOURCE_TOGGLE_TAG = "code-block-source-toggle"

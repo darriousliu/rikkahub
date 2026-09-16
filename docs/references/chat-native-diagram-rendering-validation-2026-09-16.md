@@ -37,6 +37,22 @@
 - Android/iOS：没有自动化原生文件选择器保存。macOS 已实际保存并验证导出 PNG。
 - iOS 曾点击 `Fixture dark`，但保留截图时预览 overlay 已打开，未能明确复核主题颜色变化；不将 iOS 深色主题标记为通过。`ImagePager` 的双指缩放手势未执行；预览打开与关闭已验证。
 
+## Mermaid 视口与预览入口补充回归
+
+后续布局修复恢复 Mermaid 的固定 `200.dp` 视口、按宽度绘制和块内垂直滚动；图面点击不再打开预览，代码块标题和右下角按钮均保留预览入口。
+
+- Android 17（API 37）Pixel_10_Pro_XL：针对 `NativeDiagramChatTest` 运行
+  `:app:connectedDebugAndroidTest`，最终 XML 为 `tests=1, failures=0`。仪器测试经真实聊天
+  `MarkdownBlock` 路径确认首个 Mermaid viewport 高为 200dp，`VerticalScrollAxisRange.maxValue > 0`；
+  对图面真实 touch click 和 `swipeUp` 后都没有 dialog，且滚动值增长；标题右侧与右下角预览按钮各自打开并关闭 dialog。
+- 该次测试启用证据开关，在 target app 的
+  `cache/native-diagram-layout-evidence/` 生成 `mermaid-fit-width.png` 与
+  `mermaid-scrolled.png`。Gradle 结束后验证设备已从 ADB 列表断开，无法拉取这两张缓存图；未将其
+  视为已保留截图。本轮未做截图视觉复核，专用设备缓存也暂无法清理。
+- 代码回归：`ChatImageExportTest` 为 5 tests / 0 failures，
+  `compileKotlinIosSimulatorArm64` 通过（25 s）。本补充轮没有重新启动 macOS 或 iOS fixture，
+  因而不把上一轮 GUI 结果作为本轮布局行为的跨平台验证。
+
 ## 清理
 
 验证完成后已终止仅 PID `87521` 的桌面 fixture 和 iOS simulator fixture，恢复 desktop/iOS 临时入口，并删除 `NativeDiagramFixturePage`。未保留含桌面背景的截图；仅保留 iOS fixture 画面。Windows 保持 Blocked。

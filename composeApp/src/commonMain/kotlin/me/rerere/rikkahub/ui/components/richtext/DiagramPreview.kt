@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.ui.components.richtext
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +32,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -77,7 +79,7 @@ import kotlin.time.Clock
 internal fun DiagramPreview(diagram: DiagramSource, modifier: Modifier = Modifier) {
     var preview by remember(diagram) { mutableStateOf(false) }
     Column(modifier) {
-        NativeDiagramImage(diagram, Modifier.fillMaxWidth().height(200.dp).clickable { preview = true })
+        NativeDiagramImage(diagram, Modifier.fillMaxWidth().height(200.dp))
         if (!LocalExportContext.current) {
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 IconButton(onClick = { preview = true }) {
@@ -98,17 +100,24 @@ internal fun NativeDiagramImage(diagram: DiagramSource, modifier: Modifier = Mod
     var error by remember(request) { mutableStateOf<String?>(null) }
     val renders = LocalDiagramRenders.current
     val ready = remember(request) { CompletableDeferred<Unit>() }
+    val fitWidth = diagram.language == "mermaid"
+    val scrollState = rememberScrollState()
     DisposableEffect(renders, ready) {
         renders?.add(ready)
         onDispose { renders?.remove(ready) }
     }
-    Box(modifier) {
+    Box(modifier.testTag("native-diagram-viewport")) {
         AsyncImage(
             model = request,
             contentDescription = "${diagram.language} diagram",
-            modifier = Modifier.fillMaxSize().testTag("native-diagram-image").semantics {
-                stateDescription = if (loading) "Loading" else if (error != null) "Error" else "Ready"
-            },
+            contentScale = if (fitWidth) ContentScale.FillWidth else ContentScale.Fit,
+            alignment = if (fitWidth) Alignment.TopCenter else Alignment.Center,
+            // The viewport stays 200 dp tall; Mermaid keeps its aspect ratio at the available width.
+            modifier = (if (fitWidth) Modifier.fillMaxWidth().verticalScroll(scrollState) else Modifier.fillMaxSize())
+                .testTag("native-diagram-image")
+                .semantics {
+                    stateDescription = if (loading) "Loading" else if (error != null) "Error" else "Ready"
+                },
             onSuccess = {
                 loading = false
                 error = null
