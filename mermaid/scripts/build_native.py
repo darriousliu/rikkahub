@@ -6,8 +6,10 @@ from __future__ import annotations
 import argparse
 import os
 import platform
+import re
 import shlex
 import shutil
+import struct
 import subprocess
 import sys
 import tomllib
@@ -19,6 +21,7 @@ UPSTREAM = MODULE / "merman"
 MANIFEST = MODULE / "native/Cargo.toml"
 PROFILE = "native-distribution"
 LIBRARY = "rikkahub_mermaid"
+HEADER = MODULE / "native/include/rikkahub_mermaid.h"
 
 
 @dataclass(frozen=True)
@@ -136,6 +139,48 @@ def android_ndk(explicit: str | None) -> Path:
     return ndk.resolve()
 
 
+def windows_exports(path: Path) -> set[str]:
+    """Read the PE export table without loading a cross-compiled Windows DLL."""
+    data = path.read_bytes()
+    pe = struct.unpack_from("<I", data, 0x3C)[0]
+    if data[:2] != b"MZ" or data[pe:pe + 4] != b"PE\0\0":
+        raise RuntimeError(f"Invalid Windows DLL: {path}")
+    optional = pe + 24
+    magic = struct.unpack_from("<H", data, optional)[0]
+    if magic not in (0x10B, 0x20B):
+        raise RuntimeError(f"Unsupported PE optional header in {path}")
+    export_rva = struct.unpack_from("<I", data, optional + (112 if magic == 0x20B else 96))[0]
+    if export_rva == 0:
+        return set()
+    section_count = struct.unpack_from("<H", data, pe + 6)[0]
+    section_start = optional + struct.unpack_from("<H", data, pe + 20)[0]
+    sections = [struct.unpack_from("<III", data, section_start + i * 40 + 12) for i in range(section_count)]
+
+    def offset(rva: int) -> int:
+        for address, size, position in sections:
+            if address <= rva < address + size:
+                return position + rva - address
+        raise RuntimeError(f"Invalid PE export address {rva:#x} in {path}")
+
+    directory = offset(export_rva)
+    count = struct.unpack_from("<I", data, directory + 24)[0]
+    if count == 0:
+        return set()
+    names = offset(struct.unpack_from("<I", data, directory + 32)[0])
+    exports = set()
+    for index in range(count):
+        start = offset(struct.unpack_from("<I", data, names + index * 4)[0])
+        exports.add(data[start:data.index(b"\0", start)].decode("ascii"))
+    return exports
+
+
+def validate_windows_exports(path: Path) -> None:
+    required = set(re.findall(r"\b(rikkahub_mermaid_\w+)\s*\(", HEADER.read_text(encoding="utf-8")))
+    missing = required - windows_exports(path)
+    if missing:
+        raise RuntimeError(f"{path} is missing C ABI exports: {', '.join(sorted(missing))}")
+
+
 def build(kind: str, target: Target, toolchain: str, ndk: Path | None) -> None:
     env = os.environ.copy()
     env["RUSTUP_TOOLCHAIN"] = toolchain
@@ -168,6 +213,8 @@ def build(kind: str, target: Target, toolchain: str, ndk: Path | None) -> None:
         "--lib", "--profile", PROFILE, "--target", target.triple,
     ], env=env)
     source = MODULE / "build/cargo" / target.triple / PROFILE / target.filename
+    if target.filename.endswith(".dll"):
+        validate_windows_exports(source)
     destination = MODULE / "build/native" / kind / target.directory / target.filename
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)

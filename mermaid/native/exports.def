@@ -1,0 +1,6 @@
+EXPORTS
+    rikkahub_mermaid_render_svg
+    rikkahub_mermaid_render_svg_with_config
+    rikkahub_mermaid_result_svg
+    rikkahub_mermaid_result_error
+    rikkahub_mermaid_result_free

@@ -5,6 +5,7 @@ import androidx.compose.material3.lightColorScheme
 import coil3.PlatformContext
 import coil3.decode.DataSource
 import coil3.request.ErrorResult
+import coil3.request.ImageResult
 import coil3.request.SuccessResult
 import coil3.toBitmap
 import kotlinx.coroutines.runBlocking
@@ -17,6 +18,9 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class NativeDiagramImageTest {
+    private fun assertSuccess(result: ImageResult): SuccessResult =
+        assertIs<SuccessResult>(result, (result as? ErrorResult)?.throwable?.stackTraceToString())
+
     @Test
     fun decodesSvgThroughResvgAndCachesTheBitmap() = runBlocking {
         val loader = createDesktopImageLoader(PlatformContext.INSTANCE)
@@ -26,10 +30,10 @@ class NativeDiagramImageTest {
                 "svg",
             )
             val request = diagramImageRequest(PlatformContext.INSTANCE, diagram).size(200, 200).build()
-            val result = assertIs<SuccessResult>(loader.execute(request))
+            val result = assertSuccess(loader.execute(request))
             val bitmap = result.image.toBitmap()
             assertEquals(0xffe6141e.toInt(), bitmap.getColor(bitmap.width / 2, bitmap.height / 2))
-            assertEquals(DataSource.MEMORY_CACHE, assertIs<SuccessResult>(loader.execute(request)).dataSource)
+            assertEquals(DataSource.MEMORY_CACHE, assertSuccess(loader.execute(request)).dataSource)
         } finally {
             loader.shutdown()
         }
@@ -50,7 +54,7 @@ class NativeDiagramImageTest {
             assertTrue(!svg.contains("foreignObject"))
             assertTrue(!svg.contains("\$\$x^2\$\$"))
             for (diagram in listOf(light, dark)) {
-                val result = assertIs<SuccessResult>(loader.execute(
+                val result = assertSuccess(loader.execute(
                     diagramImageRequest(PlatformContext.INSTANCE, diagram).size(600, 400).build(),
                 ))
                 assertTrue(result.image.width > 0 && result.image.height > 0)

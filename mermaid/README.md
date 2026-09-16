@@ -85,6 +85,12 @@ JVM JAR 会包含 `build/native/jvm/` 下已准备好的所有平台库，JNA �
 `windows-x86-64` 是命令别名，实际资源前缀是 JNA 所需的 `win32-x86-64`。
 如果需要严格限定发布包的平台，先运行 `./gradlew :mermaid:clean` 再构建所需目标。
 
+Windows GNU 链接通过 `native/build.rs` 将 `native/exports.def` 作为独立输入传给链接器，
+避免 cargo-zigbuild 过滤 Rust 自动生成的 `list.def` 后丢失 Mermaid C ABI。
+新增公开接口时需同步更新头文件和 `exports.def`。构建脚本会在复制 DLL 前检查 PE 导出表是否包含
+头文件声明的全部接口；交叉编译也执行此检查，不需要运行 Windows DLL。
+桌面 CI 在生成安装包前运行脚本测试、`:mermaid:jvmTest` 和桌面图片解码回归，验证 JNA 调用及 SVG 解码。
+
 Gradle 构建会自动调用对应准备脚本。也可直接执行：
 
 ```bash
@@ -127,6 +133,19 @@ CARGO_TARGET_DIR="$PWD/mermaid/build/cargo" cargo +1.95.0 test \
 ./gradlew :mermaid:iosSimulatorArm64Test
 ./gradlew :mermaid:connectedAndroidDeviceTest
 ```
+
+2026-09-17 Windows x64 DLL 导出修复验证：
+
+- 修复前：实际 DLL 与桌面运行 JAR 均缺少全部 5 个 Mermaid C ABI 导出，5 项 JVM 测试全部报
+  `UnsatisfiedLinkError`；桌面现有聊天也复现 `rikkahub_mermaid_render_svg_with_config` 查找失败。
+- 修复后：9 项 Python 测试、5 项 Mermaid JVM 测试、3 项 `NativeDiagramImageTest` 全部通过。
+  覆盖中文、公式、主题配置、错误恢复，以及 Mermaid → SVG → Coil/resvg 位图解码和缓存。
+  图片测试补齐了桌面 Skiko 运行库，失败信息会保留底层异常。
+- 产物检查：新的 DLL 与 JAR 均通过导出表检查；同一检查能拒绝原桌面 JAR 中的坏 DLL。
+  `:desktopApp:run` 已成功启动使用新 DLL 的实例。本轮未重新生成发行安装包。
+- GUI：因本次涉及 DLL 打包运行时，安排 `gpt-5.6-terra` 子 agent 操作真实 Windows 桌面。
+  修复前已在现有聊天中核对报错；修复后的新实例可枚举到窗口，但窗口激活/截图恢复仍报
+  `GetCursorPos failed: 拒绝访问。 (0x80070005)`。中文图表、主题和大屏预览的 GUI 回归受阻，未标记为通过。
 
 Rust/JVM/iOS 测试覆盖真实渲染、公式排版、中文和 HTML 标签的 resvg 兼容输出、主题配置、空输入，以及错误后继续渲染。
 Android 相同测试放在设备测试 source set，避免 JVM host test 误加载 Android `.so`。

@@ -212,7 +212,13 @@ kotlin {
         val androidJvmTest = create("androidJvmTest") {
             dependsOn(commonTest.get())
         }
-        named("jvmTest") { dependsOn(androidJvmTest) }
+        named("jvmTest") {
+            dependsOn(androidJvmTest)
+            dependencies {
+                // Image decoding tests need the same Skiko native runtime as desktopApp.
+                runtimeOnly(compose.desktop.currentOs)
+            }
+        }
         named("androidHostTest") {
             dependsOn(androidJvmTest)
             dependencies {

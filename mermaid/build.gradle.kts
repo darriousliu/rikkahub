@@ -13,6 +13,7 @@ extra["kotlin.mpp.enableCInteropCommonization"] = "true"
 
 val nativeRoot = layout.buildDirectory.dir("native")
 val windowsHost = System.getProperty("os.name").startsWith("Windows")
+val macHost = System.getProperty("os.name").startsWith("Mac")
 
 fun registerNativeBuild(name: String, platform: String, targets: List<String> = emptyList()) =
     tasks.register<Exec>(name) {
@@ -60,21 +61,29 @@ kotlin {
     jvm {
         compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
     }
-    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { target ->
         val targetName = target.konanTarget.name
         val nativeDirectory = nativeRoot.get().dir("ios/$targetName")
-        val prepare = registerNativeBuild(
-            "prepare${target.name.replaceFirstChar(Char::uppercaseChar)}Rust", "ios", listOf(targetName),
-        )
+        // Keep cinterop declarations on every host so Kotlin disables unsupported iOS metadata
+        // cross-compilation instead of compiling iosMain without its generated FFI bindings.
         val interop = target.compilations.getByName("main").cinterops.create("mermaid") {
             defFile(file("src/nativeInterop/cinterop/mermaid.def"))
             includeDirs(file("native/include"))
             extraOpts("-libraryPath", nativeDirectory.asFile.absolutePath)
         }
-        tasks.named(interop.interopProcessingTaskName).configure {
-            dependsOn(prepare)
-            // staticLibraries are embedded in the klib; cinterop doesn't track their contents itself.
-            inputs.file(nativeDirectory.file("librikkahub_mermaid.a"))
+        if (macHost) {
+            val prepare = registerNativeBuild(
+                "prepare${target.name.replaceFirstChar(Char::uppercaseChar)}Rust", "ios", listOf(targetName),
+            )
+            tasks.named(interop.interopProcessingTaskName).configure {
+                dependsOn(prepare)
+                // staticLibraries are embedded in the klib; cinterop doesn't track their contents itself.
+                inputs.file(nativeDirectory.file("librikkahub_mermaid.a"))
+            }
         }
         target.binaries.framework {
             baseName = "Mermaid"

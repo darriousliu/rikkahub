@@ -52,6 +52,12 @@ jobs:
       - name: Install web dependencies
         working-directory: web-ui
         run: pnpm install --frozen-lockfile
+      - name: Verify Mermaid native rendering
+        shell: bash
+        run: |
+          python -m unittest discover -s mermaid/scripts -p 'test_*.py'
+          ./gradlew :mermaid:jvmTest :composeApp:jvmTest \
+            --tests 'me.rerere.rikkahub.ui.components.richtext.NativeDiagramImageTest' --console=plain
       - name: Build optimized installer
         shell: bash
         run: ./gradlew :desktopApp:packageReleaseDistributionForCurrentOS --console=plain
