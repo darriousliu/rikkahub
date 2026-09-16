@@ -1,9 +1,0 @@
-{
-  "templateRestored": "{{ message }}",
-  "assistantId": "9070a2d6-c80c-46bc-b5fd-386f53412ea8",
-  "otherPreferencesByteIdentical": 45,
-  "otherAssistantValuesUnchanged": true,
-  "selectedAssistantUnchangedSinceFixturePreparation": true,
-  "originalSelectionBeforeGuiWasNotRecorded": true,
-  "finalSha256": "78a1d0a8abd27c4ed0ce9d08c132b4ae921f26645d12731b97d0479e01aa30d3"
-}

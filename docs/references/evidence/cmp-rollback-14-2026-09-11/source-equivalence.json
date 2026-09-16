@@ -1,8 +1,0 @@
-{
-  "baseline": "2.4.5",
-  "checks": {
-    "forkConversationAtMessage_original_body": true,
-    "fork_file_helper_only_FileKit_suspend_adapter": true,
-    "buildUuidFileName_only_MimeTypeMap_adapter": true
-  }
-}
