@@ -93,6 +93,28 @@ Conscrypt 类型，不属于已启用的发行功能；这项检查不初始化�
 产物：`desktopApp/build/compose/binaries/main-release/dmg/rikkahub-2.4.5-mac-arm64.dmg`。
 SHA-256：`f49527517e7ccc11fcc94753ba718d760993e635c4c66af7422645e06258b4a8`。
 
+## Windows 最小化后的通知延迟
+
+Nucleus 2.5.15 的 `TaoComposeSceneHostWindows` 使用 `FlushingMainDispatcher` 处理窗口内的 Compose 协程，
+由渲染过程调用 `drain()`。最小化时渲染提前返回，因此 `AppRoutes` 中的 `LaunchedEffect` 订阅者暂停消费。
+这与应用级 `Dispatchers.Main` 使用的 `TaoMainDispatcher` 是不同的调度队列。
+
+原先界面与 `ChatNotificationManager` 订阅同一个容量为 16 的 `SharedFlow`。流式生成填满缓冲后，
+`ChatGenerationEnded` 的挂起发送会等最慢的界面订阅者释放缓冲，直到恢复窗口才能发送通知。
+单独把通知消费者放到后台线程无法解除这个等待；参见 [SharedFlow 缓冲行为](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-shared-flow/)。
+
+修复将生成更新和结束事件路由到独立的 `generationEvents`，由后台通知策略消费。界面及 OAuth 事件保留原队列，
+完成事件继续挂起发送以保留原有交付语义，流式更新继续使用 `tryEmit`；无需更改应用主线程或扩大缓冲。
+
+验证记录：
+
+- 新增 JVM 回归：注册界面订阅者后暂停其调度，发送 128 次流式更新，再发送完成事件；预期在恢复界面前收到完成通知。
+  旧实现等待 5 秒后超时；修复后通过，同时验证恢复界面时原先的语音、设置和 OAuth 事件仍按顺序保留。
+- `:composeApp:jvmTest --tests 'me.rerere.rikkahub.service.ChatNotificationManagerContractTest'`：5 项通过。
+- `:desktopApp:compileKotlinJvm`：通过。
+- 需要安装包内的系统通知验证；按用户要求由用户手动执行，本轮未启动应用、运行 GUI 或移动端验证。
+  重新构建安装 NSIS 后，在流式生成期间最小化，保持最小化直至生成完成；预期此时收到通知，恢复窗口不会补发同一通知。
+
 ## 官方依据
 
 - [Nucleus 安装与版本要求](https://nucleusframework.dev/en/docs/start/install/)

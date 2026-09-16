@@ -38,7 +38,7 @@ class ChatNotificationManager(
             stopObservingForeground = observeChatNotificationForeground { isForeground.value = it }
         }
         collectionJob = appScope.launch(Dispatchers.Default) {
-            eventBus.events.collect { event ->
+            eventBus.generationEvents.collect { event ->
                 when (event) {
                     is AppEvent.ChatGenerationUpdate -> handleGenerationUpdate(event)
                     is AppEvent.ChatGenerationEnded -> handleGenerationEnded(event)

@@ -4,12 +4,17 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import me.rerere.ai.ui.UIMessage
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.rikkahub.data.datastore.SettingsStore
@@ -24,9 +29,52 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class ChatNotificationManagerContractTest {
+    @Test
+    fun completionDoesNotWaitForMinimizedUiAndPendingUiActionsArePreserved() = runTest {
+        Fixture().use { f ->
+            f.settings(true, false)
+            val uiDispatcher = StandardTestDispatcher(TestCoroutineScheduler())
+            val uiScope = CoroutineScope(SupervisorJob() + uiDispatcher)
+            val receivedUiEvents = mutableListOf<AppEvent>()
+            // Subscribe like AppRoutes, then stop advancing the window's Compose dispatcher.
+            uiScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                f.bus.events.collect { receivedUiEvents += it }
+            }
+            try {
+                val pendingUiEvents = listOf(
+                    AppEvent.Speak("queued speech"),
+                    AppEvent.OpenUsageAccessSettings,
+                    AppEvent.McpOAuthCallback("state", "code", null),
+                )
+                pendingUiEvents.forEach { assertTrue(f.bus.tryEmit(it)) }
+                val id = Uuid.random()
+                // Exceed the shared buffer while the UI is parked, as a streamed response does.
+                repeat(128) {
+                    f.bus.tryEmit(AppEvent.ChatGenerationUpdate(id, UIMessage.assistant("chunk $it"), "sender"))
+                }
+                withContext(Dispatchers.Default) {
+                    withTimeout(5_000) {
+                        f.bus.emit(AppEvent.ChatGenerationEnded(id, "sender", "completed while minimized"))
+                        assertEquals(
+                            listOf(Action.Cancel(id), Action.Done(id, "sender", "completed while minimized")),
+                            f.drain(),
+                        )
+                    }
+                }
+                assertTrue(receivedUiEvents.isEmpty(), "The window must still be paused when notification arrives")
+                uiDispatcher.scheduler.runCurrent()
+                assertEquals(pendingUiEvents, receivedUiEvents)
+            } finally {
+                uiScope.cancel()
+                uiDispatcher.scheduler.runCurrent()
+            }
+        }
+    }
+
     @Test
     fun originalPhasePriorityAndPreviewLimitsArePreserved() = runTest {
         Fixture().use { f ->
